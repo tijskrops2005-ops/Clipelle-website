@@ -14,6 +14,8 @@ type StepCardProps = {
   panel?: ReactNode;
   /** When provided the card reflects pipeline state; omitted on the dashboard explainer. */
   status?: StepStatus;
+  /** Actions under the description, e.g. a Retry button. */
+  footer?: ReactNode;
   className?: string;
 };
 
@@ -28,6 +30,7 @@ export function StepCard({
   description,
   panel,
   status,
+  footer,
   className,
 }: StepCardProps) {
   const active = status === "processing";
@@ -58,6 +61,7 @@ export function StepCard({
       )}
 
       <p className="mt-5 text-sm leading-relaxed text-muted">{description}</p>
+      {footer && <div className="mt-5">{footer}</div>}
     </article>
   );
 }

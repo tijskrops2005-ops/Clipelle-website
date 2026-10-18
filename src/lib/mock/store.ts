@@ -59,6 +59,10 @@ function subscribe(listener: Listener) {
 }
 
 const getSnapshot = () => projects;
+
+/** Non-reactive access for the demo runner. */
+export const getProjectsSnapshot = () => projects;
+export const subscribeToProjects = subscribe;
 // Must be a stable reference: React compares snapshots by identity during hydration.
 const serverSnapshot = sortNewestFirst(mockProjects);
 const getServerSnapshot = () => serverSnapshot;

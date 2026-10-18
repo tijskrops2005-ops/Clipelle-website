@@ -9,4 +9,6 @@ export const config = {
    * visible "Demo mode" label. Flip to false only once real services exist (Stage 7+).
    */
   demoMode: true,
+  /** Placeholder clip served from /public while no real VEED output exists. */
+  demoVideoUrl: "/demo/sample-video.mp4",
 } as const;

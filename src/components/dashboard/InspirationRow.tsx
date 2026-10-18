@@ -5,12 +5,12 @@ import { Badge } from "@/components/ui/Badge";
 
 /* Tints are derived from design tokens — no hex values in components. */
 const tints: Record<InspirationExample["tint"], string> = {
-  warm: "from-accent/20 to-accent/5",
-  cool: "from-ink/15 to-ink/5",
-  sand: "from-warning/20 to-warning/5",
-  mint: "from-success/20 to-success/5",
-  rose: "from-danger/15 to-danger/5",
-  slate: "from-muted/25 to-muted/5",
+  warm: "from-accent/25 via-accent/10 to-surface-muted",
+  cool: "from-ink/15 via-ink/5 to-surface-muted",
+  sand: "from-warning/25 via-warning/10 to-surface-muted",
+  mint: "from-success/20 via-success/8 to-surface-muted",
+  rose: "from-danger/15 via-danger/5 to-surface-muted",
+  slate: "from-muted/30 via-muted/10 to-surface-muted",
 };
 
 /** A row of example formats. Placeholders only — clearly labelled, no real footage. */
@@ -27,22 +27,23 @@ export function InspirationRow() {
         <Badge tone="warning">Demo placeholders</Badge>
       </div>
 
-      <div className="grid grid-cols-3 gap-5 sm:grid-cols-6">
+      <div className="-mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-2">
         {mockInspiration.map((example) => (
           <div
             key={example.id}
             className={cn(
-              "relative aspect-[9/16] overflow-hidden rounded-tile bg-gradient-to-b shadow-card",
+              "relative aspect-[9/16] w-[136px] shrink-0 snap-start overflow-hidden rounded-tile bg-gradient-to-b shadow-card",
               tints[example.tint],
             )}
           >
-            <Clapperboard
-              className="absolute left-1/2 top-1/2 size-7 -translate-x-1/2 -translate-y-1/2 text-ink/25"
-              aria-hidden
-            />
-            <div className="absolute inset-x-3 bottom-3">
-              <p className="text-sm font-semibold text-ink">{example.title}</p>
-              <p className="label-mono mt-1 text-muted">{example.format}</p>
+            <span className="absolute left-3 top-3 grid size-8 place-items-center rounded-full bg-surface/90 text-ink shadow-card">
+              <Clapperboard className="size-4" aria-hidden />
+            </span>
+            <div className="absolute inset-x-3 bottom-3 space-y-1">
+              <p className="text-sm font-semibold leading-tight text-ink">
+                {example.title}
+              </p>
+              <p className="label-mono leading-[1.3] text-muted">{example.format}</p>
             </div>
           </div>
         ))}

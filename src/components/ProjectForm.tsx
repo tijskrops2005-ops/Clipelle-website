@@ -113,7 +113,7 @@ export function ProjectForm() {
       };
       addProject(project);
       images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
-      router.push("/dashboard");
+      router.push(`/projects/${project.id}`);
     } catch (error) {
       submitLock.current = false;
       setSubmitting(false);

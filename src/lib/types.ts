@@ -16,6 +16,8 @@ export interface Step {
   outputUrl?: string;
   /** Job id at the external service — needed for polling / retries later. */
   externalJobId?: string;
+  /** 1 on the first run, incremented by Retry. */
+  attempt?: number;
 }
 
 export interface Project {

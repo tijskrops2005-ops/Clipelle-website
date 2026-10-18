@@ -86,3 +86,9 @@
     letter-spacing: -0.02em;
   }
 }
+
+/* Indeterminate progress bar used while a pipeline step is processing. */
+@keyframes slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
