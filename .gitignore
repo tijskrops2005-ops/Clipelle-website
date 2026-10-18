@@ -31,3 +31,8 @@ next-env.d.ts
 Thumbs.db
 .idea/
 .vscode/
+
+# Testing / misc
+/coverage
+*.pem
+.pnpm-debug.log*
