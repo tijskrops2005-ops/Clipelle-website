@@ -31,7 +31,7 @@ Input ────┤                           ├→ VEED (final video) → pr
 
 ## Current stage
 
-Stages 1–3 (inspection, competitor analysis, design plan) are done. **We are in Stage 4: frontend skeleton with mock data.**
+Stages 1–4 are done: inspection, competitor analysis, design plan and the frontend skeleton with mock data (all five pages, simulated workflow runner, demo store). **Next is Stage 5: frontend polish** (loading/empty/error states, responsive behaviour, mobile navigation).
 
 Do not skip ahead. Do not start real API integrations until Tijs explicitly moves to Stage 6/7.
 
