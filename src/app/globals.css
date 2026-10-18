@@ -12,8 +12,8 @@
   --border: #eceae4;
   --divider: #e7e5e0;
   --muted: #6b6b70;
-  --accent: #ff5a36;
-  --accent-hover: #e8492a;
+  --accent: #d43f1b; /* white text on this coral meets AA (4.6:1) */
+  --accent-hover: #c03716;
   --success: #16a34a;
   --warning: #d97706;
   --danger: #dc2626;
@@ -26,7 +26,7 @@
     0 12px 32px -16px rgba(17, 17, 20, 0.1);
   --shadow-card-hover: 0 2px 4px rgba(17, 17, 20, 0.05),
     0 20px 40px -16px rgba(17, 17, 20, 0.16);
-  --shadow-accent: 0 10px 24px -10px rgba(255, 90, 54, 0.55);
+  --shadow-accent: 0 10px 24px -10px rgba(212, 63, 27, 0.5);
 }
 
 /* Expose the tokens to Tailwind as utilities (bg-surface, text-muted, rounded-card, shadow-card, ...). */

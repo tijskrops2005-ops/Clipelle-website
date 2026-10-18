@@ -14,9 +14,9 @@ const variants: Record<Variant, string> = {
   primary:
     "rounded-control bg-ink text-surface hover:bg-ink/90 hover:-translate-y-px active:translate-y-0",
   // The accent pill is reserved for the one main call to action on a page.
-  // Ink text on coral keeps the label readable (AA); white on coral does not.
+  // White text: the accent token is tuned so this pair meets AA contrast.
   accent:
-    "rounded-full bg-accent text-ink shadow-accent hover:bg-accent-hover hover:-translate-y-px active:translate-y-0",
+    "rounded-full bg-accent text-white shadow-accent hover:bg-accent-hover hover:-translate-y-px active:translate-y-0",
   secondary:
     "rounded-control bg-surface text-ink border border-border shadow-card hover:bg-surface-muted",
   ghost: "rounded-control text-ink hover:bg-ink/5",

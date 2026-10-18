@@ -74,8 +74,8 @@ Design tokens (defined once in `src/app/globals.css` as CSS variables and expose
 | `border` | `#ECEAE4` | subtle card borders |
 | `divider` | `#E7E5E0` | separators |
 | `muted` | `#6B6B70` | secondary text |
-| `accent` | `#FF5A36` | main CTA, active step |
-| `accent-hover` | `#E8492A` | |
+| `accent` | `#D43F1B` | main CTA, active step (white text on it meets AA) |
+| `accent-hover` | `#C03716` | |
 | `success` | `#16A34A` | completed |
 | `warning` | `#D97706` | waiting/attention, demo labels |
 | `danger` | `#DC2626` | failed |
