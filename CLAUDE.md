@@ -38,7 +38,7 @@ Input ─→ Script (Claude API) ─┬→ Product clip (fal.ai image-to-video) 
 
 ## Current stage
 
-Stages 1–6 are done: inspection, competitor analysis, design plan, frontend skeleton with mock data, frontend polish, and API verification (`docs/api-verification.md`). The roadmap with the MVP and extensions is in `docs/roadmap.md`. **Next is Stage 7: integrate each service separately**, in this order: HeyGen v3 → Claude (script) → fal.ai → Shotstack. Do not start it until Tijs has created the accounts and keys listed in the roadmap and says so.
+Stages 1–6 are done: inspection, competitor analysis, design plan, frontend skeleton with mock data, frontend polish, and API verification (`docs/api-verification.md`). The roadmap with the MVP and extensions is in `docs/roadmap.md`. **Stage 7 is in progress**: step 1 (HeyGen v3 service + `/dev/heygen` test bench) is built; next come Claude (script) → fal.ai → Shotstack, each as a separate service module with its own dev test bench, each only after Tijs has created the account and key.
 
 Do not skip ahead. Build the MVP (one product → one complete 9:16 ad, one angle) before any extension.
 
@@ -95,6 +95,8 @@ Radius: `radius-card` 20px, `radius-tile` 16px, `radius-control` 12px (buttons/i
 - Reusable UI components in `src/components/ui/` (Button, Card, Badge, Input, Textarea, Field, UploadDropzone, VideoPlayer, EmptyState, ErrorState, Skeleton, PageHeader/SectionHeader).
 - Feature components in `src/components/` (AppShell, Sidebar, MobileNav, Brand, StepCard, StepIllustrations, ProjectTile, Poster, ProjectForm, ProjectView, ProjectsGrid, DemoModeBadge/DemoBadge, DemoRunner), dashboard sections in `src/components/dashboard/`, pipeline cards in `src/components/pipeline/`.
 - Every page uses `PageHeader` for its title row and `SectionHeader` for sections; every simulated element carries `DemoBadge`. Each route has `loading.tsx`; `(app)/error.tsx` and `app/not-found.tsx` cover errors and unknown URLs inside the shell.
+- Developer tools live under `src/app/(app)/dev/` (pages) and `src/app/api/dev/` (route handlers). They return 404 outside `NODE_ENV=development`, are never linked from navigation, and never touch the demo store or the pipeline. Current tool: `/dev/heygen` (Stage 7 step 1).
+- Real service clients live in `src/lib/services/` and start with `import "server-only"`. They read keys from `process.env` at call time and never include them in errors or logs. Only calls that cost money (e.g. HeyGen `POST /v3/videos`) require an explicit confirmation from the UI; listing and status calls are free.
 - Later (Stage 8, not now): database for projects, file storage, and a background-job service for long-running video jobs (serverless functions time out).
 
 Planned structure:
