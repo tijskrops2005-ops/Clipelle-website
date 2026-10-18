@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { KeyRound, Settings2, UserRound } from "lucide-react";
 import { config } from "@/lib/config";
-import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { DemoBadge } from "@/components/DemoModeBadge";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -27,17 +28,15 @@ const later = [
 export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-10">
-      <header className="space-y-3">
-        <h1 className="text-display text-ink">Settings</h1>
-        <p className="text-[17px] text-muted">
-          Nothing to configure yet. This page fills up as the real services are connected.
-        </p>
-      </header>
+      <PageHeader
+        title="Settings"
+        description="Nothing to configure yet. This page fills up as the real services are connected."
+      />
 
       <Card>
         <CardHeader className="flex items-start justify-between gap-3">
           <CardTitle>Coming later</CardTitle>
-          <Badge tone="warning">Placeholder</Badge>
+          <DemoBadge>Placeholder</DemoBadge>
         </CardHeader>
         <CardContent>
           <ul className="divide-y divide-divider">

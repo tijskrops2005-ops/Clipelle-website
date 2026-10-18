@@ -27,7 +27,7 @@ export function Field({
         <label htmlFor={id} className="text-sm font-medium text-ink">
           {label}
         </label>
-        {optional && <span className="label-mono text-muted/80">Optional</span>}
+        {optional && <span className="label-mono text-muted">Optional</span>}
       </div>
       {children}
       {error ? (
@@ -45,7 +45,7 @@ export function Field({
 
 /** Shared control styling for Input and Textarea. */
 export const controlClass =
-  "w-full rounded-control border bg-surface px-3.5 text-[15px] text-ink placeholder:text-muted/60 " +
+  "w-full rounded-control border bg-surface px-3.5 text-[15px] text-ink placeholder:text-muted/70 " +
   "transition-colors focus:outline-none focus:ring-2 focus:ring-ink/15 disabled:opacity-60";
 
 export function controlStateClass(invalid?: boolean) {

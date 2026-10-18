@@ -1,3 +1,4 @@
+import { config } from "@/lib/config";
 import type { Project } from "@/lib/types";
 
 /**
@@ -33,7 +34,7 @@ export const mockProjects: Project[] = [
         finishedAt: "2026-10-16T09:12:40Z",
       },
     },
-    finalVideoUrl: undefined, // simulated — no real video exists in demo mode
+    finalVideoUrl: config.demoVideoUrl, // placeholder clip — no real video exists in demo mode
     createdAt: "2026-10-16T09:01:00Z",
   },
   {
@@ -103,6 +104,7 @@ export const mockProjects: Project[] = [
         finishedAt: "2026-10-12T10:11:00Z",
       },
     },
+    finalVideoUrl: config.demoVideoUrl,
     createdAt: "2026-10-12T09:58:00Z",
   },
   {

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/Badge";
+import { DemoBadge } from "@/components/DemoModeBadge";
 
 type VideoPlayerProps = {
   src: string;
@@ -24,12 +24,13 @@ export function VideoPlayer({ src, poster, simulated, className }: VideoPlayerPr
         controls
         playsInline
         preload="metadata"
+        aria-label="Preview of your video"
         className="size-full object-cover"
       />
       {simulated && (
-        <Badge tone="warning" className="absolute left-3 top-3 bg-surface text-warning shadow-card">
+        <DemoBadge className="absolute left-3 top-3 bg-surface shadow-card">
           Simulated preview
-        </Badge>
+        </DemoBadge>
       )}
     </div>
   );

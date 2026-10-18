@@ -31,7 +31,7 @@ Input ────┤                           ├→ VEED (final video) → pr
 
 ## Current stage
 
-Stages 1–4 are done: inspection, competitor analysis, design plan and the frontend skeleton with mock data (all five pages, simulated workflow runner, demo store). **Next is Stage 5: frontend polish** (loading/empty/error states, responsive behaviour, mobile navigation).
+Stages 1–5 are done: inspection, competitor analysis, design plan, the frontend skeleton with mock data (all five pages, simulated workflow runner, demo store) and frontend polish (responsive layout with a mobile drawer, loading/error/not-found states, consistent headers and demo labels, keyboard focus and contrast). **Next is Stage 6: API verification** against the official Vmake, HeyGen and VEED docs. Do not start it until Tijs says so.
 
 Do not skip ahead. Do not start real API integrations until Tijs explicitly moves to Stage 6/7.
 
@@ -61,7 +61,7 @@ The app looks **premium, light and calm**, in the spirit of MakeUGC's light styl
 - **9:16 video tiles** (`ProjectTile`) are the eye-catcher: floating white status badge top-left, play button bottom-right, dark gradient with name and duration on completed tiles, first product image as poster when available.
 - **Generous spacing.** Content max-width 1120px, sections 64px apart, card padding 28px.
 - Light theme only. No gradient text, no promo bars, no dark mode.
-- Responsive down to phone width (mobile navigation is Stage 5 work).
+- Responsive down to phone width: sidebar from `lg`, a top bar with a drawer (`MobileNav`) below it; tile grids 2 → 3 → 4 columns.
 
 Design tokens (defined once in `src/app/globals.css` as CSS variables and exposed via Tailwind `@theme`; never hard-code colors in components):
 
@@ -85,8 +85,9 @@ Radius: `radius-card` 20px, `radius-tile` 16px, `radius-control` 12px (buttons/i
 ## Tech stack
 
 - Next.js (App Router) + TypeScript + Tailwind CSS.
-- Reusable UI components in `src/components/ui/` (Button, Card, Badge, Input, Textarea, UploadDropzone, VideoPlayer, EmptyState).
-- Feature components in `src/components/` (AppShell, Sidebar, StepCard, StepIllustrations, ProjectTile, ProjectForm, DemoModeBadge) and dashboard sections in `src/components/dashboard/`.
+- Reusable UI components in `src/components/ui/` (Button, Card, Badge, Input, Textarea, Field, UploadDropzone, VideoPlayer, EmptyState, ErrorState, Skeleton, PageHeader/SectionHeader).
+- Feature components in `src/components/` (AppShell, Sidebar, MobileNav, Brand, StepCard, StepIllustrations, ProjectTile, Poster, ProjectForm, ProjectView, ProjectsGrid, DemoModeBadge/DemoBadge, DemoRunner), dashboard sections in `src/components/dashboard/`, pipeline cards in `src/components/pipeline/`.
+- Every page uses `PageHeader` for its title row and `SectionHeader` for sections; every simulated element carries `DemoBadge`. Each route has `loading.tsx`; `(app)/error.tsx` and `app/not-found.tsx` cover errors and unknown URLs inside the shell.
 - Later (Stage 8, not now): database for projects, file storage, and a background-job service for long-running video jobs (serverless functions time out).
 
 Planned structure:

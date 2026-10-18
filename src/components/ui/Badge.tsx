@@ -4,12 +4,13 @@ import type { ProjectStatus, StepStatus } from "@/lib/types";
 
 type Tone = "neutral" | "accent" | "success" | "warning" | "danger";
 
+/* Text stays ink on every tint so small badge text keeps AA contrast; the tint + dot carry the colour. */
 const tinted: Record<Tone, string> = {
-  neutral: "bg-ink/5 text-muted",
-  accent: "bg-accent/10 text-accent",
-  success: "bg-success/10 text-success",
-  warning: "bg-warning/10 text-warning",
-  danger: "bg-danger/10 text-danger",
+  neutral: "bg-ink/5 text-ink",
+  accent: "bg-accent/12 text-ink",
+  success: "bg-success/12 text-ink",
+  warning: "bg-warning/12 text-ink",
+  danger: "bg-danger/12 text-ink",
 };
 
 const dot: Record<Tone, string> = {
@@ -70,11 +71,7 @@ export function StatusBadge({
     <Badge tone={tone} variant={variant} className={className}>
       <span
         aria-hidden
-        className={cn(
-          "size-1.5 rounded-full",
-          dot[tone],
-          status === "processing" && "animate-pulse",
-        )}
+        className={cn("size-1.5 rounded-full", dot[tone], status === "processing" && "animate-pulse")}
       />
       {label}
     </Badge>

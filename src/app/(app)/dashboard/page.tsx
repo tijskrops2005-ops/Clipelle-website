@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { HowItWorks } from "@/components/dashboard/HowItWorks";
 import { InspirationRow } from "@/components/dashboard/InspirationRow";
 import { RecentProjects } from "@/components/dashboard/RecentProjects";
@@ -11,20 +12,16 @@ export const metadata: Metadata = { title: "Dashboard" };
 export default function DashboardPage() {
   return (
     <div className="space-y-12 lg:space-y-16">
-      {/* Hero */}
-      <header className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
-        <div className="max-w-xl space-y-4">
-          <h1 className="text-display text-ink">Welcome back</h1>
-          <p className="text-[17px] leading-relaxed text-muted">
-            Add your product once. We create the product clip, the presenter and
-            the final ad, then bring the finished video back here.
-          </p>
-        </div>
-        <Button href="/new" variant="accent" size="lg" className="shrink-0">
-          <Plus className="size-5" aria-hidden />
-          Create new video
-        </Button>
-      </header>
+      <PageHeader
+        title="Welcome back"
+        description="Add your product once. We create the product clip, the presenter and the final ad, then bring the finished video back here."
+        actions={
+          <Button href="/new" variant="accent" size="lg">
+            <Plus className="size-5" aria-hidden />
+            Create new video
+          </Button>
+        }
+      />
 
       <HowItWorks />
 

@@ -66,6 +66,7 @@ export function ProjectsGrid() {
               onClick={() => setFilter(key)}
               className={cn(
                 "inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition-all",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-muted",
                 active
                   ? "bg-surface text-ink shadow-card"
                   : "text-muted hover:text-ink",
@@ -75,7 +76,7 @@ export function ProjectsGrid() {
               <span
                 className={cn(
                   "label-mono rounded-full px-1.5 py-0.5",
-                  active ? "bg-ink/5 text-ink" : "text-muted/80",
+                  active ? "bg-ink/5 text-ink" : "text-muted",
                 )}
               >
                 {count}

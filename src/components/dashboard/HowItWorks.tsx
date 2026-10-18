@@ -1,3 +1,4 @@
+import { SectionHeader } from "@/components/ui/PageHeader";
 import { StepCard } from "@/components/StepCard";
 import {
   FinalVideoIllustration,
@@ -11,12 +12,10 @@ const illustrationClass = "mx-auto h-[72px] w-full max-w-[160px] text-ink/70";
 export function HowItWorks() {
   return (
     <section className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold text-ink">How it works</h2>
-        <p className="mt-1.5 text-[15px] text-muted">
-          Three services, one click. You never open them yourself.
-        </p>
-      </div>
+      <SectionHeader
+        title="How it works"
+        description="Three services, one click. You never open them yourself."
+      />
       <div className="grid gap-5 md:grid-cols-3 md:gap-6">
         <StepCard
           number={1}

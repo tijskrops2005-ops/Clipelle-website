@@ -85,6 +85,21 @@
   h3 {
     letter-spacing: -0.02em;
   }
+
+  /* Keyboard focus is always visible, even on elements without their own ring classes. */
+  :focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ink) 40%, transparent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 /* Indeterminate progress bar used while a pipeline step is processing. */

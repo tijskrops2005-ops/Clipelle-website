@@ -7,10 +7,13 @@ import { config } from "@/lib/config";
 import type { Project } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { useProjects } from "@/lib/mock/store";
-import { Badge, StatusBadge } from "@/components/ui/Badge";
+import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
+import { PageHeaderSkeleton, Skeleton } from "@/components/ui/Skeleton";
+import { DemoBadge } from "@/components/DemoModeBadge";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { Pipeline } from "@/components/pipeline/Pipeline";
 import { stepMeta } from "@/components/pipeline/PipelineStep";
@@ -46,34 +49,25 @@ export function ProjectView({ id }: { id: string }) {
 
   return (
     <div className="space-y-10">
-      <header className="space-y-5">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-ink"
-        >
-          <ArrowLeft className="size-4" aria-hidden />
-          Dashboard
-        </Link>
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-display text-ink">{project.name}</h1>
-              <StatusBadge status={project.status} className="translate-y-1" />
-            </div>
-            <p className="text-[17px] text-muted">
-              {project.productName} · created {formatDate(project.createdAt)}
-            </p>
-          </div>
-          <HeaderActions project={project} />
-        </div>
-      </header>
+      <PageHeader
+        eyebrow={
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+            Dashboard
+          </Link>
+        }
+        title={project.name}
+        badge={<StatusBadge status={project.status} className="translate-y-1" />}
+        description={`${project.productName} · created ${formatDate(project.createdAt)}`}
+        actions={<HeaderActions project={project} />}
+      />
 
       <div className="grid gap-8 xl:grid-cols-3">
         <section className="space-y-5 xl:col-span-2">
-          <div>
-            <h2 className="text-2xl font-semibold text-ink">Pipeline</h2>
-            <p className="mt-1.5 text-[15px] text-muted">{pipelineSummary(project)}</p>
-          </div>
+          <SectionHeader title="Pipeline" description={pipelineSummary(project)} />
           <Pipeline project={project} />
         </section>
 
@@ -130,7 +124,7 @@ function ResultCard({ project }: { project: Project }) {
       <Card>
         <CardHeader className="flex items-start justify-between gap-3">
           <CardTitle>Your video</CardTitle>
-          <Badge tone="warning">Demo placeholder</Badge>
+          <DemoBadge>Demo placeholder</DemoBadge>
         </CardHeader>
         <CardContent className="space-y-5">
           <VideoPlayer
@@ -208,7 +202,7 @@ function DetailsCard({ project }: { project: Project }) {
                 <img
                   key={i}
                   src={url}
-                  alt=""
+                  alt={`Product image ${i + 1} of ${project.productName}`}
                   className="size-12 rounded-[8px] object-cover shadow-card"
                 />
               ))}
@@ -226,7 +220,7 @@ function DetailsCard({ project }: { project: Project }) {
               href={project.productUrl}
               target="_blank"
               rel="noreferrer"
-              className="break-all text-ink underline decoration-border underline-offset-4 hover:decoration-ink"
+              className="break-all rounded-control text-ink underline decoration-border underline-offset-4 hover:decoration-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40"
             >
               {project.productUrl}
             </a>
@@ -243,23 +237,22 @@ function DetailsCard({ project }: { project: Project }) {
   );
 }
 
-function ProjectSkeleton() {
+export function ProjectSkeleton() {
   return (
-    <div className="animate-pulse space-y-10" aria-busy="true">
-      <div className="space-y-4">
-        <div className="h-4 w-24 rounded bg-surface-muted" />
-        <div className="h-10 w-2/3 rounded bg-surface-muted" />
-        <div className="h-5 w-1/3 rounded bg-surface-muted" />
+    <div className="space-y-10" aria-busy="true">
+      <div className="space-y-5">
+        <Skeleton className="h-4 w-24" />
+        <PageHeaderSkeleton />
       </div>
       <div className="grid gap-8 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="h-64 rounded-card bg-surface-muted" />
-            <div className="h-64 rounded-card bg-surface-muted" />
+            <Skeleton className="h-64 rounded-card" />
+            <Skeleton className="h-64 rounded-card" />
           </div>
-          <div className="h-64 rounded-card bg-surface-muted" />
+          <Skeleton className="h-64 rounded-card" />
         </div>
-        <div className="h-[520px] rounded-card bg-surface-muted" />
+        <Skeleton className="h-[520px] rounded-card" />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { Clock3 } from "lucide-react";
 import { mockUsage } from "@/lib/mock/usage";
-import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { DemoBadge } from "@/components/DemoModeBadge";
 
 /** Small usage summary. Numbers are simulated until Stage 8. */
 export function UsageCard() {
@@ -12,7 +12,7 @@ export function UsageCard() {
     <Card className="flex h-full flex-col">
       <CardHeader className="flex items-start justify-between gap-3">
         <CardTitle>This month</CardTitle>
-        <Badge tone="warning">Demo numbers</Badge>
+        <DemoBadge>Demo numbers</DemoBadge>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-between gap-6">
         <div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { ProjectForm } from "@/components/ProjectForm";
 
 export const metadata: Metadata = { title: "New video" };
@@ -12,13 +13,12 @@ const afterwards = [
 export default function NewVideoPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-12">
-      <header className="space-y-4">
-        <h1 className="text-display text-ink">New video</h1>
-        <p className="max-w-xl text-[17px] leading-relaxed text-muted">
-          Tell us about the product once. After you click Generate, three steps
-          run on their own and the finished ad lands on your dashboard.
-        </p>
-        <ol className="grid gap-3 pt-2 sm:grid-cols-3">
+      <div className="space-y-6">
+        <PageHeader
+          title="New video"
+          description="Tell us about the product once. After you click Generate, three steps run on their own and the finished ad lands on your dashboard."
+        />
+        <ol className="grid gap-3 sm:grid-cols-3">
           {afterwards.map((step) => (
             <li
               key={step.n}
@@ -34,7 +34,7 @@ export default function NewVideoPage() {
             </li>
           ))}
         </ol>
-      </header>
+      </div>
 
       <ProjectForm />
     </div>

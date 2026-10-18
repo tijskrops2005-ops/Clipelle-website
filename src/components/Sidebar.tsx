@@ -46,7 +46,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <p className="label-mono px-1 text-muted/80">Vmake · HeyGen · VEED</p>
+      <p className="label-mono px-1 text-muted">Vmake · HeyGen · VEED</p>
     </aside>
   );
 }

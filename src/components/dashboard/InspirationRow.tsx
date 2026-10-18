@@ -1,7 +1,8 @@
 import { Clapperboard } from "lucide-react";
 import { mockInspiration, type InspirationExample } from "@/lib/mock/usage";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/Badge";
+import { SectionHeader } from "@/components/ui/PageHeader";
+import { DemoBadge } from "@/components/DemoModeBadge";
 
 /* Tints are derived from design tokens — no hex values in components. */
 const tints: Record<InspirationExample["tint"], string> = {
@@ -17,15 +18,11 @@ const tints: Record<InspirationExample["tint"], string> = {
 export function InspirationRow() {
   return (
     <section className="space-y-6">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold text-ink">Inspiration</h2>
-          <p className="mt-1.5 text-[15px] text-muted">
-            Formats that work well for product ads.
-          </p>
-        </div>
-        <Badge tone="warning">Demo placeholders</Badge>
-      </div>
+      <SectionHeader
+        title="Inspiration"
+        description="Formats that work well for product ads."
+        aside={<DemoBadge className="shrink-0">Demo placeholders</DemoBadge>}
+      />
 
       <div className="-mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-2">
         {mockInspiration.map((example) => (

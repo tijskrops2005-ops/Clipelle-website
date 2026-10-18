@@ -107,7 +107,7 @@ export function MobileNav() {
               })}
             </nav>
 
-            <p className="label-mono mt-auto text-muted/80">Vmake · HeyGen · VEED</p>
+            <p className="label-mono mt-auto text-muted">Vmake · HeyGen · VEED</p>
           </div>
         </div>
       )}
