@@ -104,7 +104,7 @@ export function ProjectsGrid() {
           }
         />
       ) : (
-        <div className="grid grid-cols-2 gap-7 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-5 sm:gap-7 lg:grid-cols-3 xl:grid-cols-4">
           {visible.map((project) => (
             <ProjectTile key={project.id} project={project} />
           ))}

@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Dashboard" };
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-16">
+    <div className="space-y-12 lg:space-y-16">
       {/* Hero */}
       <header className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
         <div className="max-w-xl space-y-4">
@@ -30,11 +30,11 @@ export default function DashboardPage() {
 
       <RecentProjects />
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="min-w-0 xl:col-span-2">
           <InspirationRow />
         </div>
-        <div className="lg:pt-[68px]">
+        <div className="min-w-0 xl:pt-[68px]">
           <UsageCard />
         </div>
       </div>

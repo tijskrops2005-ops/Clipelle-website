@@ -7,7 +7,7 @@ import { PipelineStep } from "@/components/pipeline/PipelineStep";
 export function Pipeline({ project }: { project: Project }) {
   return (
     <div>
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2 md:gap-6">
         <PipelineStep project={project} stepKey="vmake" />
         <PipelineStep project={project} stepKey="heygen" />
       </div>

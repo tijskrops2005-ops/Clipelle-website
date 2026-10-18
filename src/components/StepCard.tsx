@@ -38,7 +38,7 @@ export function StepCard({
   return (
     <article
       className={cn(
-        "flex flex-col rounded-card bg-surface p-7 shadow-card transition-shadow",
+        "flex flex-col rounded-card bg-surface p-5 shadow-card transition-shadow sm:p-7",
         active && "ring-1 ring-accent/40",
         className,
       )}

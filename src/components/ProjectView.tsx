@@ -68,8 +68,8 @@ export function ProjectView({ id }: { id: string }) {
         </div>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <section className="space-y-5 lg:col-span-2">
+      <div className="grid gap-8 xl:grid-cols-3">
+        <section className="space-y-5 xl:col-span-2">
           <div>
             <h2 className="text-2xl font-semibold text-ink">Pipeline</h2>
             <p className="mt-1.5 text-[15px] text-muted">{pipelineSummary(project)}</p>
@@ -77,7 +77,7 @@ export function ProjectView({ id }: { id: string }) {
           <Pipeline project={project} />
         </section>
 
-        <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+        <aside className="grid gap-6 md:grid-cols-2 xl:sticky xl:top-6 xl:block xl:self-start xl:space-y-6">
           <ResultCard project={project} />
           <DetailsCard project={project} />
         </aside>
@@ -137,6 +137,7 @@ function ResultCard({ project }: { project: Project }) {
             src={project.finalVideoUrl}
             poster={project.imageUrls[0]}
             simulated={config.demoMode}
+            className="mx-auto w-full max-w-xs"
           />
           <p className="text-[13px] leading-relaxed text-muted">
             This clip is a stand-in. The real ad arrives here once VEED is connected.
@@ -167,7 +168,7 @@ function ResultCard({ project }: { project: Project }) {
         <CardTitle>{failed ? "Paused" : "Your video"}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="relative aspect-[9/16] overflow-hidden rounded-tile bg-surface-muted">
+        <div className="relative mx-auto aspect-[9/16] w-full max-w-xs overflow-hidden rounded-tile bg-surface-muted">
           <div className="absolute inset-0 grid place-items-center p-6 text-center">
             <p className="text-sm text-muted">
               {failed
@@ -244,14 +245,14 @@ function DetailsCard({ project }: { project: Project }) {
 
 function ProjectSkeleton() {
   return (
-    <div className="animate-pulse space-y-10" aria-busy>
+    <div className="animate-pulse space-y-10" aria-busy="true">
       <div className="space-y-4">
         <div className="h-4 w-24 rounded bg-surface-muted" />
         <div className="h-10 w-2/3 rounded bg-surface-muted" />
         <div className="h-5 w-1/3 rounded bg-surface-muted" />
       </div>
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="space-y-6 xl:col-span-2">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="h-64 rounded-card bg-surface-muted" />
             <div className="h-64 rounded-card bg-surface-muted" />

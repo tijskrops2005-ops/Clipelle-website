@@ -17,7 +17,7 @@ export function HowItWorks() {
           Three services, one click. You never open them yourself.
         </p>
       </div>
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-3 md:gap-6">
         <StepCard
           number={1}
           title="Product video"
