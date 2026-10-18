@@ -26,30 +26,28 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-surface">
-      {/* Brand */}
-      <div className="flex h-16 items-center gap-2.5 px-5">
+    <aside className="flex h-full w-66 shrink-0 flex-col px-6 py-7">
+      {/* Brand (temporary name, see lib/config.ts) */}
+      <Link href="/dashboard" className="flex items-center gap-2.5 px-1">
         <span
           aria-hidden
-          className="grid size-8 place-items-center rounded-control bg-ink text-surface text-sm font-bold"
+          className="grid size-8 place-items-center rounded-[10px] bg-ink text-sm font-bold text-surface"
         >
           {config.productName.charAt(0)}
         </span>
-        <span className="text-base font-semibold tracking-tight text-ink">
+        <span className="text-[17px] font-semibold tracking-tight text-ink">
           {config.productName}
         </span>
-      </div>
+      </Link>
 
       {/* Primary action — always the most prominent thing in the sidebar */}
-      <div className="px-4 pb-4">
-        <Button href="/new" variant="accent" className="w-full">
-          <Plus className="size-4" aria-hidden />
-          Create new video
-        </Button>
-      </div>
+      <Button href="/new" variant="accent" size="lg" className="mt-8 w-full">
+        <Plus className="size-[18px]" aria-hidden />
+        Create new video
+      </Button>
 
       {/* Navigation */}
-      <nav aria-label="Main" className="flex flex-1 flex-col gap-1 px-3">
+      <nav aria-label="Main" className="mt-8 flex flex-1 flex-col gap-1">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
@@ -58,13 +56,13 @@ export function Sidebar() {
               href={href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-control px-3 py-2 text-sm font-medium transition-colors",
+                "flex h-10 items-center gap-3 rounded-control px-3 text-sm font-medium transition-all",
                 active
-                  ? "bg-ink/5 text-ink"
+                  ? "bg-surface text-ink shadow-card"
                   : "text-muted hover:bg-ink/5 hover:text-ink",
               )}
             >
-              <Icon className="size-4" aria-hidden />
+              <Icon className="size-[18px]" aria-hidden />
               {label}
             </Link>
           );
@@ -72,9 +70,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-border px-5 py-4 text-xs text-muted">
-        Vmake · HeyGen · VEED
-      </div>
+      <p className="label-mono px-1 text-muted/80">Vmake · HeyGen · VEED</p>
     </aside>
   );
 }

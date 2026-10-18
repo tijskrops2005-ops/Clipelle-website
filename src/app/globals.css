@@ -8,7 +8,9 @@
   --ink: #111114;
   --bg: #fafaf7;
   --surface: #ffffff;
-  --border: #e7e5e0;
+  --surface-muted: #f4f3ef;
+  --border: #eceae4;
+  --divider: #e7e5e0;
   --muted: #6b6b70;
   --accent: #ff5a36;
   --accent-hover: #e8492a;
@@ -16,16 +18,25 @@
   --warning: #d97706;
   --danger: #dc2626;
 
-  --radius-card: 12px;
-  --radius-control: 10px;
+  --radius-card: 20px;
+  --radius-tile: 16px;
+  --radius-control: 12px;
+
+  --shadow-card: 0 1px 2px rgba(17, 17, 20, 0.04),
+    0 12px 32px -16px rgba(17, 17, 20, 0.1);
+  --shadow-card-hover: 0 2px 4px rgba(17, 17, 20, 0.05),
+    0 20px 40px -16px rgba(17, 17, 20, 0.16);
+  --shadow-accent: 0 10px 24px -10px rgba(255, 90, 54, 0.55);
 }
 
-/* Expose the tokens to Tailwind as utilities (bg-surface, text-muted, border-border, ...). */
+/* Expose the tokens to Tailwind as utilities (bg-surface, text-muted, rounded-card, shadow-card, ...). */
 @theme inline {
   --color-ink: var(--ink);
   --color-bg: var(--bg);
   --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
   --color-border: var(--border);
+  --color-divider: var(--divider);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
@@ -34,14 +45,44 @@
   --color-danger: var(--danger);
 
   --radius-card: var(--radius-card);
+  --radius-tile: var(--radius-tile);
   --radius-control: var(--radius-control);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-accent: var(--shadow-accent);
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font-sans);
+/* Small uppercase monospace label: step numbers, service names, "DEMO MODE". */
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Page title: large, tight, calm. */
+@utility text-display {
+  font-size: 2.5rem;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+@layer base {
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
+  }
 }

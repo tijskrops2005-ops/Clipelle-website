@@ -17,16 +17,20 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-card border border-dashed border-border bg-surface px-6 py-14 text-center",
+        "flex flex-col items-center justify-center rounded-card bg-surface px-6 py-16 text-center shadow-card",
         className,
       )}
     >
-      {icon && <div className="mb-4 text-muted">{icon}</div>}
-      <h3 className="text-base font-semibold text-ink">{title}</h3>
-      {description && (
-        <p className="mt-1 max-w-sm text-sm text-muted">{description}</p>
+      {icon && (
+        <div className="mb-5 grid size-14 place-items-center rounded-full bg-surface-muted text-muted">
+          {icon}
+        </div>
       )}
-      {action && <div className="mt-6">{action}</div>}
+      <h3 className="text-lg font-semibold text-ink">{title}</h3>
+      {description && (
+        <p className="mt-1.5 max-w-sm text-[15px] text-muted">{description}</p>
+      )}
+      {action && <div className="mt-7">{action}</div>}
     </div>
   );
 }

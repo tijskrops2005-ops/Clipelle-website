@@ -49,36 +49,44 @@ Sidebar navigation: Dashboard, New video, Projects, Settings. "Create new video"
 
 ## Design direction
 
-References were MakeUGC (overall feel, numbered step cards) and Creatify (one-primary-input-first creation flow). Use their patterns, never their logos, colors, assets or exact visuals.
+References were MakeUGC (overall feel, numbered step cards) and Creatify (one-primary-input-first creation flow). Use their patterns, never their logos, colors, assets or exact visuals. Full analysis and the approved plan: `docs/design-analysis.md` (screenshots in `docs/references/`).
 
-- Light, calm, card-based. Should feel like a polished SaaS product, not a generic admin panel and not a video-editing suite.
-- Black (ink) primary buttons; one warm accent (coral) for the main CTA and the active pipeline step.
-- Vertical 9:16 video tiles with a status badge.
-- The pipeline on the project page is the signature screen: three numbered step cards, Vmake and HeyGen side by side, VEED below/after.
-- Generous spacing, clear hierarchy, minimal distractions. Responsive down to phone width.
+The app looks **premium, light and calm**, in the spirit of MakeUGC's light style:
 
-Design tokens (define once as CSS variables / Tailwind theme, never hard-code colors in components):
+- **Soft surfaces.** The sidebar sits on the page background with no border; only cards are white. Cards use `rounded-card` (20px) and the layered `shadow-card`; on hover `shadow-card-hover`. Inner panels inside cards use `surface-muted` with 14px radius.
+- **Big, tight headings.** Page titles use the `text-display` utility (40px, -0.03em). Section titles are 24px. Subtitles 17px muted, body 15px, meta 13px.
+- **Micro-labels in mono.** The `label-mono` utility (Geist Mono, 11px, uppercase) is used for service names, step labels and the Demo mode pill. Never for body text.
+- **One accent pill.** `Button variant="accent"` is a fully rounded pill with `shadow-accent`, reserved for the main call to action on a page ("Create new video", "Generate video"). Every other primary button is black (ink), 12px radius.
+- **Numbered step cards** (`StepCard`) are the signature element: ink circle with the number, title, mono service label, muted inner panel, plain-language description. On the dashboard they explain the flow with small original SVG illustrations; on the project page they show live status (accent = processing, green check = completed, red cross = failed).
+- **9:16 video tiles** (`ProjectTile`) are the eye-catcher: floating white status badge top-left, play button bottom-right, dark gradient with name and duration on completed tiles, first product image as poster when available.
+- **Generous spacing.** Content max-width 1120px, sections 64px apart, card padding 28px.
+- Light theme only. No gradient text, no promo bars, no dark mode.
+- Responsive down to phone width (mobile navigation is Stage 5 work).
+
+Design tokens (defined once in `src/app/globals.css` as CSS variables and exposed via Tailwind `@theme`; never hard-code colors in components):
 
 | Token | Value | Use |
 |---|---|---|
 | `ink` | `#111114` | text, primary buttons |
-| `bg` | `#FAFAF7` | page background |
+| `bg` | `#FAFAF7` | page background, sidebar |
 | `surface` | `#FFFFFF` | cards |
-| `border` | `#E7E5E0` | card borders, dividers |
+| `surface-muted` | `#F4F3EF` | inner panels, placeholders |
+| `border` | `#ECEAE4` | subtle card borders |
+| `divider` | `#E7E5E0` | separators |
 | `muted` | `#6B6B70` | secondary text |
 | `accent` | `#FF5A36` | main CTA, active step |
 | `accent-hover` | `#E8492A` | |
 | `success` | `#16A34A` | completed |
-| `warning` | `#D97706` | waiting/attention |
+| `warning` | `#D97706` | waiting/attention, demo labels |
 | `danger` | `#DC2626` | failed |
 
-Radius: 12px cards, 10px buttons/inputs. Font: Geist via `next/font`.
+Radius: `radius-card` 20px, `radius-tile` 16px, `radius-control` 12px (buttons/inputs). Shadows: `shadow-card`, `shadow-card-hover`, `shadow-accent`. Font: Geist (sans) and Geist Mono via `next/font`.
 
 ## Tech stack
 
 - Next.js (App Router) + TypeScript + Tailwind CSS.
 - Reusable UI components in `src/components/ui/` (Button, Card, Badge, Input, Textarea, UploadDropzone, VideoPlayer, EmptyState).
-- Feature components in `src/components/` (AppShell, Sidebar, PipelineStepper, ProjectTile, ProjectForm).
+- Feature components in `src/components/` (AppShell, Sidebar, StepCard, StepIllustrations, ProjectTile, ProjectForm, DemoModeBadge) and dashboard sections in `src/components/dashboard/`.
 - Later (Stage 8, not now): database for projects, file storage, and a background-job service for long-running video jobs (serverless functions time out).
 
 Planned structure:
@@ -90,7 +98,7 @@ src/
   components/           feature components
   lib/config.ts         product name and app-wide constants
   lib/types.ts          Project, StepStatus, etc.
-  lib/mock/             ALL mock data and the simulated workflow runner
+  lib/mock/             ALL mock data, the client-side demo store (localStorage) and the simulated workflow runner
   lib/services/         (Stage 7) vmake.ts, heygen.ts, veed.ts — server-only
   lib/workflow/         (Stage 8) the orchestrator
 ```

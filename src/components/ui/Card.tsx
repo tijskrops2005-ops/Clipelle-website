@@ -1,28 +1,26 @@
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
+/** Soft white surface with a layered shadow — the basic building block of every page. */
 export function Card({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
-      className={cn(
-        "rounded-card border border-border bg-surface shadow-[0_1px_2px_rgba(17,17,20,0.04)]",
-        className,
-      )}
+      className={cn("rounded-card bg-surface shadow-card", className)}
       {...props}
     />
   );
 }
 
 export function CardHeader({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("px-6 pt-6 pb-2", className)} {...props} />;
+  return <div className={cn("px-7 pt-7 pb-3", className)} {...props} />;
 }
 
 export function CardTitle({ className, ...props }: ComponentProps<"h3">) {
   return (
-    <h3 className={cn("text-base font-semibold text-ink", className)} {...props} />
+    <h3 className={cn("text-lg font-semibold text-ink", className)} {...props} />
   );
 }
 
 export function CardContent({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("px-6 pb-6", className)} {...props} />;
+  return <div className={cn("px-7 pb-7", className)} {...props} />;
 }

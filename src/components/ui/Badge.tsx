@@ -4,7 +4,7 @@ import type { ProjectStatus, StepStatus } from "@/lib/types";
 
 type Tone = "neutral" | "accent" | "success" | "warning" | "danger";
 
-const tones: Record<Tone, string> = {
+const tinted: Record<Tone, string> = {
   neutral: "bg-ink/5 text-muted",
   accent: "bg-accent/10 text-accent",
   success: "bg-success/10 text-success",
@@ -12,16 +12,31 @@ const tones: Record<Tone, string> = {
   danger: "bg-danger/10 text-danger",
 };
 
+const dot: Record<Tone, string> = {
+  neutral: "bg-muted",
+  accent: "bg-accent",
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-danger",
+};
+
+type BadgeProps = ComponentProps<"span"> & {
+  tone?: Tone;
+  /** "tinted" sits inside cards; "floating" is white with a shadow, for use over images. */
+  variant?: "tinted" | "floating";
+};
+
 export function Badge({
   tone = "neutral",
+  variant = "tinted",
   className,
   ...props
-}: ComponentProps<"span"> & { tone?: Tone }) {
+}: BadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
-        tones[tone],
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+        variant === "tinted" ? tinted[tone] : "bg-surface text-ink shadow-card",
         className,
       )}
       {...props}
@@ -43,18 +58,21 @@ export const statusMeta: Record<
 
 export function StatusBadge({
   status,
+  variant = "tinted",
   className,
 }: {
   status: ProjectStatus | StepStatus;
+  variant?: "tinted" | "floating";
   className?: string;
 }) {
   const { tone, label } = statusMeta[status];
   return (
-    <Badge tone={tone} className={className}>
+    <Badge tone={tone} variant={variant} className={className}>
       <span
         aria-hidden
         className={cn(
-          "size-1.5 rounded-full bg-current",
+          "size-1.5 rounded-full",
+          dot[tone],
           status === "processing" && "animate-pulse",
         )}
       />
