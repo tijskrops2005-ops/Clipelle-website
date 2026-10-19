@@ -7,6 +7,14 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 
+type Security = {
+  ok: boolean;
+  rls: { table: string; enabled: boolean }[];
+  grants: string[];
+  probes: { name: string; status: number; refused: boolean; detail: string }[];
+  checkedAt: string;
+};
+
 type Status = {
   ok: boolean;
   latencyMs: number;
@@ -20,6 +28,8 @@ export function DbStatusPanel() {
   const [status, setStatus] = useState<Status | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [security, setSecurity] = useState<Security | null>(null);
+  const [securityError, setSecurityError] = useState<string | null>(null);
 
   /** Fetches without touching state synchronously, so the effect below stays lint-clean. */
   const fetchStatus = useCallback(() => {
@@ -38,6 +48,14 @@ export function DbStatusPanel() {
 
   useEffect(() => {
     void fetchStatus();
+    fetch("/api/dev/db/security")
+      .then(async (r) => {
+        const b = await r.json();
+        if (!r.ok) throw new Error(b.error ?? `HTTP ${r.status}`);
+        return b as Security;
+      })
+      .then((sec) => setSecurity(sec))
+      .catch((e: Error) => setSecurityError(e.message));
   }, [fetchStatus]);
 
   function refresh() {
@@ -46,6 +64,50 @@ export function DbStatusPanel() {
   }
 
   return (
+    <div className="space-y-6">
+    <Card>
+      <CardHeader className="flex items-center justify-between gap-3">
+        <CardTitle>Security check</CardTitle>
+        {security && <Badge tone={security.ok ? "success" : "danger"}>{security.ok ? "all checks passed" : "attention needed"}</Badge>}
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        {securityError && <p role="alert" className="text-danger">{securityError}</p>}
+        {!security && !securityError && <Skeleton className="h-24" />}
+        {security && (
+          <>
+            <p className="text-muted">
+              Run live just now ({new Date(security.checkedAt).toLocaleTimeString()}): row-level security per table, grants for the Data API roles, and real requests with the publishable key.
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <p className="label-mono mb-2 text-muted">Row-level security</p>
+                <ul className="space-y-1">
+                  {security.rls.map((r) => (
+                    <li key={r.table} className="flex items-center justify-between gap-3">
+                      <span className="font-mono text-[12px] text-ink">{r.table}</span>
+                      <Badge tone={r.enabled ? "success" : "danger"}>{r.enabled ? "enabled" : "OFF"}</Badge>
+                    </li>
+                  ))}
+                </ul>
+                <p className="label-mono mb-2 mt-4 text-muted">Grants to anon / authenticated</p>
+                {security.grants.length === 0 ? <Badge tone="success">none</Badge> : <ul className="space-y-1 text-danger">{security.grants.map((g) => <li key={g}>{g}</li>)}</ul>}
+              </div>
+              <div>
+                <p className="label-mono mb-2 text-muted">Requests with the publishable key</p>
+                <ul className="space-y-1">
+                  {security.probes.map((p) => (
+                    <li key={p.name} className="flex items-center justify-between gap-3">
+                      <span className="font-mono text-[12px] text-ink" title={p.detail}>{p.name} · {p.status}</span>
+                      <Badge tone={p.refused ? "success" : "danger"}>{p.refused ? "refused" : "ALLOWED"}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
     <div className="grid gap-6 lg:grid-cols-3">
       <Card className="lg:col-span-2">
         <CardHeader className="flex items-center justify-between gap-3">
@@ -117,6 +179,7 @@ export function DbStatusPanel() {
           </CardContent>
         </Card>
       </div>
+    </div>
     </div>
   );
 }

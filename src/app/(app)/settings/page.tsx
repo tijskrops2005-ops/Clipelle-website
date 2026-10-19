@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { KeyRound, Settings2, UserRound } from "lucide-react";
 import { config } from "@/lib/config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DemoBadge } from "@/components/DemoModeBadge";
+import { StorageMeter } from "@/components/dev/StorageMeter";
+import { getStorageUsage } from "@/lib/storage";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -24,6 +28,31 @@ const later = [
     text: "Preferred language and video length, once the services confirm what they support.",
   },
 ];
+
+async function loadUsage() {
+  try {
+    return await getStorageUsage();
+  } catch {
+    return null; // storage not configured on this machine: nothing to show
+  }
+}
+
+async function StorageCard() {
+  await connection(); // live data: render at request time, inside the Suspense boundary below
+  const usage = await loadUsage();
+  if (!usage) return null;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Storage</CardTitle>
+        <p className="mt-1 text-[15px] text-muted">Uploads and finished videos live in our own storage. This is how much of the included space is used.</p>
+      </CardHeader>
+      <CardContent>
+        <StorageMeter usage={usage} />
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function SettingsPage() {
   return (
@@ -54,6 +83,10 @@ export default function SettingsPage() {
           </ul>
         </CardContent>
       </Card>
+
+      <Suspense fallback={null}>
+        <StorageCard />
+      </Suspense>
 
       <Card>
         <CardHeader>

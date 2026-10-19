@@ -8,6 +8,20 @@
       "when": 1792401101286,
       "tag": "0000_massive_sway",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792402101869,
+      "tag": "0001_enable_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792402102105,
+      "tag": "0002_revoke_anon_grants",
+      "breakpoints": true
     }
   ]
 }

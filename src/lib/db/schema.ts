@@ -22,6 +22,11 @@ import type { LanguageCode, Segment, TranslationQuality } from "@/lib/types";
  *
  * Changing this file: `npm run db:generate` writes a migration into ./drizzle,
  * `npm run db:migrate` applies it (uses DIRECT_DATABASE_URL, the session pooler).
+ *
+ * Security: every table has row-level security enabled with no policies, and the
+ * migration 0001 revokes all grants from the `anon` and `authenticated` roles. The app
+ * reaches the tables only through the server-side Postgres connection; the Data API
+ * with the publishable key cannot read or write them (verified live on /dev/db).
  */
 
 /* ---------- enums (values mirror src/lib/types.ts) ---------- */
@@ -99,7 +104,7 @@ export const projects = pgTable(
     ...timestamps,
   },
   (t) => [index("projects_owner_created_idx").on(t.ownerId, t.createdAt), index("projects_status_idx").on(t.status)],
-);
+).enableRLS();
 
 export const steps = pgTable(
   "steps",
@@ -124,7 +129,7 @@ export const steps = pgTable(
     ...timestamps,
   },
   (t) => [uniqueIndex("steps_project_key_idx").on(t.projectId, t.key)],
-);
+).enableRLS();
 
 export const assets = pgTable(
   "assets",
@@ -146,7 +151,7 @@ export const assets = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("assets_project_idx").on(t.projectId), uniqueIndex("assets_storage_path_idx").on(t.storagePath)],
-);
+).enableRLS();
 
 export const translations = pgTable(
   "translations",
@@ -168,7 +173,7 @@ export const translations = pgTable(
     ...timestamps,
   },
   (t) => [uniqueIndex("translations_project_language_idx").on(t.projectId, t.language)],
-);
+).enableRLS();
 
 /** The cost guard's log, moved from .reelay/cost-log.jsonl (same fields). */
 export const costEntries = pgTable(
@@ -189,7 +194,7 @@ export const costEntries = pgTable(
     meta: jsonb("meta").$type<Record<string, unknown>>(),
   },
   (t) => [index("cost_entries_fingerprint_idx").on(t.fingerprint, t.startedAt), index("cost_entries_started_idx").on(t.startedAt)],
-);
+).enableRLS();
 
 /** Every webhook delivery, stored before it is acted on. The unique index makes duplicates harmless. */
 export const webhookEvents = pgTable(
@@ -204,7 +209,7 @@ export const webhookEvents = pgTable(
     payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
   },
   (t) => [uniqueIndex("webhook_events_dedupe_idx").on(t.provider, t.externalId, t.eventType)],
-);
+).enableRLS();
 
 /* ---------- inferred row types ---------- */
 
