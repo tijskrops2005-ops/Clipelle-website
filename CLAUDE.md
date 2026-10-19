@@ -38,7 +38,7 @@ Input ─→ Script (Claude API) ─┬→ Product clip (fal.ai image-to-video) 
 
 ## Current stage
 
-Stages 1–6 are done: inspection, competitor analysis, design plan, frontend skeleton with mock data, frontend polish, and API verification (`docs/api-verification.md`). The roadmap with the MVP and extensions is in `docs/roadmap.md`. **Stage 7 is in progress**: step 1 (HeyGen v3 service + `/dev/heygen` test bench) is built; next come Claude (script) → fal.ai → Shotstack, each as a separate service module with its own dev test bench, each only after Tijs has created the account and key.
+Stages 1–6 are done: inspection, competitor analysis, design plan, frontend skeleton with mock data, frontend polish, and API verification (`docs/api-verification.md`). The roadmap with the MVP and extensions is in `docs/roadmap.md`. **Stage 7 is in progress**: all four service modules are built with their own dev test benches: HeyGen v3 (`/dev/heygen`), Claude script (`/dev/script`), fal.ai product clip with smart crop and Bria Expand (`/dev/product-clip`), Shotstack final edit (`/dev/final-edit`, verified in the free sandbox). Paid tests (HeyGen, Claude, fal.ai) still have to run once Tijs adds credits and keys. Next: Stage 8 (database, storage, background jobs, webhooks, orchestrator) after the paid tests pass.
 
 Do not skip ahead. Build the MVP (one product → one complete 9:16 ad, one angle) before any extension.
 
@@ -97,6 +97,7 @@ Radius: `radius-card` 20px, `radius-tile` 16px, `radius-control` 12px (buttons/i
 - Every page uses `PageHeader` for its title row and `SectionHeader` for sections; every simulated element carries `DemoBadge`. Each route has `loading.tsx`; `(app)/error.tsx` and `app/not-found.tsx` cover errors and unknown URLs inside the shell.
 - Developer tools live under `src/app/(app)/dev/` (pages) and `src/app/api/dev/` (route handlers). They return 404 outside `NODE_ENV=development`, are never linked from navigation, and never touch the demo store or the pipeline. Current tool: `/dev/heygen` (Stage 7 step 1).
 - **HeyGen work**: read `docs/vendors/heygen/capabilities.md` first (what the API can do, endpoints, costs, source links; the docs index is in `docs/vendors/heygen/llms.txt`). Then always fetch the current source page on developers.heygen.com before writing code: the documentation changes often, fields get renamed and v1/v2 disappear on 2026-10-31.
+- **Vendor docs**: before touching a service, read `docs/vendors/<vendor>/capabilities.md` (anthropic, fal, heygen, shotstack) and fetch the live source page; the files are dated and APIs change.
 - Real service clients live in `src/lib/services/` and start with `import "server-only"`. They read keys from `process.env` at call time and never include them in errors or logs. Only calls that cost money (e.g. HeyGen `POST /v3/videos`) require an explicit confirmation from the UI; listing and status calls are free.
 - Later (Stage 8, not now): database for projects, file storage, and a background-job service for long-running video jobs (serverless functions time out).
 
@@ -110,7 +111,7 @@ src/
   lib/config.ts         product name and app-wide constants
   lib/types.ts          Project, StepStatus, etc.
   lib/mock/             ALL mock data, the client-side demo store (localStorage) and the simulated workflow runner
-  lib/services/         (Stage 7) script.ts (Claude), productClip.ts (fal.ai), presenter.ts (HeyGen v3), finalEdit.ts (Shotstack) — server-only, one file per step, provider swappable behind it
+  lib/services/         (Stage 7) script.ts (Claude), productClip.ts (fal.ai), heygen.ts (HeyGen v3 presenter), finalEdit.ts (Shotstack) — server-only, one file per step, provider swappable behind it
   lib/workflow/         (Stage 8) the orchestrator
 ```
 
