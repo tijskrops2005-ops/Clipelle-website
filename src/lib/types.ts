@@ -25,6 +25,8 @@ export interface Step {
   finishedAt?: string; // ISO date
   /** Plain-language error shown to the user when status is "failed". */
   error?: string;
+  /** Plain-language note on a completed step that needs a look (e.g. the script was cut to fit). */
+  warning?: string;
   /** URL of this step's output (clip, presenter video, final edit). */
   outputUrl?: string;
   /** Job id at the external service — needed for polling / retries later. */

@@ -3,7 +3,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { adProjectCreated, inngest, stepRetry } from "@/lib/inngest/client";
 import type { AdInput } from "@/lib/db";
-import { generateAdScript, estimateScriptCost, SCRIPT_MODEL, type AdScript } from "@/lib/services/script";
+import { writeScriptWithinLimit, SCRIPT_MODEL, type AdScript } from "@/lib/services/script";
 import {
   analyzeProductPhoto,
   cropToNineSixteen,
@@ -83,18 +83,20 @@ export const adWorkflow = inngest.createFunction(
           targetSeconds: cfg.adSeconds,
           angle: "problem_solution" as const,
         };
-        const estimate = estimateScriptCost({ ...base, hasImage: Boolean(image) }).costUsd;
-        const reserved = await reserveSpend({ service: "anthropic", action: "ad_script", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, model: SCRIPT_MODEL, hasImage: Boolean(image) } });
-        let result;
-        try {
-          result = await withRetries("Writing the script", () => generateAdScript({ ...base, image }));
-        } catch (error) {
-          await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
-          throw error;
-        }
-        await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens", meta: { usage: result.usage } });
+        // One paid call, plus one automatic shortening pass when the presenter text is over the word limit.
+        const result = await writeScriptWithinLimit({ ...base, image }, async ({ kind, estimateUsd, run }) => {
+          const reserved = await reserveSpend({ service: "anthropic", action: kind === "script" ? "ad_script" : "ad_script_shorten", estimatedUsd: estimateUsd, fingerprintInput: { projectId, attempt: row.attempt, kind }, projectId, stepId: row.id, meta: { attempt: row.attempt, model: SCRIPT_MODEL, hasImage: Boolean(image) && kind === "script", pass: kind } });
+          try {
+            const r = await withRetries(kind === "script" ? "Writing the script" : "Shortening the script", run);
+            await settleSpend(reserved.entryId, { status: "completed", actualUsd: r.costUsd, basis: "tokens", meta: { usage: r.usage } });
+            return r;
+          } catch (error) {
+            await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+            throw error;
+          }
+        });
         await storeBytes({ projectId, stepId: row.id, kind: "script", data: new TextEncoder().encode(JSON.stringify(result.script, null, 2)), mime: "application/json", fileName: "script.json" });
-        await markCompleted(projectId, "script", { output: { script: result.script }, costUsd: result.costUsd });
+        await markCompleted(projectId, "script", { output: { script: result.script, wordCount: result.wordCount, maxWords: result.maxWords, attempts: result.attempts, ...(result.warning ? { warning: result.warning } : {}) }, costUsd: result.costUsd });
         return result.script;
       } catch (error) {
         return failStep(projectId, "script", error);

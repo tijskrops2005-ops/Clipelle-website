@@ -2,8 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import {
   AD_ANGLES,
   estimateScriptCost,
-  generateAdScript,
   resolveModel,
+  writeScriptWithinLimit,
   type AdAngle,
   type ScriptInput,
 } from "@/lib/services/script";
@@ -77,30 +77,31 @@ export async function POST(request: Request) {
     return Response.json({ error: "Confirmation required before calling the Claude API." }, { status: 400 });
   }
 
-  // Cost guard: limits + duplicate window, before anything is charged.
-  let entryId = "";
+  const imageHash = image ? createHash("sha256").update(image.base64).digest("hex") : null;
   try {
-    const reserved = await reserveSpend({
-      service: "anthropic",
-      action: "script",
-      estimatedUsd: estimate.costUsd,
-      fingerprintInput: { ...base, imageHash: image ? createHash("sha256").update(image.base64).digest("hex") : null },
-      meta: { model: base.model, language: base.language, targetSeconds: base.targetSeconds, hasImage: Boolean(image) },
+    const started = Date.now();
+    // Cost guard around every paid call (the first script and, when needed, the shortening pass).
+    const result = await writeScriptWithinLimit({ ...base, image: image ?? undefined }, async ({ kind, estimateUsd, run }) => {
+      const reserved = await reserveSpend({
+        service: "anthropic",
+        action: kind === "script" ? "script" : "script_shorten",
+        estimatedUsd: estimateUsd,
+        fingerprintInput: { ...base, kind, imageHash },
+        meta: { model: base.model, language: base.language, targetSeconds: base.targetSeconds, hasImage: Boolean(image) && kind === "script", pass: kind },
+      });
+      try {
+        const r = await run();
+        await settleSpend(reserved.entryId, { status: "completed", actualUsd: r.costUsd, basis: "tokens", meta: { usage: r.usage, model: r.model } });
+        return r;
+      } catch (error) {
+        await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+        throw error;
+      }
     });
-    entryId = reserved.entryId;
+    return Response.json({ ...result, estimate, elapsedMs: Date.now() - started });
   } catch (error) {
     const refused = costGuardResponse(error);
     if (refused) return refused;
-    return errorResponse(error);
-  }
-
-  try {
-    const started = Date.now();
-    const result = await generateAdScript({ ...base, image: image ?? undefined });
-    await settleSpend(entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens", meta: { usage: result.usage, model: result.model } });
-    return Response.json({ ...result, estimate, entryId, elapsedMs: Date.now() - started });
-  } catch (error) {
-    await settleSpend(entryId, { status: "failed", actualUsd: 0 });
     if (error instanceof Anthropic.AuthenticationError) {
       return Response.json({ error: "Anthropic rejected the API key. Check ANTHROPIC_API_KEY in .env.local." }, { status: 401 });
     }

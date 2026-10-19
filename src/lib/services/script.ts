@@ -21,12 +21,12 @@ export const AdScriptSchema = z.object({
   angle: z.enum(AD_ANGLES),
   language: z.string().describe("BCP-47 language of all text, e.g. en or nl"),
   hook: z.object({
-    spoken: z.string().describe("The first sentence the presenter says, max 12 words"),
-    onScreen: z.string().describe("Large on-screen text for the first 2 seconds, max 6 words"),
+    spoken: z.string().describe("The first sentence the presenter says, max 12 words. Same message as onScreen, worded for speech"),
+    onScreen: z.string().describe("Large on-screen text for the first 2 seconds, max 6 words. Same message as spoken, shorter"),
   }),
   presenterScript: z
     .string()
-    .describe("Everything the presenter says, including the hook, in natural spoken sentences"),
+    .describe("Everything the presenter says, in natural spoken sentences: starts with hook.spoken, ends with a call to action, within the word limit"),
   scenes: z
     .array(
       z.object({
@@ -69,6 +69,53 @@ export type ScriptResult = {
   costUsd: number;
   stopReason: string | null;
 };
+
+/** What the caller gets after the word limit has been enforced (one call, or one call plus one shortening pass). */
+export type ScriptOutcome = ScriptResult & {
+  /** Paid Claude calls made: 1, or 2 when a shortening pass was needed. */
+  attempts: number;
+  wordCount: number;
+  maxWords: number;
+  presenterSeconds: number;
+  /** Set when the text had to be cut locally after the shortening pass; the step shows it. */
+  warning?: string;
+};
+
+/** Spoken pace the prompt and the limit are built on. */
+export const WORDS_PER_SECOND = 2.5;
+/** Share of the ad in which the presenter speaks (the rest is hook, product footage, benefits and the end card). */
+export const PRESENTER_SHARE = 0.45;
+
+/** Presenter scene length and the hard word limit for it, derived from the ad length. */
+export function presenterBudget(targetSeconds: number) {
+  const presenterSeconds = Math.round(targetSeconds * PRESENTER_SHARE);
+  return { presenterSeconds, maxWords: Math.round(presenterSeconds * WORDS_PER_SECOND) };
+}
+
+export function countWords(text: string) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/**
+ * Local fallback when Claude twice delivers too many words: keep whole sentences only.
+ * The last sentence is the call to action and is kept; sentences before it are dropped
+ * from the end until the text fits. If even hook + CTA do not fit, the CTA is dropped.
+ */
+export function trimToWordLimit(text: string, maxWords: number): string {
+  const sentences = (text.match(/[^.!?]+[.!?]+["”']?\s*/g) ?? [text]).map((x) => x.trim()).filter(Boolean);
+  if (countWords(text) <= maxWords) return text.trim();
+  const cta = sentences.pop() ?? "";
+  const body = [...sentences];
+  while (body.length > 0 && countWords([...body, cta].join(" ")) > maxWords) body.pop();
+  if (body.length > 0) return [...body, cta].join(" ");
+  // Nothing but the CTA fits: fall back to the opening sentences that fit, without the CTA.
+  const opening: string[] = [];
+  for (const sentence of sentences) {
+    if (countWords([...opening, sentence].join(" ")) > maxWords) break;
+    opening.push(sentence);
+  }
+  return opening.length ? opening.join(" ") : text.trim().split(/\s+/).slice(0, maxWords).join(" ");
+}
 
 export class ScriptError extends Error {
   constructor(message: string, public readonly code: string) {
@@ -116,11 +163,14 @@ Rules:
 - Angle "problem_solution": open with the problem the viewer recognises, then present the product as the fix.
 - Write for speech, not for reading: short sentences, concrete words, no hype adjectives, no emojis.
 - Only use facts that are in the product information. Never invent prices, discounts, ingredients, certifications or reviews. If the information is thin, stay general rather than making claims up.
-- The presenter speaks about 2.5 words per second. Size presenterScript to the planned presenter seconds.
+- The presenter speaks about ${WORDS_PER_SECOND} words per second. presenterScript must stay within the word limit given in the request; count the words before you answer. This is a hard limit, not a target.
+- presenterScript starts with the spoken hook and ends with a call to action: the last sentence tells the viewer what to do next (for example tap the link, shop now, order today). The call to action is mandatory.
+- hook.spoken and hook.onScreen carry the same message: the on-screen version is the short written form, the spoken version is the same idea said out loud. Do not give them different messages.
 - Scene seconds must add up to the requested total length.
 - All text in the requested language.`;
 
 function userPrompt(input: Omit<ScriptInput, "image">) {
+  const { presenterSeconds, maxWords } = presenterBudget(input.targetSeconds);
   const lines = [
     `Product name: ${input.productName}`,
     `Description: ${input.description}`,
@@ -128,25 +178,46 @@ function userPrompt(input: Omit<ScriptInput, "image">) {
     input.hint ? `Extra direction from the seller: ${input.hint}` : null,
     `Angle: ${input.angle}`,
     `Language: ${input.language}`,
-    `Total length: ${input.targetSeconds} seconds (hook 2 s, presenter about ${Math.round(input.targetSeconds * 0.45)} s, product ${Math.round(input.targetSeconds * 0.2)} s, benefits ${Math.round(input.targetSeconds * 0.2)} s, offer the rest).`,
+    `Total length: ${input.targetSeconds} seconds (hook 2 s, presenter ${presenterSeconds} s, product ${Math.round(input.targetSeconds * 0.2)} s, benefits ${Math.round(input.targetSeconds * 0.2)} s, offer the rest).`,
+    `Word limit for presenterScript: at most ${maxWords} words (${presenterSeconds} s × ${WORDS_PER_SECOND} words per second). Fewer is fine; more is not.`,
     "If a product photo is attached, use what you see (colour, shape, packaging) to make the script concrete.",
   ];
   return lines.filter(Boolean).join("\n");
 }
 
-export async function generateAdScript(input: ScriptInput): Promise<ScriptResult> {
+/** Second pass: the same script, with presenterScript cut down to the limit. */
+function shortenPrompt(input: Omit<ScriptInput, "image">, previous: AdScript) {
+  const { maxWords } = presenterBudget(input.targetSeconds);
+  return [
+    `The script below has ${countWords(previous.presenterScript)} words in presenterScript; the hard limit is ${maxWords} words.`,
+    "Return the same script with presenterScript shortened to fit the limit: keep the spoken hook as the first sentence and the call to action as the last sentence, cut the middle. Keep every other field unchanged unless it must change to stay consistent. Count the words before you answer.",
+    `Language: ${input.language}`,
+    "",
+    JSON.stringify(previous, null, 2),
+  ].join("\n");
+}
+
+/** Estimate for the shortening pass (no photo, previous script in the prompt). */
+export function estimateShortenCost(input: Omit<ScriptInput, "image">, previous: AdScript) {
+  const model = resolveModel(input.model);
+  const inputTokens = Math.ceil((SYSTEM_PROMPT.length + shortenPrompt(input, previous).length) / 4);
+  const outputTokens = 900;
+  return { model, inputTokens, outputTokens, costUsd: claudeTokensToUsd(model, inputTokens, outputTokens, 0) };
+}
+
+export async function generateAdScript(input: ScriptInput, options: { shorten?: AdScript } = {}): Promise<ScriptResult> {
   const client = new Anthropic({ apiKey: requireApiKey() });
   const { image, ...rest } = input;
   const model = resolveModel(input.model);
 
   const content: Anthropic.ContentBlockParam[] = [];
-  if (image) {
+  if (image && !options.shorten) {
     content.push({
       type: "image",
       source: { type: "base64", media_type: image.mediaType, data: image.base64 },
     });
   }
-  content.push({ type: "text", text: userPrompt(rest) });
+  content.push({ type: "text", text: options.shorten ? shortenPrompt(rest, options.shorten) : userPrompt(rest) });
 
   const response = await client.messages.parse({
     model,
@@ -178,5 +249,55 @@ export async function generateAdScript(input: ScriptInput): Promise<ScriptResult
     usage,
     costUsd: claudeTokensToUsd(model, usage.inputTokens, usage.outputTokens, usage.cacheReadTokens),
     stopReason: response.stop_reason,
+  };
+}
+
+/**
+ * The script step as the app runs it: one call, then the word limit is enforced.
+ * Too long → one automatic shortening pass (a second paid call). Still too long → the text
+ * is cut locally to whole sentences and a warning is attached. The caller wraps every paid
+ * call through `paid` (cost guard reserve/settle), so this module never touches the guard.
+ */
+export async function writeScriptWithinLimit(
+  input: ScriptInput,
+  paid: (call: { kind: "script" | "shorten"; estimateUsd: number; run: () => Promise<ScriptResult> }) => Promise<ScriptResult>,
+): Promise<ScriptOutcome> {
+  const { image, ...rest } = input;
+  const { presenterSeconds, maxWords } = presenterBudget(input.targetSeconds);
+  const first = await paid({
+    kind: "script",
+    estimateUsd: estimateScriptCost({ ...rest, hasImage: Boolean(image) }).costUsd,
+    run: () => generateAdScript(input),
+  });
+  const firstWords = countWords(first.script.presenterScript);
+  if (firstWords <= maxWords) return { ...first, attempts: 1, wordCount: firstWords, maxWords, presenterSeconds };
+
+  const second = await paid({
+    kind: "shorten",
+    estimateUsd: estimateShortenCost(rest, first.script).costUsd,
+    run: () => generateAdScript(input, { shorten: first.script }),
+  });
+  const merged: ScriptResult = {
+    ...second,
+    usage: {
+      inputTokens: first.usage.inputTokens + second.usage.inputTokens,
+      outputTokens: first.usage.outputTokens + second.usage.outputTokens,
+      cacheReadTokens: first.usage.cacheReadTokens + second.usage.cacheReadTokens,
+    },
+    costUsd: Math.round((first.costUsd + second.costUsd) * 10_000) / 10_000,
+  };
+  const secondWords = countWords(second.script.presenterScript);
+  if (secondWords <= maxWords) return { ...merged, attempts: 2, wordCount: secondWords, maxWords, presenterSeconds };
+
+  const trimmed = trimToWordLimit(second.script.presenterScript, maxWords);
+  const trimmedWords = countWords(trimmed);
+  return {
+    ...merged,
+    script: { ...second.script, presenterScript: trimmed },
+    attempts: 2,
+    wordCount: trimmedWords,
+    maxWords,
+    presenterSeconds,
+    warning: `The presenter text was still ${secondWords} words after one shortening pass; the limit for a ${input.targetSeconds}-second ad is ${maxWords} (${presenterSeconds} s of speech). It was cut to the last full sentences that fit (${trimmedWords} words). Check that the message and the call to action survived.`,
   };
 }

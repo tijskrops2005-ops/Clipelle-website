@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ImagePlus, Loader2, Sparkles, X } from "lucide-react";
+import { ImagePlus, Loader2, Sparkles, TriangleAlert, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -31,6 +31,12 @@ type RunResult = {
   costUsd: number;
   estimate: Estimate;
   elapsedMs: number;
+  /** Word-limit enforcement (missing on results saved before it existed). */
+  attempts?: number;
+  wordCount?: number;
+  maxWords?: number;
+  presenterSeconds?: number;
+  warning?: string;
 };
 
 const STORAGE_KEY = "reelay.dev.script.last";
@@ -242,7 +248,7 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
             {phase === "confirm" ? (
               <div className="flex flex-col gap-3 rounded-[14px] border border-accent/40 bg-accent/5 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-ink">
-                  This sends the product info{imageDataUrl ? " and the photo" : ""} to Claude for about <strong>{estimate ? usd(estimate.costUsd) : "a few cents"}</strong>. Continue?
+                  This sends the product info{imageDataUrl ? " and the photo" : ""} to Claude for about <strong>{estimate ? usd(estimate.costUsd) : "a few cents"}</strong>. If the text is over the word limit, one automatic shortening pass follows (about the same again). Continue?
                 </p>
                 <div className="flex shrink-0 gap-2">
                   <Button variant="ghost" onClick={() => setPhase("idle")}>Cancel</Button>
@@ -278,10 +284,18 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
                 </Section>
                 <Section label="Presenter script">
                   <p className="text-sm leading-relaxed text-ink/90">{result.script.presenterScript}</p>
-                  <p className="mt-1 text-[13px] text-muted">
-                    {result.script.presenterScript.trim().split(/\s+/).length} words ≈{" "}
-                    {Math.round(result.script.presenterScript.trim().split(/\s+/).length / 2.5)} s
+                  <p className={cn("mt-1 text-[13px]", result.maxWords && (result.wordCount ?? 0) > result.maxWords ? "text-danger" : "text-muted")}>
+                    {result.wordCount ?? result.script.presenterScript.trim().split(/\s+/).length} words
+                    {result.maxWords ? ` of max ${result.maxWords} (${result.presenterSeconds} s of speech)` : ""} ≈{" "}
+                    {Math.round((result.wordCount ?? result.script.presenterScript.trim().split(/\s+/).length) / 2.5)} s
+                    {result.attempts === 2 ? " · shortened in a second pass" : ""}
                   </p>
+                  {result.warning && (
+                    <p className="mt-2 flex items-start gap-2 rounded-[10px] bg-warning/10 p-3 text-[13px] leading-relaxed text-ink">
+                      <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+                      <span>{result.warning}</span>
+                    </p>
+                  )}
                 </Section>
                 <Section label="Scenes">
                   <ul className="divide-y divide-divider text-sm">
@@ -311,6 +325,7 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
                   {(
                     [
                       ["Model", result.model],
+                      ["Claude calls", String(result.attempts ?? 1)],
                       ["Tokens in / out", `${result.usage.inputTokens.toLocaleString()} / ${result.usage.outputTokens.toLocaleString()}`],
                       ["Estimated cost", usd(result.estimate.costUsd)],
                       ["Actual cost", usd(result.costUsd)],

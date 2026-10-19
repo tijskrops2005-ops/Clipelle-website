@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Clock, RotateCcw, UserRoundCheck } from "lucide-react";
+import { Clock, RotateCcw, TriangleAlert, UserRoundCheck } from "lucide-react";
 import { config } from "@/lib/config";
 import type { AdProject, Step, StepKey } from "@/lib/types";
 import { retryStep } from "@/lib/data/client";
@@ -142,17 +142,25 @@ export function StepProgressCard({
           ? Date.parse(step.finishedAt) - Date.parse(step.startedAt)
           : undefined;
       panel = (
-        <div className="flex items-center gap-4">
-          {poster && (
-            <div className="relative aspect-[9/16] w-14 shrink-0 overflow-hidden rounded-[8px] shadow-card">{poster}</div>
-          )}
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-ink">{meta.doneLabel ?? "Clip ready"}</p>
-            <p className="text-[13px] text-muted">
-              {took !== undefined ? `Done in ${formatSeconds(took)}` : "Done"}
-              {step.attempt && step.attempt > 1 ? ` · attempt ${step.attempt}` : ""}
-            </p>
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            {poster && (
+              <div className="relative aspect-[9/16] w-14 shrink-0 overflow-hidden rounded-[8px] shadow-card">{poster}</div>
+            )}
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-ink">{meta.doneLabel ?? "Clip ready"}</p>
+              <p className="text-[13px] text-muted">
+                {took !== undefined ? `Done in ${formatSeconds(took)}` : "Done"}
+                {step.attempt && step.attempt > 1 ? ` · attempt ${step.attempt}` : ""}
+              </p>
+            </div>
           </div>
+          {step.warning && (
+            <p className="flex items-start gap-2 text-[13px] leading-relaxed text-ink/80">
+              <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+              <span>{step.warning}</span>
+            </p>
+          )}
         </div>
       );
       break;

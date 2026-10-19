@@ -34,6 +34,7 @@ function toStep(row: StepRow | undefined): Step {
     startedAt: row.startedAt?.toISOString(),
     finishedAt: row.finishedAt?.toISOString(),
     error: row.error ?? undefined,
+    warning: typeof row.output?.warning === "string" ? row.output.warning : undefined,
     externalJobId: row.externalJobId ?? undefined,
     attempt: row.attempt,
   };
