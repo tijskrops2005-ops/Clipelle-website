@@ -347,7 +347,7 @@ export async function rewriteForProject(projectId: string, language: LanguageCod
   });
   try {
     const result = await rewriteSegmentsInAdTone({ segments: segments.map((s) => ({ index: s.index, start: s.start, end: s.end, original: s.original, text: s.text })), language });
-    await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd });
+    await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens", meta: { usage: result.usage } });
     return segments.map((s, i) => ({ ...s, text: result.segments[i]?.text ?? s.text }));
   } catch (error) {
     await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });

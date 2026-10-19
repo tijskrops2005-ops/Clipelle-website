@@ -19,7 +19,8 @@ export async function POST(request: Request) {
   }
   const actual = typeof body.actualUsd === "number" && Number.isFinite(body.actualUsd) ? Math.max(0, body.actualUsd) : null;
   try {
-    await settleSpend(body.entryId, { status: body.status, actualUsd: actual });
+    // The test pages compute the real amount from the provider's balance before/after.
+    await settleSpend(body.entryId, { status: body.status, actualUsd: actual, basis: actual == null ? undefined : "balance" });
     return Response.json({ ok: true });
   } catch (error) {
     return errorResponse(error);

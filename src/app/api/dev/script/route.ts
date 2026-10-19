@@ -95,7 +95,7 @@ export async function POST(request: Request) {
   try {
     const started = Date.now();
     const result = await generateAdScript({ ...base, image: image ?? undefined });
-    await settleSpend(entryId, { status: "completed", actualUsd: result.costUsd, meta: result.usage });
+    await settleSpend(entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens", meta: { usage: result.usage, model: result.model } });
     return Response.json({ ...result, estimate, entryId, elapsedMs: Date.now() - started });
   } catch (error) {
     await settleSpend(entryId, { status: "failed", actualUsd: 0 });

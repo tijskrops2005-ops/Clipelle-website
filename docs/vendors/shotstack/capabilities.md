@@ -25,6 +25,7 @@ Stap 5: presentatorclip + productclip + hook-tekst + ondertitels + muziek + CTA-
 Twee tracks: `rich-caption` (zelfde stijl als de advertentie; `src` = SRT-URL van HeyGen, anders `alias://source` voor auto-transcriptie) boven één videoclip (`alias: "source"`, volledige lengte, `fit: "crop"` centreert de spreker in 9:16, of `fit: "contain"` voor letterbox op ink). Output 1080 × 9:16, 25 fps. Sandbox gratis; productie ≈ $0,10 per 30 s via de cost guard.
 
 ## Kosten voor onze stap
+Geen API voor verbruik of werkelijke kosten (gecontroleerd 19 okt 2026: de referentie kent alleen edit, serve en ingest; alleen AI-generatie heeft een quote-endpoint). Werkelijke kosten blijven lijstprijs × minuten; controleren in het dashboard.
 Sandbox gratis (watermerk). Productie pay-as-you-go $10 voor 50 minuten ⇒ ≈ $0,10 per advertentie van 30 s; Starter $39/mnd voor 250 min ⇒ ≈ $0,08. Captions zijn in de gelezen docs niet apart geprijsd. Bron: https://shotstack.io/pricing/
 
 ## Grenzen die we bewust hanteren

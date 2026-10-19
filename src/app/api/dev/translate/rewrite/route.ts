@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   }
   try {
     const result = await rewriteSegmentsInAdTone({ segments, language });
-    await settleSpend(entryId, { status: "completed", actualUsd: result.costUsd, meta: { usage: result.usage } });
+    await settleSpend(entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens", meta: { usage: result.usage } });
     return Response.json({ ...result, estimateUsd, entryId });
   } catch (error) {
     await settleSpend(entryId, { status: "failed", actualUsd: 0 });

@@ -261,22 +261,39 @@ export async function reserveSpend(input: ReserveInput): Promise<{ entryId: stri
   return { entryId: row.id, fingerprint, summary };
 }
 
+/**
+ * How an actual amount was determined; shown on /dev/costs.
+ * - balance: difference of the provider's wallet balance before/after (HeyGen test pages)
+ * - tokens: token usage × price per million tokens (Claude)
+ * - provider: read back from the provider's usage API (fal.ai sync)
+ * - list: list price × measured quantity (what we know when the provider reports nothing)
+ */
+export type CostBasis = "balance" | "tokens" | "provider" | "list";
+
 /** Records the outcome. `actualUsd` null keeps the estimate as the charge. */
 export async function settleSpend(
   entryId: string,
-  outcome: { status: "completed" | "failed"; actualUsd?: number | null; meta?: Record<string, unknown> },
+  outcome: { status: "completed" | "failed"; actualUsd?: number | null; basis?: CostBasis; meta?: Record<string, unknown> },
 ) {
   if (!entryId) return;
   const [current] = await db().select({ meta: costEntries.meta }).from(costEntries).where(eq(costEntries.id, entryId)).limit(1);
+  const basis: CostBasis | undefined = outcome.basis ?? (outcome.actualUsd == null ? undefined : "list");
   await db()
     .update(costEntries)
     .set({
       status: outcome.status,
       actualUsd: outcome.actualUsd == null ? null : round4(outcome.actualUsd),
       finishedAt: new Date(),
-      ...(outcome.meta ? { meta: { ...(current?.meta ?? {}), ...outcome.meta } } : {}),
+      meta: { ...(current?.meta ?? {}), ...(outcome.meta ?? {}), ...(basis ? { basis } : {}) },
     })
     .where(eq(costEntries.id, entryId));
+}
+
+/** Adds details to an entry without changing its status (e.g. the provider's request id once known). */
+export async function annotateSpend(entryId: string, meta: Record<string, unknown>) {
+  if (!entryId) return;
+  const [current] = await db().select({ meta: costEntries.meta }).from(costEntries).where(eq(costEntries.id, entryId)).limit(1);
+  await db().update(costEntries).set({ meta: { ...(current?.meta ?? {}), ...meta } }).where(eq(costEntries.id, entryId));
 }
 
 /** Maps a CostGuardError to a JSON response; other errors pass through as null. */

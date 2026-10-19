@@ -3,7 +3,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { adProjectCreated, inngest, stepRetry } from "@/lib/inngest/client";
 import type { AdInput } from "@/lib/db";
-import { generateAdScript, estimateScriptCost, type AdScript } from "@/lib/services/script";
+import { generateAdScript, estimateScriptCost, SCRIPT_MODEL, type AdScript } from "@/lib/services/script";
 import {
   analyzeProductPhoto,
   cropToNineSixteen,
@@ -18,7 +18,7 @@ import {
 } from "@/lib/services/productClip";
 import { createAvatarVideo, estimateCostUsd, estimateSeconds, getVideo, listLookSelection, listVoices } from "@/lib/services/heygen";
 import { buildAdEdit, getRender, shotstackEnv, startRender } from "@/lib/services/finalEdit";
-import { reserveSpend, settleSpend } from "@/lib/services/costGuard";
+import { annotateSpend, reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { putObject, signedDownloadUrl } from "@/lib/storage";
 import { SHOTSTACK_USD_PER_SECOND } from "@/lib/translatePricing";
 import { workflowSettings as cfg } from "@/lib/workflow/settings";
@@ -84,7 +84,7 @@ export const adWorkflow = inngest.createFunction(
           angle: "problem_solution" as const,
         };
         const estimate = estimateScriptCost({ ...base, hasImage: Boolean(image) }).costUsd;
-        const reserved = await reserveSpend({ service: "anthropic", action: "ad_script", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id });
+        const reserved = await reserveSpend({ service: "anthropic", action: "ad_script", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, model: SCRIPT_MODEL, hasImage: Boolean(image) } });
         let result;
         try {
           result = await withRetries("Writing the script", () => generateAdScript({ ...base, image }));
@@ -92,7 +92,7 @@ export const adWorkflow = inngest.createFunction(
           await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
           throw error;
         }
-        await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd });
+        await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens", meta: { usage: result.usage } });
         await storeBytes({ projectId, stepId: row.id, kind: "script", data: new TextEncoder().encode(JSON.stringify(result.script, null, 2)), mime: "application/json", fileName: "script.json" });
         await markCompleted(projectId, "script", { output: { script: result.script }, costUsd: result.costUsd });
         return result.script;
@@ -139,7 +139,7 @@ async function runProductClip(projectId: string, script: AdScript, step: StepToo
       if (plan.fits) {
         prepared = await cropToNineSixteen(original, plan.crop);
       } else {
-        const reserved = await reserveSpend({ service: "fal", action: "expand_image", estimatedUsd: EXPAND_USD_PER_IMAGE, fingerprintInput: { projectId, photo: photo.id, attempt: row.attempt }, projectId, stepId: row.id });
+        const reserved = await reserveSpend({ service: "fal", action: "expand_image", estimatedUsd: EXPAND_USD_PER_IMAGE, fingerprintInput: { projectId, photo: photo.id, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, model: "Bria Expand" } });
         try {
           const expanded = await withRetries("Expanding the photo to 9:16", () => expandToNineSixteen(original, analysis));
           prepared = expanded.buffer;
@@ -155,9 +155,10 @@ async function runProductClip(projectId: string, script: AdScript, step: StepToo
       const model = cfg.clipModel;
       const prompt = clipPrompt(script);
       const estimate = estimateClipCost(model, CLIP_SECONDS);
-      const reserved = await reserveSpend({ service: "fal", action: `clip_${model}`, estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { model } });
+      const reserved = await reserveSpend({ service: "fal", action: `clip_${model}`, estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, model: CLIP_MODELS[model].label, endpointId: CLIP_MODELS[model].endpointId, seconds: CLIP_SECONDS } });
       try {
         const submitted = await withRetries("Starting the product clip", () => submitProductClip({ image: prepared, model, prompt, durationSeconds: CLIP_SECONDS }));
+        await annotateSpend(reserved.entryId, { requestId: submitted.requestId }).catch(() => {});
         return { ...submitted, entryId: reserved.entryId, estimate, expandCost, stepId: row.id };
       } catch (error) {
         await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
@@ -212,7 +213,7 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
       const { lookId, voiceId } = await pickPresenter();
       const seconds = estimateSeconds(script.presenterScript);
       const estimate = estimateCostUsd(cfg.heygenEngine, seconds);
-      const reserved = await reserveSpend({ service: "heygen", action: "avatar_video", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { engine: cfg.heygenEngine, seconds } });
+      const reserved = await reserveSpend({ service: "heygen", action: "avatar_video", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, engine: cfg.heygenEngine, resolution: cfg.heygenResolution, seconds } });
       try {
         const created = await withRetries("Starting the presenter video", () =>
           createAvatarVideo({ avatarId: lookId, voiceId, script: script.presenterScript, engine: cfg.heygenEngine, resolution: cfg.heygenResolution, title: `Reelay ${projectId.slice(0, 8)}`, idempotencyKey: reserved.fingerprint }),
@@ -233,7 +234,7 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
       return step.run("presenter-store", async () => {
         try {
           const asset = await storeFromUrl({ projectId, stepId: job.stepId, kind: "presenter", url: video.video_url!, fileName: "presenter.mp4", seconds: video.duration ?? undefined, fallbackMime: "video/mp4" });
-          await settleSpend(job.entryId, { status: "completed", actualUsd: video.duration ? estimateCostUsd(cfg.heygenEngine, video.duration) : job.estimate });
+          await settleSpend(job.entryId, { status: "completed", actualUsd: video.duration ? estimateCostUsd(cfg.heygenEngine, video.duration) : job.estimate, basis: "list", meta: { durationSeconds: video.duration ?? null, videoId: job.videoId } });
           await markCompleted(projectId, key, { output: { assetId: asset.id, seconds: video.duration ?? null }, externalJobId: job.videoId, costUsd: job.estimate });
           return asset.id;
         } catch (error) {
@@ -294,7 +295,7 @@ async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: st
       });
       const env = shotstackEnv();
       const estimate = env === "v1" ? Math.round(edit.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000 : 0;
-      const reserved = env === "v1" ? await reserveSpend({ service: "shotstack", action: "ad_render", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id }) : null;
+      const reserved = env === "v1" ? await reserveSpend({ service: "shotstack", action: "ad_render", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, env, seconds: edit.meta.totalSeconds } }) : null;
       try {
         const render = await withRetries("Starting the final edit", () => startRender(edit));
         return { renderId: render.renderId, entryId: reserved?.entryId ?? "", estimate, totalSeconds: edit.meta.totalSeconds, stepId: row.id };
