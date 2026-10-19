@@ -35,8 +35,8 @@ export class DataError extends Error {
 function generatedScriptOf(step: StepRow | undefined, seconds: number) {
   const script = step?.output?.script as AdScript | undefined;
   if (!script) return undefined;
-  const hooks = script.hooks?.length ? script.hooks : [script.hook];
-  return { hooks, presenterScript: script.presenterScript, benefits: script.benefits ?? [], offer: script.offer, maxWords: maxSpokenWords(seconds) };
+  const hooks = (script.hooks?.length ? script.hooks : [script.hook]).map((h) => ({ spoken: h.spoken }));
+  return { hooks, presenterScript: script.presenterScript, maxWords: maxSpokenWords(seconds) };
 }
 
 function toStep(row: StepRow | undefined): Step {

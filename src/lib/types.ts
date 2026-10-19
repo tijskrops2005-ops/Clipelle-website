@@ -160,10 +160,9 @@ export interface PresenterPage {
 
 /** What the customer sees and edits on the script review. */
 export interface GeneratedScript {
-  hooks: { spoken: string; onScreen: string }[];
+  /** Three spoken hooks; the first sentence of the ad. Nothing is shown as text on screen except the captions. */
+  hooks: { spoken: string }[];
   presenterScript: string;
-  benefits: string[];
-  offer: { headline: string; cta: string };
   /** Hard word limit for presenterScript at this ad length. */
   maxWords: number;
 }

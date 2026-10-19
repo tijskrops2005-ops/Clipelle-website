@@ -159,18 +159,13 @@ function demoGeneratedScript(p: AdProject): GeneratedScript {
   const name = p.productName || "this product";
   const seconds = p.seconds ?? 30;
   const maxWords = Math.floor(seconds * 2.5);
+  const hook = `Still looking for the right ${name.toLowerCase()}?`;
   const cta = p.offer ? `Tap the link: ${p.offer}.` : "Tap the link and shop now.";
-  const body = `Meet ${name}. ${p.description.split(/(?<=[.!?])\s+/)[0] ?? ""} It is made for everyday use and it shows. ${cta}`;
-  const presenterScript = body.split(/\s+/).slice(0, maxWords).join(" ");
+  const benefits = seconds <= 10 ? "" : " It is made for every day, easy to wear, and it looks the part.";
+  const body = `${hook} Meet ${name}. ${p.description.split(/(?<=[.!?])\s+/)[0] ?? ""}${benefits} ${cta}`;
   return {
-    hooks: [
-      { spoken: `Still looking for the right ${name.toLowerCase()}?`, onScreen: "Still looking?" },
-      { spoken: `This is the ${name.toLowerCase()} people keep asking about.`, onScreen: "Everyone asks about this" },
-      { spoken: `Here is why ${name.toLowerCase()} is worth it.`, onScreen: "Worth it. Here's why" },
-    ],
-    presenterScript: `${"Still looking for the right " + name.toLowerCase() + "?"} ${presenterScript}`.split(/\s+/).slice(0, maxWords).join(" "),
-    benefits: seconds <= 10 ? [] : ["Made for every day", "Easy to use", "Looks the part"],
-    offer: { headline: p.offer || `${name}: ready when you are`, cta: "Shop now" },
+    hooks: [{ spoken: hook }, { spoken: `This is the ${name.toLowerCase()} people keep asking about.` }, { spoken: `Here is why ${name.toLowerCase()} is worth it.` }],
+    presenterScript: body.replace(/\s+/g, " ").trim().split(" ").slice(0, maxWords).join(" "),
     maxWords,
   };
 }

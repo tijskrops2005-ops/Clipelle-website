@@ -57,7 +57,7 @@ export function ScriptReviewPanel({ project }: { project: AdProject }) {
       </CardHeader>
       <CardContent className="space-y-5">
         <div>
-          <p className="mb-2 text-sm font-medium text-ink">Hook (the first two seconds)</p>
+          <p className="mb-2 text-sm font-medium text-ink">Opening line (spoken)</p>
           <div className="grid gap-3 sm:grid-cols-3">
             {hooks.map((h, i) => {
               const selected = i === hookIndex;
@@ -70,8 +70,7 @@ export function ScriptReviewPanel({ project }: { project: AdProject }) {
                   aria-pressed={selected}
                   className={cn("rounded-[14px] border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40", selected ? "border-ink bg-surface-muted" : "border-border bg-surface hover:shadow-card")}
                 >
-                  <span className="block text-[15px] font-semibold leading-snug text-ink">{h.onScreen}</span>
-                  <span className="mt-1.5 block text-[13px] text-muted">Spoken: “{h.spoken}”</span>
+                  <span className="block text-[15px] font-medium leading-snug text-ink">“{h.spoken}”</span>
                 </button>
               );
             })}
@@ -96,18 +95,7 @@ export function ScriptReviewPanel({ project }: { project: AdProject }) {
           </p>
         </div>
 
-        {script.benefits.length > 0 && (
-          <div>
-            <p className="label-mono mb-1.5 text-muted">Benefits on screen</p>
-            <p className="text-sm text-ink/90">{script.benefits.join(" · ")}</p>
-          </div>
-        )}
-        <div>
-          <p className="label-mono mb-1.5 text-muted">End card</p>
-          <p className="text-sm text-ink/90">
-            {script.offer.headline} · button “{script.offer.cta}”
-          </p>
-        </div>
+        <p className="text-[13px] text-muted">The only text on screen is the captions of these words, in your caption style. Benefits and the call to action are spoken, not shown as labels.</p>
 
         {error && (
           <p role="alert" className="text-sm text-danger">

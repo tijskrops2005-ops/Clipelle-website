@@ -20,17 +20,38 @@ const overlayCount = (total: number) => (total <= 12 ? 1 : total <= 36 ? 2 : tot
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
+/** Camera moves on the product footage, one per overlay, never the same twice in a row. */
+export type OverlayMotion = {
+  /** Shotstack clip effect (slow pan or zoom). */
+  effect: "zoomInSlow" | "zoomOutSlow" | "slideUpSlow" | "slideDownSlow" | "slideLeftSlow" | "slideRightSlow";
+  /** Crop: 1 = whole product; >1 = a detail, with offset choosing the part (top = neckline, bottom = hem). */
+  scale: number;
+  offsetY: number;
+  /** Soft transitions, about 0.5 s (Shotstack "Fast" variants). */
+  transitionIn: "fadeFast" | "slideLeftFast" | "slideRightFast" | "slideUpFast";
+  transitionOut: "fadeFast" | "slideLeftFast" | "slideRightFast" | "slideDownFast";
+  label: string;
+};
+
+export const OVERLAY_MOTIONS: OverlayMotion[] = [
+  { effect: "zoomInSlow", scale: 1, offsetY: 0, transitionIn: "fadeFast", transitionOut: "fadeFast", label: "whole product, slow zoom in" },
+  { effect: "slideDownSlow", scale: 1.6, offsetY: 0.18, transitionIn: "slideLeftFast", transitionOut: "slideLeftFast", label: "top detail, slow pan down" },
+  { effect: "zoomOutSlow", scale: 1.5, offsetY: 0, transitionIn: "slideUpFast", transitionOut: "fadeFast", label: "middle detail, slow zoom out" },
+  { effect: "slideUpSlow", scale: 1.6, offsetY: -0.22, transitionIn: "slideRightFast", transitionOut: "slideRightFast", label: "lower detail, slow pan up" },
+  { effect: "slideLeftSlow", scale: 1.3, offsetY: 0.05, transitionIn: "fadeFast", transitionOut: "slideDownFast", label: "upper half, slow pan left" },
+];
+
 export type ProductOverlay = {
   start: number;
   length: number;
   /** Offset into the product clip, so repeated overlays show different pieces. */
   trim: number;
-  effect: "zoomInSlow" | "zoomOutSlow";
-  /** The benefits text sits on this overlay. */
-  withBenefits: boolean;
+  motion: OverlayMotion;
+  /** Odd overlays use the prepared product photo (slow pan) when one is available, for variety. */
+  usePhoto: boolean;
 };
 
-export type SceneKind = "hook" | "presenter" | "product" | "benefits" | "offer";
+export type SceneKind = "presenter" | "product";
 export type LayoutScene = { kind: SceneKind; start: number; length: number };
 
 export type AdLayout = {
@@ -54,34 +75,34 @@ export function adLayout(totalSeconds: number, clipSeconds = 5): AdLayout {
     start: r1(windowStart + gap * (i + 1) + len * i),
     length: len,
     trim: r1(Math.min(maxTrim, (i % 2) * Math.min(1, maxTrim))),
-    effect: i % 2 === 0 ? "zoomInSlow" : "zoomOutSlow",
-    withBenefits: i === 0,
+    motion: OVERLAY_MOTIONS[i % OVERLAY_MOTIONS.length],
+    usePhoto: i % 2 === 1,
   }));
 
-  const scenes: LayoutScene[] = [{ kind: "hook", start: 0, length: HOOK_SECONDS }];
-  let cursor = HOOK_SECONDS;
+  // Timeline as a sequence: presenter in frame, product footage, presenter again; the spoken hook
+  // fills the first seconds and the spoken call to action the last ones (no text on screen).
+  const scenes: LayoutScene[] = [];
+  let cursor = 0;
   for (const o of overlays) {
     if (o.start > cursor) scenes.push({ kind: "presenter", start: cursor, length: r1(o.start - cursor) });
-    scenes.push({ kind: o.withBenefits ? "benefits" : "product", start: o.start, length: o.length });
+    scenes.push({ kind: "product", start: o.start, length: o.length });
     cursor = r1(o.start + o.length);
   }
-  const offerStart = r1(total - END_CARD_SECONDS);
-  if (offerStart > cursor) scenes.push({ kind: "presenter", start: cursor, length: r1(offerStart - cursor) });
-  scenes.push({ kind: "offer", start: offerStart, length: END_CARD_SECONDS });
+  if (total > cursor) scenes.push({ kind: "presenter", start: cursor, length: r1(total - cursor) });
 
   return { totalSeconds: total, maxWords: maxSpokenWords(total), overlays, scenes };
 }
 
-/** One line per scene, e.g. "hook 0–2 s: hook text on screen". */
+/** One line per scene, e.g. "product 8.7–12.7 s: product footage (voice continues)". */
 export function describeLayout(layout: AdLayout): string[] {
   const what: Record<SceneKind, string> = {
-    hook: "hook text large on screen over the presenter",
-    presenter: "presenter in frame",
-    product: "product clip over the presenter (voice continues)",
-    benefits: "product clip with the three benefits as text (voice continues)",
-    offer: "end card: offer headline and CTA button over the presenter",
+    presenter: "presenter in frame (captions only)",
+    product: "product footage over the presenter (voice and captions continue)",
   };
-  return layout.scenes.map((s) => `${s.kind} ${s.start}–${r1(s.start + s.length)} s: ${what[s.kind]}`);
+  return layout.scenes.map((s, i) => {
+    const extra = i === 0 ? "; the spoken hook opens here" : i === layout.scenes.length - 1 ? "; the spoken call to action closes here" : "";
+    return `${s.kind} ${s.start}–${r1(s.start + s.length)} s: ${what[s.kind]}${extra}`;
+  });
 }
 
 export { WORDS_PER_SECOND };

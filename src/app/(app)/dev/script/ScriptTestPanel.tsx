@@ -13,15 +13,14 @@ import { SpendMeter } from "@/components/dev/SpendMeter";
 import { AD_LENGTHS, CLAUDE_MODELS, DEFAULT_AD_SECONDS, type AdLength, type ScriptModel } from "@/lib/pricing";
 
 type Estimate = { model: ScriptModel; inputTokens: number; outputTokens: number; costUsd: number };
-type Scene = { kind: string; seconds: number; onScreenText: string | null };
+type Scene = { kind: string; seconds: number };
 type AdScript = {
   angle: string;
   language: string;
-  hook: { spoken: string; onScreen: string };
+  hooks?: { spoken: string }[];
+  hook: { spoken: string };
   presenterScript: string;
   scenes: Scene[];
-  benefits: string[];
-  offer: { headline: string; cta: string };
   musicMood: string;
   mood?: string;
   photoShowsPerson?: boolean;
@@ -282,9 +281,12 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
             {!result && <p className="text-sm text-muted">No script yet.</p>}
             {result && (
               <>
-                <Section label="Hook (on screen)">
-                  <p className="text-xl font-semibold leading-tight text-ink">{result.script.hook.onScreen}</p>
-                  <p className="mt-1 text-sm text-muted">Spoken: “{result.script.hook.spoken}”</p>
+                <Section label="Hooks (spoken; the customer picks one)">
+                  <ol className="list-decimal space-y-0.5 pl-5 text-sm text-ink/90">
+                    {(result.script.hooks ?? [result.script.hook]).map((h, i) => (
+                      <li key={i}>{h.spoken}</li>
+                    ))}
+                  </ol>
                 </Section>
                 <Section label="Presenter script">
                   <p className="text-sm leading-relaxed text-ink/90">{result.script.presenterScript}</p>
@@ -301,29 +303,18 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
                     </p>
                   )}
                 </Section>
-                <Section label={`Scenes (${result.script.scenes.reduce((n, s) => n + s.seconds, 0)} s on screen while the presenter talks)`}>
+                <Section label={`Scenes (${result.script.scenes.reduce((n, s) => n + s.seconds, 0)} s; no text on screen except captions)`}>
                   <ul className="divide-y divide-divider text-sm">
                     {result.script.scenes.map((s, i) => (
                       <li key={i} className="flex justify-between gap-3 py-1.5">
-                        <span className="text-ink">
-                          <span className="label-mono mr-2 text-muted">{s.kind}</span>
-                          {s.onScreenText ?? <span className="text-muted">—</span>}
-                        </span>
+                        <span className="label-mono text-muted">{s.kind}</span>
                         <span className="shrink-0 text-muted">{s.seconds} s</span>
                       </li>
                     ))}
                   </ul>
                 </Section>
-                <Section label="Benefits">
-                  <ul className="list-disc space-y-0.5 pl-5 text-sm text-ink/90">
-                    {result.script.benefits.map((b, i) => (
-                      <li key={i}>{b}</li>
-                    ))}
-                  </ul>
-                </Section>
-                <Section label="Offer">
-                  <p className="text-sm font-semibold text-ink">{result.script.offer.headline}</p>
-                  <p className="text-sm text-muted">Button: {result.script.offer.cta} · Music: {result.script.musicMood}</p>
+                <Section label="Music">
+                  <p className="text-sm text-muted">{result.script.musicMood}</p>
                 </Section>
                 <Section label="Product clip">
                   <p className="text-sm text-muted">

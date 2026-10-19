@@ -2,7 +2,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 import { adProjectCreated, adScriptApproved, inngest, stepRetry } from "@/lib/inngest/client";
-import type { AdInput } from "@/lib/db";
+import { and, eq } from "drizzle-orm";
+import { assets, db, type AdInput } from "@/lib/db";
 import { writeScriptWithinLimit, SCRIPT_MODEL, type AdScript } from "@/lib/services/script";
 import { clipPrompt } from "@/lib/clipPrompt";
 import { isAdTone } from "@/lib/adOptions";
@@ -362,15 +363,17 @@ async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: st
       const musicUrl = await ensureSharedMusic();
       const adInput = (await loadProject(projectId)).input as AdInput;
       const logoAsset = adInput.brand?.logoAssetId ? await loadAsset(adInput.brand.logoAssetId) : null;
+      // The 9:16 photo the clip step prepared (stored as "prepared-9x16.jpg"); used for the still overlays.
+      const preparedPhoto = (await db().select().from(assets).where(and(eq(assets.projectId, projectId), eq(assets.kind, "image"))))
+        .filter((a) => a.storagePath.endsWith("prepared-9x16.jpg"))
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
       const edit = buildAdEdit({
         presenterUrl: await providerUrl(presenter),
         presenterSeconds: presenter.seconds ?? adInput.seconds ?? cfg.adSeconds,
         productClipUrl: await providerUrl(clip),
         productClipSeconds: clip.seconds ?? CLIP_SECONDS,
         musicUrl,
-        hook: script.hook.onScreen,
-        benefits: script.benefits,
-        offer: script.offer,
+        productPhotoUrl: preparedPhoto ? await providerUrl(preparedPhoto) : undefined,
         colors: adInput.brand?.accent ? { accent: adInput.brand.accent } : undefined,
         brand: { font: adInput.brand?.font, captionStyle: adInput.brand?.captionStyle, logoUrl: logoAsset ? await providerUrl(logoAsset) : undefined },
         captionLanguage: adInput.language ?? cfg.adLanguage,

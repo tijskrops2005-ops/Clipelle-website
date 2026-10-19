@@ -9,10 +9,6 @@ import { nearestAdLength } from "@/lib/pricing";
 const SHOTSTACK_USD_PER_MINUTE = 0.2;
 
 type Body = {
-  hook?: string;
-  benefits?: string[];
-  headline?: string;
-  cta?: string;
   presenterUrl?: string;
   productClipUrl?: string;
   musicUrl?: string;
@@ -42,13 +38,6 @@ export async function POST(request: Request) {
   if (env === "v1" && body.confirmed !== true) {
     return Response.json({ error: "Production render requires confirmation (it costs credits)." }, { status: 400 });
   }
-  const hook = body.hook?.trim();
-  const benefits = (body.benefits ?? []).map((b) => b.trim()).filter(Boolean);
-  const headline = body.headline?.trim();
-  const cta = body.cta?.trim();
-  if (!hook || benefits.length > 3 || !headline || !cta) {
-    return Response.json({ error: "Give a hook, up to three benefits, a headline and a CTA." }, { status: 400 });
-  }
   const seconds = nearestAdLength(Number(body.seconds) || 30);
 
   try {
@@ -69,9 +58,6 @@ export async function POST(request: Request) {
       productClipUrl: product.url,
       productClipSeconds: product.duration ?? 8,
       musicUrl: music.url,
-      hook,
-      benefits,
-      offer: { headline, cta },
       fillToSeconds: seconds,
     });
     // Production renders cost credits: run them through the cost guard. Sandbox renders are free.
@@ -83,7 +69,7 @@ export async function POST(request: Request) {
           service: "shotstack",
           action: "render",
           estimatedUsd: estimateUsd,
-          fingerprintInput: { hook, benefits, headline, cta, presenter: presenter.url, product: product.url, music: music.url },
+          fingerprintInput: { seconds, presenter: presenter.url, product: product.url, music: music.url },
           meta: { totalSeconds: edit.meta.totalSeconds, seconds },
         });
         entryId = reserved.entryId;

@@ -1,5 +1,5 @@
 import "server-only";
-import { adLayout, END_CARD_SECONDS, HOOK_SECONDS } from "@/lib/adLayout";
+import { adLayout } from "@/lib/adLayout";
 import { DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, type CaptionStyle } from "@/lib/adOptions";
 
 /**
@@ -119,10 +119,8 @@ export type AdEditInput = {
   /** Seconds available in the one product clip (reused for every overlay). */
   productClipSeconds: number;
   musicUrl?: string;
-  hook: string;
-  /** Up to three; empty for a 10-second ad. */
-  benefits: string[];
-  offer: { headline: string; cta: string };
+  /** The prepared 9:16 product photo; odd overlays show it with a slow pan for variety. Optional. */
+  productPhotoUrl?: string;
   /** Brand colours (hex). Defaults match the app tokens. */
   colors?: { accent?: string; ink?: string; light?: string };
   /** Brand style (Shotstack built-in font, caption look, logo URL top-right). Missing = defaults. */
@@ -135,13 +133,12 @@ export type AdEditInput = {
   fillToSeconds?: number;
 };
 
-export { HOOK_SECONDS, END_CARD_SECONDS };
 
 /**
  * Builds the Shotstack Edit JSON for a vertical ad. Pure function: easy to test and version.
- * The presenter video runs the whole ad (picture and voice); the product clip is laid over it
- * at the moments from adLayout(); hook text in the first 2 s, benefits on the first overlay,
- * end card in the last 2 s; captions over everything; music softly underneath.
+ * The presenter video runs the whole ad (picture and voice); product footage is laid over it at
+ * the moments from adLayout() with varied camera moves; captions over everything (the only text on
+ * screen), optional logo top right; music softly underneath.
  */
 export function buildAdEdit(input: AdEditInput) {
   const accent = input.colors?.accent ?? "#D43F1B";
@@ -152,17 +149,10 @@ export function buildAdEdit(input: AdEditInput) {
   const fill = input.fillToSeconds && input.fillToSeconds > presenterLen ? Math.round(input.fillToSeconds * 10) / 10 : null;
   const total = fill ?? presenterLen;
   const layout = adLayout(total, Math.max(1, input.productClipSeconds));
-  const endStart = Math.round((total - END_CARD_SECONDS) * 10) / 10;
-  const benefits = input.benefits.map((b) => b.trim()).filter(Boolean).slice(0, 3);
 
   // Fonts: only Shotstack's built-in families (rich-text docs, 2026-10-19); anything else falls back to Roboto.
   const family = (FONT_KEYS as readonly string[]).includes(input.brand?.font ?? "") ? (input.brand!.font as string) : DEFAULT_FONT;
   const captionLook = (["bold", "clean", "karaoke"].includes(input.brand?.captionStyle ?? "") ? input.brand!.captionStyle : DEFAULT_CAPTION_STYLE) as CaptionStyle;
-  const textBase = {
-    font: { family, size: 64, weight: 900, color: light, opacity: 1 },
-    align: { horizontal: "center", vertical: "middle" },
-    stroke: { width: 0, color: ink, opacity: 1 },
-  };
   // Three caption looks on Shotstack rich-caption (animation styles pop | fade | karaoke; active word colours).
   const captionVariants: Record<CaptionStyle, Record<string, unknown>> = {
     bold: {
@@ -213,97 +203,28 @@ export function buildAdEdit(input: AdEditInput) {
     })),
   };
 
-  // The one product clip, laid over the presenter at fixed moments; different pieces, alternating zoom.
-  // volume 0: MiniMax clips carry a sound track and Kling can too; only the presenter's voice and the music are heard.
-  // fit "crop": a 720×1280 clip (Kling v3 Standard) is scaled up to fill the 1080×1920 frame.
+  // Product footage over the presenter at the moments from adLayout(). RULE: no text on screen except
+  // the captions, so there is no hook card, no benefit labels and no end card (CLAUDE.md, 2026-10-19).
+  // Each overlay has its own camera move and crop (scale + offset), soft 0.5 s transitions in and out
+  // (Shotstack "Fast" variants), volume 0 (MiniMax clips carry a sound track) and opacity 1 so the
+  // presenter never shows through; the presenter track below keeps playing, so voice and captions are
+  // continuous. fit "crop": a 720×1280 clip is scaled up to fill 1080×1920.
   const productOverlays = {
-    clips: layout.overlays.map((o) => ({
-      asset: { type: "video", src: input.productClipUrl, volume: 0, trim: o.trim },
-      start: o.start,
-      length: o.length,
-      fit: "crop",
-      effect: o.effect,
-      transition: { in: "fadeFast", out: "fadeFast" },
-    })),
-  };
-
-  const benefitsOverlay = layout.overlays.find((o) => o.withBenefits);
-  const overlays = {
-    clips: [
-      // Hook: big sticker-style text in the first 2 seconds, upper half so the presenter's face stays visible.
-      {
-        asset: {
-          ...textBase,
-          type: "rich-text",
-          text: input.hook,
-          font: { ...textBase.font, size: 110 },
-          style: { lineHeight: 1.05, textTransform: "uppercase" },
-          background: { color: accent, opacity: 1, borderRadius: 28, wrap: true },
-          padding: 26,
-          shadow: { offsetX: 0, offsetY: 10, blur: 22, color: ink, opacity: 0.45 },
-          animation: { preset: "ascend", duration: 0.6, style: "word" },
-        },
-        start: 0,
-        length: HOOK_SECONDS,
-        width: 940,
-        height: 700,
-        offset: { x: 0, y: 0.22 },
-        transition: { out: "fadeFast" },
-      },
-      // Benefits: staggered pills on the first product overlay, upper half (captions live in the lower third).
-      ...(benefitsOverlay
-        ? benefits.map((benefit, i) => ({
-            asset: {
-              ...textBase,
-              type: "rich-text",
-              text: benefit,
-              font: { ...textBase.font, size: 56, weight: 800 },
-              background: { color: ink, opacity: 0.85, borderRadius: 999, wrap: true },
-              padding: 24,
-              animation: { preset: "ascend", duration: 0.5, style: "word" },
-            },
-            start: Math.round((benefitsOverlay.start + 0.3 + i * 0.7) * 10) / 10,
-            length: Math.round((benefitsOverlay.length - 0.3 - i * 0.7) * 10) / 10,
-            width: 940,
-            height: 150,
-            offset: { x: 0, y: 0.34 - i * 0.11 },
-          }))
-        : []),
-      // End card in the last 2 s: headline and CTA pill over the presenter, who speaks the CTA.
-      {
-        asset: {
-          ...textBase,
-          type: "rich-text",
-          text: input.offer.headline,
-          font: { ...textBase.font, size: 80 },
-          style: { lineHeight: 1.08 },
-          background: { color: ink, opacity: 0.75, borderRadius: 24, wrap: true },
-          padding: 28,
-          animation: { preset: "fadeIn", duration: 0.4 },
-        },
-        start: endStart,
-        length: END_CARD_SECONDS,
-        width: 940,
-        height: 420,
-        offset: { x: 0, y: 0.24 },
-      },
-      {
-        asset: {
-          ...textBase,
-          type: "rich-text",
-          text: input.offer.cta,
-          font: { ...textBase.font, size: 56, weight: 800 },
-          background: { color: accent, opacity: 1, borderRadius: 999, wrap: true },
-          padding: 30,
-          animation: { preset: "ascend", duration: 0.5, style: "word" },
-        },
-        start: Math.round((endStart + 0.3) * 10) / 10,
-        length: Math.round((END_CARD_SECONDS - 0.3) * 10) / 10,
-        width: 900,
-        height: 160,
-        offset: { x: 0, y: 0.02 },
-      },
-    ],
+    clips: layout.overlays.map((o) => {
+      const usePhoto = o.usePhoto && Boolean(input.productPhotoUrl);
+      const asset = usePhoto ? { type: "image", src: input.productPhotoUrl } : { type: "video", src: input.productClipUrl, volume: 0, trim: o.trim };
+      return {
+        asset,
+        start: o.start,
+        length: o.length,
+        fit: "crop",
+        scale: o.motion.scale,
+        offset: { x: 0, y: o.motion.offsetY },
+        opacity: 1,
+        effect: o.motion.effect,
+        transition: { in: o.motion.transitionIn, out: o.motion.transitionOut },
+      };
+    }),
   };
 
   // Logo: small, top-right, the whole ad (Shotstack positioning docs: scale + position + offset).
@@ -318,10 +239,10 @@ export function buildAdEdit(input: AdEditInput) {
   return {
     timeline: {
       background: ink,
-      tracks: [...(logo ? [logo] : []), captions, overlays, productOverlays, presenter, ...(music ? [music] : [])],
+      tracks: [...(logo ? [logo] : []), captions, productOverlays, presenter, ...(music ? [music] : [])],
     },
     output: { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 },
-    meta: { totalSeconds: total, endStart, layout, filled: Boolean(fill) },
+    meta: { totalSeconds: total, layout, filled: Boolean(fill) },
   };
 }
 

@@ -33,10 +33,6 @@ type Run = {
 const STORAGE_KEY = "reelay.dev.final-edit.runs";
 
 export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; env: "stage" | "v1" }) {
-  const [hook, setHook] = useState("");
-  const [benefits, setBenefits] = useState(["", "", ""]);
-  const [headline, setHeadline] = useState("");
-  const [cta, setCta] = useState("");
   const [presenterUrl, setPresenterUrl] = useState("");
   const [productClipUrl, setProductClipUrl] = useState("");
   const [musicUrl, setMusicUrl] = useState("");
@@ -106,7 +102,7 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
       const res = await fetch("/api/dev/final-edit/render", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hook, benefits, headline, cta, presenterUrl, productClipUrl, musicUrl, seconds, confirmed: true }),
+        body: JSON.stringify({ presenterUrl, productClipUrl, musicUrl, seconds, confirmed: true }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
@@ -122,7 +118,7 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
   }
 
   const busy = phase === "uploading" || phase === "polling";
-  const valid = hook.trim() && headline.trim() && cta.trim();
+  const valid = true;
   const layout = adLayout(seconds);
 
   return (
@@ -134,26 +130,10 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
         )}
         <Card>
           <CardHeader>
-            <p className="label-mono text-muted">Copy</p>
-            <CardTitle className="mt-2">Texts</CardTitle>
-            <p className="mt-1 text-[15px] text-muted">Paste the JSON fields from the script test, or keep the defaults.</p>
+            <p className="label-mono text-muted">Rule</p>
+            <CardTitle className="mt-2">Text on screen</CardTitle>
+            <p className="mt-1 text-[15px] text-muted">Only the captions of what the presenter says, in the chosen caption style, for the whole video. No hook card, no benefit labels, no end card, no button. The hook, the benefits and the call to action are spoken.</p>
           </CardHeader>
-          <CardContent className="space-y-5">
-            <Field id="hook" label="Hook (first 2 seconds)" hint="Short and loud; shown as a sticker over the product clip.">
-              <Input id="hook" value={hook} onChange={(e) => setHook(e.target.value)} disabled={busy} placeholder="e.g. Still wearing last summer's dress?" />
-            </Field>
-            <div className="grid gap-3 md:grid-cols-3">
-              {benefits.map((b, i) => (
-                <Field key={i} id={`benefit-${i}`} label={`Benefit ${i + 1}`}>
-                  <Input id={`benefit-${i}`} value={b} disabled={busy} placeholder={["e.g. 100% washed linen", "e.g. Sizes XS–XL", "e.g. Machine washable"][i]} onChange={(e) => setBenefits((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))} />
-                </Field>
-              ))}
-            </div>
-            <div className="grid gap-5 md:grid-cols-2">
-              <Field id="headline" label="End card headline"><Input id="headline" value={headline} onChange={(e) => setHeadline(e.target.value)} disabled={busy} placeholder="e.g. Linen Summer Dress" /></Field>
-              <Field id="cta" label="Call to action"><Input id="cta" value={cta} onChange={(e) => setCta(e.target.value)} disabled={busy} placeholder="e.g. Shop now" /></Field>
-            </div>
-          </CardContent>
         </Card>
 
         <Card>
