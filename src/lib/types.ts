@@ -14,7 +14,7 @@ export type WorkflowKind = "ad" | "translate";
  * Steps of the ad workflow, named after what they do, not after the provider
  * (the customer-facing label per step is in config.stepLabels; the provider behind it is internal and swappable).
  */
-export type StepKey = "productClip" | "presenter" | "finalEdit";
+export type StepKey = "script" | "productClip" | "presenter" | "finalEdit";
 
 /** Steps of the translate workflow. */
 export type TranslateStepKey = "upload" | "translate" | "review" | "captions";

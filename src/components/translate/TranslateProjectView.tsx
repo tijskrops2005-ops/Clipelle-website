@@ -7,8 +7,7 @@ import { config } from "@/lib/config";
 import type { LanguageCode, Segment, TranslateProject } from "@/lib/types";
 import { languageLabel, languageOf } from "@/lib/languages";
 import { formatDate } from "@/lib/utils";
-import { approveReview, saveReviewedSegments } from "@/lib/mock/runner";
-import { demoAdToneRewrite } from "@/lib/mock/translations";
+import { approveReview, rewriteInAdTone, saveReviewedSegments } from "@/lib/data/client";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -26,16 +25,23 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
   const inReview = project.steps.review.status === "needs_input";
   const sourceLanguage: LanguageCode = project.detectedLanguage ?? (project.sourceLanguage === "auto" ? "en" : project.sourceLanguage);
 
-  async function rewrite(language: LanguageCode, segments: Segment[]) {
-    // Demo: a prepared shorter variant. Later: Claude via the server, see /dev/translate.
-    await new Promise((r) => setTimeout(r, 900));
-    return demoAdToneRewrite(segments, language);
+  const [approveError, setApproveError] = useState<string | null>(null);
+
+  function rewrite(language: LanguageCode, segments: Segment[]) {
+    // Demo: a prepared shorter variant. Database: Claude via the server (cents, cost guard).
+    return rewriteInAdTone(project.id, language, segments);
   }
 
-  function approve() {
+  async function approve() {
     if (approving) return; // rule 4: no duplicate starts
     setApproving(true);
-    approveReview(project.id);
+    setApproveError(null);
+    try {
+      await approveReview(project.id);
+    } catch (error) {
+      setApproveError(error instanceof Error ? error.message : "Could not approve. Try again.");
+      setApproving(false);
+    }
   }
 
   return (
@@ -81,10 +87,15 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
             title="Step 3 · Review"
             description="Nothing is rendered until you approve. Edits are saved as you type."
           />
+          {approveError && (
+            <p role="alert" className="text-sm text-danger">
+              {approveError}
+            </p>
+          )}
           <ReviewPanel
             translations={project.translations}
             sourceLanguage={sourceLanguage}
-            onChange={(language, segments) => saveReviewedSegments(project.id, language, segments)}
+            onChange={(language, segments) => void saveReviewedSegments(project.id, language, segments).catch(() => {})}
             onRewrite={rewrite}
             onApprove={approve}
             approving={approving}

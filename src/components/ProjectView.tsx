@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
 import { ArrowLeft, Download, FolderOpen, Plus } from "lucide-react";
 import { config } from "@/lib/config";
 import type { AdProject } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import { useProjects } from "@/lib/mock/store";
+import { useProject, useProjectsReady } from "@/lib/data/client";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -20,16 +19,10 @@ import { stepMeta } from "@/components/pipeline/PipelineStep";
 import { TranslateProjectView } from "@/components/translate/TranslateProjectView";
 
 export function ProjectView({ id }: { id: string }) {
-  const projects = useProjects();
-  const project = projects.find((p) => p.id === id);
-
-  // The demo store hydrates from localStorage after mount; avoid a "not found" flash
-  // by rendering a skeleton until we are on the client.
-  const ready = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
+  const project = useProject(id);
+  // Demo: the store hydrates from localStorage after mount; database: the first fetch takes a moment.
+  // Either way, show a skeleton instead of a "not found" flash.
+  const ready = useProjectsReady();
 
   if (!project) {
     if (!ready) return <ProjectSkeleton />;
@@ -84,14 +77,14 @@ export function ProjectView({ id }: { id: string }) {
 }
 
 function pipelineSummary(project: AdProject) {
-  const done = (["productClip", "presenter", "finalEdit"] as const).filter(
+  const done = (["script", "productClip", "presenter", "finalEdit"] as const).filter(
     (k) => project.steps[k].status === "completed",
   ).length;
   switch (project.status) {
     case "completed":
-      return "All three steps finished. Your video is ready on the right.";
+      return "All four steps finished. Your video is ready on the right.";
     case "failed": {
-      const failed = (["productClip", "presenter", "finalEdit"] as const).find(
+      const failed = (["script", "productClip", "presenter", "finalEdit"] as const).find(
         (k) => project.steps[k].status === "failed",
       );
       return failed
@@ -99,7 +92,7 @@ function pipelineSummary(project: AdProject) {
         : "A step stopped.";
     }
     case "processing":
-      return `${done} of 3 steps done. You can leave this page; progress continues.`;
+      return `${done} of 4 steps done. You can leave this page; progress continues.`;
     default:
       return "This project has not been started yet.";
   }
@@ -170,12 +163,12 @@ function ResultCard({ project }: { project: AdProject }) {
             <p className="text-sm text-muted">
               {failed
                 ? "The video will continue once the failed step is retried."
-                : "Your finished video appears here when step 3 is done."}
+                : "Your finished video appears here when step 4 is done."}
             </p>
           </div>
         </div>
         <ul className="space-y-2">
-          {(["productClip", "presenter", "finalEdit"] as const).map((k) => (
+          {(["script", "productClip", "presenter", "finalEdit"] as const).map((k) => (
             <li key={k} className="flex items-center justify-between text-sm">
               <span className="text-ink">
                 {stepMeta[k].number}. {stepMeta[k].title}

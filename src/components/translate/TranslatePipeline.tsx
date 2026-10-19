@@ -1,7 +1,7 @@
 "use client";
 
 import type { TranslateProject } from "@/lib/types";
-import { retryTranslateStep } from "@/lib/mock/runner";
+import { retryStep } from "@/lib/data/client";
 import { StepProgressCard } from "@/components/pipeline/PipelineStep";
 import { Poster } from "@/components/Poster";
 import { TRANSLATE_STEPS, translateStepMeta } from "./translateSteps";
@@ -16,7 +16,7 @@ export function TranslatePipeline({ project }: { project: TranslateProject }) {
           meta={translateStepMeta[key]}
           step={project.steps[key]}
           poster={key === "captions" || key === "translate" ? <Poster seed={`${project.id}:${key}`} /> : undefined}
-          onRetry={() => retryTranslateStep(project.id, key)}
+          onRetry={() => retryStep(project.id, key)}
         />
       ))}
     </div>

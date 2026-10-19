@@ -4,11 +4,10 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 import { Check, Languages, Loader2 } from "lucide-react";
 import { config } from "@/lib/config";
-import type { LanguageCode, TranslateProject, TranslationQuality } from "@/lib/types";
+import type { LanguageCode, TranslationQuality } from "@/lib/types";
 import { LANGUAGES } from "@/lib/languages";
 import { estimatePerLanguageUsd, estimateTotalUsd, formatUsd } from "@/lib/translatePricing";
-import { addProject } from "@/lib/mock/store";
-import { emptyTranslations } from "@/lib/mock/translations";
+import { createTranslateProject } from "@/lib/data/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -24,7 +23,7 @@ const QUALITY: Array<{ key: TranslationQuality; title: string; text: string }> =
   { key: "precision", title: "Precision", text: "The mouth is redrawn for the new language. Best for close-ups and final ads." },
 ];
 
-/** The "Translate an existing video" form. Demo mode: adds a simulated project to the store. */
+/** The "Translate an existing video" form. Demo: simulated project; database: upload + real workflow. */
 export function TranslateForm() {
   const router = useRouter();
   const [video, setVideo] = useState<UploadedVideo | null>(null);
@@ -33,6 +32,9 @@ export function TranslateForm() {
   const [targets, setTargets] = useState<LanguageCode[]>([]);
   const [quality, setQuality] = useState<TranslationQuality>("speed");
   const [rights, setRights] = useState(false);
+  const [reviewBeforeRender, setReviewBeforeRender] = useState(true);
+  const [format, setFormat] = useState<"original" | "9:16">("9:16");
+  const [enhance, setEnhance] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   const submitLock = useRef(false);
@@ -57,7 +59,7 @@ export function TranslateForm() {
     return next;
   }
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitLock.current) return;
     const next = validate();
@@ -70,31 +72,25 @@ export function TranslateForm() {
 
     submitLock.current = true;
     setSubmitting(true);
-    const now = new Date().toISOString();
-    const project: TranslateProject = {
-      id: `prj_${Date.now().toString(36)}`,
-      workflow: "translate",
-      name: projectName.trim(),
-      status: "processing",
-      createdAt: now,
-      sourceFileName: video.file.name,
-      sourceSeconds: Math.round(video.seconds ?? 30),
-      // Demo: the browser's object URL only lives in this tab. Stage 8 stores the file.
-      sourceVideoUrl: video.previewUrl,
-      sourceLanguage: source,
-      targetLanguages: targets,
-      quality,
-      rightsConfirmedAt: now,
-      steps: {
-        upload: { status: "processing", startedAt: now, attempt: 1 },
-        translate: { status: "waiting" },
-        review: { status: "waiting" },
-        captions: { status: "waiting" },
-      },
-      translations: emptyTranslations(targets),
-    };
-    addProject(project);
-    router.push(`/projects/${project.id}`);
+    try {
+      const { id } = await createTranslateProject({
+        name: projectName.trim(),
+        video: video.file,
+        sourceSeconds: Math.round(video.seconds ?? 30),
+        sourceLanguage: source,
+        targetLanguages: targets,
+        quality,
+        reviewBeforeRender,
+        format,
+        enhance,
+        rightsConfirmed: rights,
+      });
+      router.push(`/projects/${id}`);
+    } catch (error) {
+      submitLock.current = false;
+      setSubmitting(false);
+      setErrors({ form: error instanceof Error ? error.message : "Something went wrong while starting the translation. Please try again." });
+    }
   }
 
   return (
@@ -242,10 +238,56 @@ export function TranslateForm() {
         </CardContent>
       </Card>
 
-      {/* 3. Rights */}
+      {/* 3. Options */}
       <Card>
         <CardHeader>
-          <p className="label-mono text-muted">Step 3 of 3</p>
+          <p className="label-mono text-muted">Step 3 of 4</p>
+          <CardTitle className="mt-2 text-xl">Options</CardTitle>
+          <p className="mt-1 text-[15px] text-muted">The pictures and the edit stay exactly as they are. Only the language changes.</p>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <label htmlFor="review" className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-border bg-surface-muted p-4">
+            <input id="review" type="checkbox" checked={reviewBeforeRender} onChange={(e) => setReviewBeforeRender(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 shrink-0 accent-ink" />
+            <span>
+              <span className="block text-sm font-medium text-ink">Review before rendering</span>
+              <span className="block text-[13px] leading-relaxed text-muted">
+                Pause so you can check and edit every line next to the original. Off: the translation is rewritten in ad tone automatically and rendered right away.
+              </span>
+            </span>
+          </label>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium text-ink">Format</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(
+                [
+                  { key: "9:16", title: "Vertical 9:16", text: "For TikTok, Reels and Shorts. The speaker is centred; the sides are cropped." },
+                  { key: "original", title: "Keep original", text: "Same width and height as the video you upload. Captions added." },
+                ] as const
+              ).map((f) => (
+                <label key={f.key} className={cn("flex cursor-pointer flex-col gap-1 rounded-[14px] border p-4", format === f.key ? "border-ink bg-surface shadow-card" : "border-border bg-surface-muted", submitting && "pointer-events-none opacity-60")}>
+                  <span className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+                    <input type="radio" name="format" value={f.key} checked={format === f.key} onChange={() => setFormat(f.key)} disabled={submitting} className="size-4 accent-ink" />
+                    {f.title}
+                  </span>
+                  <span className="text-[13px] leading-relaxed text-muted">{f.text}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <label htmlFor="enhance" className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-border bg-surface-muted p-4">
+            <input id="enhance" type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 shrink-0 accent-ink" />
+            <span>
+              <span className="block text-sm font-medium text-ink">Enhance picture quality</span>
+              <span className="block text-[13px] leading-relaxed text-muted">Sharper, cleaner picture before the captions go on. Adds about {formatUsd(Math.max(0.3, seconds * 0.02))} per language and a few minutes.</span>
+            </span>
+          </label>
+        </CardContent>
+      </Card>
+
+      {/* 4. Rights */}
+      <Card>
+        <CardHeader>
+          <p className="label-mono text-muted">Step 4 of 4</p>
           <CardTitle className="mt-2 text-xl">Rights</CardTitle>
           <p className="mt-1 text-[15px] text-muted">The voice and face in this video are cloned for the translation. We need your confirmation first.</p>
         </CardHeader>
@@ -283,7 +325,11 @@ export function TranslateForm() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-[13px] text-muted">
           <DemoBadge>Demo mode</DemoBadge>
-          <span>This starts a simulated run. No video is uploaded or translated yet.</span>
+          <span>
+            {config.demoMode
+              ? "This starts a simulated run. No video is uploaded or translated yet."
+              : "This uploads your video and starts the real translation. Costs are capped by the spending limits."}
+          </span>
         </div>
         <div className="flex items-center gap-3">
           <Button href="/new" variant="ghost" aria-disabled={submitting || undefined} className={submitting ? "pointer-events-none opacity-50" : undefined}>

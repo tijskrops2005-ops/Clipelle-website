@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, Plus, Video } from "lucide-react";
-import { useProjects } from "@/lib/mock/store";
+import { useProjects } from "@/lib/data/client";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionHeader } from "@/components/ui/PageHeader";

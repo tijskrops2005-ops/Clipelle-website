@@ -3,9 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 import { Loader2, Sparkles } from "lucide-react";
-import type { AdProject } from "@/lib/types";
-import { addProject } from "@/lib/mock/store";
-import { fileToThumbnail } from "@/lib/mock/images";
+import { config } from "@/lib/config";
+import { createAdProject } from "@/lib/data/client";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
@@ -55,8 +54,9 @@ function validate(values: Values, images: UploadedImage[]): Errors {
 }
 
 /**
- * The "New video" form. Validates on submit, disables the button while submitting
- * (rule 4: no duplicate workflow starts) and adds a simulated project to the demo store.
+ * The "New ad" form. Validates on submit, disables the button while submitting
+ * (rule 4: no duplicate workflow starts) and creates the project through the data layer
+ * (demo: simulated in the browser; database: uploads + the real workflow).
  */
 export function ProjectForm() {
   const router = useRouter();
@@ -93,28 +93,16 @@ export function ProjectForm() {
     setSubmitting(true);
 
     try {
-      const imageUrls = await Promise.all(images.map((img) => fileToThumbnail(img.file)));
-      const now = new Date().toISOString();
-      const project: AdProject = {
-        id: `prj_${Date.now().toString(36)}`,
-        workflow: "ad",
+      const { id } = await createAdProject({
         name: values.projectName.trim(),
         productName: values.productName.trim(),
         productUrl: values.productUrl.trim() || undefined,
         description: values.description.trim(),
-        imageUrls,
         script: values.script.trim() || undefined,
-        status: "processing",
-        steps: {
-          productClip: { status: "processing", startedAt: now },
-          presenter: { status: "processing", startedAt: now },
-          finalEdit: { status: "waiting" },
-        },
-        createdAt: now,
-      };
-      addProject(project);
+        images: images.map((img) => img.file),
+      });
       images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
-      router.push(`/projects/${project.id}`);
+      router.push(`/projects/${id}`);
     } catch (error) {
       submitLock.current = false;
       setSubmitting(false);
@@ -246,7 +234,9 @@ export function ProjectForm() {
       {/* Submit row */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] text-muted">
-          Demo mode: this starts a simulated run. No real video is generated yet.
+          {config.demoMode
+            ? "Demo mode: this starts a simulated run. No real video is generated yet."
+            : "This uploads your photos and starts the real workflow. Costs are capped by the spending limits."}
         </p>
         <div className="flex items-center gap-3">
           <Button

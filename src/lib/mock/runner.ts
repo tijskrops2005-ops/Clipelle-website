@@ -29,6 +29,7 @@ import { demoDetectedLanguage, demoSegments } from "./translations";
  * Retry succeeds.
  */
 const AD_DURATION_MS: Record<StepKey, number> = {
+  script: 4_000,
   productClip: 7_000,
   presenter: 11_000,
   finalEdit: 8_000,
@@ -55,7 +56,7 @@ function wantsFailure(project: Project) {
 /* ---------------- Workflow A ---------------- */
 
 function tickAd(project: AdProject, now: number, nowIso: string) {
-  for (const key of ["productClip", "presenter", "finalEdit"] as const) {
+  for (const key of ["script", "productClip", "presenter", "finalEdit"] as const) {
     const step = project.steps[key];
     if (step.status !== "processing") continue;
 
@@ -90,7 +91,7 @@ function tickAd(project: AdProject, now: number, nowIso: string) {
       if (p.workflow !== "ad") return p;
       const steps = {
         ...p.steps,
-        [key]: { ...p.steps[key], status: "completed" as const, finishedAt: nowIso, outputUrl: config.demoVideoUrl },
+        [key]: { ...p.steps[key], status: "completed" as const, finishedAt: nowIso, outputUrl: key === "script" ? undefined : config.demoVideoUrl },
       };
       const finished = key === "finalEdit";
       return {
@@ -102,8 +103,30 @@ function tickAd(project: AdProject, now: number, nowIso: string) {
     });
   }
 
-  // The final edit starts only when both inputs are ready.
+  // The script gates the two parallel steps; the final edit starts only when both are ready.
   const latest = getProjectsSnapshot().find((p) => p.id === project.id);
+  if (
+    latest &&
+    latest.workflow === "ad" &&
+    latest.status === "processing" &&
+    latest.steps.script.status === "completed" &&
+    latest.steps.productClip.status === "waiting" &&
+    latest.steps.presenter.status === "waiting"
+  ) {
+    updateProject(latest.id, (p) =>
+      p.workflow === "ad"
+        ? {
+            ...p,
+            steps: {
+              ...p.steps,
+              productClip: { status: "processing", startedAt: nowIso, attempt: 1 },
+              presenter: { status: "processing", startedAt: nowIso, attempt: 1 },
+            },
+          }
+        : p,
+    );
+    return;
+  }
   if (
     latest &&
     latest.workflow === "ad" &&

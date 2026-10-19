@@ -5,10 +5,11 @@ export const config = {
   productName: "Reelay",
   tagline: "Turn product info into a finished video ad — automatically.",
   /**
-   * While true, the UI runs on simulated data from src/lib/mock and shows a
-   * visible "Demo mode" label. Flip to false only once real services exist (Stage 7+).
+   * While true, the UI runs on simulated data from src/lib/mock and shows a visible
+   * "Demo mode" label. Set NEXT_PUBLIC_DEMO_MODE=false in .env.local to use the database
+   * and the real orchestrator instead (Stage 8). Default: on.
    */
-  demoMode: true,
+  demoMode: process.env.NEXT_PUBLIC_DEMO_MODE !== "false",
   /** Placeholder clip served from /public while no real final-edit output exists. */
   demoVideoUrl: "/demo/sample-video.mp4",
   /**

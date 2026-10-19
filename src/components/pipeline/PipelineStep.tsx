@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Clock, RotateCcw, UserRoundCheck } from "lucide-react";
 import { config } from "@/lib/config";
 import type { AdProject, Step, StepKey } from "@/lib/types";
-import { retryStep } from "@/lib/mock/runner";
+import { retryStep } from "@/lib/data/client";
 import { Button } from "@/components/ui/Button";
 import { Poster } from "@/components/Poster";
 import { StepCard } from "@/components/StepCard";
@@ -22,22 +22,30 @@ export type StepMeta = {
 };
 
 export const stepMeta: Record<StepKey, StepMeta> = {
-  productClip: {
+  script: {
     number: 1,
+    title: "Script",
+    service: config.stepLabels.script,
+    description: "A hook, the presenter's lines, three benefits and a call to action, written from your product description.",
+    waitingNote: "Queued. Starts as soon as the workflow begins.",
+    doneLabel: "Script ready",
+  },
+  productClip: {
+    number: 2,
     title: "Product clip",
     service: config.stepLabels.productClip,
     description: "Turns your product photos into a short clip that shows the product in motion.",
-    waitingNote: "Queued. Starts as soon as the workflow begins.",
+    waitingNote: "Starts when the script is ready.",
   },
   presenter: {
-    number: 2,
+    number: 3,
     title: "AI presenter",
     service: config.stepLabels.presenter,
     description: "A realistic presenter speaks your script on camera, with natural voice and lip-sync.",
-    waitingNote: "Queued. Runs at the same time as the product clip.",
+    waitingNote: "Starts when the script is ready, at the same time as the product clip.",
   },
   finalEdit: {
-    number: 3,
+    number: 4,
     title: "Final edit",
     service: config.stepLabels.finalEdit,
     description: "Combines both clips into a 9:16 ad with captions, music and a call to action.",
@@ -194,7 +202,7 @@ export function PipelineStep({
     <StepProgressCard
       meta={stepMeta[stepKey]}
       step={project.steps[stepKey]}
-      poster={<Poster seed={`${project.id}:${stepKey}`} imageUrl={stepKey === "productClip" ? project.imageUrls[0] : undefined} />}
+      poster={stepKey === "script" ? undefined : <Poster seed={`${project.id}:${stepKey}`} imageUrl={stepKey === "productClip" ? project.imageUrls[0] : undefined} />}
       onRetry={() => retryStep(project.id, stepKey)}
       className={className}
     />

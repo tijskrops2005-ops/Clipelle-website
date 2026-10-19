@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus, Video } from "lucide-react";
 import type { Project, ProjectStatus } from "@/lib/types";
-import { useProjects } from "@/lib/mock/store";
+import { useProjects } from "@/lib/data/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";

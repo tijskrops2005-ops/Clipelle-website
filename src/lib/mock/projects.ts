@@ -20,6 +20,7 @@ export const mockProjects: Project[] = [
       "Tired of dull skin? Meet Glow — the serum that brightens in two weeks. Tap to shop.",
     status: "completed",
     steps: {
+      script: { status: "completed", startedAt: "2026-10-16T09:01:10Z", finishedAt: "2026-10-16T09:01:50Z" },
       productClip: {
         status: "completed",
         startedAt: "2026-10-16T09:02:00Z",
@@ -49,6 +50,7 @@ export const mockProjects: Project[] = [
     imageUrls: [],
     status: "processing",
     steps: {
+      script: { status: "completed", startedAt: "2026-10-18T07:39:10Z", finishedAt: "2026-10-18T07:39:50Z" },
       productClip: {
         status: "completed",
         startedAt: "2026-10-18T07:40:00Z",
@@ -68,6 +70,7 @@ export const mockProjects: Project[] = [
     imageUrls: [],
     status: "failed",
     steps: {
+      script: { status: "completed", startedAt: "2026-10-15T13:59:00Z", finishedAt: "2026-10-15T13:59:40Z" },
       productClip: {
         status: "completed",
         startedAt: "2026-10-15T14:00:00Z",
@@ -93,6 +96,7 @@ export const mockProjects: Project[] = [
     imageUrls: [],
     status: "completed",
     steps: {
+      script: { status: "completed", startedAt: "2026-10-12T09:59:00Z", finishedAt: "2026-10-12T09:59:40Z" },
       productClip: {
         status: "completed",
         startedAt: "2026-10-12T10:00:00Z",
@@ -121,6 +125,7 @@ export const mockProjects: Project[] = [
     imageUrls: [],
     status: "draft",
     steps: {
+      script: { status: "waiting" },
       productClip: { status: "waiting" },
       presenter: { status: "waiting" },
       finalEdit: { status: "waiting" },
