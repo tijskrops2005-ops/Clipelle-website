@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
 import { Textarea } from "@/components/ui/Textarea";
+import { Input } from "@/components/ui/Input";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { SpendMeter } from "@/components/dev/SpendMeter";
+import { clipPrompt, DEFAULT_CLIP_MOOD } from "@/lib/clipPrompt";
 
 /* Mirrors constants in src/lib/services/productClip.ts (server-only). */
 const EXPAND_USD = 0.04;
@@ -40,8 +42,6 @@ type Run = {
 
 const STORAGE_KEY = "reelay.dev.product-clip.runs";
 const usd = (n: number) => `$${n.toFixed(3)}`;
-const DEFAULT_PROMPT =
-  "Slow cinematic push-in on the product, soft studio light, gentle rotation, product stays sharp and unchanged, no text, no hands.";
 
 export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -56,6 +56,9 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
 
   const [model, setModel] = useState<ModelKey>(PROMO ? "minimax_turbo" : "kling_standard");
   const [prompt, setPrompt] = useState("");
+  const [productName, setProductName] = useState("");
+  const [mood, setMood] = useState("");
+  const [hasPerson, setHasPerson] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [run, setRun] = useState<Run | null>(null);
   const [queueNote, setQueueNote] = useState("");
@@ -170,8 +173,9 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
   const clipEstimate = Math.round(MODELS[model].usdPerSecond * CLIP_SECONDS * 1000) / 1000;
   const methodReady = method === "crop" || Boolean(expandPreview);
   const busy = phase === "submitting" || phase === "polling";
-  /* The grey example text is the real default: an empty field sends it. */
-  const effectivePrompt = prompt.trim() || DEFAULT_PROMPT;
+  /* The grey text is exactly what the orchestrator sends (same function); typing in the field overwrites it. */
+  const defaultPrompt = clipPrompt({ productName, mood, hasPerson });
+  const effectivePrompt = prompt.trim() || defaultPrompt;
   const canStart = Boolean(prepared) && methodReady && !busy;
   const a = prepared?.analysis;
   const bboxStyle = a ? {
@@ -287,8 +291,23 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
                 </button>
               ))}
             </div>
-            <Field id="prompt" label="Motion prompt" hint="Describe camera and motion only. The product itself must stay unchanged. Leave empty to use the example shown.">
-              <Textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={busy} className="min-h-20" placeholder={DEFAULT_PROMPT} />
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field id="clipProductName" label="Product name" hint="Goes into the prompt, as in the real workflow.">
+                <Input id="clipProductName" value={productName} onChange={(e) => setProductName(e.target.value)} disabled={busy} placeholder="e.g. Madison dress" />
+              </Field>
+              <Field id="clipMood" label="Mood" hint={`Two or three words; the script step writes this. Empty: "${DEFAULT_CLIP_MOOD}".`}>
+                <Input id="clipMood" value={mood} onChange={(e) => setMood(e.target.value)} disabled={busy} placeholder="e.g. elegant, calm, evening" />
+              </Field>
+            </div>
+            <label className="flex items-start gap-3 text-sm text-ink">
+              <input type="checkbox" checked={hasPerson} onChange={(e) => setHasPerson(e.target.checked)} disabled={busy} className="mt-0.5 size-4 accent-ink" />
+              <span>
+                The photo shows a person wearing or holding the product
+                <span className="block text-[13px] text-muted">In the real workflow the script step decides this from the photo. It switches the prompt to keep the person, face and outfit unchanged.</span>
+              </span>
+            </label>
+            <Field id="prompt" label="Motion prompt" hint="The grey text is what the orchestrator sends for these inputs. Type here to overwrite it.">
+              <Textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={busy} className="min-h-24" placeholder={defaultPrompt} />
             </Field>
             <div className="rounded-[14px] bg-surface-muted p-4 text-sm">
               <p className="font-semibold text-ink">

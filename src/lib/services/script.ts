@@ -43,6 +43,10 @@ export const AdScriptSchema = z.object({
     cta: z.string().describe("Call to action button text, max 4 words"),
   }),
   musicMood: z.string().describe("Two or three words describing the background music mood"),
+  mood: z.string().describe("Two or three words for the visual mood of the product footage, e.g. elegant, calm, evening"),
+  photoShowsPerson: z
+    .boolean()
+    .describe("true when the attached product photo shows a person wearing or holding the product; false when there is no person or no photo"),
 });
 
 export type AdScript = z.infer<typeof AdScriptSchema>;
@@ -178,7 +182,7 @@ function userPrompt(input: Omit<ScriptInput, "image">) {
     `Word limit for presenterScript: at most ${layout.maxWords} words (${input.targetSeconds} s × ${WORDS_PER_SECOND} words per second). Aim for ${Math.round(layout.maxWords * 0.85)} to ${layout.maxWords - 2} words so the voice fills the whole ad; more than ${layout.maxWords} is not allowed.`,
     "Scene plan (what is on screen; the voice continues throughout):",
     ...describeLayout(layout).map((l) => `- ${l}`),
-    "If a product photo is attached, use what you see (colour, shape, packaging) to make the script concrete.",
+    "If a product photo is attached, use what you see (colour, shape, packaging) to make the script concrete, and set photoShowsPerson to true only if a person is visible in it. Without a photo, photoShowsPerson is false.",
   ];
   return lines.filter(Boolean).join("\n");
 }

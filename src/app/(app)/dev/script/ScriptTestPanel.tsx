@@ -23,6 +23,8 @@ type AdScript = {
   benefits: string[];
   offer: { headline: string; cta: string };
   musicMood: string;
+  mood?: string;
+  photoShowsPerson?: boolean;
 };
 type RunResult = {
   script: AdScript;
@@ -322,6 +324,11 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
                 <Section label="Offer">
                   <p className="text-sm font-semibold text-ink">{result.script.offer.headline}</p>
                   <p className="text-sm text-muted">Button: {result.script.offer.cta} · Music: {result.script.musicMood}</p>
+                </Section>
+                <Section label="Product clip">
+                  <p className="text-sm text-muted">
+                    Mood: {result.script.mood ?? "—"} · Photo shows a person: {result.script.photoShowsPerson === undefined ? "—" : result.script.photoShowsPerson ? "yes" : "no"}
+                  </p>
                 </Section>
                 <dl className="divide-y divide-divider rounded-[14px] bg-surface-muted px-4 text-sm">
                   {(

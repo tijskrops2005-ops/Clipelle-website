@@ -4,6 +4,7 @@ import sharp from "sharp";
 import { adProjectCreated, inngest, stepRetry } from "@/lib/inngest/client";
 import type { AdInput } from "@/lib/db";
 import { writeScriptWithinLimit, SCRIPT_MODEL, type AdScript } from "@/lib/services/script";
+import { clipPrompt } from "@/lib/clipPrompt";
 import {
   analyzeProductPhoto,
   cropToNineSixteen,
@@ -155,7 +156,7 @@ async function runProductClip(projectId: string, script: AdScript, step: StepToo
       await storeBytes({ projectId, stepId: row.id, kind: "image", data: new Uint8Array(prepared), mime: "image/jpeg", fileName: "prepared-9x16.jpg" });
 
       const model = cfg.clipModel;
-      const prompt = clipPrompt(script);
+      const prompt = clipPrompt({ productName: input.productName, mood: script.mood, hasPerson: script.photoShowsPerson });
       const estimate = estimateClipCost(model, CLIP_SECONDS);
       const reserved = await reserveSpend({ service: "fal", action: `clip_${model}`, estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, model: CLIP_MODELS[model].label, endpointId: CLIP_MODELS[model].endpointId, seconds: CLIP_SECONDS } });
       try {
@@ -195,11 +196,6 @@ async function runProductClip(projectId: string, script: AdScript, step: StepToo
     await step.sleep(`clip-wait-${i}`, `${cfg.pollSeconds}s`);
   }
   return step.run("clip-timeout", () => failStep(projectId, key, new StepFailure(`The product clip took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
-}
-
-function clipPrompt(script: AdScript) {
-  const product = script.scenes.find((s) => s.kind === "product")?.onScreenText;
-  return `Smooth, slow product showcase of the item in the photo on a clean background, soft studio light, subtle camera push-in, no text, no people, keep the product exactly as shown.${product ? ` Mood: ${product}.` : ""}`;
 }
 
 /* ---------- presenter ---------- */
