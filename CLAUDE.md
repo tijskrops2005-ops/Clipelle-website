@@ -34,7 +34,7 @@ Input ─→ Script (Claude API) ─┬→ Product clip (fal.ai image-to-video) 
   - Presenter: HeyGen **v3 only** (`POST /v3/videos`, `aspect_ratio: "9:16"`, webhooks). v1/v2 are sunset on 2026-10-31; never use them.
   - Final edit: Shotstack Edit API (timeline, rich captions, text, audio, `callback`), chosen for the MVP and verified in the sandbox in Stage 7. HeyGen "studio" can concatenate scenes but has no text overlays, CTA, music or transitions, so it is not the final editor; a HeyGen template is at most an experiment after the MVP, not a planned replacement.
 - Every provider returns temporary URLs. The orchestrator (Stage 8) copies each output to our own storage before the next step and before download.
-- **UI step labels stay generic** ("Script", "Product clip", "AI presenter", "Final edit"). Service names appear only as the small mono label on a step card and in Settings, read from one place in code, so a provider can be swapped without touching screens.
+- **Provider names are never shown to customers.** Step titles and the mono micro-labels stay generic ("Product clip", "AI presenter", "AI translation", "Captions and 9:16"), read from `config.stepLabels`; explainer copy says what a step does, not who runs it; the sidebar footer shows the tagline. HeyGen, Shotstack, fal.ai and Claude appear only on the `/dev` test pages (and in `config.services`, which only those pages use).
 
 ## Current stage
 
@@ -64,9 +64,9 @@ The app looks **premium, light and calm**, in the spirit of MakeUGC's light styl
 
 - **Soft surfaces.** The sidebar sits on the page background with no border; only cards are white. Cards use `rounded-card` (20px) and the layered `shadow-card`; on hover `shadow-card-hover`. Inner panels inside cards use `surface-muted` with 14px radius.
 - **Big, tight headings.** Page titles use the `text-display` utility (40px, -0.03em). Section titles are 24px. Subtitles 17px muted, body 15px, meta 13px.
-- **Micro-labels in mono.** The `label-mono` utility (Geist Mono, 11px, uppercase) is used for service names, step labels and the Demo mode pill. Never for body text.
+- **Micro-labels in mono.** The `label-mono` utility (Geist Mono, 11px, uppercase) is used for the generic step descriptors, step labels and the Demo mode pill. Never for body text, never for provider names.
 - **One accent pill.** `Button variant="accent"` is a fully rounded pill with `shadow-accent`, reserved for the main call to action on a page ("Create new video", "Generate video"). Every other primary button is black (ink), 12px radius.
-- **Numbered step cards** (`StepCard`) are the signature element: ink circle with the number, generic title ("Product clip", "AI presenter", "Final edit"), mono service label from config, muted inner panel, plain-language description. On the dashboard they explain the flow with small original SVG illustrations; on the project page they show live status (accent = processing, green check = completed, red cross = failed).
+- **Numbered step cards** (`StepCard`) are the signature element: ink circle with the number, generic title ("Product clip", "AI presenter", "Final edit"), mono step descriptor from `config.stepLabels`, muted inner panel, plain-language description. On the dashboard they explain the flow with small original SVG illustrations; on the project page they show live status (accent = processing, green check = completed, red cross = failed).
 - **9:16 video tiles** (`ProjectTile`) are the eye-catcher: floating white status badge top-left, play button bottom-right, dark gradient with name and duration on completed tiles, first product image as poster when available.
 - **Generous spacing.** Content max-width 1120px, sections 64px apart, card padding 28px.
 - Light theme only. No gradient text, no promo bars, no dark mode.
@@ -121,7 +121,7 @@ src/
 Core data model (start here, extend only when needed):
 
 - `Project`: id, name, productName, productUrl?, description, imageUrls[], script?, status (`draft | processing | completed | failed`), steps, finalVideoUrl?, createdAt.
-- `steps`: keyed by generic step names (`productClip | presenter | finalEdit`; `script` joins when the orchestrator runs it as its own step), each with status (`waiting | processing | completed | failed`), startedAt?, finishedAt?, error?, outputUrl?, externalJobId?, attempt?. Keys describe the step, never the provider; the provider label per step comes from `config.services`.
+- `steps`: keyed by generic step names (`productClip | presenter | finalEdit`; `script` joins when the orchestrator runs it as its own step), each with status (`waiting | processing | completed | failed`), startedAt?, finishedAt?, error?, outputUrl?, externalJobId?, attempt?. Keys describe the step, never the provider; the customer-facing label per step comes from `config.stepLabels`.
 
 ## Non-negotiable rules
 
@@ -131,7 +131,7 @@ Core data model (start here, extend only when needed):
 4. Prevent duplicate workflow starts (disable the button after submit, guard on the server later).
 5. No features outside the scope above: no analytics, campaign management, ad launching, creative-strategy engines, node editors, model pickers or editing suites, unless Tijs explicitly asks.
 6. Keep changes focused. Do not rewrite large parts of the project without a clear reason.
-7. **Rights confirmation for uploaded videos (Workflow B, translation of an existing video)**: before any translation starts, the user must tick: "Ik heb de rechten op deze video en toestemming van de spreker voor het gebruik van zijn of haar stem en gezicht." No tick, no translation: the button stays disabled and the server rejects the request when the confirmation is missing. Store the confirmation with a timestamp on the project. Never build watermark removal.
+7. **Rights confirmation for uploaded videos (Workflow B, translation of an existing video)**: before any translation starts, the user must tick: "I own the rights to this video and have the speaker's permission to use their voice and face." (the app is fully English; the text lives once in `config.rightsConfirmationText`). No tick, no translation: the button stays disabled and the server rejects the request when the confirmation is missing. Store the confirmation with a timestamp on the project. Never build watermark removal.
 
 ## How to work with Tijs
 

@@ -15,27 +15,27 @@ export function HowItWorks() {
     <section className="space-y-6">
       <SectionHeader
         title="How it works"
-        description="Three services, one click. You never open them yourself."
+        description="Three steps, one click. Everything runs on its own."
       />
       <div className="grid gap-5 md:grid-cols-3 md:gap-6">
         <StepCard
           number={1}
           title="Product clip"
-          service={config.services.productClip}
+          service={config.stepLabels.productClip}
           description="Your product photos become a short, polished clip that shows the product in motion."
           panel={<ProductVideoIllustration className={illustrationClass} />}
         />
         <StepCard
           number={2}
           title="AI presenter"
-          service={config.services.presenter}
+          service={config.stepLabels.presenter}
           description="Your script is spoken by a realistic presenter, with natural voice and lip-sync."
           panel={<PresenterIllustration className={illustrationClass} />}
         />
         <StepCard
           number={3}
           title="Final edit"
-          service={config.services.finalEdit}
+          service={config.stepLabels.finalEdit}
           description="Both clips are combined into a 9:16 ad with captions, music and a call to action."
           panel={<FinalVideoIllustration className={illustrationClass} />}
         />

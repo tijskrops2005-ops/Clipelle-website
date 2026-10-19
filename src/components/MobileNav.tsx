@@ -108,7 +108,7 @@ export function MobileNav() {
               })}
             </nav>
 
-            <p className="label-mono mt-auto text-muted">{`${config.services.productClip} · ${config.services.presenter} · ${config.services.finalEdit}`}</p>
+            <p className="label-mono mt-auto text-muted">{config.tagline}</p>
           </div>
         </div>
       )}

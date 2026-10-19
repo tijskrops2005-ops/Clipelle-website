@@ -9,7 +9,7 @@ export const translateStepMeta: Record<TranslateStepKey, StepMeta> = {
   upload: {
     number: 1,
     title: "Upload",
-    service: config.productName,
+    service: config.stepLabels.upload,
     description: "Your video is checked and stored safely, together with your rights confirmation.",
     waitingNote: "Queued. Starts as soon as the workflow begins.",
     doneLabel: "Video received",
@@ -17,7 +17,7 @@ export const translateStepMeta: Record<TranslateStepKey, StepMeta> = {
   translate: {
     number: 2,
     title: "Translate",
-    service: config.services.translate,
+    service: config.stepLabels.translate,
     description: "The speech is transcribed and translated, a voice that sounds like the speaker is prepared, and the lip movements are matched.",
     waitingNote: "Starts when the upload is done.",
     doneLabel: "Translation ready",
@@ -25,7 +25,7 @@ export const translateStepMeta: Record<TranslateStepKey, StepMeta> = {
   review: {
     number: 3,
     title: "Review",
-    service: "You",
+    service: config.stepLabels.review,
     description: "You check every fragment next to the original, rewrite it in ad tone if you like, and approve before anything is rendered.",
     waitingNote: "Waits until the translation is ready.",
     needsInputNote: "Check the translation below and click Create videos.",
@@ -34,7 +34,7 @@ export const translateStepMeta: Record<TranslateStepKey, StepMeta> = {
   captions: {
     number: 4,
     title: "Captions and 9:16",
-    service: config.services.captions,
+    service: config.stepLabels.captions,
     description: "The translated video gets TikTok-style captions and the vertical 9:16 format, one file per language.",
     waitingNote: "Waits for your approval.",
     doneLabel: "Videos ready",

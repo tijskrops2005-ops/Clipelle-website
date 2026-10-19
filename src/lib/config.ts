@@ -12,8 +12,8 @@ export const config = {
   /** Placeholder clip served from /public while no real final-edit output exists. */
   demoVideoUrl: "/demo/sample-video.mp4",
   /**
-   * Provider behind each step. Shown only as the small mono label on step cards
-   * and in Settings, so a provider can be swapped without touching screens.
+   * Provider behind each step. Internal only: shown on the /dev test pages, never to
+   * customers. Customer screens use stepLabels below.
    */
   services: {
     script: "Claude",
@@ -22,6 +22,20 @@ export const config = {
     finalEdit: "Shotstack",
     translate: "HeyGen",
     captions: "Shotstack",
+  },
+  /**
+   * Generic step descriptors for the mono micro-label on step cards and in explainers.
+   * Never a provider name: customers see what a step does, not who runs it.
+   */
+  stepLabels: {
+    script: "AI script",
+    productClip: "AI product footage",
+    presenter: "AI presenter",
+    finalEdit: "Captions, music and 9:16",
+    upload: "Secure upload",
+    translate: "AI translation",
+    review: "Your review",
+    captions: "Captions and 9:16",
   },
   /** Hard limits shown to the user before anything is uploaded. */
   limits: {
@@ -35,5 +49,5 @@ export const config = {
    * Shown as a checkbox; without it no translation starts.
    */
   rightsConfirmationText:
-    "Ik heb de rechten op deze video en toestemming van de spreker voor het gebruik van zijn of haar stem en gezicht.",
+    "I own the rights to this video and have the speaker's permission to use their voice and face.",
 } as const;

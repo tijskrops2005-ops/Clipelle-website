@@ -152,7 +152,7 @@ export function ReviewPanel({
           </p>
           {pendingEstimate !== null ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-ink">Claude rewrite ≈ ${pendingEstimate.toFixed(3)}. Continue?</span>
+              <span className="text-sm text-ink">AI rewrite ≈ ${pendingEstimate.toFixed(3)}. Continue?</span>
               <Button size="sm" onClick={rewrite} disabled={rewriting !== null || approving}>
                 <Check className="size-4" aria-hidden />
                 Confirm

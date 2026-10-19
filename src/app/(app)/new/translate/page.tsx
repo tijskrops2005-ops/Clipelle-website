@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import { config } from "@/lib/config";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TranslateForm } from "@/components/translate/TranslateForm";
 
 export const metadata: Metadata = { title: "Translate a video" };
 
 const afterwards = [
-  { n: 1, title: "Translate", text: `${config.services.translate} translates speech, voice and lip movements.` },
+  { n: 1, title: "Translate", text: "AI translates the speech and matches voice and lip movements." },
   { n: 2, title: "Review", text: "You check every line next to the original and approve." },
-  { n: 3, title: "Captions and 9:16", text: `${config.services.captions} adds captions and the vertical format.` },
+  { n: 3, title: "Captions and 9:16", text: "Captions and the vertical format are added automatically." },
 ];
 
 export default function NewTranslatePage() {

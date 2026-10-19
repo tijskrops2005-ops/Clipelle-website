@@ -47,7 +47,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <p className="label-mono px-1 text-muted">{`${config.services.productClip} · ${config.services.presenter} · ${config.services.finalEdit}`}</p>
+      <p className="label-mono px-1 text-muted">{config.tagline}</p>
     </aside>
   );
 }

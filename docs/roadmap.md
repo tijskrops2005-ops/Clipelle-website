@@ -114,7 +114,7 @@ Datum onderzoek: 19 oktober 2026, actuele officiële documentatie (bronnen per o
 
 **Doel:** de gebruiker uploadt een bestaande video (eigen opname, eerdere advertentie, presentatorclip) en krijgt dezelfde video terug in een andere taal: vertaalde tekst, een stem die op de spreker lijkt, mondbewegingen die kloppen, ondertitels, 9:16. De gebruiker mag elke video gebruiken die hij zelf aanlevert; rechten op het beeldmateriaal en de stem liggen bij hem. Watermerken verwijderen bouwen we niet.
 
-**Verplichte bevestiging bij het uploaden.** Voordat een vertaling start, vinkt de gebruiker aan: *"Ik heb de rechten op deze video en toestemming van de spreker voor het gebruik van zijn of haar stem en gezicht."* Zonder vinkje geen vertaling: de knop blijft uitgeschakeld en de server weigert het verzoek als de bevestiging ontbreekt. De bevestiging wordt met tijdstip bij het project opgeslagen. Deze regel staat ook in `CLAUDE.md`.
+**Verplichte bevestiging bij het uploaden.** Voordat een vertaling start, vinkt de gebruiker aan (de app is Engelstalig): *"I own the rights to this video and have the speaker's permission to use their voice and face."* Zonder vinkje geen vertaling: de knop blijft uitgeschakeld en de server weigert het verzoek als de bevestiging ontbreekt. De bevestiging wordt met tijdstip bij het project opgeslagen. Deze regel staat ook in `CLAUDE.md`.
 
 ```
 Upload + rechtenbevestiging ─→ Vertalen (tekst + stem + lipsync) ─→ Correctie door gebruiker ─→ Ondertitels + 9:16 ─→ (optioneel) Verbetering ─→ Download
