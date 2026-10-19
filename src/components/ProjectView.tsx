@@ -81,14 +81,14 @@ export function ProjectView({ id }: { id: string }) {
 }
 
 function pipelineSummary(project: Project) {
-  const done = (["vmake", "heygen", "veed"] as const).filter(
+  const done = (["productClip", "presenter", "finalEdit"] as const).filter(
     (k) => project.steps[k].status === "completed",
   ).length;
   switch (project.status) {
     case "completed":
       return "All three steps finished. Your video is ready on the right.";
     case "failed": {
-      const failed = (["vmake", "heygen", "veed"] as const).find(
+      const failed = (["productClip", "presenter", "finalEdit"] as const).find(
         (k) => project.steps[k].status === "failed",
       );
       return failed
@@ -134,7 +134,7 @@ function ResultCard({ project }: { project: Project }) {
             className="mx-auto w-full max-w-xs"
           />
           <p className="text-[13px] leading-relaxed text-muted">
-            This clip is a stand-in. The real ad arrives here once VEED is connected.
+            This clip is a stand-in. The real ad arrives here once the final edit is connected.
           </p>
           <div className="grid gap-3">
             <Button href={project.finalVideoUrl} variant="accent" size="lg" download>
@@ -172,7 +172,7 @@ function ResultCard({ project }: { project: Project }) {
           </div>
         </div>
         <ul className="space-y-2">
-          {(["vmake", "heygen", "veed"] as const).map((k) => (
+          {(["productClip", "presenter", "finalEdit"] as const).map((k) => (
             <li key={k} className="flex items-center justify-between text-sm">
               <span className="text-ink">
                 {stepMeta[k].number}. {stepMeta[k].title}

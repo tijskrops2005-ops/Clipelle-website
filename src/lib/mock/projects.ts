@@ -3,7 +3,7 @@ import type { Project } from "@/lib/types";
 
 /**
  * MOCK DATA — simulated projects for the frontend skeleton (Stage 4).
- * Nothing here comes from Vmake, HeyGen or VEED. Replaced by real storage in Stage 8.
+ * Nothing here comes from a real service. Replaced by real storage in Stage 8.
  */
 export const mockProjects: Project[] = [
   {
@@ -18,17 +18,17 @@ export const mockProjects: Project[] = [
       "Tired of dull skin? Meet Glow — the serum that brightens in two weeks. Tap to shop.",
     status: "completed",
     steps: {
-      vmake: {
+      productClip: {
         status: "completed",
         startedAt: "2026-10-16T09:02:00Z",
         finishedAt: "2026-10-16T09:06:30Z",
       },
-      heygen: {
+      presenter: {
         status: "completed",
         startedAt: "2026-10-16T09:02:00Z",
         finishedAt: "2026-10-16T09:08:10Z",
       },
-      veed: {
+      finalEdit: {
         status: "completed",
         startedAt: "2026-10-16T09:08:15Z",
         finishedAt: "2026-10-16T09:12:40Z",
@@ -46,13 +46,13 @@ export const mockProjects: Project[] = [
     imageUrls: [],
     status: "processing",
     steps: {
-      vmake: {
+      productClip: {
         status: "completed",
         startedAt: "2026-10-18T07:40:00Z",
         finishedAt: "2026-10-18T07:44:20Z",
       },
-      heygen: { status: "processing", startedAt: "2026-10-18T07:40:00Z" },
-      veed: { status: "waiting" },
+      presenter: { status: "processing", startedAt: "2026-10-18T07:40:00Z" },
+      finalEdit: { status: "waiting" },
     },
     createdAt: "2026-10-18T07:39:00Z",
   },
@@ -64,19 +64,19 @@ export const mockProjects: Project[] = [
     imageUrls: [],
     status: "failed",
     steps: {
-      vmake: {
+      productClip: {
         status: "completed",
         startedAt: "2026-10-15T14:00:00Z",
         finishedAt: "2026-10-15T14:05:00Z",
       },
-      heygen: {
+      presenter: {
         status: "failed",
         startedAt: "2026-10-15T14:00:00Z",
         finishedAt: "2026-10-15T14:03:00Z",
         error:
           "The presenter video could not be generated because the script was empty. Add a script and retry.",
       },
-      veed: { status: "waiting" },
+      finalEdit: { status: "waiting" },
     },
     createdAt: "2026-10-15T13:58:00Z",
   },
@@ -88,17 +88,17 @@ export const mockProjects: Project[] = [
     imageUrls: [],
     status: "completed",
     steps: {
-      vmake: {
+      productClip: {
         status: "completed",
         startedAt: "2026-10-12T10:00:00Z",
         finishedAt: "2026-10-12T10:04:00Z",
       },
-      heygen: {
+      presenter: {
         status: "completed",
         startedAt: "2026-10-12T10:00:00Z",
         finishedAt: "2026-10-12T10:07:00Z",
       },
-      veed: {
+      finalEdit: {
         status: "completed",
         startedAt: "2026-10-12T10:07:05Z",
         finishedAt: "2026-10-12T10:11:00Z",
@@ -115,9 +115,9 @@ export const mockProjects: Project[] = [
     imageUrls: [],
     status: "draft",
     steps: {
-      vmake: { status: "waiting" },
-      heygen: { status: "waiting" },
-      veed: { status: "waiting" },
+      productClip: { status: "waiting" },
+      presenter: { status: "waiting" },
+      finalEdit: { status: "waiting" },
     },
     createdAt: "2026-10-11T18:20:00Z",
   },

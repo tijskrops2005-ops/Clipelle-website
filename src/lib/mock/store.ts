@@ -9,7 +9,8 @@ import { mockProjects } from "./projects";
  * localStorage so a demo project survives a page refresh. Stage 8 replaces this
  * with a real database behind the same functions.
  */
-const STORAGE_KEY = "reelay.demo.projects.v1";
+// v2: step keys were renamed from provider names to step names; v1 entries are ignored.
+const STORAGE_KEY = "reelay.demo.projects.v2";
 
 type Listener = () => void;
 

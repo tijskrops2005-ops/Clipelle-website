@@ -119,7 +119,7 @@ src/
 Core data model (start here, extend only when needed):
 
 - `Project`: id, name, productName, productUrl?, description, imageUrls[], script?, status (`draft | processing | completed | failed`), steps, finalVideoUrl?, createdAt.
-- `steps`: keyed by generic step names, each with status (`waiting | processing | completed | failed`), startedAt?, finishedAt?, error?, outputUrl?, externalJobId?, attempt?. The mock currently uses the keys `vmake | heygen | veed`; when Stage 7 starts, rename them to `script | productClip | presenter | finalEdit` (one focused change) so the keys describe the step, not the provider.
+- `steps`: keyed by generic step names (`productClip | presenter | finalEdit`; `script` joins when the orchestrator runs it as its own step), each with status (`waiting | processing | completed | failed`), startedAt?, finishedAt?, error?, outputUrl?, externalJobId?, attempt?. Keys describe the step, never the provider; the provider label per step comes from `config.services`.
 
 ## Non-negotiable rules
 

@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/ui/Badge";
 type StepCardProps = {
   number: number;
   title: string;
-  /** Service name, rendered as a mono micro-label: "Vmake", "HeyGen", "VEED". */
+  /** Provider name from config.services, rendered as a mono micro-label. */
   service: string;
   description: string;
   /** Shown as a muted inner panel: an illustration (dashboard) or live status details (project page). */

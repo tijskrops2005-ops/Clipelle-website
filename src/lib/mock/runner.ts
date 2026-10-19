@@ -7,24 +7,24 @@ import { getProjectsSnapshot, subscribeToProjects, updateProject } from "./store
 /**
  * SIMULATED WORKFLOW RUNNER — demo only.
  * Advances processing projects on a timer so the UI can show the full flow:
- * Vmake and HeyGen run in parallel, VEED starts when both are done.
+ * Product clip and presenter run in parallel, the final edit starts when both are done.
  * Stage 8 replaces this with the real orchestrator (server-side, webhooks/polling).
  *
  * Testing hook: a project whose name or product name contains "fail"
- * fails at the HeyGen step on its first attempt. Retry succeeds.
+ * fails at the presenter step on its first attempt. Retry succeeds.
  */
 const DURATION_MS: Record<StepKey, number> = {
-  vmake: 7_000,
-  heygen: 11_000,
-  veed: 8_000,
+  productClip: 7_000,
+  presenter: 11_000,
+  finalEdit: 8_000,
 };
 
 const FAIL_MESSAGE =
   "The presenter video could not be generated. The script was rejected by the voice service. Check the script for unsupported characters and try again.";
 
 function shouldFail(project: Project, step: StepKey) {
-  if (step !== "heygen") return false;
-  const attempt = project.steps.heygen.attempt ?? 1;
+  if (step !== "presenter") return false;
+  const attempt = project.steps.presenter.attempt ?? 1;
   const haystack = `${project.name} ${project.productName}`.toLowerCase();
   return attempt === 1 && haystack.includes("fail");
 }
@@ -36,7 +36,7 @@ function tick() {
   for (const project of getProjectsSnapshot()) {
     if (project.status !== "processing") continue;
 
-    for (const key of ["vmake", "heygen", "veed"] as const) {
+    for (const key of ["productClip", "presenter", "finalEdit"] as const) {
       const step = project.steps[key];
       if (step.status !== "processing") continue;
 
@@ -70,7 +70,7 @@ function tick() {
           ...p.steps,
           [key]: { ...p.steps[key], status: "completed" as const, finishedAt: nowIso, outputUrl: config.demoVideoUrl },
         };
-        const finished = key === "veed";
+        const finished = key === "finalEdit";
         return {
           ...p,
           steps,
@@ -80,18 +80,18 @@ function tick() {
       });
     }
 
-    // VEED starts only when both inputs are ready.
+    // The final edit starts only when both inputs are ready.
     const latest = getProjectsSnapshot().find((p) => p.id === project.id);
     if (
       latest &&
       latest.status === "processing" &&
-      latest.steps.vmake.status === "completed" &&
-      latest.steps.heygen.status === "completed" &&
-      latest.steps.veed.status === "waiting"
+      latest.steps.productClip.status === "completed" &&
+      latest.steps.presenter.status === "completed" &&
+      latest.steps.finalEdit.status === "waiting"
     ) {
       updateProject(latest.id, (p) => ({
         ...p,
-        steps: { ...p.steps, veed: { status: "processing", startedAt: nowIso, attempt: 1 } },
+        steps: { ...p.steps, finalEdit: { status: "processing", startedAt: nowIso, attempt: 1 } },
       }));
     }
   }

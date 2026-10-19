@@ -16,7 +16,7 @@ export function ProjectTile({ project }: { project: Project }) {
     >
       <div className="relative aspect-[9/16] overflow-hidden rounded-tile bg-surface-muted shadow-card transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-card-hover">
         {/* Poster: the first product image, or a curated gradient.
-            Real poster frames arrive with VEED output (Stage 7). */}
+            Real poster frames arrive with the final-edit output (Stage 8). */}
         <Poster
           seed={project.id}
           monogram={project.productName.charAt(0)}

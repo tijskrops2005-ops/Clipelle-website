@@ -1,5 +1,6 @@
 "use client";
 
+import { config } from "@/lib/config";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
@@ -107,7 +108,7 @@ export function MobileNav() {
               })}
             </nav>
 
-            <p className="label-mono mt-auto text-muted">Vmake · HeyGen · VEED</p>
+            <p className="label-mono mt-auto text-muted">{`${config.services.productClip} · ${config.services.presenter} · ${config.services.finalEdit}`}</p>
           </div>
         </div>
       )}

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
+import { config } from "@/lib/config";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ProjectForm } from "@/components/ProjectForm";
 
 export const metadata: Metadata = { title: "New video" };
 
 const afterwards = [
-  { n: 1, title: "Product clip", text: "Vmake animates your product photos." },
-  { n: 2, title: "AI presenter", text: "HeyGen speaks the script on camera." },
-  { n: 3, title: "Final ad", text: "VEED combines both into a 9:16 video." },
+  { n: 1, title: "Product clip", text: `${config.services.productClip} animates your product photos.` },
+  { n: 2, title: "AI presenter", text: `${config.services.presenter} speaks the script on camera.` },
+  { n: 3, title: "Final edit", text: `${config.services.finalEdit} combines both into a 9:16 video.` },
 ];
 
 export default function NewVideoPage() {

@@ -1,10 +1,14 @@
-/** Status of one pipeline step (Vmake, HeyGen or VEED). */
+/** Status of one pipeline step. */
 export type StepStatus = "waiting" | "processing" | "completed" | "failed";
 
 /** Overall status of a project. */
 export type ProjectStatus = "draft" | "processing" | "completed" | "failed";
 
-export type StepKey = "vmake" | "heygen" | "veed";
+/**
+ * Steps of the ad workflow, named after what they do, not after the provider
+ * (the provider behind each step is in config.services and can be swapped).
+ */
+export type StepKey = "productClip" | "presenter" | "finalEdit";
 
 export interface Step {
   status: StepStatus;

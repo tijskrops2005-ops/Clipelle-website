@@ -3,13 +3,13 @@
 import type { Project } from "@/lib/types";
 import { PipelineStep } from "@/components/pipeline/PipelineStep";
 
-/** Vmake and HeyGen side by side (they run in parallel), VEED below (it needs both). */
+/** Product clip and presenter side by side (they run in parallel), final edit below (it needs both). */
 export function Pipeline({ project }: { project: Project }) {
   return (
     <div>
       <div className="grid gap-5 md:grid-cols-2 md:gap-6">
-        <PipelineStep project={project} stepKey="vmake" />
-        <PipelineStep project={project} stepKey="heygen" />
+        <PipelineStep project={project} stepKey="productClip" />
+        <PipelineStep project={project} stepKey="presenter" />
       </div>
 
       {/* connector */}
@@ -19,7 +19,7 @@ export function Pipeline({ project }: { project: Project }) {
         <span className="h-6 w-px bg-divider" />
       </div>
 
-      <PipelineStep project={project} stepKey="veed" />
+      <PipelineStep project={project} stepKey="finalEdit" />
     </div>
   );
 }

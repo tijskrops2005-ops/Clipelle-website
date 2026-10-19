@@ -1,3 +1,4 @@
+import { config } from "@/lib/config";
 import { SectionHeader } from "@/components/ui/PageHeader";
 import { StepCard } from "@/components/StepCard";
 import {
@@ -19,22 +20,22 @@ export function HowItWorks() {
       <div className="grid gap-5 md:grid-cols-3 md:gap-6">
         <StepCard
           number={1}
-          title="Product video"
-          service="Vmake"
+          title="Product clip"
+          service={config.services.productClip}
           description="Your product photos become a short, polished clip that shows the product in motion."
           panel={<ProductVideoIllustration className={illustrationClass} />}
         />
         <StepCard
           number={2}
           title="AI presenter"
-          service="HeyGen"
+          service={config.services.presenter}
           description="Your script is spoken by a realistic presenter, with natural voice and lip-sync."
           panel={<PresenterIllustration className={illustrationClass} />}
         />
         <StepCard
           number={3}
-          title="Final video"
-          service="VEED"
+          title="Final edit"
+          service={config.services.finalEdit}
           description="Both clips are combined into a 9:16 ad with captions, music and a call to action."
           panel={<FinalVideoIllustration className={illustrationClass} />}
         />

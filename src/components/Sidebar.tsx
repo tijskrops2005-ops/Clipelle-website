@@ -1,5 +1,6 @@
 "use client";
 
+import { config } from "@/lib/config";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -46,7 +47,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <p className="label-mono px-1 text-muted">Vmake · HeyGen · VEED</p>
+      <p className="label-mono px-1 text-muted">{`${config.services.productClip} · ${config.services.presenter} · ${config.services.finalEdit}`}</p>
     </aside>
   );
 }

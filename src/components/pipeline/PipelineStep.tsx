@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Clock, RotateCcw } from "lucide-react";
+import { config } from "@/lib/config";
 import type { Project, Step, StepKey } from "@/lib/types";
 import { retryStep } from "@/lib/mock/runner";
 import { Button } from "@/components/ui/Button";
@@ -11,26 +12,26 @@ import { StepCard } from "@/components/StepCard";
 type Meta = { number: number; title: string; service: string; description: string; waitingNote: string };
 
 export const stepMeta: Record<StepKey, Meta> = {
-  vmake: {
+  productClip: {
     number: 1,
-    title: "Product video",
-    service: "Vmake",
+    title: "Product clip",
+    service: config.services.productClip,
     description: "Turns your product photos into a short clip that shows the product in motion.",
     waitingNote: "Queued. Starts as soon as the workflow begins.",
   },
-  heygen: {
+  presenter: {
     number: 2,
     title: "AI presenter",
-    service: "HeyGen",
+    service: config.services.presenter,
     description: "A realistic presenter speaks your script on camera, with natural voice and lip-sync.",
-    waitingNote: "Queued. Runs at the same time as the product video.",
+    waitingNote: "Queued. Runs at the same time as the product clip.",
   },
-  veed: {
+  finalEdit: {
     number: 3,
-    title: "Final video",
-    service: "VEED",
+    title: "Final edit",
+    service: config.services.finalEdit,
     description: "Combines both clips into a 9:16 ad with captions, music and a call to action.",
-    waitingNote: "Waits until the product video and the presenter are both ready.",
+    waitingNote: "Waits until the product clip and the presenter are both ready.",
   },
 };
 
@@ -109,7 +110,7 @@ export function PipelineStep({
       panel = (
         <div className="flex items-center gap-4">
           <div className="relative aspect-[9/16] w-14 shrink-0 overflow-hidden rounded-[8px] shadow-card">
-            <Poster seed={`${project.id}:${stepKey}`} imageUrl={stepKey === "vmake" ? project.imageUrls[0] : undefined} />
+            <Poster seed={`${project.id}:${stepKey}`} imageUrl={stepKey === "productClip" ? project.imageUrls[0] : undefined} />
           </div>
           <div className="min-w-0">
             <p className="text-sm font-medium text-ink">Clip ready</p>

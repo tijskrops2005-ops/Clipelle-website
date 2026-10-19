@@ -105,9 +105,9 @@ export function ProjectForm() {
         script: values.script.trim() || undefined,
         status: "processing",
         steps: {
-          vmake: { status: "processing", startedAt: now },
-          heygen: { status: "processing", startedAt: now },
-          veed: { status: "waiting" },
+          productClip: { status: "processing", startedAt: now },
+          presenter: { status: "processing", startedAt: now },
+          finalEdit: { status: "waiting" },
         },
         createdAt: now,
       };

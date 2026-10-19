@@ -16,7 +16,7 @@ const later = [
   {
     icon: KeyRound,
     title: "Connected services",
-    text: "Status of the Vmake, HeyGen and VEED connections. Keys stay on the server, never in the browser.",
+    text: "Status of the connections per step (script, product clip, presenter, final edit). Keys stay on the server, never in the browser.",
   },
   {
     icon: Settings2,
