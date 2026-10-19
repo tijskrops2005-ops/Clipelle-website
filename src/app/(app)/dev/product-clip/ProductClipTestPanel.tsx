@@ -14,10 +14,14 @@ import { SpendMeter } from "@/components/dev/SpendMeter";
 /* Mirrors constants in src/lib/services/productClip.ts (server-only). */
 const EXPAND_USD = 0.04;
 const CLIP_SECONDS = 5;
-type ModelKey = "minimax" | "kling";
+type ModelKey = "minimax" | "minimax_turbo" | "kling_standard" | "kling";
+const PROMO = new Date() < new Date("2026-11-01");
+/* Mirrors CLIP_MODELS in src/lib/services/productClip.ts (server-only). Prices: fal.ai, 2026-10-19. */
 const MODELS: Record<ModelKey, { label: string; blurb: string; usdPerSecond: number }> = {
-  minimax: { label: "MiniMax H3 Max", blurb: "Cheapest, fast, photo as first frame, 768p.", usdPerSecond: new Date() < new Date("2026-11-01") ? 0.052 : 0.08 },
-  kling: { label: "Kling v3 Pro", blurb: "Higher fidelity to product details, audio off.", usdPerSecond: 0.112 },
+  minimax: { label: "MiniMax H3 Max (768p)", blurb: "Cheapest, fast, photo as first frame. Upscaled to 1080p in the edit.", usdPerSecond: PROMO ? 0.052 : 0.08 },
+  minimax_turbo: { label: "MiniMax H3 Max Turbo (1080p)", blurb: "Tuned for prompt adherence and aesthetics, native 1080p. Default until 31 October.", usdPerSecond: PROMO ? 0.052 : 0.08 },
+  kling_standard: { label: "Kling v3 Standard", blurb: "Strong product fidelity at 1080p, audio off. Default from 1 November.", usdPerSecond: 0.084 },
+  kling: { label: "Kling v3 Pro", blurb: "Highest fidelity, audio off. Costs more without a visible gain for a still product.", usdPerSecond: 0.112 },
 };
 
 type Analysis = {
@@ -50,7 +54,7 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
   const [expandState, setExpandState] = useState<"idle" | "confirm" | "running">("idle");
   const [expandCost, setExpandCost] = useState<number | null>(null);
 
-  const [model, setModel] = useState<ModelKey>("minimax");
+  const [model, setModel] = useState<ModelKey>(PROMO ? "minimax_turbo" : "kling_standard");
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [phase, setPhase] = useState<Phase>("idle");
   const [run, setRun] = useState<Run | null>(null);

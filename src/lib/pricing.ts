@@ -18,8 +18,10 @@ export const PRICING = {
   expandUsd: 0.04,
   /** fal.ai image-to-video, USD per generated second. MiniMax promo ends 2026-10-31. */
   clipUsdPerSecond: {
-    minimax: { until: "2026-10-31", promo: 0.052, regular: 0.08 },
-    kling: { until: null, promo: 0.112, regular: 0.112 },
+    minimax: { until: "2026-10-31", promo: 0.052, regular: 0.08 }, // H3 Max, 768p
+    minimax_turbo: { until: "2026-10-31", promo: 0.052, regular: 0.08 }, // H3 Max Turbo, 1080p
+    kling_standard: { until: null, promo: 0.084, regular: 0.084 },
+    kling: { until: null, promo: 0.112, regular: 0.112 }, // Pro
   },
   clipSeconds: 5,
   /** HeyGen presenter, USD per second of video (enterprise rate card, 1 credit = $0.50). */
@@ -88,5 +90,10 @@ export function formatUsd(n: number) {
   return `$${n.toFixed(2)}`;
 }
 
+/** Agreed in docs/cost-quality.md §12: MiniMax Turbo 1080p during the promo, Kling v3 Standard from 1 November. */
+export function defaultClipModel(at = new Date()): ClipModelKey {
+  return at < new Date("2026-11-01T00:00:00Z") ? "minimax_turbo" : "kling_standard";
+}
+
 /** Defaults the orchestrator uses unless .env.local overrides them (mirrored in src/lib/workflow/settings.ts). */
-export const DEFAULTS = { adSeconds: 30, clipModel: "minimax" as ClipModelKey, engine: "avatar_iv" as PresenterEngine };
+export const DEFAULTS = { adSeconds: 30, clipModel: defaultClipModel(), engine: "avatar_iv" as PresenterEngine, presenterResolution: "1080p" as const };

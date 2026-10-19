@@ -215,7 +215,7 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
       const reserved = await reserveSpend({ service: "heygen", action: "avatar_video", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { engine: cfg.heygenEngine, seconds } });
       try {
         const created = await withRetries("Starting the presenter video", () =>
-          createAvatarVideo({ avatarId: lookId, voiceId, script: script.presenterScript, engine: cfg.heygenEngine, title: `Reelay ${projectId.slice(0, 8)}`, idempotencyKey: reserved.fingerprint }),
+          createAvatarVideo({ avatarId: lookId, voiceId, script: script.presenterScript, engine: cfg.heygenEngine, resolution: cfg.heygenResolution, title: `Reelay ${projectId.slice(0, 8)}`, idempotencyKey: reserved.fingerprint }),
         );
         return { videoId: created.video_id, entryId: reserved.entryId, estimate, stepId: row.id };
       } catch (error) {

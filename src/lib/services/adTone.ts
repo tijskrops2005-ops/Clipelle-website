@@ -2,7 +2,7 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { PRICE_PER_MTOK, SCRIPT_MODEL, tokensToUsd } from "@/lib/services/script";
+import { workflowSettings } from "@/lib/workflow/settings";
 import { languageOf } from "@/lib/languages";
 import type { LanguageCode } from "@/lib/types";
 import { maxCharsForSegment } from "@/lib/translatePricing";
@@ -59,12 +59,28 @@ function requireApiKey() {
   return key;
 }
 
+/** USD per million tokens per model (platform.claude.com/docs/en/about-claude/pricing, 2026-10-19). */
+const PRICES: Record<string, { input: number; output: number; cacheRead: number }> = {
+  "claude-opus-5-5": { input: 4, output: 20, cacheRead: 0.2 },
+  "claude-sonnet-5-5": { input: 2, output: 10, cacheRead: 0.1 },
+  "claude-haiku-5-5": { input: 0.1, output: 0.5, cacheRead: 0.01 },
+};
+
+function priceFor(model: string) {
+  return PRICES[model] ?? PRICES["claude-opus-5-5"];
+}
+
+function usdFor(model: string, inputTokens: number, outputTokens: number, cacheReadTokens = 0) {
+  const p = priceFor(model);
+  return Math.round(((inputTokens * p.input + outputTokens * p.output + cacheReadTokens * p.cacheRead) / 1_000_000) * 10_000) / 10_000;
+}
+
 /** Rough pre-call estimate: ~4 characters per token, output about the size of the input text. */
 export function estimateRewriteUsd(segments: ToneSegment[]) {
   const chars = segments.reduce((n, s) => n + s.text.length + s.original.length, 0) + 1200;
   const inputTokens = Math.ceil(chars / 4);
   const outputTokens = Math.ceil(segments.reduce((n, s) => n + s.text.length, 0) / 4) + 60;
-  return Math.round(((inputTokens * PRICE_PER_MTOK.input + outputTokens * PRICE_PER_MTOK.output) / 1_000_000) * 10_000) / 10_000;
+  return usdFor(workflowSettings.rewriteModel, inputTokens, outputTokens);
 }
 
 const SYSTEM = `You rewrite subtitle fragments of a short product video into direct, confident advertising copy.
@@ -86,7 +102,7 @@ export async function rewriteSegmentsInAdTone(input: { segments: ToneSegment[]; 
   });
 
   const response = await client.messages.parse({
-    model: SCRIPT_MODEL,
+    model: workflowSettings.rewriteModel,
     max_tokens: 2500,
     system: SYSTEM,
     messages: [{ role: "user", content: `Target language: ${target}\nFragments:\n\n${lines.join("\n\n")}` }],
@@ -94,7 +110,7 @@ export async function rewriteSegmentsInAdTone(input: { segments: ToneSegment[]; 
   });
 
   const usage = { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens };
-  const costUsd = tokensToUsd(usage.inputTokens, usage.outputTokens, response.usage.cache_read_input_tokens ?? 0);
+  const costUsd = usdFor(workflowSettings.rewriteModel, usage.inputTokens, usage.outputTokens, response.usage.cache_read_input_tokens ?? 0);
 
   if (response.stop_reason === "refusal") throw new AdToneError("Claude declined to rewrite this text.", "refusal", 422);
   const parsed = response.parsed_output;

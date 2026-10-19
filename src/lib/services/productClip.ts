@@ -19,7 +19,7 @@ const RATIO = 9 / 16;
 
 /* ---------- models ---------- */
 
-export type ClipModelKey = "minimax" | "kling";
+export type ClipModelKey = "minimax" | "minimax_turbo" | "kling_standard" | "kling";
 
 export type ClipModel = {
   key: ClipModelKey;
@@ -31,9 +31,17 @@ export type ClipModel = {
   buildInput: (args: { imageUrl: string; prompt: string; durationSeconds: number }) => Record<string, unknown>;
 };
 
-/** MiniMax H3 Max promo price ($0.052/s at 768p) runs until 2026-10-31; $0.08/s after. */
+/** MiniMax promo prices (35% off) run until 2026-10-31. Verified on fal.ai on 2026-10-19. */
+function promo(now: Date, promoRate: number, regular: number) {
+  return now < new Date("2026-11-01T00:00:00Z") ? promoRate : regular;
+}
+/** H3 Max at 768p: $0.052/s promo, $0.08/s after. */
 function minimaxUsdPerSecond(now = new Date()) {
-  return now < new Date("2026-11-01T00:00:00Z") ? 0.052 : 0.08;
+  return promo(now, 0.052, 0.08);
+}
+/** H3 Max Turbo at 1080p: $0.052/s promo, $0.08/s after. */
+function minimaxTurboUsdPerSecond(now = new Date()) {
+  return promo(now, 0.052, 0.08);
 }
 
 export const CLIP_MODELS: Record<ClipModelKey, ClipModel> = {
@@ -51,11 +59,39 @@ export const CLIP_MODELS: Record<ClipModelKey, ClipModel> = {
       prompt_expansion_mode: "balanced",
     }),
   },
+  minimax_turbo: {
+    key: "minimax_turbo",
+    endpointId: "minimax/h3-max-turbo/image-to-video",
+    label: "MiniMax H3 Max Turbo (1080p)",
+    blurb: "Tuned for prompt adherence and aesthetics, native 1080p. Default until 31 October.",
+    usdPerSecond: minimaxTurboUsdPerSecond(),
+    buildInput: ({ imageUrl, prompt, durationSeconds }) => ({
+      prompt,
+      image_url: imageUrl,
+      duration: durationSeconds,
+      resolution: "1080P",
+      prompt_expansion_mode: "balanced",
+    }),
+  },
+  kling_standard: {
+    key: "kling_standard",
+    endpointId: "fal-ai/kling-video/v3/standard/image-to-video",
+    label: "Kling v3 Standard",
+    blurb: "Strong product fidelity at 1080p, audio off. Default from 1 November.",
+    usdPerSecond: 0.084,
+    buildInput: ({ imageUrl, prompt, durationSeconds }) => ({
+      prompt,
+      start_image_url: imageUrl,
+      duration: String(durationSeconds),
+      generate_audio: false,
+      negative_prompt: "blur, distort, low quality, extra text, changed logo, warped label",
+    }),
+  },
   kling: {
     key: "kling",
     endpointId: "fal-ai/kling-video/v3/pro/image-to-video",
     label: "Kling v3 Pro",
-    blurb: "Higher fidelity to product details. Audio off to save cost.",
+    blurb: "Highest fidelity, audio off. Costs more without a visible gain for a still product.",
     usdPerSecond: 0.112,
     buildInput: ({ imageUrl, prompt, durationSeconds }) => ({
       prompt,

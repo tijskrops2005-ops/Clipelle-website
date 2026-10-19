@@ -253,6 +253,8 @@ export type CreateAvatarVideoInput = {
   voiceId: string;
   script: string;
   engine: HeygenEngine;
+  /** 720p for cheap tests, 1080p for customer videos (same price per second). */
+  resolution?: "720p" | "1080p";
   title?: string;
   /** Stable key so a retried identical request is not created twice by HeyGen (24 h). */
   idempotencyKey?: string;
@@ -268,7 +270,7 @@ export async function createAvatarVideo(input: CreateAvatarVideoInput) {
       voice_id: input.voiceId,
       script: input.script,
       aspect_ratio: "9:16",
-      resolution: "720p",
+      resolution: input.resolution ?? "720p",
       engine: { type: input.engine },
       title: input.title ?? "Reelay test",
     }),

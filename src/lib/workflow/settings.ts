@@ -1,6 +1,12 @@
 import "server-only";
-import type { ClipModelKey } from "@/lib/services/productClip";
+import { CLIP_MODELS, type ClipModelKey } from "@/lib/services/productClip";
 import type { HeygenEngine } from "@/lib/services/heygen";
+import { defaultClipModel } from "@/lib/pricing";
+
+function clipModelFromEnv(): ClipModelKey {
+  const raw = process.env.PRODUCT_CLIP_MODEL?.trim();
+  return raw && raw in CLIP_MODELS ? (raw as ClipModelKey) : defaultClipModel();
+}
 
 /**
  * Orchestrator defaults, overridable from .env.local without code changes.
@@ -12,8 +18,12 @@ export const workflowSettings = {
   /** HeyGen voice id. Empty: the look's default voice, else the first public voice. */
   heygenVoiceId: process.env.HEYGEN_DEFAULT_VOICE_ID?.trim() || "",
   heygenEngine: (process.env.HEYGEN_DEFAULT_ENGINE?.trim() === "avatar_iii" ? "avatar_iii" : "avatar_iv") as HeygenEngine,
-  /** fal.ai image-to-video model for the product clip. */
-  clipModel: (process.env.PRODUCT_CLIP_MODEL?.trim() === "kling" ? "kling" : "minimax") as ClipModelKey,
+  /** Presenter resolution; no surcharge for 1080p in HeyGen's API rate card (docs/cost-quality.md §4). */
+  heygenResolution: (process.env.HEYGEN_DEFAULT_RESOLUTION?.trim() === "720p" ? "720p" : "1080p") as "720p" | "1080p",
+  /** fal.ai image-to-video model for the product clip (docs/cost-quality.md §2). Empty: date-based default. */
+  clipModel: clipModelFromEnv(),
+  /** Claude model for the ad-tone rewrite of subtitles (docs/cost-quality.md §1). */
+  rewriteModel: process.env.REWRITE_MODEL?.trim() || "claude-sonnet-5-5",
   /** Planned ad length in seconds (script planning). Mirrors DEFAULTS in src/lib/pricing.ts. */
   adSeconds: Number(process.env.AD_TARGET_SECONDS) > 0 ? Number(process.env.AD_TARGET_SECONDS) : 30,
   /** Language of the generated script (BCP-47). */

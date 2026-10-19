@@ -2,7 +2,7 @@
 
 Peildatum: 19 oktober 2026. Alle prijzen zijn de gepubliceerde lijstprijzen van de leveranciers op die dag (bronnen per onderdeel). Rekenbasis: één video van 30 seconden. Shotstack telt overal als $0,10 per video, ook als de sandbox gratis rendert. HeyGen-tarieven zijn de enterprise-tarieven (1 credit = $0,50); de self-serve tabel staat achter een login en het helpcenter noemt ongeveer $4 per minuut voor 1080p, dus de presentator kan in de praktijk iets duurder uitvallen (zie §8).
 
-**Status: analyse en voorstel. Er is niets gebouwd; de standaardinstellingen in `src/lib/workflow/settings.ts` veranderen pas na akkoord.**
+**Status: akkoord op 19 oktober 2026. De standaardinstellingen uit §12 staan in `src/lib/workflow/settings.ts` en `.env.example`; de Turbo- en Standard-varianten staan op `/dev/product-clip`.**
 
 ## 1. Script (Claude)
 
@@ -154,7 +154,7 @@ Alles via de bestaande testpagina's, met de cost guard aan (per actie $1,50), me
 
 Beoordeel per paar op drie vragen: zou ik dit als advertentie durven inzetten, is het product herkenbaar en onvervormd, en zie ik dat het AI is. Noteer per test de werkelijke kosten uit de spend meter naast de schatting; die vergelijking zegt ook meteen of HeyGen self-serve $3 of $4 per minuut rekent.
 
-Voor stap 2 moeten de Turbo- en Standard-varianten eerst als keuze op de testpagina komen (klein werk, zonder betaalde aanroep); dat doe ik samen met het doorvoeren van de standaardinstellingen zodra je akkoord geeft.
+De vier clipmodellen staan als keuze op `/dev/product-clip`; de test kan draaien zodra er saldo op fal.ai en HeyGen staat.
 
 ## 12. Voorgestelde standaardinstellingen (na akkoord)
 
