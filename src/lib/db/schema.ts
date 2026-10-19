@@ -175,7 +175,7 @@ export const translations = pgTable(
   (t) => [uniqueIndex("translations_project_language_idx").on(t.projectId, t.language)],
 ).enableRLS();
 
-/** The cost guard's log, moved from .reelay/cost-log.jsonl (same fields). */
+/** The cost guard's log (src/lib/services/costGuard.ts). One row per paid action. */
 export const costEntries = pgTable(
   "cost_entries",
   {

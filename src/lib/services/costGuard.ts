@@ -1,17 +1,17 @@
 /**
  * Central cost guard for every paid API call (HeyGen, Claude, fal.ai, Shotstack production).
- * Server-only by usage: imported from route handlers and services, never from client code.
+ * Server-only by usage: imported from route handlers, services and the orchestrator, never from client code.
  *
  * - Per-action and per-day limits from .env.local (MAX_COST_PER_ACTION_USD, MAX_DAILY_SPEND_USD).
- * - Append-only JSON-lines log (development: a file under .reelay/; Stage 8: the database).
+ * - Every paid action is a row in `cost_entries` (Stage 8; before that a JSON-lines file under .reelay/).
  * - Duplicate protection: the same request fingerprint within 10 minutes is not run again.
  *
  * Usage: `const { entryId } = await reserveSpend(...)` BEFORE the paid call; it throws CostGuardError
  * when a limit or duplicate blocks it. Then `await settleSpend(entryId, { status, actualUsd })`.
  */
 import { createHash } from "node:crypto";
-import { appendFile, mkdir, readFile } from "node:fs/promises";
-import path from "node:path";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { costEntries, db, type CostEntryRow } from "@/lib/db";
 
 export type CostService = "heygen" | "anthropic" | "fal" | "shotstack";
 export type EntryStatus = "started" | "completed" | "failed";
@@ -26,12 +26,10 @@ export type CostEntry = {
   fingerprint: string;
   startedAt: string;
   finishedAt: string | null;
+  projectId?: string | null;
+  stepId?: string | null;
   meta?: Record<string, unknown>;
 };
-
-type LogLine =
-  | { kind: "start"; entry: CostEntry }
-  | { kind: "settle"; id: string; status: Exclude<EntryStatus, "started">; actualUsd: number | null; finishedAt: string; meta?: Record<string, unknown> };
 
 export const DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
 
@@ -63,54 +61,35 @@ export function costLimits() {
   };
 }
 
-function logPath() {
-  return process.env.COST_LOG_PATH?.trim() || path.join(process.cwd(), ".reelay", "cost-log.jsonl");
+/* ---------- storage (table cost_entries) ---------- */
+
+function toEntry(r: CostEntryRow): CostEntry {
+  return {
+    id: r.id,
+    service: r.service,
+    action: r.action,
+    estimatedUsd: r.estimatedUsd,
+    actualUsd: r.actualUsd,
+    status: r.status,
+    fingerprint: r.fingerprint,
+    startedAt: r.startedAt.toISOString(),
+    finishedAt: r.finishedAt ? r.finishedAt.toISOString() : null,
+    projectId: r.projectId,
+    stepId: r.stepId,
+    meta: r.meta ?? undefined,
+  };
 }
 
-/* ---------- storage (append-only JSON lines) ---------- */
-
-async function readLines(): Promise<LogLine[]> {
-  try {
-    const raw = await readFile(logPath(), "utf8");
-    return raw
-      .split("\n")
-      .filter(Boolean)
-      .map((line) => {
-        try {
-          return JSON.parse(line) as LogLine;
-        } catch {
-          return null;
-        }
-      })
-      .filter((l): l is LogLine => l !== null);
-  } catch {
-    return [];
-  }
+/** Newest first. */
+export async function listEntries(limit = 200): Promise<CostEntry[]> {
+  const rows = await db().select().from(costEntries).orderBy(desc(costEntries.startedAt)).limit(limit);
+  return rows.map(toEntry);
 }
 
-async function appendLine(line: LogLine) {
-  const file = logPath();
-  await mkdir(path.dirname(file), { recursive: true });
-  await appendFile(file, JSON.stringify(line) + "\n", "utf8");
-}
-
-/** Folds the log into the current state of every entry, newest first. */
-export async function listEntries(): Promise<CostEntry[]> {
-  const entries = new Map<string, CostEntry>();
-  for (const line of await readLines()) {
-    if (line.kind === "start") {
-      entries.set(line.entry.id, { ...line.entry });
-    } else {
-      const e = entries.get(line.id);
-      if (e) {
-        e.status = line.status;
-        e.actualUsd = line.actualUsd;
-        e.finishedAt = line.finishedAt;
-        if (line.meta) e.meta = { ...e.meta, ...line.meta };
-      }
-    }
-  }
-  return [...entries.values()].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+/** Entries of one project, newest first. */
+export async function listProjectEntries(projectId: string): Promise<CostEntry[]> {
+  const rows = await db().select().from(costEntries).where(eq(costEntries.projectId, projectId)).orderBy(desc(costEntries.startedAt));
+  return rows.map(toEntry);
 }
 
 /* ---------- helpers ---------- */
@@ -123,20 +102,21 @@ export function todayKey(date = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
-function isToday(iso: string) {
-  return todayKey(new Date(iso)) === todayKey();
+function startOfToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 /** What an entry counts for: the real cost when known, otherwise the estimate (reserved). Failed = what it actually cost (usually 0). */
-function chargeOf(e: CostEntry) {
+function chargeOf(e: Pick<CostEntry, "status" | "actualUsd" | "estimatedUsd">) {
   if (e.status === "failed") return e.actualUsd ?? 0;
   return e.actualUsd ?? e.estimatedUsd;
 }
 
-/** Stable fingerprint of a request's meaningful inputs. */
 export function fingerprintOf(service: CostService, action: string, input: unknown) {
-  const canonical = JSON.stringify(input, Object.keys(input as object).sort());
-  return createHash("sha256").update(`${service}:${action}:${canonical}`).digest("hex");
+  const raw = JSON.stringify({ service, action, input });
+  return createHash("sha256").update(raw).digest("hex");
 }
 
 export const round4 = (n: number) => Math.round(n * 10_000) / 10_000;
@@ -155,8 +135,7 @@ export type SpendSummary = {
 
 export async function getSpendSummary(recentLimit = 10): Promise<SpendSummary> {
   const limits = costLimits();
-  const entries = await listEntries();
-  const today = entries.filter((e) => isToday(e.startedAt));
+  const today = await db().select().from(costEntries).where(gte(costEntries.startedAt, startOfToday()));
   const spent = round4(today.reduce((sum, e) => sum + chargeOf(e), 0));
   return {
     day: todayKey(),
@@ -165,7 +144,7 @@ export async function getSpendSummary(recentLimit = 10): Promise<SpendSummary> {
     maxDailyUsd: limits.maxDailyUsd,
     maxPerActionUsd: limits.maxPerActionUsd,
     actionsToday: today.length,
-    recent: entries.slice(0, recentLimit),
+    recent: await listEntries(recentLimit),
   };
 }
 
@@ -175,6 +154,9 @@ export type ReserveInput = {
   estimatedUsd: number;
   /** The request inputs that make two calls "the same". */
   fingerprintInput: unknown;
+  /** Set by the orchestrator so costs add up per project and step. */
+  projectId?: string | null;
+  stepId?: string | null;
   meta?: Record<string, unknown>;
 };
 
@@ -203,34 +185,37 @@ export async function reserveSpend(input: ReserveInput): Promise<{ entryId: stri
   }
 
   const fingerprint = fingerprintOf(input.service, input.action, input.fingerprintInput);
-  const cutoff = Date.now() - DUPLICATE_WINDOW_MS;
-  const entries = await listEntries();
-  const twin = entries.find(
-    (e) => e.fingerprint === fingerprint && e.status !== "failed" && Date.parse(e.startedAt) >= cutoff,
-  );
+  const cutoff = new Date(Date.now() - DUPLICATE_WINDOW_MS);
+  const [twin] = await db()
+    .select()
+    .from(costEntries)
+    .where(and(eq(costEntries.fingerprint, fingerprint), gte(costEntries.startedAt, cutoff), sql`${costEntries.status} <> 'failed'`))
+    .orderBy(desc(costEntries.startedAt))
+    .limit(1);
   if (twin) {
-    const minutes = Math.max(1, Math.round((Date.now() - Date.parse(twin.startedAt)) / 60_000));
+    const minutes = Math.max(1, Math.round((Date.now() - twin.startedAt.getTime()) / 60_000));
     throw new CostGuardError(
       `The same request was already ${twin.status === "started" ? "started" : "completed"} ${minutes} minute${minutes === 1 ? "" : "s"} ago. Change the input, or wait up to 10 minutes to run it again.`,
       "duplicate",
-      { previousEntryId: twin.id, startedAt: twin.startedAt },
+      { previousEntryId: twin.id, startedAt: twin.startedAt.toISOString() },
     );
   }
 
-  const entry: CostEntry = {
-    id: crypto.randomUUID(),
-    service: input.service,
-    action: input.action,
-    estimatedUsd: estimated,
-    actualUsd: null,
-    status: "started",
-    fingerprint,
-    startedAt: new Date().toISOString(),
-    finishedAt: null,
-    meta: input.meta,
-  };
-  await appendLine({ kind: "start", entry });
-  return { entryId: entry.id, fingerprint, summary };
+  const [row] = await db()
+    .insert(costEntries)
+    .values({
+      service: input.service,
+      action: input.action,
+      estimatedUsd: estimated,
+      actualUsd: null,
+      status: "started",
+      fingerprint,
+      projectId: input.projectId ?? null,
+      stepId: input.stepId ?? null,
+      meta: input.meta ?? null,
+    })
+    .returning({ id: costEntries.id });
+  return { entryId: row.id, fingerprint, summary };
 }
 
 /** Records the outcome. `actualUsd` null keeps the estimate as the charge. */
@@ -239,14 +224,16 @@ export async function settleSpend(
   outcome: { status: "completed" | "failed"; actualUsd?: number | null; meta?: Record<string, unknown> },
 ) {
   if (!entryId) return;
-  await appendLine({
-    kind: "settle",
-    id: entryId,
-    status: outcome.status,
-    actualUsd: outcome.actualUsd == null ? null : round4(outcome.actualUsd),
-    finishedAt: new Date().toISOString(),
-    meta: outcome.meta,
-  });
+  const [current] = await db().select({ meta: costEntries.meta }).from(costEntries).where(eq(costEntries.id, entryId)).limit(1);
+  await db()
+    .update(costEntries)
+    .set({
+      status: outcome.status,
+      actualUsd: outcome.actualUsd == null ? null : round4(outcome.actualUsd),
+      finishedAt: new Date(),
+      ...(outcome.meta ? { meta: { ...(current?.meta ?? {}), ...outcome.meta } } : {}),
+    })
+    .where(eq(costEntries.id, entryId));
 }
 
 /** Maps a CostGuardError to a JSON response; other errors pass through as null. */
