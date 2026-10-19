@@ -1,7 +1,7 @@
 import "server-only";
 import { CLIP_MODELS, type ClipModelKey } from "@/lib/services/productClip";
 import type { HeygenEngine } from "@/lib/services/heygen";
-import { defaultClipModel } from "@/lib/pricing";
+import { DEFAULT_AD_SECONDS, defaultClipModel, isAdLength } from "@/lib/pricing";
 
 function clipModelFromEnv(): ClipModelKey {
   const raw = process.env.PRODUCT_CLIP_MODEL?.trim();
@@ -24,8 +24,8 @@ export const workflowSettings = {
   clipModel: clipModelFromEnv(),
   /** Claude model for the ad-tone rewrite of subtitles (docs/cost-quality.md §1). */
   rewriteModel: process.env.REWRITE_MODEL?.trim() || "claude-sonnet-5-5",
-  /** Planned ad length in seconds (script planning). Mirrors DEFAULTS in src/lib/pricing.ts. */
-  adSeconds: Number(process.env.AD_TARGET_SECONDS) > 0 ? Number(process.env.AD_TARGET_SECONDS) : 30,
+  /** Fallback ad length for projects without a chosen length; must be one of AD_LENGTHS (src/lib/pricing.ts). */
+  adSeconds: isAdLength(Number(process.env.AD_TARGET_SECONDS)) ? Number(process.env.AD_TARGET_SECONDS) : DEFAULT_AD_SECONDS,
   /** Language of the generated script (BCP-47). */
   adLanguage: process.env.AD_LANGUAGE?.trim() || "en",
   /** How long we keep polling a provider before giving up (minutes). */

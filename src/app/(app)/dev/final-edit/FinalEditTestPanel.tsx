@@ -5,8 +5,11 @@ import { Clapperboard, Download, ExternalLink, Loader2 } from "lucide-react";
 import { Badge, StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Field } from "@/components/ui/Field";
+import { Field, controlClass, controlStateClass } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { cn } from "@/lib/utils";
+import { AD_LENGTHS, DEFAULT_AD_SECONDS, captionsUsd, formatUsd as usd, type AdLength } from "@/lib/pricing";
+import { adLayout, describeLayout } from "@/lib/adLayout";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { SpendMeter } from "@/components/dev/SpendMeter";
 
@@ -23,7 +26,7 @@ type Run = {
   status?: string;
   edit?: unknown;
   assets?: { presenter: string; product: string; music: string; presenterSeconds: number };
-  meta?: { totalSeconds: number };
+  meta?: { totalSeconds: number; filled?: boolean; layout?: { scenes: { kind: string; start: number; length: number }[]; overlays: unknown[] } };
   entryId?: string;
 };
 
@@ -37,6 +40,7 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
   const [presenterUrl, setPresenterUrl] = useState("");
   const [productClipUrl, setProductClipUrl] = useState("");
   const [musicUrl, setMusicUrl] = useState("");
+  const [seconds, setSeconds] = useState<AdLength>(DEFAULT_AD_SECONDS);
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [run, setRun] = useState<Run | null>(null);
@@ -102,7 +106,7 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
       const res = await fetch("/api/dev/final-edit/render", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hook, benefits, headline, cta, presenterUrl, productClipUrl, musicUrl, confirmed: true }),
+        body: JSON.stringify({ hook, benefits, headline, cta, presenterUrl, productClipUrl, musicUrl, seconds, confirmed: true }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
@@ -118,7 +122,8 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
   }
 
   const busy = phase === "uploading" || phase === "polling";
-  const valid = hook.trim() && benefits.every((b) => b.trim()) && headline.trim() && cta.trim();
+  const valid = hook.trim() && headline.trim() && cta.trim();
+  const layout = adLayout(seconds);
 
   return (
     <div className="grid gap-8 xl:grid-cols-5">
@@ -162,9 +167,21 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
             <Field id="productClipUrl" label="Product clip URL" optional hint="e.g. the clip from the product clip test."><Input id="productClipUrl" value={productClipUrl} onChange={(e) => setProductClipUrl(e.target.value)} disabled={busy} placeholder="demo: sample-video.mp4" /></Field>
             <Field id="musicUrl" label="Music URL" optional hint="MP3 or WAV. Later: a track from the HeyGen music catalogue."><Input id="musicUrl" value={musicUrl} onChange={(e) => setMusicUrl(e.target.value)} disabled={busy} placeholder="demo: sample-music.mp3" /></Field>
 
+            <Field id="seconds" label="Ad length" hint="The presenter runs the whole ad. A shorter presenter clip (the 9-second demo) is repeated to reach this length, so the layout can be checked for free.">
+              <select id="seconds" value={seconds} onChange={(e) => setSeconds(Number(e.target.value) as AdLength)} disabled={busy} className={cn(controlClass, controlStateClass(false), "h-11")}>
+                {AD_LENGTHS.map((len) => (
+                  <option key={len} value={len}>{len} seconds</option>
+                ))}
+              </select>
+            </Field>
             <div className="rounded-[14px] bg-surface-muted p-4 text-sm">
-              <p className="font-semibold text-ink">{env === "stage" ? "Sandbox render: free, with a Shotstack watermark." : "Production render: about $0.10 per 30-second ad (pay-as-you-go)."}</p>
-              <p className="mt-1 text-[13px] text-muted">Output 1080×1920, 25 fps. Structure: hook 2 s → presenter → product clip with benefits 4 s → end card 3 s. Captions are transcribed from the presenter audio.</p>
+              <p className="font-semibold text-ink">{env === "stage" ? "Sandbox render: free, with a Shotstack watermark." : `Production render: about ${usd(captionsUsd(seconds))} for ${seconds} s (pay-as-you-go).`}</p>
+              <p className="mt-1 text-[13px] text-muted">Output 1080×1920, 25 fps. Presenter as the base for the full length, captions transcribed from its audio, music softly underneath. On screen:</p>
+              <ul className="mt-2 space-y-0.5 text-[13px] text-muted">
+                {describeLayout(layout).map((line) => (
+                  <li key={line} className="flex gap-2"><span className="label-mono shrink-0 text-ink">{line.split(":")[0]}</span><span>{line.split(": ")[1]}</span></li>
+                ))}
+              </ul>
             </div>
             {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 

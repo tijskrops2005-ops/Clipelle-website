@@ -1,4 +1,5 @@
 import "server-only";
+import { adLayout, END_CARD_SECONDS, HOOK_SECONDS } from "@/lib/adLayout";
 
 /**
  * Step 5 — final edit via Shotstack (server-only).
@@ -111,122 +112,152 @@ export async function ingestFromUrl(url: string): Promise<{ url: string; width?:
 
 export type AdEditInput = {
   presenterUrl: string;
-  /** Seconds of the presenter clip to use. */
+  /** Real length of the presenter video: it is the base of the whole ad. */
   presenterSeconds: number;
   productClipUrl: string;
-  /** Seconds available in the product clip (it is reused for hook and benefits). */
+  /** Seconds available in the one product clip (reused for every overlay). */
   productClipSeconds: number;
   musicUrl?: string;
   hook: string;
-  benefits: [string, string, string];
+  /** Up to three; empty for a 10-second ad. */
+  benefits: string[];
   offer: { headline: string; cta: string };
   /** Brand colours (hex). Defaults match the app tokens. */
   colors?: { accent?: string; ink?: string; light?: string };
   captionLanguage?: string;
+  /**
+   * Dev/sandbox only: when the presenter clip is shorter than this, repeat it back to back
+   * to reach this length, so a 60-second layout can be checked with a 9-second demo clip.
+   */
+  fillToSeconds?: number;
 };
 
-export const HOOK_SECONDS = 2;
-export const BENEFITS_SECONDS = 4;
-export const END_CARD_SECONDS = 3;
+export { HOOK_SECONDS, END_CARD_SECONDS };
 
-/** Builds the Shotstack Edit JSON for a vertical ad. Pure function: easy to test and version. */
+/**
+ * Builds the Shotstack Edit JSON for a vertical ad. Pure function: easy to test and version.
+ * The presenter video runs the whole ad (picture and voice); the product clip is laid over it
+ * at the moments from adLayout(); hook text in the first 2 s, benefits on the first overlay,
+ * end card in the last 2 s; captions over everything; music softly underneath.
+ */
 export function buildAdEdit(input: AdEditInput) {
   const accent = input.colors?.accent ?? "#D43F1B";
   const ink = input.colors?.ink ?? "#111114";
   const light = input.colors?.light ?? "#FFFFFF";
 
-  const P = Math.max(1, input.presenterSeconds);
-  const hookStart = 0;
-  const presenterStart = HOOK_SECONDS;
-  const benefitsStart = presenterStart + P;
-  const benefitsLen = Math.min(BENEFITS_SECONDS, Math.max(2, input.productClipSeconds - HOOK_SECONDS));
-  const endStart = benefitsStart + benefitsLen;
-  const total = endStart + END_CARD_SECONDS;
+  const presenterLen = Math.max(1, Math.round(input.presenterSeconds * 10) / 10);
+  const fill = input.fillToSeconds && input.fillToSeconds > presenterLen ? Math.round(input.fillToSeconds * 10) / 10 : null;
+  const total = fill ?? presenterLen;
+  const layout = adLayout(total, Math.max(1, input.productClipSeconds));
+  const endStart = Math.round((total - END_CARD_SECONDS) * 10) / 10;
+  const benefits = input.benefits.map((b) => b.trim()).filter(Boolean).slice(0, 3);
 
   const textBase = {
     font: { family: "Roboto", size: 64, weight: 900, color: light, opacity: 1 },
     align: { horizontal: "center", vertical: "middle" },
     stroke: { width: 0, color: ink, opacity: 1 },
   };
-
-  const captions = {
-    clips: [
-      {
-        asset: {
-          type: "rich-caption",
-          src: "alias://presenter",
-          font: { family: "Roboto", size: 62, color: light, opacity: 1, weight: 900 },
-          style: { textTransform: "uppercase" },
-          stroke: { width: 7, color: ink, opacity: 1 },
-          animation: { style: "pop" },
-          active: { font: { color: light, background: accent }, stroke: { width: 7, color: ink, opacity: 1 } },
-          border: { width: 0, color: ink, opacity: 1, radius: 16 },
-          padding: { top: 6, right: 10, bottom: 6, left: 10 },
-          align: { vertical: "middle" },
-        },
-        start: presenterStart,
-        length: P,
-        width: 900,
-        height: 500,
-        offset: { x: 0, y: -0.18 },
-      },
-    ],
+  const captionStyle = {
+    type: "rich-caption",
+    font: { family: "Roboto", size: 62, color: light, opacity: 1, weight: 900 },
+    style: { textTransform: "uppercase" },
+    stroke: { width: 7, color: ink, opacity: 1 },
+    animation: { style: "pop" },
+    active: { font: { color: light, background: accent }, stroke: { width: 7, color: ink, opacity: 1 } },
+    border: { width: 0, color: ink, opacity: 1, radius: 16 },
+    padding: { top: 6, right: 10, bottom: 6, left: 10 },
+    align: { vertical: "middle" },
   };
 
+  // Base: the presenter for the full length (repeated copies only in fill mode, for sandbox tests).
+  const copies = fill ? Math.ceil(total / presenterLen) : 1;
+  const presenterClips = Array.from({ length: copies }, (_, i) => {
+    const start = Math.round(i * presenterLen * 10) / 10;
+    const length = Math.min(presenterLen, Math.round((total - start) * 10) / 10);
+    return { alias: i === 0 ? "presenter" : `presenter${i + 1}`, asset: { type: "video", src: input.presenterUrl, volume: 1, trim: 0 }, start, length, fit: "crop" };
+  });
+  const captions = {
+    clips: presenterClips.map((c) => ({
+      asset: { ...captionStyle, src: `alias://${c.alias}` },
+      start: c.start,
+      length: c.length,
+      width: 900,
+      height: 500,
+      offset: { x: 0, y: -0.18 },
+    })),
+  };
+
+  // The one product clip, laid over the presenter at fixed moments; different pieces, alternating zoom.
+  const productOverlays = {
+    clips: layout.overlays.map((o) => ({
+      asset: { type: "video", src: input.productClipUrl, volume: 0, trim: o.trim },
+      start: o.start,
+      length: o.length,
+      fit: "crop",
+      effect: o.effect,
+      transition: { in: "fadeFast", out: "fadeFast" },
+    })),
+  };
+
+  const benefitsOverlay = layout.overlays.find((o) => o.withBenefits);
   const overlays = {
     clips: [
-      // Hook: big sticker-style text in the first 2 seconds.
+      // Hook: big sticker-style text in the first 2 seconds, upper half so the presenter's face stays visible.
       {
         asset: {
           ...textBase,
           type: "rich-text",
           text: input.hook,
-          font: { ...textBase.font, size: 118 },
+          font: { ...textBase.font, size: 110 },
           style: { lineHeight: 1.05, textTransform: "uppercase" },
           background: { color: accent, opacity: 1, borderRadius: 28, wrap: true },
           padding: 26,
           shadow: { offsetX: 0, offsetY: 10, blur: 22, color: ink, opacity: 0.45 },
           animation: { preset: "ascend", duration: 0.6, style: "word" },
         },
-        start: hookStart,
+        start: 0,
         length: HOOK_SECONDS,
         width: 940,
-        height: 900,
-        offset: { x: 0, y: 0.06 },
+        height: 700,
+        offset: { x: 0, y: 0.22 },
         transition: { out: "fadeFast" },
       },
-      // Benefits: three staggered pills on the product footage, stacked in the lower half.
-      ...input.benefits.map((benefit, i) => ({
-        asset: {
-          ...textBase,
-          type: "rich-text",
-          text: benefit,
-          font: { ...textBase.font, size: 56, weight: 800 },
-          background: { color: ink, opacity: 0.85, borderRadius: 999, wrap: true },
-          padding: 24,
-          animation: { preset: "ascend", duration: 0.5, style: "word" },
-        },
-        start: benefitsStart + 0.3 + i * 0.9,
-        length: benefitsLen - 0.3 - i * 0.9,
-        width: 940,
-        height: 150,
-        offset: { x: 0, y: -0.02 - i * 0.11 },
-      })),
-      // End card headline + CTA pill.
+      // Benefits: staggered pills on the first product overlay, upper half (captions live in the lower third).
+      ...(benefitsOverlay
+        ? benefits.map((benefit, i) => ({
+            asset: {
+              ...textBase,
+              type: "rich-text",
+              text: benefit,
+              font: { ...textBase.font, size: 56, weight: 800 },
+              background: { color: ink, opacity: 0.85, borderRadius: 999, wrap: true },
+              padding: 24,
+              animation: { preset: "ascend", duration: 0.5, style: "word" },
+            },
+            start: Math.round((benefitsOverlay.start + 0.3 + i * 0.7) * 10) / 10,
+            length: Math.round((benefitsOverlay.length - 0.3 - i * 0.7) * 10) / 10,
+            width: 940,
+            height: 150,
+            offset: { x: 0, y: 0.34 - i * 0.11 },
+          }))
+        : []),
+      // End card in the last 2 s: headline and CTA pill over the presenter, who speaks the CTA.
       {
         asset: {
           ...textBase,
           type: "rich-text",
           text: input.offer.headline,
-          font: { ...textBase.font, size: 88 },
+          font: { ...textBase.font, size: 80 },
           style: { lineHeight: 1.08 },
-          animation: { preset: "fadeIn", duration: 0.5 },
+          background: { color: ink, opacity: 0.75, borderRadius: 24, wrap: true },
+          padding: 28,
+          animation: { preset: "fadeIn", duration: 0.4 },
         },
         start: endStart,
         length: END_CARD_SECONDS,
-        width: 900,
-        height: 520,
-        offset: { x: 0, y: 0.1 },
+        width: 940,
+        height: 420,
+        offset: { x: 0, y: 0.24 },
       },
       {
         asset: {
@@ -236,25 +267,18 @@ export function buildAdEdit(input: AdEditInput) {
           font: { ...textBase.font, size: 56, weight: 800 },
           background: { color: accent, opacity: 1, borderRadius: 999, wrap: true },
           padding: 30,
-          animation: { preset: "ascend", duration: 0.6, style: "word" },
+          animation: { preset: "ascend", duration: 0.5, style: "word" },
         },
-        start: endStart + 0.35,
-        length: END_CARD_SECONDS - 0.35,
+        start: Math.round((endStart + 0.3) * 10) / 10,
+        length: Math.round((END_CARD_SECONDS - 0.3) * 10) / 10,
         width: 900,
         height: 160,
-        offset: { x: 0, y: -0.14 },
+        offset: { x: 0, y: 0.02 },
       },
     ],
   };
 
-  const video = {
-    clips: [
-      { asset: { type: "video", src: input.productClipUrl, volume: 0, trim: 0 }, start: hookStart, length: HOOK_SECONDS, fit: "crop", effect: "zoomInSlow" },
-      { alias: "presenter", asset: { type: "video", src: input.presenterUrl, volume: 1, trim: 0 }, start: presenterStart, length: P, fit: "crop", transition: { in: "fadeFast" } },
-      { asset: { type: "video", src: input.productClipUrl, volume: 0, trim: 0 }, start: benefitsStart, length: benefitsLen, fit: "crop", effect: "zoomOutSlow", transition: { in: "fadeFast", out: "fadeFast" } },
-    ],
-  };
-
+  const presenter = { clips: presenterClips };
   const music = input.musicUrl
     ? { clips: [{ asset: { type: "audio", src: input.musicUrl, volume: 0.18, effect: "fadeInFadeOut" }, start: 0, length: total }] }
     : null;
@@ -262,10 +286,10 @@ export function buildAdEdit(input: AdEditInput) {
   return {
     timeline: {
       background: ink,
-      tracks: [captions, overlays, video, ...(music ? [music] : [])],
+      tracks: [captions, overlays, productOverlays, presenter, ...(music ? [music] : [])],
     },
     output: { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 },
-    meta: { totalSeconds: total, presenterStart, benefitsStart, endStart },
+    meta: { totalSeconds: total, endStart, layout, filled: Boolean(fill) },
   };
 }
 

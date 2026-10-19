@@ -2,7 +2,8 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { CLAUDE_MODELS, claudeTokensToUsd, isScriptModel, type ScriptModel } from "@/lib/pricing";
+import { CLAUDE_MODELS, claudeTokensToUsd, isScriptModel, maxSpokenWords, type ScriptModel } from "@/lib/pricing";
+import { adLayout, describeLayout, WORDS_PER_SECOND } from "@/lib/adLayout";
 
 /**
  * Step 2 — hook + script for one ad angle, via the Claude API (server-only).
@@ -26,17 +27,17 @@ export const AdScriptSchema = z.object({
   }),
   presenterScript: z
     .string()
-    .describe("Everything the presenter says, in natural spoken sentences: starts with hook.spoken, ends with a call to action, within the word limit"),
+    .describe("Everything the presenter says during the whole ad, in natural spoken sentences: starts with hook.spoken, ends with a call to action, within the word limit"),
   scenes: z
     .array(
       z.object({
         kind: z.enum(["hook", "presenter", "product", "benefits", "offer"]),
-        seconds: z.number().describe("Planned duration of this scene in seconds"),
+        seconds: z.number().describe("Duration of this scene in seconds, from the scene plan"),
         onScreenText: z.string().nullable().describe("Short overlay text for this scene, or null"),
       }),
     )
-    .describe("Scenes in order: hook, presenter, product, benefits, offer"),
-  benefits: z.array(z.string()).describe("Exactly three benefits, max 6 words each"),
+    .describe("What is on screen while the presenter keeps talking, exactly as in the scene plan; the seconds add up to the ad length"),
+  benefits: z.array(z.string()).describe("Three benefits, max 6 words each; an empty list for a 10-second ad"),
   offer: z.object({
     headline: z.string().describe("End card headline, max 8 words"),
     cta: z.string().describe("Call to action button text, max 4 words"),
@@ -81,15 +82,9 @@ export type ScriptOutcome = ScriptResult & {
   warning?: string;
 };
 
-/** Spoken pace the prompt and the limit are built on. */
-export const WORDS_PER_SECOND = 2.5;
-/** Share of the ad in which the presenter speaks (the rest is hook, product footage, benefits and the end card). */
-export const PRESENTER_SHARE = 0.45;
-
-/** Presenter scene length and the hard word limit for it, derived from the ad length. */
+/** The presenter talks the whole ad: spoken seconds = ad length, word limit from src/lib/pricing.ts. */
 export function presenterBudget(targetSeconds: number) {
-  const presenterSeconds = Math.round(targetSeconds * PRESENTER_SHARE);
-  return { presenterSeconds, maxWords: Math.round(presenterSeconds * WORDS_PER_SECOND) };
+  return { presenterSeconds: targetSeconds, maxWords: maxSpokenWords(targetSeconds) };
 }
 
 export function countWords(text: string) {
@@ -163,14 +158,15 @@ Rules:
 - Angle "problem_solution": open with the problem the viewer recognises, then present the product as the fix.
 - Write for speech, not for reading: short sentences, concrete words, no hype adjectives, no emojis.
 - Only use facts that are in the product information. Never invent prices, discounts, ingredients, certifications or reviews. If the information is thin, stay general rather than making claims up.
-- The presenter speaks about ${WORDS_PER_SECOND} words per second. presenterScript must stay within the word limit given in the request; count the words before you answer. This is a hard limit, not a target.
-- presenterScript starts with the spoken hook and ends with a call to action: the last sentence tells the viewer what to do next (for example tap the link, shop now, order today). The call to action is mandatory.
+- The presenter talks during the whole ad, also while the product clip, the benefits and the end card are on screen. presenterScript covers the full length.
+- The presenter speaks about ${WORDS_PER_SECOND} words per second. presenterScript must stay within the word limit given in the request; aim about one second (2-3 words) under it and count the words before you answer. This is a hard limit, not a target.
+- Order of the spoken text: the hook, the problem or a moment the viewer recognises, the product, the benefits, and as the last sentence a call to action that tells the viewer what to do next (tap the link, shop now, order today). The call to action is mandatory. For a 10-second ad: only hook, product and call to action, and an empty benefits list.
 - hook.spoken and hook.onScreen carry the same message: the on-screen version is the short written form, the spoken version is the same idea said out loud. Do not give them different messages.
-- Scene seconds must add up to the requested total length.
+- scenes describe what is on screen while the presenter keeps talking, not how long the presenter talks. Return the scene plan from the request exactly, in order, with the given seconds; only fill in onScreenText (null where nothing is shown).
 - All text in the requested language.`;
 
 function userPrompt(input: Omit<ScriptInput, "image">) {
-  const { presenterSeconds, maxWords } = presenterBudget(input.targetSeconds);
+  const layout = adLayout(input.targetSeconds);
   const lines = [
     `Product name: ${input.productName}`,
     `Description: ${input.description}`,
@@ -178,8 +174,10 @@ function userPrompt(input: Omit<ScriptInput, "image">) {
     input.hint ? `Extra direction from the seller: ${input.hint}` : null,
     `Angle: ${input.angle}`,
     `Language: ${input.language}`,
-    `Total length: ${input.targetSeconds} seconds (hook 2 s, presenter ${presenterSeconds} s, product ${Math.round(input.targetSeconds * 0.2)} s, benefits ${Math.round(input.targetSeconds * 0.2)} s, offer the rest).`,
-    `Word limit for presenterScript: at most ${maxWords} words (${presenterSeconds} s × ${WORDS_PER_SECOND} words per second). Fewer is fine; more is not.`,
+    `Ad length: ${input.targetSeconds} seconds. The presenter talks for the full ${input.targetSeconds} seconds.`,
+    `Word limit for presenterScript: at most ${layout.maxWords} words (${input.targetSeconds} s × ${WORDS_PER_SECOND} words per second). Aim for ${Math.round(layout.maxWords * 0.85)} to ${layout.maxWords - 2} words so the voice fills the whole ad; more than ${layout.maxWords} is not allowed.`,
+    "Scene plan (what is on screen; the voice continues throughout):",
+    ...describeLayout(layout).map((l) => `- ${l}`),
     "If a product photo is attached, use what you see (colour, shape, packaging) to make the script concrete.",
   ];
   return lines.filter(Boolean).join("\n");

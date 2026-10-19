@@ -112,7 +112,7 @@ export function useProjectsReady(): boolean {
 
 /* ---------- actions ---------- */
 
-export type AdProjectDraft = { name: string; productName: string; productUrl?: string; description: string; script?: string; images: File[] };
+export type AdProjectDraft = { name: string; seconds: number; productName: string; productUrl?: string; description: string; script?: string; images: File[] };
 
 export async function createAdProject(draft: AdProjectDraft): Promise<{ id: string }> {
   if (config.demoMode) {
@@ -122,6 +122,7 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
       id: `prj_${Date.now().toString(36)}`,
       workflow: "ad",
       name: draft.name,
+      seconds: draft.seconds,
       productName: draft.productName,
       productUrl: draft.productUrl,
       description: draft.description,

@@ -51,6 +51,8 @@ interface ProjectBase {
 /** Workflow A: one product → one finished 9:16 ad. */
 export interface AdProject extends ProjectBase {
   workflow: "ad";
+  /** Chosen ad length in seconds (one of AD_LENGTHS). Older projects: undefined = 30. */
+  seconds?: number;
   productName: string;
   productUrl?: string;
   description: string;

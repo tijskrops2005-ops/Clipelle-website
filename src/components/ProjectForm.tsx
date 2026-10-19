@@ -7,7 +7,8 @@ import { config } from "@/lib/config";
 import { createAdProject } from "@/lib/data/client";
 import { useHydrated } from "@/lib/useHydrated";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
-import { DEFAULTS, estimateAdCost, formatUsd } from "@/lib/pricing";
+import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, estimateAdCost, formatUsd, type AdLength } from "@/lib/pricing";
+import { controlClass, controlStateClass } from "@/components/ui/Field";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -71,15 +72,18 @@ export function ProjectForm() {
     description: "",
     script: "",
   });
+  const [seconds, setSeconds] = useState<AdLength>(DEFAULT_AD_SECONDS);
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   const submitLock = useRef(false);
   // Before React is attached a click would submit the form natively and reload the page with nothing saved.
   const hydrated = useHydrated();
-  const estimate = estimateAdCost({ seconds: DEFAULTS.adSeconds, clipModel: DEFAULTS.clipModel, engine: DEFAULTS.engine });
   const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 1.5;
+  const estimateFor = (len: AdLength) => estimateAdCost({ seconds: len, clipModel: DEFAULTS.clipModel, engine: DEFAULTS.engine });
+  const estimate = estimateFor(seconds);
   const overBudget = estimate.total > budget;
+  const lengthsWithinBudget = AD_LENGTHS.filter((len) => estimateFor(len).total <= budget);
 
   function update<K extends keyof Values>(key: K, value: Values[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -104,6 +108,7 @@ export function ProjectForm() {
     try {
       const { id } = await createAdProject({
         name: values.projectName.trim(),
+        seconds,
         productName: values.productName.trim(),
         productUrl: values.productUrl.trim() || undefined,
         description: values.description.trim(),
@@ -223,6 +228,22 @@ export function ProjectForm() {
             />
           </Field>
 
+          <Field id="seconds" label="Video length" hint="The presenter talks the whole video. The estimate below follows your choice.">
+            <select
+              id="seconds"
+              value={seconds}
+              onChange={(e) => setSeconds(Number(e.target.value) as AdLength)}
+              disabled={submitting}
+              className={`${controlClass} ${controlStateClass(false)} h-11`}
+            >
+              {AD_LENGTHS.map((len) => (
+                <option key={len} value={len}>
+                  {len} seconds · about {formatUsd(estimateFor(len).total)}{estimateFor(len).total > budget ? " · over budget" : ""}
+                </option>
+              ))}
+            </select>
+          </Field>
+
           <Field
             id="script"
             label="Script"
@@ -248,8 +269,14 @@ export function ProjectForm() {
             Estimated cost {formatUsd(estimate.total)} · budget {formatUsd(budget)} per video
           </p>
           <p className="text-[13px] text-muted">
-            Script {formatUsd(estimate.parts.script)} · product clip {formatUsd(estimate.parts.clip)} (+{formatUsd(estimate.parts.expand)} if the photo needs expanding) · presenter {formatUsd(estimate.parts.presenter)} · captions and edit {formatUsd(estimate.parts.captions)}. Based on a {DEFAULTS.adSeconds} s ad.
+            Script {formatUsd(estimate.parts.script)} · product clip {formatUsd(estimate.parts.clip)} (+{formatUsd(estimate.parts.expand)} if the photo needs expanding) · presenter {seconds} s {formatUsd(estimate.parts.presenter)} · captions and edit {formatUsd(estimate.parts.captions)}.
           </p>
+          {overBudget && (
+            <p className="mt-1.5 text-[13px] font-medium text-danger">
+              A {seconds}-second video is above the budget, so it cannot start.{" "}
+              {lengthsWithinBudget.length > 0 ? `Choose ${lengthsWithinBudget.join(" or ")} seconds.` : "No length fits the current budget."}
+            </p>
+          )}
         </div>
         <Badge tone={overBudget ? "danger" : "success"}>{overBudget ? "over budget" : "within budget"}</Badge>
       </div>

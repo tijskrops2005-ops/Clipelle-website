@@ -9,7 +9,7 @@ Datum: 18 oktober 2026. Dit document vervangt de keten "Vmake → HeyGen → VEE
 2  Script         hook + script per invalshoek (problem/solution, UGC/testimonial, product demo)
 3  Productclip    B-roll uit de productfoto (9:16, 5–10 s)
 4  Presentator    AI-presentator spreekt het script uit (9:16)
-5  Montage        hook (0–2 s) → presentator → productbeelden → voordelen → aanbod + CTA,
+5  Montage        presentator als basis, hook-tekst (0–2 s), productbeelden + voordelen eroverheen, aanbod + CTA,
                   met ondertitels en muziek, als 9:16 MP4
 6  Resultaat      preview + download
 ```
@@ -31,14 +31,14 @@ Niet gekozen: Vmake (geen productvideo-API) en VEED (geen montage-API). Zie `doc
 
 ## MVP: één product → één complete 9:16-advertentie, één invalshoek
 
-Doel: een gebruiker vult het formulier in, kiest niets extra's, en krijgt één afgeronde advertentie van 20–35 seconden in de invalshoek "problem/solution" met één standaardpresentator en één standaardmuziektrack.
+Doel: een gebruiker vult het formulier in, kiest alleen de lengte (10, 20, 30, 45 of 60 seconden; standaard 30), en krijgt één afgeronde advertentie in de invalshoek "problem/solution" met één standaardpresentator die de hele advertentie doorpraat en één standaardmuziektrack.
 
 | # | Stap | Wat het oplevert | Dienst | Wat Tijs vooraf regelt |
 |---|---|---|---|---|
 | M1 | Script | JSON met `hook`, `scenes[]` (tekst per scène), `benefits[]`, `offer`, `cta`, `presenterScript`; gegenereerd uit naam, beschrijving, URL en de eerste foto (Claude kijkt naar de foto). | Claude API | Anthropic Console-account, tegoed, sleutel `ANTHROPIC_API_KEY`. |
 | M2 | Productclip | 9:16 MP4 van 5–10 s uit de eerste foto, met een prompt afgeleid uit het script. | fal.ai | fal.ai-account, tegoed, sleutel `FAL_KEY`. |
-| M3 | Presentator | 9:16 MP4 waarin de standaardavatar `presenterScript` uitspreekt; SRT-ondertitels meegeleverd. | HeyGen v3 | HeyGen-account, API-credits, sleutel `HEYGEN_API_KEY`, webhook-endpoint geregistreerd. |
-| M4 | Montage | 9:16 MP4: hook-tekst over de productclip (0–2 s), presentator, productclip met voordelen als tekst, eindkaart met aanbod en CTA; ondertitels; muziek eronder. | Shotstack (reserve Creatomate) | Shotstack-account, sandbox-sleutel `SHOTSTACK_API_KEY`; één rechtenvrije muziektrack met licentie in onze opslag. |
+| M3 | Presentator | Eén 9:16 MP4 van de volledige lengte waarin de standaardavatar `presenterScript` uitspreekt (HeyGen: max 5.000 tekens en 30 minuten per video, dus geen splitsing nodig). | HeyGen v3 | HeyGen-account, API-credits, sleutel `HEYGEN_API_KEY`, webhook-endpoint geregistreerd. |
+| M4 | Montage | 9:16 MP4: de presentatorvideo loopt de hele advertentie door als basis (beeld en stem); hook-tekst in beeld in de eerste 2 s; de ene productclip op vaste momenten eroverheen (steeds een ander stuk, afwisselend in- en uitgezoomd) met de voordelen als tekst op de eerste; eindkaart met knop in de laatste 2 s; ondertitels; muziek zacht eronder. Opbouw per lengte in `src/lib/adLayout.ts`. | Shotstack (reserve Creatomate) | Shotstack-account, sandbox-sleutel `SHOTSTACK_API_KEY`; één rechtenvrije muziektrack met licentie in onze opslag. |
 | M5 | Orchestrator | Serverproces dat M1–M4 in volgorde start, status bijhoudt, webhooks en polling afhandelt, elk tussenresultaat naar eigen opslag kopieert, en retry per stap ondersteunt. | Eigen backend (fase 8) | Database en bestandsopslag; keuze en accounts in fase 8. |
 | M6 | UI | Bestaande schermen aangesloten op echte statussen; "Demo mode" uit. | – | – |
 

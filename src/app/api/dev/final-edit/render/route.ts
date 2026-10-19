@@ -3,6 +3,7 @@ import path from "node:path";
 import { buildAdEdit, shotstackEnv, startRender, uploadAsset } from "@/lib/services/finalEdit";
 import { costGuardResponse, reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { devOnly, errorResponse } from "../../_guard";
+import { nearestAdLength } from "@/lib/pricing";
 
 /** Shotstack pay-as-you-go: $10 per 50 minutes of output = $0.20 per minute. */
 const SHOTSTACK_USD_PER_MINUTE = 0.2;
@@ -16,6 +17,8 @@ type Body = {
   productClipUrl?: string;
   musicUrl?: string;
   presenterSeconds?: number;
+  /** Chosen ad length; a shorter presenter clip is repeated to reach it (sandbox check of the layout). */
+  seconds?: number;
   confirmed?: boolean;
 };
 
@@ -43,9 +46,10 @@ export async function POST(request: Request) {
   const benefits = (body.benefits ?? []).map((b) => b.trim()).filter(Boolean);
   const headline = body.headline?.trim();
   const cta = body.cta?.trim();
-  if (!hook || benefits.length !== 3 || !headline || !cta) {
-    return Response.json({ error: "Give a hook, exactly three benefits, a headline and a CTA." }, { status: 400 });
+  if (!hook || benefits.length > 3 || !headline || !cta) {
+    return Response.json({ error: "Give a hook, up to three benefits, a headline and a CTA." }, { status: 400 });
   }
+  const seconds = nearestAdLength(Number(body.seconds) || 30);
 
   try {
     const started = Date.now();
@@ -66,8 +70,9 @@ export async function POST(request: Request) {
       productClipSeconds: product.duration ?? 8,
       musicUrl: music.url,
       hook,
-      benefits: [benefits[0], benefits[1], benefits[2]],
+      benefits,
       offer: { headline, cta },
+      fillToSeconds: seconds,
     });
     // Production renders cost credits: run them through the cost guard. Sandbox renders are free.
     let entryId = "";
@@ -79,7 +84,7 @@ export async function POST(request: Request) {
           action: "render",
           estimatedUsd: estimateUsd,
           fingerprintInput: { hook, benefits, headline, cta, presenter: presenter.url, product: product.url, music: music.url },
-          meta: { totalSeconds: edit.meta.totalSeconds },
+          meta: { totalSeconds: edit.meta.totalSeconds, seconds },
         });
         entryId = reserved.entryId;
       } catch (error) {
@@ -99,6 +104,7 @@ export async function POST(request: Request) {
     return Response.json({
       ...render,
       edit: { timeline: edit.timeline, output: edit.output },
+      meta: edit.meta,
       assets: { presenter: presenter.url, product: product.url, music: music.url, presenterSeconds },
       estimateUsd,
       entryId,

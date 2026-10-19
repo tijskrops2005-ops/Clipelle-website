@@ -53,7 +53,7 @@ async function urlFor(asset: AssetRow | undefined) {
 /** Estimate for one click, with the same numbers the forms show. */
 export function estimateForProject(row: ProjectRow) {
   if (row.workflow === "ad") {
-    return estimateAdCost({ seconds: workflowSettings.adSeconds, clipModel: workflowSettings.clipModel, engine: workflowSettings.heygenEngine }).total;
+    return estimateAdCost({ seconds: (row.input as AdInput).seconds ?? workflowSettings.adSeconds, clipModel: workflowSettings.clipModel, engine: workflowSettings.heygenEngine }).total;
   }
   const input = row.input as TranslateInput;
   return estimateTranslateCost({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }).perLanguageTotal;
@@ -76,6 +76,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       name: row.name,
       status: row.status,
       createdAt: row.createdAt.toISOString(),
+      seconds: input.seconds ?? workflowSettings.adSeconds,
       productName: input.productName,
       productUrl: input.productUrl,
       description: input.description,
@@ -164,7 +165,7 @@ export async function getProjectRow(id: string) {
 
 /* ---------- creation: draft → upload assets → start ---------- */
 
-export type NewAdProject = { name: string; productName: string; productUrl?: string; description: string; script?: string };
+export type NewAdProject = { name: string; seconds: number; productName: string; productUrl?: string; description: string; script?: string };
 export type NewTranslateProject = {
   name: string;
   sourceFileName: string;
@@ -189,7 +190,7 @@ export async function createDraft(input: { workflow: "ad"; ad: NewAdProject } | 
         workflow: "ad",
         name: a.name,
         status: "draft",
-        input: { productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
+        input: { seconds: a.seconds, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
       })
       .returning();
     await d.insert(steps).values(AD_STEPS.map((key) => ({ projectId: row.id, key, status: "waiting" as const })));

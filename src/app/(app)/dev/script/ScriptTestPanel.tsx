@@ -10,7 +10,7 @@ import { Field, controlClass, controlStateClass } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { SpendMeter } from "@/components/dev/SpendMeter";
-import { CLAUDE_MODELS, type ScriptModel } from "@/lib/pricing";
+import { AD_LENGTHS, CLAUDE_MODELS, DEFAULT_AD_SECONDS, type AdLength, type ScriptModel } from "@/lib/pricing";
 
 type Estimate = { model: ScriptModel; inputTokens: number; outputTokens: number; costUsd: number };
 type Scene = { kind: string; seconds: number; onScreenText: string | null };
@@ -61,7 +61,7 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
   const [hint, setHint] = useState("");
   const [model, setModel] = useState<ScriptModel>("claude-opus-5-5");
   const [language, setLanguage] = useState("en");
-  const [targetSeconds, setTargetSeconds] = useState(30);
+  const [targetSeconds, setTargetSeconds] = useState<AdLength>(DEFAULT_AD_SECONDS);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
 
   const [estimate, setEstimate] = useState<Estimate | null>(null);
@@ -221,10 +221,12 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
                 </select>
               </Field>
               <Field id="length" label="Ad length">
-                <select id="length" value={targetSeconds} onChange={(e) => setTargetSeconds(Number(e.target.value))} disabled={busy} className={cn(controlClass, controlStateClass(false), "h-11")}>
-                  <option value={20}>20 seconds</option>
-                  <option value={30}>30 seconds</option>
-                  <option value={45}>45 seconds</option>
+                <select id="length" value={targetSeconds} onChange={(e) => setTargetSeconds(Number(e.target.value) as AdLength)} disabled={busy} className={cn(controlClass, controlStateClass(false), "h-11")}>
+                  {AD_LENGTHS.map((len) => (
+                    <option key={len} value={len}>
+                      {len} seconds · max {Math.floor(len * 2.5)} words
+                    </option>
+                  ))}
                 </select>
               </Field>
             </div>
@@ -286,7 +288,7 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
                   <p className="text-sm leading-relaxed text-ink/90">{result.script.presenterScript}</p>
                   <p className={cn("mt-1 text-[13px]", result.maxWords && (result.wordCount ?? 0) > result.maxWords ? "text-danger" : "text-muted")}>
                     {result.wordCount ?? result.script.presenterScript.trim().split(/\s+/).length} words
-                    {result.maxWords ? ` of max ${result.maxWords} (${result.presenterSeconds} s of speech)` : ""} ≈{" "}
+                    {result.maxWords ? ` of max ${result.maxWords} (${result.presenterSeconds}-second ad, presenter talks throughout)` : ""} ≈{" "}
                     {Math.round((result.wordCount ?? result.script.presenterScript.trim().split(/\s+/).length) / 2.5)} s
                     {result.attempts === 2 ? " · shortened in a second pass" : ""}
                   </p>
@@ -297,7 +299,7 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
                     </p>
                   )}
                 </Section>
-                <Section label="Scenes">
+                <Section label={`Scenes (${result.script.scenes.reduce((n, s) => n + s.seconds, 0)} s on screen while the presenter talks)`}>
                   <ul className="divide-y divide-divider text-sm">
                     {result.script.scenes.map((s, i) => (
                       <li key={i} className="flex justify-between gap-3 py-1.5">

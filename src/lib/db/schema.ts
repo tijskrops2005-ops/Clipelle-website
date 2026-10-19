@@ -53,6 +53,8 @@ export const costStatus = pgEnum("cost_status", ["started", "completed", "failed
 
 /** What the user entered. One shape per workflow; `workflow` on the row says which. */
 export type AdInput = {
+  /** Chosen ad length in seconds (AD_LENGTHS in src/lib/pricing.ts). Missing on older rows = 30. */
+  seconds?: number;
   productName: string;
   productUrl?: string;
   description: string;

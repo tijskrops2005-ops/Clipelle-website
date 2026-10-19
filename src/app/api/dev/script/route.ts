@@ -8,6 +8,7 @@ import {
   type ScriptInput,
 } from "@/lib/services/script";
 import { createHash } from "node:crypto";
+import { nearestAdLength } from "@/lib/pricing";
 import { costGuardResponse, reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { devOnly, errorResponse } from "../_guard";
 
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
     productUrl: body.productUrl?.trim() || undefined,
     hint: body.hint?.trim() || undefined,
     language: body.language?.trim() || "en",
-    targetSeconds: Math.min(60, Math.max(15, Number(body.targetSeconds) || 30)),
+    targetSeconds: nearestAdLength(Number(body.targetSeconds) || 30),
     angle,
     model: resolveModel(body.model),
   };

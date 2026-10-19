@@ -3,6 +3,7 @@ import { z } from "zod";
 import { LANGUAGES } from "@/lib/languages";
 import type { LanguageCode } from "@/lib/types";
 import { config } from "@/lib/config";
+import { DEFAULT_AD_SECONDS, isAdLength } from "@/lib/pricing";
 import { createDraft, dataErrorResponse, listProjects } from "@/lib/data/server";
 import { databaseModeOnly, readJson } from "./_guard";
 
@@ -23,6 +24,7 @@ const codes = LANGUAGES.map((l) => l.code) as [string, ...string[]];
 const AdBody = z.object({
   workflow: z.literal("ad"),
   name: z.string().trim().min(2).max(120),
+  seconds: z.number().refine(isAdLength, { error: "Choose one of the offered ad lengths." }).default(DEFAULT_AD_SECONDS),
   productName: z.string().trim().min(1).max(120),
   productUrl: z.string().trim().url().optional().or(z.literal("")),
   description: z.string().trim().min(20).max(4000),
@@ -52,7 +54,7 @@ export async function POST(request: Request) {
   try {
     if (body.workflow === "ad") {
       const a = AdBody.parse(body);
-      const row = await createDraft({ workflow: "ad", ad: { name: a.name, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
+      const row = await createDraft({ workflow: "ad", ad: { name: a.name, seconds: a.seconds, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
       return Response.json({ id: row.id, status: row.status }, { status: 201 });
     }
     if (body.workflow === "translate") {

@@ -80,7 +80,7 @@ export const adWorkflow = inngest.createFunction(
           productUrl: input.productUrl,
           hint: input.script ? `The seller wrote these presenter lines; keep them as the presenter script, only trim for timing:\n${input.script}` : undefined,
           language: cfg.adLanguage,
-          targetSeconds: cfg.adSeconds,
+          targetSeconds: input.seconds ?? cfg.adSeconds,
           angle: "problem_solution" as const,
         };
         // One paid call, plus one automatic shortening pass when the presenter text is over the word limit.
@@ -286,12 +286,12 @@ async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: st
       const musicUrl = await ensureSharedMusic();
       const edit = buildAdEdit({
         presenterUrl: await providerUrl(presenter),
-        presenterSeconds: presenter.seconds ?? 10,
+        presenterSeconds: presenter.seconds ?? ((await loadProject(projectId)).input as AdInput).seconds ?? cfg.adSeconds,
         productClipUrl: await providerUrl(clip),
         productClipSeconds: clip.seconds ?? CLIP_SECONDS,
         musicUrl,
         hook: script.hook.onScreen,
-        benefits: [script.benefits[0] ?? "", script.benefits[1] ?? "", script.benefits[2] ?? ""],
+        benefits: script.benefits,
         offer: script.offer,
         captionLanguage: cfg.adLanguage,
       });

@@ -40,16 +40,17 @@ $0,04 per foto. Alleen nodig als het product niet in een 9:16-uitsnede past; de 
 
 ## 4. Presentator (HeyGen)
 
-| Engine | Per seconde | 13,5 s spreektijd (45% van 30 s) | Kwaliteit |
-|---|---|---|---|
-| Avatar III (studio/digital twin) | $0,0084 | $0,11 | Oudere engine: stijvere beweging, minder natuurlijke mimiek |
-| Avatar III (photo avatar) | $0,0217 | $0,29 | Zelfde engine op een foto-avatar |
-| Avatar IV (alle avatartypes) | $0,05 | $0,68 | Huidige standaard: natuurlijke hoofd- en handbeweging, goede lipsync |
-| Avatar V | $0,05 | $0,68 | Alleen voor eigen digital twins (opname van jezelf of een acteur) |
+Sinds 19 oktober 2026 praat de presentator de hele advertentie door (ook terwijl de productclip, de voordelen en de eindkaart in beeld zijn). De presentatorvideo is dus net zo lang als de advertentie.
 
-Geen toeslag voor 1080p in de API-tarieven; 1080p is dus de keuze. Bron: https://developers.heygen.com/docs/enterprise-pricing
+| Engine | Per seconde | 10 s | 20 s | 30 s | 45 s | 60 s | Kwaliteit |
+|---|---|---|---|---|---|---|---|
+| Avatar III (studio/digital twin) | $0,0083 | $0,08 | $0,17 | $0,25 | $0,37 | $0,50 | Oudere engine: stijvere beweging, minder natuurlijke mimiek |
+| Avatar IV (alle avatartypes) | $0,05 | $0,50 | $1,00 | $1,50 | $2,25 | $3,00 | Huidige standaard: natuurlijke hoofd- en handbeweging, goede lipsync |
+| Avatar V | $0,05 | $0,50 | $1,00 | $1,50 | $2,25 | $3,00 | Alleen voor eigen digital twins |
 
-**Keuze: Avatar IV op 1080p.** Dit is de stap die de klant het eerst ziet en beoordeelt. Avatar III bespaart $0,57 per video maar oogt als een jaar oud; voor een advertentie waar iemand voor betaalt is dat het verschil tussen "wauw" en "AI". Avatar V is pas interessant zodra we eigen presentators opnemen.
+Geen toeslag voor 1080p in de API-tarieven; 1080p is dus de keuze. Limieten (developers.heygen.com/docs/usage-limits, 19 oktober 2026): script maximaal 5.000 tekens, maximaal 30 minuten per video, 10 gelijktijdige video's op pay-as-you-go. Een advertentie van 60 s is 150 woorden ≈ 900 tekens; één video volstaat, splitsen is niet nodig. Bron tarieven: https://developers.heygen.com/docs/enterprise-pricing
+
+**Keuze: Avatar IV op 1080p.** Dit is de stap die de klant het eerst ziet en beoordeelt, en met een doorpratende presentator is het ook veruit de grootste kostenpost. Avatar III is 6× goedkoper maar oogt als een jaar oud.
 
 ## 5. Montage (Shotstack)
 
@@ -86,20 +87,21 @@ Bron: https://fal.ai/models/fal-ai/topaz/upscale/video
 
 **Keuze: Topaz Proteus, standaard uit.** Bij een goede bronvideo (1080p, telefoon van de laatste jaren) voegt het niets toe. Bij oud of gecomprimeerd materiaal is het de enige stap die zichtbaar verschil maakt. Daarom een vinkje, geen standaard.
 
-## 8. Kosten per video van 30 seconden
+## 8. Kosten per video, per lengte
 
 ### Workflow A (advertentie vanaf productfoto)
 
-| Onderdeel | Tot 31 oktober | Vanaf 1 november |
-|---|---|---|
-| Script (Opus 5.5) | $0,02 | $0,02 |
-| Foto aanvullen (alleen indien nodig) | tot $0,04 | tot $0,04 |
-| Productclip 5 s (nu MiniMax Turbo 1080p, straks Kling Standard) | $0,26 | $0,42 |
-| Presentator Avatar IV, 13,5 s | $0,68 | $0,68 |
-| Montage, ondertitels, muziek, CTA (Shotstack) | $0,10 | $0,10 |
-| **Totaal** | **$1,06 tot $1,10** | **$1,22 tot $1,26** |
+De presentator praat de hele advertentie; één productclip van 5 s; Shotstack $0,10 per 30 s; foto aanvullen als "tot" meegeteld. Tarieven uit `src/lib/pricing.ts` (`estimateAdCost`), 19 oktober 2026.
 
-Zou HeyGen self-serve $4 per minuut rekenen in plaats van $3, dan wordt de presentator $0,90 en het totaal $1,28 tot $1,48. Nog binnen $1,50, zonder marge. Met Avatar III zou het totaal $0,65 zijn, maar dat is de bezuiniging die de klant ziet.
+| Lengte | Max woorden | Script (Opus 5.5) | Foto aanvullen (tot) | Productclip 5 s (MiniMax Turbo → Kling Standard na 1 nov) | Presentator Avatar IV | Montage (Shotstack) | **Totaal nu** | **Totaal na 1 nov** | Binnen $1,50? |
+|---|---|---|---|---|---|---|---|---|---|
+| 10 s | 25 | $0,03 | $0,04 | $0,26 → $0,42 | $0,50 | $0,03 | **$0,86** | **$1,02** | ja |
+| 20 s | 50 | $0,03 | $0,04 | $0,26 → $0,42 | $1,00 | $0,07 | **$1,40** | **$1,56** | ja tot 1 nov, daarna $0,06 erboven |
+| 30 s | 75 | $0,03 | $0,04 | $0,26 → $0,42 | $1,50 | $0,10 | **$1,93** | **$2,09** | nee |
+| 45 s | 112 | $0,03 | $0,04 | $0,26 → $0,42 | $2,25 | $0,15 | **$2,73** | **$2,89** | nee |
+| 60 s | 150 | $0,03 | $0,04 | $0,26 → $0,42 | $3,00 | $0,20 | **$3,53** | **$3,69** | nee |
+
+Let op de tweede grens: `MAX_COST_PER_ACTION_USD` ($1,50 per aanroep). De presentatorvideo is één aanroep: bij 30 s precies $1,50 (nog toegestaan), bij 45 en 60 s erboven, dus die stap wordt door de cost guard geweigerd zolang die grens staat. Met Avatar III kost de presentator $0,08 tot $0,50 en past elke lengte ($0,44 tot $1,03 totaal).
 
 ### Workflow B (bestaande video vertalen), per taalversie
 
@@ -117,7 +119,7 @@ Een tweede taal kost dus ongeveer $1,05 extra (speed). De prijsverhoging van 1 n
 
 ## 9. Past een goede advertentie binnen $1,50 per klik?
 
-**Workflow A: ja.** Met Avatar IV op 1080p, een productclip van 5 seconden op 1080p en de volledige montage kom je op $1,06 nu en $1,26 na 1 november. Wat je ervoor inlevert: één productclip in plaats van twee (een tweede clip van 5 s kost $0,26 tot $0,42 extra en brengt het totaal op $1,32 tot $1,68), en de presentator spreekt maximaal zo'n 14 seconden. Bij $2,00 passen twee productclips (meer afwisseling in de B-roll) of Kling Pro, en blijft er ruimte voor de onzekerheid in het HeyGen-tarief. Mijn advies: $1,50 houden als standaard en $2,00 niet nodig maken, maar wel toestaan als een klant twee clips wil.
+**Workflow A: alleen 10 en 20 seconden, nu de presentator de hele advertentie doorpraat.** Met Avatar IV kost elke seconde $0,05, dus de presentator alleen al is $1,50 bij 30 s. Een advertentie van 10 s kost $0,86, van 20 s $1,40 (na 1 november $1,02 en $1,56). 30, 45 en 60 s vallen buiten het budget per video, en 45 en 60 s ook buiten de grens per aanroep. Het formulier toont de schatting per lengte en weigert een lengte boven het budget. Hoe we daarmee omgaan staat in §13.
 
 **Workflow B: ja in speed-modus, nee zodra je precision of beeldverbetering wilt.** Speed zonder verbetering kost $1,05 tot $1,11 per taal. Precision ($1,80 tot $1,86) en speed met verbetering ($1,65 tot $1,71) vallen buiten $1,50. Met $2,00 past óf precision óf speed met verbetering, niet allebei ($2,40 tot $2,46). Wat je inlevert bij $1,50: bij close-ups is de lipsync van speed zichtbaar minder, en oude bronvideo's blijven zacht. Advies: $1,50 voor speed als standaard, en de twee opties in het formulier expliciet tonen met hun meerprijs, zodat het budget per taal in de instellingen naar $2,00 kan voor klanten die dat willen.
 
@@ -168,3 +170,17 @@ De vier clipmodellen staan als keuze op `/dev/product-clip`; de test kan draaien
 | Vertaling | speed | speed (precision als optie) |
 | Beeldverbetering | uit | uit (Topaz Proteus als optie) |
 | Budget per creative | $1,50 | $1,50; per taalversie in Workflow B; het formulier toont de meerprijs van precision en verbetering |
+| Lengte advertentie | 30 s vast | keuze 10, 20, 30, 45, 60 s (standaard 30); presentator praat de hele lengte; opbouw in `src/lib/adLayout.ts` |
+
+## 13. Lengtes boven het budget: voorstel (19 oktober 2026, nog niet besloten)
+
+Met een doorpratende presentator op Avatar IV passen alleen 10 en 20 seconden binnen $1,50. Vier manieren om 30, 45 en 60 s toch aan te bieden, met de kosten per video (nu / na 1 november):
+
+| Voorstel | 10 s | 20 s | 30 s | 45 s | 60 s | Wat het vraagt |
+|---|---|---|---|---|---|---|
+| A. Budget groeit mee met de lengte: $0,05 per seconde boven 20 s bovenop $1,50 (dus $2,00 / $2,75 / $3,50), en `MAX_COST_PER_ACTION_USD` naar $3,00 | $0,86 / $1,02 | $1,40 / $1,56 | $1,93 / $2,09 | $2,73 / $2,89 | $3,53 / $3,69 | Twee limieten aanpassen; de prijs per video voor de klant moet meegroeien. 60 s na 1 nov zit $0,19 boven $3,50, dus dan $3,75. |
+| B. Avatar III voor 30 s en langer, Avatar IV tot 20 s | $0,86 / $1,02 | $1,40 / $1,56 | $0,68 / $0,84 | $0,85 / $1,01 | $1,03 / $1,19 | Geen limietwijziging. Zichtbaar lagere kwaliteit op precies de lange video's; vreemd dat 30 s goedkoper is dan 20 s. |
+| C. 720p in plaats van 1080p | geen verschil | geen verschil | geen verschil | geen verschil | geen verschil | HeyGen rekent geen toeslag voor 1080p, dus dit bespaart niets. Afgevallen. |
+| D. Alleen 10 en 20 s aanbieden; 30, 45 en 60 s pas na een prijsverhoging per video | $0,86 / $1,02 | $1,40 / $1,56 | – | – | – | Niets te bouwen; de keuzelijst toont de lange lengtes als "over budget". 20 s valt na 1 november ook af tenzij het budget naar $1,60 gaat. |
+
+**Aanbeveling: A, in combinatie met D tot de prijs per video is bepaald.** Alleen A levert lange video's in de kwaliteit die de klant verwacht; B bespaart op precies het onderdeel dat de klant beoordeelt. Concreet: budget per video $1,50 tot 20 s en daarboven $0,05 per extra seconde (30 s $2,00, 45 s $2,75, 60 s $3,50 → $3,75 na 1 november), en de grens per aanroep naar $3,00 (de presentatorvideo van 60 s). Tot jij dat goedkeurt blijven beide limieten op $1,50 en zijn alleen 10 en 20 s te starten.

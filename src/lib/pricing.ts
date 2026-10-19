@@ -32,6 +32,28 @@ export function claudeTokensToUsd(model: ScriptModel, inputTokens: number, outpu
   return Math.round(usd * 10_000) / 10_000;
 }
 
+/** Ad lengths the app offers (seconds). The only list; every form and estimate reads it. */
+export const AD_LENGTHS = [10, 20, 30, 45, 60] as const;
+export type AdLength = (typeof AD_LENGTHS)[number];
+export const DEFAULT_AD_SECONDS: AdLength = 30;
+
+export function isAdLength(n: number): n is AdLength {
+  return (AD_LENGTHS as readonly number[]).includes(n);
+}
+
+/** Nearest offered length, for inputs that are not exactly on the list. */
+export function nearestAdLength(n: number): AdLength {
+  return AD_LENGTHS.reduce((best, len) => (Math.abs(len - n) < Math.abs(best - n) ? len : best), DEFAULT_AD_SECONDS);
+}
+
+/** Spoken pace the word limit and the HeyGen estimate are built on. */
+export const WORDS_PER_SECOND = 2.5;
+
+/** Hard word limit for the presenter text: the presenter talks the whole ad (10 s = 25, 30 s = 75, 60 s = 150). */
+export function maxSpokenWords(seconds: number) {
+  return Math.floor(seconds * WORDS_PER_SECOND);
+}
+
 export const PRICING = {
   /** Claude script: ~1.5k input + 900 output tokens on claude-opus-5-5 ($4 / $20 per MTok). */
   scriptUsd: 0.03,
@@ -47,10 +69,8 @@ export const PRICING = {
     kling: { until: null, promo: 0.112, regular: 0.112 }, // Pro
   },
   clipSeconds: 5,
-  /** HeyGen presenter, USD per second of video (enterprise rate card, 1 credit = $0.50). */
+  /** HeyGen presenter, USD per second of video (enterprise rate card, 1 credit = $0.50). The presenter talks the whole ad. */
   presenterUsdPerSecond: { avatar_iv: 0.05, avatar_iii: 0.0083 },
-  /** Share of a 30 s ad spoken by the presenter (hook 2 s, product 4 s, end card 3 s are not). */
-  presenterShare: 0.45,
   /** Shotstack: $10 per 50 minutes ⇒ $0.10 per 30 s video. Always counted, sandbox or not. */
   captionsUsdPer30s: 0.1,
   /** HeyGen video translation, per second of source per target language. */
@@ -77,9 +97,9 @@ export function captionsUsd(seconds: number) {
 
 export type AdEstimateInput = { seconds: number; clipModel: ClipModelKey; engine: PresenterEngine; at?: Date };
 
-/** One click on "Generate video" in Workflow A. */
+/** One click on "Generate video" in Workflow A. The presenter video is as long as the ad. */
 export function estimateAdCost(input: AdEstimateInput) {
-  const presenterSeconds = Math.round(input.seconds * PRICING.presenterShare);
+  const presenterSeconds = input.seconds;
   const parts = {
     script: PRICING.scriptUsd,
     expand: PRICING.expandUsd,
@@ -119,4 +139,4 @@ export function defaultClipModel(at = new Date()): ClipModelKey {
 }
 
 /** Defaults the orchestrator uses unless .env.local overrides them (mirrored in src/lib/workflow/settings.ts). */
-export const DEFAULTS = { adSeconds: 30, clipModel: defaultClipModel(), engine: "avatar_iv" as PresenterEngine, presenterResolution: "1080p" as const };
+export const DEFAULTS = { adSeconds: DEFAULT_AD_SECONDS, clipModel: defaultClipModel(), engine: "avatar_iv" as PresenterEngine, presenterResolution: "1080p" as const };
