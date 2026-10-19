@@ -10,6 +10,9 @@ import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { PresenterPicker } from "@/components/PresenterPicker";
 import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, formatUsd, type AdLength, type PresenterEngine } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
+import { LANGUAGES } from "@/lib/languages";
+import type { LanguageCode } from "@/lib/types";
+import { AD_TONES, DEFAULT_AD_LANGUAGE, DEFAULT_TONE, DIRECTION_MAX_CHARS, OFFER_MAX_CHARS, TONE_META, type AdTone } from "@/lib/adOptions";
 import { controlClass, controlStateClass } from "@/components/ui/Field";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -25,6 +28,8 @@ type Values = {
   productUrl: string;
   description: string;
   script: string;
+  offer: string;
+  direction: string;
 };
 
 type Errors = Partial<Record<keyof Values | "images" | "form", string>>;
@@ -73,7 +78,11 @@ export function ProjectForm() {
     productUrl: "",
     description: "",
     script: "",
+    offer: "",
+    direction: "",
   });
+  const [language, setLanguage] = useState<LanguageCode>(DEFAULT_AD_LANGUAGE);
+  const [tone, setTone] = useState<AdTone>(DEFAULT_TONE);
   const [seconds, setSeconds] = useState<AdLength>(DEFAULT_AD_SECONDS);
   const [engine, setEngine] = useState<PresenterEngine>(DEFAULT_PRESENTER_ENGINE);
   const [lookId, setLookId] = useState<string | undefined>(undefined);
@@ -117,6 +126,10 @@ export function ProjectForm() {
         seconds,
         engine,
         lookId,
+        language,
+        offer: values.offer.trim() || undefined,
+        direction: values.direction.trim() || undefined,
+        tone,
         productName: values.productName.trim(),
         productUrl: values.productUrl.trim() || undefined,
         description: values.description.trim(),
@@ -296,6 +309,48 @@ export function ProjectForm() {
                 </option>
               ))}
             </select>
+          </Field>
+
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field id="language" label="Script language" hint="The presenter speaks this language.">
+              <select id="language" value={language} onChange={(e) => setLanguage(e.target.value as LanguageCode)} disabled={submitting} className={cn(controlClass, controlStateClass(false), "h-11")}>
+                {LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code}>{l.label}</option>
+                ))}
+              </select>
+            </Field>
+            <Field id="offer" label="Offer" optional hint={`Used in the call to action. Leave empty and no offer is mentioned. Max ${OFFER_MAX_CHARS} characters.`}>
+              <Input id="offer" value={values.offer} maxLength={OFFER_MAX_CHARS} onChange={(e) => update("offer", e.target.value)} placeholder="e.g. 20% off this week" disabled={submitting} />
+            </Field>
+          </div>
+
+          <fieldset>
+            <legend className="mb-1.5 text-sm font-medium text-ink">Tone</legend>
+            <div className="grid gap-3 sm:grid-cols-4">
+              {AD_TONES.map((t) => {
+                const selected = tone === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTone(t)}
+                    disabled={submitting}
+                    aria-pressed={selected}
+                    className={cn(
+                      "rounded-[14px] border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40",
+                      selected ? "border-ink bg-surface-muted" : "border-border bg-surface hover:shadow-card",
+                    )}
+                  >
+                    <span className="block text-sm font-semibold text-ink">{TONE_META[t].label}</span>
+                    <span className="mt-0.5 block text-[13px] text-muted">{TONE_META[t].blurb}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <Field id="direction" label="Direction" optional hint={`Who it is for and what to emphasise. Max ${DIRECTION_MAX_CHARS} characters.`}>
+            <Input id="direction" value={values.direction} maxLength={DIRECTION_MAX_CHARS} onChange={(e) => update("direction", e.target.value)} placeholder="e.g. for mums, light-hearted, no exaggerated claims" disabled={submitting} />
           </Field>
 
           <Field

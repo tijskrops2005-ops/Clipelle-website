@@ -8,6 +8,7 @@ import { rewriteSegmentsInAdTone } from "@/lib/services/adTone";
 import { costGuardResponse, costLimits, creativeSpent, getProjectSpend, reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { estimateAdCost, estimateTranslateCost } from "@/lib/pricing";
 import { workflowSettings } from "@/lib/workflow/settings";
+import { DEFAULT_TONE, isAdTone, type AdTone } from "@/lib/adOptions";
 
 /**
  * Data access for real projects (database mode). The UI calls this through the routes in
@@ -80,6 +81,10 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       seconds: input.seconds ?? workflowSettings.adSeconds,
       engine: input.engine ?? workflowSettings.heygenEngine,
       lookId: input.lookId,
+      language: (input.language as LanguageCode | undefined) ?? "en",
+      offer: input.offer,
+      direction: input.direction,
+      tone: input.tone && isAdTone(input.tone) ? input.tone : DEFAULT_TONE,
       productName: input.productName,
       productUrl: input.productUrl,
       description: input.description,
@@ -168,7 +173,7 @@ export async function getProjectRow(id: string) {
 
 /* ---------- creation: draft → upload assets → start ---------- */
 
-export type NewAdProject = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; productName: string; productUrl?: string; description: string; script?: string };
+export type NewAdProject = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: LanguageCode; offer?: string; direction?: string; tone: AdTone; productName: string; productUrl?: string; description: string; script?: string };
 export type NewTranslateProject = {
   name: string;
   sourceFileName: string;
@@ -193,7 +198,7 @@ export async function createDraft(input: { workflow: "ad"; ad: NewAdProject } | 
         workflow: "ad",
         name: a.name,
         status: "draft",
-        input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
+        input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, offer: a.offer, direction: a.direction, tone: a.tone, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
       })
       .returning();
     await d.insert(steps).values(AD_STEPS.map((key) => ({ projectId: row.id, key, status: "waiting" as const })));

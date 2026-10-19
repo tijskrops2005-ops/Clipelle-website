@@ -14,6 +14,8 @@ import { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
 import { PageHeaderSkeleton, Skeleton } from "@/components/ui/Skeleton";
 import { DemoBadge } from "@/components/DemoModeBadge";
 import { formatUsd } from "@/lib/pricing";
+import { languageLabel } from "@/lib/languages";
+import { DEFAULT_TONE, TONE_META } from "@/lib/adOptions";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { Pipeline } from "@/components/pipeline/Pipeline";
 import { stepMeta } from "@/components/pipeline/PipelineStep";
@@ -240,6 +242,30 @@ function DetailsCard({ project }: { project: AdProject }) {
             >
               {project.productUrl}
             </a>
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="label-mono mb-1.5 text-muted">Language</p>
+            <p className="text-ink/90">{languageLabel(project.language ?? "en")}</p>
+          </div>
+          <div>
+            <p className="label-mono mb-1.5 text-muted">Tone</p>
+            <p className="text-ink/90">{TONE_META[project.tone ?? DEFAULT_TONE].label}</p>
+          </div>
+          <div>
+            <p className="label-mono mb-1.5 text-muted">Offer</p>
+            <p className="text-ink/90">{project.offer || <span className="text-muted">None</span>}</p>
+          </div>
+          <div>
+            <p className="label-mono mb-1.5 text-muted">Length · presenter</p>
+            <p className="text-ink/90">{project.seconds ?? 30} s · {project.engine === "avatar_iii" ? "Standard" : "Premium"}</p>
+          </div>
+        </div>
+        {project.direction && (
+          <div>
+            <p className="label-mono mb-1.5 text-muted">Direction</p>
+            <p className="leading-relaxed text-ink/90">{project.direction}</p>
           </div>
         )}
         <div>

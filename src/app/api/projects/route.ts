@@ -4,6 +4,7 @@ import { LANGUAGES } from "@/lib/languages";
 import type { LanguageCode } from "@/lib/types";
 import { config } from "@/lib/config";
 import { DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, isAdLength, isPresenterEngine } from "@/lib/pricing";
+import { AD_TONES, DEFAULT_AD_LANGUAGE, DEFAULT_TONE, DIRECTION_MAX_CHARS, OFFER_MAX_CHARS } from "@/lib/adOptions";
 import { createDraft, dataErrorResponse, listProjects } from "@/lib/data/server";
 import { databaseModeOnly, readJson } from "./_guard";
 
@@ -27,6 +28,10 @@ const AdBody = z.object({
   seconds: z.number().refine(isAdLength, { error: "Choose one of the offered ad lengths." }).default(DEFAULT_AD_SECONDS),
   engine: z.string().refine(isPresenterEngine, { error: "Choose Standard or Premium." }).default(DEFAULT_PRESENTER_ENGINE),
   lookId: z.string().regex(/^[a-f0-9]{32}$/).optional(),
+  language: z.enum(codes).default(DEFAULT_AD_LANGUAGE),
+  offer: z.string().trim().max(OFFER_MAX_CHARS).optional().or(z.literal("")),
+  direction: z.string().trim().max(DIRECTION_MAX_CHARS).optional().or(z.literal("")),
+  tone: z.enum(AD_TONES).default(DEFAULT_TONE),
   productName: z.string().trim().min(1).max(120),
   productUrl: z.string().trim().url().optional().or(z.literal("")),
   description: z.string().trim().min(20).max(4000),
@@ -56,7 +61,7 @@ export async function POST(request: Request) {
   try {
     if (body.workflow === "ad") {
       const a = AdBody.parse(body);
-      const row = await createDraft({ workflow: "ad", ad: { name: a.name, seconds: a.seconds, engine: a.engine, lookId: a.lookId, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
+      const row = await createDraft({ workflow: "ad", ad: { name: a.name, seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language as LanguageCode, offer: a.offer || undefined, direction: a.direction || undefined, tone: a.tone, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
       return Response.json({ id: row.id, status: row.status }, { status: 201 });
     }
     if (body.workflow === "translate") {

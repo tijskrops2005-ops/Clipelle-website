@@ -5,6 +5,7 @@ import { adProjectCreated, inngest, stepRetry } from "@/lib/inngest/client";
 import type { AdInput } from "@/lib/db";
 import { writeScriptWithinLimit, SCRIPT_MODEL, type AdScript } from "@/lib/services/script";
 import { clipPrompt } from "@/lib/clipPrompt";
+import { isAdTone } from "@/lib/adOptions";
 import {
   analyzeProductPhoto,
   cropToNineSixteen,
@@ -76,12 +77,15 @@ export const adWorkflow = inngest.createFunction(
         const input = (await loadProject(projectId)).input as AdInput;
         const firstImage = input.imageAssetIds[0] ? await loadAsset(input.imageAssetIds[0]) : null;
         const image = firstImage ? await imageForClaude(await downloadAsset(firstImage)) : undefined;
+        const hintParts = [input.direction?.trim(), input.script ? `The seller wrote these presenter lines; keep them as the presenter script, only trim for timing:\n${input.script}` : undefined].filter(Boolean);
         const base = {
           productName: input.productName,
           description: input.description,
           productUrl: input.productUrl,
-          hint: input.script ? `The seller wrote these presenter lines; keep them as the presenter script, only trim for timing:\n${input.script}` : undefined,
-          language: cfg.adLanguage,
+          hint: hintParts.length ? hintParts.join("\n") : undefined,
+          offer: input.offer,
+          tone: input.tone && isAdTone(input.tone) ? input.tone : undefined,
+          language: input.language ?? cfg.adLanguage,
           targetSeconds: input.seconds ?? cfg.adSeconds,
           angle: "problem_solution" as const,
         };

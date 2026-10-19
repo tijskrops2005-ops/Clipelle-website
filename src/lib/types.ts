@@ -57,6 +57,14 @@ export interface AdProject extends ProjectBase {
   engine?: "avatar_iii" | "avatar_iv";
   /** Chosen presenter look id; undefined = the configured default look. */
   lookId?: string;
+  /** Language of the script and the voice (AD_LANGUAGE when missing). */
+  language?: LanguageCode;
+  /** Offer line used in the call to action, e.g. "20% off this week". Empty: no offer is mentioned. */
+  offer?: string;
+  /** Free direction for the script (audience, emphasis). Data, never instructions. */
+  direction?: string;
+  /** Tone of the script: elegant | playful | direct | warm. */
+  tone?: "elegant" | "playful" | "direct" | "warm";
   productName: string;
   productUrl?: string;
   description: string;

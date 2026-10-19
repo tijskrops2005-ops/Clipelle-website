@@ -4,6 +4,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { config } from "@/lib/config";
 import type { AdProject, LanguageCode, PresenterPage, Project, Segment, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { mockPresenterPage } from "@/lib/mock/presenters";
+import type { AdTone } from "@/lib/adOptions";
 import * as mockStore from "@/lib/mock/store";
 import * as mockRunner from "@/lib/mock/runner";
 import { demoAdToneRewrite, emptyTranslations } from "@/lib/mock/translations";
@@ -121,7 +122,7 @@ export async function listPresenters(params: { engine: "avatar_iii" | "avatar_iv
   return api<PresenterPage>(`/api/presenters?${q}`);
 }
 
-export type AdProjectDraft = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; productName: string; productUrl?: string; description: string; script?: string; images: File[] };
+export type AdProjectDraft = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: LanguageCode; offer?: string; direction?: string; tone: AdTone; productName: string; productUrl?: string; description: string; script?: string; images: File[] };
 
 export async function createAdProject(draft: AdProjectDraft): Promise<{ id: string }> {
   if (config.demoMode) {
@@ -134,6 +135,10 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
       seconds: draft.seconds,
       engine: draft.engine,
       lookId: draft.lookId,
+      language: draft.language,
+      offer: draft.offer,
+      direction: draft.direction,
+      tone: draft.tone,
       productName: draft.productName,
       productUrl: draft.productUrl,
       description: draft.description,
