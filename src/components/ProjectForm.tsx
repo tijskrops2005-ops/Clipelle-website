@@ -5,6 +5,8 @@ import { useRef, useState, type FormEvent } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { config } from "@/lib/config";
 import { createAdProject } from "@/lib/data/client";
+import { useHydrated } from "@/lib/useHydrated";
+import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { DEFAULTS, estimateAdCost, formatUsd } from "@/lib/pricing";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -73,6 +75,8 @@ export function ProjectForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   const submitLock = useRef(false);
+  // Before React is attached a click would submit the form natively and reload the page with nothing saved.
+  const hydrated = useHydrated();
   const estimate = estimateAdCost({ seconds: DEFAULTS.adSeconds, clipModel: DEFAULTS.clipModel, engine: DEFAULTS.engine });
   const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 1.5;
   const overBudget = estimate.total > budget;
@@ -122,6 +126,7 @@ export function ProjectForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-8">
+      <ServiceStatusBanner />
       {/* 1. The main input first: product images + the product itself */}
       <Card>
         <CardHeader>
@@ -265,13 +270,13 @@ export function ProjectForm() {
           >
             Cancel
           </Button>
-          <Button type="submit" variant="accent" size="lg" disabled={submitting || overBudget}>
-            {submitting ? (
+          <Button type="submit" variant="accent" size="lg" disabled={!hydrated || submitting || overBudget}>
+            {submitting || !hydrated ? (
               <Loader2 className="size-5 animate-spin" aria-hidden />
             ) : (
               <Sparkles className="size-5" aria-hidden />
             )}
-            {submitting ? "Starting…" : "Generate video"}
+            {!hydrated ? "Loading…" : submitting ? "Starting…" : "Generate video"}
           </Button>
         </div>
       </div>

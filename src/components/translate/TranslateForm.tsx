@@ -10,6 +10,8 @@ import { formatUsd } from "@/lib/translatePricing";
 import { estimateTranslateCost } from "@/lib/pricing";
 import { Badge } from "@/components/ui/Badge";
 import { createTranslateProject } from "@/lib/data/client";
+import { useHydrated } from "@/lib/useHydrated";
+import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -40,6 +42,8 @@ export function TranslateForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   const submitLock = useRef(false);
+  // Before React is attached a click would submit the form natively and reload the page with nothing saved.
+  const hydrated = useHydrated();
 
   const seconds = video?.seconds ?? 30;
   const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 1.5;
@@ -100,6 +104,7 @@ export function TranslateForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-8">
+      <ServiceStatusBanner />
       {/* 1. The video */}
       <Card>
         <CardHeader>
@@ -356,9 +361,9 @@ export function TranslateForm() {
           <Button href="/new" variant="ghost" aria-disabled={submitting || undefined} className={submitting ? "pointer-events-none opacity-50" : undefined}>
             Back
           </Button>
-          <Button type="submit" variant="accent" size="lg" disabled={submitting || !rights || overBudget}>
-            {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
-            {submitting ? "Starting…" : "Start translation"}
+          <Button type="submit" variant="accent" size="lg" disabled={!hydrated || submitting || !rights || overBudget}>
+            {submitting || !hydrated ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
+            {!hydrated ? "Loading…" : submitting ? "Starting…" : "Start translation"}
           </Button>
         </div>
       </div>

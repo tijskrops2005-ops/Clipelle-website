@@ -19,8 +19,8 @@ export const AD_STEPS: StepKey[] = ["script", "productClip", "presenter", "final
 export const TRANSLATE_STEPS: TranslateStepKey[] = ["upload", "translate", "review", "captions"];
 
 export class DataError extends Error {
-  constructor(message: string, public readonly status = 400, public readonly code = "bad_request") {
-    super(message);
+  constructor(message: string, public readonly status = 400, public readonly code = "bad_request", cause?: unknown) {
+    super(message, cause instanceof Error ? { cause } : undefined);
     this.name = "DataError";
   }
 }
@@ -269,7 +269,24 @@ export async function startProject(projectId: string) {
     await tx.update(projects).set({ status: "processing", updatedAt: new Date() }).where(eq(projects.id, projectId));
     await tx.update(steps).set({ status: "processing", startedAt: new Date(), attempt: 1, updatedAt: new Date() }).where(and(eq(steps.projectId, projectId), eq(steps.key, firstStep)));
   });
-  await inngest.send(row.workflow === "ad" ? adProjectCreated.create({ projectId }) : translateProjectCreated.create({ projectId }));
+  try {
+    await inngest.send(row.workflow === "ad" ? adProjectCreated.create({ projectId }) : translateProjectCreated.create({ projectId }));
+  } catch (error) {
+    // The job system did not take the event: put the project back to draft so nothing looks "in progress".
+    await db().transaction(async (tx) => {
+      await tx.update(projects).set({ status: "draft", updatedAt: new Date() }).where(eq(projects.id, projectId));
+      await tx.update(steps).set({ status: "waiting", startedAt: null, updatedAt: new Date() }).where(and(eq(steps.projectId, projectId), eq(steps.key, firstStep)));
+    });
+    const dev = process.env.INNGEST_DEV === "1" || process.env.INNGEST_DEV === "true";
+    throw new DataError(
+      dev
+        ? "The background job service is not running, so the video cannot start. Run `npm run dev:jobs` in a second terminal and click Generate again."
+        : "The background job service is not reachable. Try again in a minute; if it keeps failing, contact support.",
+      503,
+      "jobs_unreachable",
+      error,
+    );
+  }
   return (await getProjectRow(projectId))!;
 }
 

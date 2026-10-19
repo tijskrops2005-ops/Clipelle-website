@@ -141,7 +141,7 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
   }
   const { id } = await api<{ id: string }>("/api/projects", { method: "POST", body: JSON.stringify({ workflow: "ad", ...draft, images: undefined }) });
   for (const file of draft.images) await uploadAndAttach(id, "image", file);
-  await api(`/api/projects/${id}/start`, { method: "POST" });
+  await startWithClearMessage(id);
   await refresh();
   return { id };
 }
@@ -190,9 +190,19 @@ export async function createTranslateProject(draft: TranslateProjectDraft): Prom
   const { video, ...rest } = draft;
   const { id } = await api<{ id: string }>("/api/projects", { method: "POST", body: JSON.stringify({ workflow: "translate", ...rest, sourceFileName: video.name }) });
   await uploadAndAttach(id, "source", video, draft.sourceSeconds);
-  await api(`/api/projects/${id}/start`, { method: "POST" });
+  await startWithClearMessage(id);
   await refresh();
   return { id };
+}
+
+/** Starts the project; a network failure (server restarting) gets a message a person can act on. */
+async function startWithClearMessage(id: string) {
+  try {
+    await api(`/api/projects/${id}/start`, { method: "POST" });
+  } catch (error) {
+    if (error instanceof TypeError) throw new Error("The app server could not be reached. Is `npm run dev` still running? Then try again.");
+    throw error;
+  }
 }
 
 /** Browser → signed URL → storage, then tell the server which object belongs to the project. */
