@@ -32,7 +32,7 @@ Input ─→ Script (Claude API) ─┬→ Product clip (fal.ai image-to-video) 
   - Script: Anthropic Claude API, model `claude-opus-5-5`, structured JSON output (hook, scenes, benefits, offer, CTA, presenter script).
   - Product clip: fal.ai image-to-video (model chosen in Stage 7), `aspect_ratio: "9:16"`, queue polling.
   - Presenter: HeyGen **v3 only** (`POST /v3/videos`, `aspect_ratio: "9:16"`, webhooks). v1/v2 are sunset on 2026-10-31; never use them.
-  - Final edit: Shotstack Edit API (timeline, text, audio, `callback`). Creatomate is the fallback if Shotstack captions or 9:16 fail the Stage 7 test. HeyGen "studio" can concatenate scenes but has no text overlays, CTA, music or transitions, so it is not the final editor.
+  - Final edit: Shotstack Edit API (timeline, rich captions, text, audio, `callback`), chosen for the MVP and verified in the sandbox in Stage 7. HeyGen "studio" can concatenate scenes but has no text overlays, CTA, music or transitions, so it is not the final editor; a HeyGen template is at most an experiment after the MVP, not a planned replacement.
 - Every provider returns temporary URLs. The orchestrator (Stage 8) copies each output to our own storage before the next step and before download.
 - **UI step labels stay generic** ("Script", "Product clip", "AI presenter", "Final edit"). Service names appear only as the small mono label on a step card and in Settings, read from one place in code, so a provider can be swapped without touching screens.
 
@@ -129,6 +129,7 @@ Core data model (start here, extend only when needed):
 4. Prevent duplicate workflow starts (disable the button after submit, guard on the server later).
 5. No features outside the scope above: no analytics, campaign management, ad launching, creative-strategy engines, node editors, model pickers or editing suites, unless Tijs explicitly asks.
 6. Keep changes focused. Do not rewrite large parts of the project without a clear reason.
+7. **Rights confirmation for uploaded videos (Workflow B, translation of an existing video)**: before any translation starts, the user must tick: "Ik heb de rechten op deze video en toestemming van de spreker voor het gebruik van zijn of haar stem en gezicht." No tick, no translation: the button stays disabled and the server rejects the request when the confirmation is missing. Store the confirmation with a timestamp on the project. Never build watermark removal.
 
 ## How to work with Tijs
 

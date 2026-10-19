@@ -81,7 +81,7 @@ Beoordeling van alles wat de HeyGen-API kan (volledige referentie: `docs/vendors
 | Account/saldo (`GET /v3/users/me`) | **MVP** | Kosten per project meten en een lage-saldo-waarschuwing tonen. |
 | Captions (`caption.style`) en `subtitle_url` | **MVP, te testen** | Als de montage-dienst zelf geen goede auto-captions levert, gebruiken we HeyGens SRT of ingebrande captions op het presentatordeel. |
 | Productfoto als achtergrond (`background.type: image` + `remove_background`) | **Uitbreiding U7** | Presentator vóór het product; vereist een avatar met matting. Eerst de kale versie laten werken. |
-| Templates (Studio-lay-out met `text`-, `video`-, `audio`-, `character`-variabelen en captions) | **MVP-kandidaat voor de montage, te testen naast Shotstack** | De enige HeyGen-route waarin hook-tekst, productclip, presentator, muziek en captions in één render samenkomen. Winst: één leverancier minder. Risico: sjabloon handmatig in Studio bouwen, prijs niet vermeld. Beslissing in fase 7 na een test met één sjabloon. |
+| Templates (Studio-lay-out met `text`-, `video`-, `audio`-, `character`-variabelen en captions) | **Mogelijk experiment na de MVP** | De enige HeyGen-route waarin hook-tekst, productclip, presentator, muziek en captions in één render samenkomen; zou één leverancier schelen. Geen geplande vervanging: Shotstack is de montagedienst voor de MVP (fase 7, stap 4, getest in de sandbox). Hooguit later één sjabloon proberen ter vergelijking; sjabloon moet handmatig in Studio worden gebouwd en de prijs is niet vermeld. |
 | Studio-video (`type: studio`, scènes aaneen) | **Niet nodig** | Geen tekst-overlays, CTA, muziek of overgangen; templates doen meer. Hooguit als noodoplossing voor een kale variant. |
 | Videomodellen (`/v3/models/videos` heygen-video-1 `image_to_video`, `/v3/video-generations` seedance-2.5 / minimax-h3-max) | **Uitbreiding, te vergelijken met fal.ai** | Zelfde taak als onze productclip-stap. Als prijs en kwaliteit kloppen, vervalt fal.ai en blijven er twee leveranciers over. Absolute prijzen ontbreken, dus eerst testen. |
 | Batches (`/v3/videos/batches`, bulk-status) | **Uitbreiding U3** | Varianten in batch: meerdere hooks en presentators in één verzoek, één webhook als alles klaar is. Niet nodig voor één video. |
@@ -96,7 +96,7 @@ Beoordeling van alles wat de HeyGen-API kan (volledige referentie: `docs/vendors
 | Muziekcatalogus (`GET /v3/audio/sounds`) en muziek genereren (`POST /v3/audio/music`, lyria-3-pro) | **MVP voor de catalogus, uitbreiding U6 voor generatie** | Lost ons muziek- en licentievraagstuk op: tracks met tijdelijke WAV-URL, in HeyGens catalogus. We downloaden de gekozen track naar eigen opslag en geven hem aan de montagedienst. Generatie op maat (bpm, intensiteit) is een nette uitbreiding. Licentievoorwaarden voor catalogusmuziek nog navragen. |
 | Geluidseffecten (`type: sound_effects`) | **Uitbreiding U6** | Whoosh bij de hook of de CTA. Klein, cosmetisch. |
 | Audio-analyse (beats, secties) | **Niet nodig** | Montage op de maat is een verfijning die onze vaste opbouw niet vraagt. |
-| HyperFrames (HTML-compositie, cloud-render ≈ $0,05/min) | **Reserve voor de montage** | Volwaardig alternatief voor Shotstack met volledige controle en lage renderprijs, maar wij schrijven de compositie zelf. Overwegen als Shotstack én templates tegenvallen. |
+| HyperFrames (HTML-compositie, cloud-render ≈ $0,05/min) | **Reserve voor de montage** | Volwaardig alternatief voor Shotstack met volledige controle en lage renderprijs, maar wij schrijven de compositie zelf. Overwegen als Shotstack in vormgeving tekortschiet. |
 | Video Agent (prompt → complete video, ≈ $2/min) | **Experiment, niet in de keten** | Kan in één call een hele advertentie maken met captions en graphics, maar zonder onze vaste opbouw. Nuttig om ideeën te zien; niet als fundament, omdat we hook/voordelen/CTA zelf willen sturen. |
 | Brand kit (kleuren, fonts, logo) | **Niet nodig** | Werkt alleen met Video Agent. Onze merkstijl gaat via het montagesjabloon (U6). |
 | Bestaande video bewerken (`edit_plan`, scènes) | **Niet nodig** | Wij regenereren liever een stap met Retry dan dat we scènes bewerken; past ook alleen bij Video Agent-sessies. |
@@ -106,7 +106,7 @@ Beoordeling van alles wat de HeyGen-API kan (volledige referentie: `docs/vendors
 | API-sleutel met scopes | **MVP** | Productie-sleutel beperken tot `videos:write`, `videos:read`, `avatars:read`, `voices:read`, `account:read`, `webhooks:write`; uitbreiden per functie. |
 | Assets-upload (`POST /v3/assets`) | **Uitbreiding U7** | Nodig zodra we een productfoto als achtergrond of een eigen foto-avatar meesturen; publieke URL's uit eigen opslag volstaan in de MVP. |
 
-**Gevolg voor de MVP-keuze van de montagedienst:** fase 7, stap 4 test eerst een HeyGen-template (hook-tekst, productclip als `video`-variabele, presentator als `character`, muziek als `audio`, CTA-tekst, captions) naast Shotstack. Werkt het sjabloon goed en is de prijs acceptabel, dan wordt HeyGen de montagedienst en vervalt Shotstack; anders blijft Shotstack met HyperFrames als reserve.
+**Montagedienst voor de MVP:** Shotstack, gekozen in fase 7 (zie `docs/vendors/final-edit-comparison.md`) en in de sandbox getest met hook, TikTok-captions, voordelen en eindkaart. Een HeyGen-template is een mogelijk experiment ná de MVP, geen geplande vervanging; HyperFrames blijft reserve als Shotstack later tekortschiet in vormgeving.
 
 ## Workflow B: bestaande video vertalen
 
@@ -114,8 +114,10 @@ Datum onderzoek: 19 oktober 2026, actuele officiële documentatie (bronnen per o
 
 **Doel:** de gebruiker uploadt een bestaande video (eigen opname, eerdere advertentie, presentatorclip) en krijgt dezelfde video terug in een andere taal: vertaalde tekst, een stem die op de spreker lijkt, mondbewegingen die kloppen, ondertitels, 9:16. De gebruiker mag elke video gebruiken die hij zelf aanlevert; rechten op het beeldmateriaal en de stem liggen bij hem. Watermerken verwijderen bouwen we niet.
 
+**Verplichte bevestiging bij het uploaden.** Voordat een vertaling start, vinkt de gebruiker aan: *"Ik heb de rechten op deze video en toestemming van de spreker voor het gebruik van zijn of haar stem en gezicht."* Zonder vinkje geen vertaling: de knop blijft uitgeschakeld en de server weigert het verzoek als de bevestiging ontbreekt. De bevestiging wordt met tijdstip bij het project opgeslagen. Deze regel staat ook in `CLAUDE.md`.
+
 ```
-Upload ─→ Vertalen (tekst + stem + lipsync) ─→ Correctie door gebruiker ─→ Ondertitels + 9:16 ─→ (optioneel) Verbetering ─→ Download
+Upload + rechtenbevestiging ─→ Vertalen (tekst + stem + lipsync) ─→ Correctie door gebruiker ─→ Ondertitels + 9:16 ─→ (optioneel) Verbetering ─→ Download
 ```
 
 ### Optie 1: HeyGen Video Translation (v3), met proofread
