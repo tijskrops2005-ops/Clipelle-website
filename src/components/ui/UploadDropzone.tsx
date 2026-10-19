@@ -20,6 +20,9 @@ type UploadDropzoneProps = {
   invalid?: boolean;
   disabled?: boolean;
   onReject?: (message: string) => void;
+  /** Copy for other uses than product photos (logo, background). */
+  title?: string;
+  hint?: string;
 };
 
 /**
@@ -35,6 +38,8 @@ export function UploadDropzone({
   invalid,
   disabled,
   onReject,
+  title,
+  hint,
 }: UploadDropzoneProps) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
@@ -114,10 +119,10 @@ export function UploadDropzone({
           <ImagePlus className="size-5" aria-hidden />
         </span>
         <p className="mt-4 text-[15px] font-medium text-ink">
-          Drop product images here, or click to choose
+          {title ?? "Drop product images here, or click to choose"}
         </p>
         <p className="mt-1 text-[13px] text-muted">
-          PNG or JPG, up to {maxSizeMb} MB each, max {max} images. Clear photos on a plain background work best.
+          {hint ?? `PNG or JPG, up to ${maxSizeMb} MB each, max ${max} images. Clear photos on a plain background work best.`}
         </p>
         <input
           ref={inputRef}

@@ -330,7 +330,7 @@ export function ProjectForm() {
             </div>
             {backgroundChoice === "image" && (
               <div className="mt-3">
-                <UploadDropzone id="backgroundImage" images={backgroundImages} onChange={setBackgroundImages} max={1} disabled={submitting} onReject={(message) => setErrors((e) => ({ ...e, form: message }))} />
+                <UploadDropzone id="backgroundImage" images={backgroundImages} onChange={setBackgroundImages} max={1} disabled={submitting} title="Drop a background image here, or click to choose" hint="PNG or JPG, up to 10 MB. Portrait or square works best." onReject={(message) => setErrors((e) => ({ ...e, form: message }))} />
                 <p className="mt-1.5 text-[13px] text-muted">A calm, plain picture works best: the hook text and captions sit on top of it.</p>
               </div>
             )}
@@ -486,7 +486,7 @@ export function ProjectForm() {
                 </Field>
               </div>
               <Field id="logo" label="Logo" optional hint="PNG with a transparent background works best. Shown small, top right, for the whole video.">
-                <UploadDropzone id="logo" images={logoImages} onChange={setLogoImages} max={1} disabled={submitting} onReject={(message) => setErrors((e) => ({ ...e, form: message }))} />
+                <UploadDropzone id="logo" images={logoImages} onChange={setLogoImages} max={1} disabled={submitting} title="Drop your logo here, or click to choose" hint="PNG or JPG, up to 10 MB, one file." onReject={(message) => setErrors((e) => ({ ...e, form: message }))} />
               </Field>
             </div>
           </fieldset>

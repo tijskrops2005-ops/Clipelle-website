@@ -207,13 +207,13 @@ Per stap: wat het is, waar het vandaan komt, effect op kwaliteit en kosten, of h
 |---|---|---|---|---|---|
 | Look (avatar) | `GET /v3/avatars/looks` (`id`, `name`, `avatar_type`, `preferred_orientation`, `image_width/height`, `tags`); alleen staande looks bruikbaar | Bepaalt gezicht, kleding, decor; grootste indruk op de klant | Geen | **Gebouwd** (19 okt 2026): picker op `/new/ad` (stap "Your presenter"), staande looks die de gekozen kwaliteit ondersteunen, 6 gecureerde looks eerst, "More presenters" met paginering; standaard Olivia (`HEYGEN_DEFAULT_LOOK_ID`); keuze opgeslagen als `AdInput.lookId` | Klant kiest (gebouwd) |
 | Geslacht | `gender` op look en groep | Past bij doelgroep | Geen | Filter All / Women / Men in de picker (gebouwd) | Filter, geen los veld |
-| Stem | `GET /v3/voices` (`language`, `gender`, `available_engines`, `support_locale`); look heeft `default_voice_id` | Groot: toon en accent bepalen geloofwaardigheid | Geen | Volgt de gekozen look (`default_voice_id`), tenzij `HEYGEN_DEFAULT_VOICE_ID` gevuld is; anders de eerste Engelse stem | Zo laten; later kiezen uit 2–3 stemmen per taal |
+| Stem | `GET /v3/voices` (`language`, `gender`, `available_engines`, `support_locale`); look heeft `default_voice_id` | Groot: toon en accent bepalen geloofwaardigheid | Geen | Volgt de gekozen look (`default_voice_id`), tenzij `HEYGEN_DEFAULT_VOICE_ID` gevuld is; anders de eerste Engelse stem | Aparte prompt (stemkeuze); let op: bij een andere scripttaal dan Engels moet de stem die taal spreken |
 | Stemtaal | `language`-filter op `/v3/voices`; script in `AD_LANGUAGE` | Moet gelijk zijn aan de scripttaal | Geen | Onze stemlijst filtert hard op "English", niet op `AD_LANGUAGE` (gevonden bij de controle) | Koppelen aan `AD_LANGUAGE` zodra er een tweede taal komt |
 | Tempo, toonhoogte, volume, accent | `voice_settings.speed` 0,5–1,5, `pitch` −50…+50, `volume`, `locale`; geen emotieveld | Tempo raakt de woordgrens (2,5 w/s); accent per regio | Geen | Niet meegestuurd (standaard 1,0) | Vaste standaard; `speed` later eventueel 1,05 na een test |
 | Engine | `engine.type` `avatar_iii | avatar_iv | avatar_v`; look moet hem ondersteunen | IV: natuurlijke beweging; III: stijver | Lijst $0,05/s vs $0,0083/s; gemeten ≈ $0,033 vs $0,017/s | Kiesbaar: Standard/Premium op `/new/ad` (gebouwd) | Klant laat kiezen (besloten) |
 | Resolutie | `resolution` `720p | 1080p | 4k` (4k alleen Avatar III twins/studio) | Staande twins zijn 720×1280 van zichzelf; 1080p is opgeschaald | Geen toeslag | Vast 1080p | Vast 1080p |
-| Achtergrond | `background.type` `color` (hex) of `image` (`url`/`asset_id`); geen video | Productfoto achter de presentator (U7) | Geen | Niet meegestuurd (decor van de look) | Later (U7) |
-| remove_background | `remove_background` (alleen looks met matting) + `output_format: webm` voor transparantie | Presentator vrijstaand over productbeeld | Geen vermeld | Uit | Later (U7) |
+| Achtergrond | `background.type: color` (`value` hex) of `image` (`url`/`asset_id`); geen video (create-video.md, 19 okt 2026) | Effen kleur of eigen foto achter de presentator | Geen | **Gebouwd**: keuze in "Your presenter" (eigen van de look, 5 kleuren, eigen afbeelding); opgeslagen als `AdInput.background` | Klant kiest (gebouwd) |
+| remove_background | Top-level `remove_background`; "Video avatars must be trained with matting enabled"; de API geeft per look niet aan of matting aan staat | Nodig om de achtergrond écht te vervangen | Geen vermeld | **Gebouwd met vangnet**: wordt meegestuurd zodra een achtergrond gekozen is; antwoordt HeyGen 400, dan behoudt de run de eigen achtergrond en toont de presentatorstap een waarschuwing | Automatisch |
 | Captions | `caption.file_format: srt`, `style: default`; SRT altijd via `subtitle_url` | Shotstack maakt onze captions; HeyGen-SRT is exacter | Geen | Uit; Shotstack transcribeert | Later: HeyGen-SRT doorgeven aan Shotstack (zoals Workflow B) |
 | Beweging / expressiviteit | `motion_prompt` en `expressiveness` `low | medium | high`: alleen foto-avatars; geweigerd voor video-avatars op IV | Alleen relevant als we foto-avatars gebruiken | Geen | N.v.t. | Later, alleen bij eigen foto-avatar |
 | Eigen foto-avatar | `POST /v3/avatars` `type: photo`; pollen op look-status | De klant als presentator | Kosten niet in de documentatie; navragen | Niet gebouwd | Later; toestemming vastleggen (geen consentstap bij HeyGen) |
@@ -225,12 +225,15 @@ Per stap: wat het is, waar het vandaan komt, effect op kwaliteit en kosten, of h
 
 | Instelling | Wat / waar vandaan | Kwaliteit | Kosten | Nu | Advies |
 |---|---|---|---|---|---|
-| Taal | `AD_LANGUAGE` → prompt; stem moet erbij passen | Moet kloppen met markt en stem | Geen | Vast `en` | Klant laten kiezen zodra stemmen per taal gekoppeld zijn (Slowaaks/Duits/Frans/Nederlands/Engels zoals Workflow B) |
+| Taal | `AD_LANGUAGE` → prompt; stem moet erbij passen | Moet kloppen met markt en stem | Geen | **Gebouwd**: keuze op `/new/ad` (Slowaaks/Duits/Frans/Nederlands/Engels), standaard `AD_LANGUAGE`; opgeslagen als `AdInput.language` | Klant kiest (gebouwd); de stem bij die taal komt in de stemprompt |
 | Invalshoek | `angle` in `ScriptInput` (`problem_solution`; UGC en demo in het schema voorbereid) | Groot verschil in toon en opbouw | Geen (zelfde aanroep) | Vast problem/solution | Later kiesbaar (U1) |
-| Toon / richting | `hint` (doelgroep, toon, nadruk) | Stuurt woordkeuze | Geen | Alleen op `/dev/script` | Eén vrij veld "Direction" op het formulier (klein, goedkoop) |
+| Toon | Vaste lijst Elegant / Playful / Direct / Warm → regel in het systeemprompt (`TONE_META`) | Stuurt woordkeuze en ritme | Geen | **Gebouwd**, standaard Direct (de oude toon) | Klant kiest (gebouwd) |
+| Richting | Vrij veld "Direction" (max 200 tekens), als data in het prompt | Doelgroep en nadruk | Geen | **Gebouwd** | Klant vult in (gebouwd) |
 | Lengte | `AD_LENGTHS` 10/20/30/45/60 s → woordgrens | Bepaalt alles; 10 s = alleen hook, product, CTA | Grootste kostenknop (presentator per seconde) | Kiesbaar (gebouwd) | Klant kiest (besloten) |
-| Aanbod / CTA | Nu verzint Claude niets; aanbod blijft algemeen | Echte korting of bundel maakt de eindkaart sterker | Geen | Geen veld (S2 in de roadmap) | Veld "Offer" toevoegen (S2) |
-| Doelgroep | Onderdeel van `hint` | Richt hook en voorbeelden | Geen | Niet apart | Samen met "Direction" |
+| Aanbod / CTA | Veld "Offer" (max 80 tekens); het script gebruikt het in de CTA en noemt zonder veld geen korting of urgentie | Echte korting of bundel maakt de eindkaart sterker | Geen | **Gebouwd** (S2) | Klant vult in (gebouwd) |
+| Doelgroep | Onderdeel van "Direction" | Richt hook en voorbeelden | Geen | Gebouwd via Direction | – |
+| Hooks | Schema levert 3 hooks; `hook` = de gekozen | Keuze uit drie invalshoeken voor de eerste 2 s | ≈ +60 uitvoertokens ≈ $0,001 per script (Opus) | **Gebouwd**; zonder review wordt de eerste gebruikt | Klant kiest bij review (gebouwd) |
+| Review script first | Pauze na het script (stap "needs_input", project "review"), goedkeuren via `POST /api/projects/{id}/script`, event `project/ad-script.approved`; retry van latere stappen slaat de pauze over zodra `approvedAt` staat | Klant ziet en corrigeert de tekst vóór de dure stappen | Geen extra kosten; voorkomt mislukte dure stappen | **Gebouwd**, standaard uit | Klant kiest (gebouwd) |
 | Model | `model` op `/dev/script` (Opus/Sonnet/Haiku) | Opus duidelijk beter in de test | $0,02 vs $0,01 vs $0,001 | Vast Opus 5.5 | Vast; klant hoeft dit niet te zien |
 
 ### Productclip (fal.ai)
@@ -246,12 +249,14 @@ Per stap: wat het is, waar het vandaan komt, effect op kwaliteit en kosten, of h
 
 | Instelling | Wat / waar vandaan | Kwaliteit | Kosten | Nu | Advies |
 |---|---|---|---|---|---|
-| Muziek | Eén eigen track; HeyGen `GET /v3/audio/sounds` als catalogus (zoeken in gewone taal, `duration`, WAV); licentie voor advertenties niet in de documentatie | Sfeer; muziek uit het script (`musicMood`) kan de zoekterm zijn | HeyGen vermeldt geen prijs; navragen | Vast `sample-music.mp3` | Later: 3–5 gelicentieerde tracks, keuze via `musicMood` automatisch |
-| Ondertitelstijl en kleuren | Shotstack `rich-caption` (font, size, color, stroke, `active` kleur, animatie `pop` enz.) | Herkenbaarheid, leesbaarheid | Geen | Vast (wit, zwarte rand, accent op het actieve woord) | Vast; later merkkleuren (U6) |
-| Lettertype | `timeline.fonts[].src` of ingebouwd (Roboto) | Merkgevoel | Geen | Vast Roboto 900 | Vast; later merkfont (U6) |
-| Logo | Extra `image`-clip op een track | Merkherkenning | Geen | Niet | Later (U6): één logo-upload, rechtsboven of op de eindkaart |
-| Eindkaart | `offer.headline` + `offer.cta` uit het script, laatste 2 s | Conversie | Geen | Automatisch | Vast; tekst via "Offer"-veld (S2) |
-| Kleuren van de hook | `colors` in `buildAdEdit` (accent, ink, light) | Merkkleur | Geen | Vast app-kleuren | Later merkkleuren (U6) |
+| Muziek | **Bewust niet gebouwd** (19 okt 2026). HeyGen `GET /v3/audio/sounds`: catalogus met zoeken in gewone taal, `duration`, tijdelijke WAV; prijs en licentie staan niet in de documentatie. Shotstack: geen muziekbibliotheek; wel AI-muziek (`elevenlabs-music`, per begonnen minuut, bedrag en licentie niet op de prijspagina) en eigen audiobestanden (`audio`-asset met `src`, `volume`, `effect`). | Sfeer | Onbekend | Vast `sample-music.mp3` | Open vragen aan HeyGen en Shotstack: prijs per track/minuut en of de licentie betaalde advertenties dekt. Tot die antwoorden: één eigen gelicentieerde track |
+| Ondertitelstijl | Shotstack `rich-caption`: animatie `pop | fade | karaoke` (van de 8 stijlen), `active` kleur, stroke | Herkenbaarheid, leesbaarheid | Geen | **Gebouwd**: Bold pop (standaard), Clean, Karaoke | Klant kiest (gebouwd) |
+| Lettertype | Ingebouwde Shotstack-families (rich-text.md): Roboto, Montserrat, Open Sans, Work Sans (uit de lijst van 11); eigen fonts via `timeline.fonts[].src` | Merkgevoel | Geen | **Gebouwd**: vaste lijst van 4, standaard Roboto | Klant kiest (gebouwd); eigen font later |
+| Logo | `image`-clip, `scale` 0,14, `position: topRight`, `offset` (positioning.md) | Merkherkenning | Geen | **Gebouwd**: optionele upload (asset kind `logo`), hele video rechtsboven | Klant uploadt (gebouwd) |
+| Eindkaart | `offer.headline` + `offer.cta` uit het script, laatste 2 s | Conversie | Geen | Automatisch; tekst via "Offer" | Vast |
+| Accentkleur (hook, CTA-knop, actief woord) | `colors.accent` in `buildAdEdit`; contrast met wit tekst gecontroleerd (WCAG, waarschuwing onder 3:1) | Merkkleur | Geen | **Gebouwd**: 6 kleuren of eigen hex | Klant kiest (gebouwd) |
+
+**Niet toegevoegd (bewust, 19 okt 2026):** model, duur en prompt van de productclip; toonhoogte en volume van de stem; expressiveness en motion prompt; eigen foto-avatars; muziek (open vragen hierboven).
 
 **Controle stemmen en default-stem:** de orchestrator gebruikt `HEYGEN_DEFAULT_VOICE_ID`, anders `default_voice_id` van de gekozen look (komt mee in de looks-lijst, bij de staande kandidaten is hij gevuld), anders de eerste stem uit `GET /v3/voices?language=English`. Die lijst filtert op "English", niet op `AD_LANGUAGE`; zolang `AD_LANGUAGE` `en` is klopt dat, maar bij een andere taal moet de stemkeuze aan de taal gekoppeld worden.
 

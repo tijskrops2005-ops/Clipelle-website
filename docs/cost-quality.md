@@ -188,3 +188,17 @@ Met een doorpratende presentator op Avatar IV passen alleen 10 en 20 seconden bi
 | D. Alleen 10 en 20 s aanbieden; 30, 45 en 60 s pas na een prijsverhoging per video | $0,86 / $1,02 | $1,40 / $1,56 | – | – | – | Niets te bouwen; de keuzelijst toont de lange lengtes als "over budget". 20 s valt na 1 november ook af tenzij het budget naar $1,60 gaat. |
 
 **Aanbeveling: A, in combinatie met D tot de prijs per video is bepaald.** Alleen A levert lange video's in de kwaliteit die de klant verwacht; B bespaart op precies het onderdeel dat de klant beoordeelt. Concreet: budget per video $1,50 tot 20 s en daarboven $0,05 per extra seconde (30 s $2,00, 45 s $2,75, 60 s $3,50 → $3,75 na 1 november), en de grens per aanroep naar $3,00 (de presentatorvideo van 60 s). Tot jij dat goedkeurt blijven beide limieten op $1,50 en zijn alleen 10 en 20 s te starten.
+
+## 14. Kosteneffect van de klantkeuzes (19 oktober 2026)
+
+| Keuze | Effect op de schatting | Effect op het budget van $1,50 |
+|---|---|---|
+| Scripttaal, toon, richting, aanbod | Geen: zelfde Claude-aanroep, enkele tokens meer | Geen |
+| Drie hooks | ≈ +60 uitvoertokens per script: +$0,001 (Opus), schatting in `estimateScriptCost` van 900 naar 960 uitvoertokens | Geen merkbaar |
+| Review script first | Geen extra aanroep; voorkomt dure stappen op een verkeerd script | Geen; de pauze zit vóór presentator en productclip |
+| Presentatorkwaliteit (Standard / Premium) | Presentator $0,0083/s of $0,05/s (lijst); zie §8 | Bepaalt samen met de lengte of een video past |
+| Presentatorlook | Geen | Geen |
+| Presentatorachtergrond (kleur of eigen foto) | Geen toeslag vermeld door HeyGen; `remove_background` niet apart geprijsd | Geen |
+| Merkstijl (kleur, ondertitels, font, logo) | Geen: zelfde Shotstack-render; een logo-afbeelding is een extra asset zonder prijs | Geen |
+
+`estimateAdCost` is dus alleen afhankelijk van lengte en presentatorkwaliteit; de andere keuzes veranderen het bedrag op het formulier niet.
