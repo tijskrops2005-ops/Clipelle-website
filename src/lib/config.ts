@@ -20,5 +20,20 @@ export const config = {
     productClip: "fal.ai",
     presenter: "HeyGen",
     finalEdit: "Shotstack",
+    translate: "HeyGen",
+    captions: "Shotstack",
   },
+  /** Hard limits shown to the user before anything is uploaded. */
+  limits: {
+    /** HeyGen `POST /v3/assets` accepts files up to 32 MB. Larger files need a separate route (not built yet). */
+    translateVideoMaxMb: 32,
+    /** Keeps a translation test short and cheap; the full product can raise this later. */
+    translateVideoMaxSeconds: 180,
+  },
+  /**
+   * Exact wording of the rights confirmation for the translate workflow (rule 7 in CLAUDE.md).
+   * Shown as a checkbox; without it no translation starts.
+   */
+  rightsConfirmationText:
+    "Ik heb de rechten op deze video en toestemming van de spreker voor het gebruik van zijn of haar stem en gezicht.",
 } as const;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { ArrowLeft, Download, FolderOpen, Plus } from "lucide-react";
 import { config } from "@/lib/config";
-import type { Project } from "@/lib/types";
+import type { AdProject } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { useProjects } from "@/lib/mock/store";
 import { StatusBadge } from "@/components/ui/Badge";
@@ -17,6 +17,7 @@ import { DemoBadge } from "@/components/DemoModeBadge";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { Pipeline } from "@/components/pipeline/Pipeline";
 import { stepMeta } from "@/components/pipeline/PipelineStep";
+import { TranslateProjectView } from "@/components/translate/TranslateProjectView";
 
 export function ProjectView({ id }: { id: string }) {
   const projects = useProjects();
@@ -46,6 +47,8 @@ export function ProjectView({ id }: { id: string }) {
       />
     );
   }
+
+  if (project.workflow === "translate") return <TranslateProjectView project={project} />;
 
   return (
     <div className="space-y-10">
@@ -80,7 +83,7 @@ export function ProjectView({ id }: { id: string }) {
   );
 }
 
-function pipelineSummary(project: Project) {
+function pipelineSummary(project: AdProject) {
   const done = (["productClip", "presenter", "finalEdit"] as const).filter(
     (k) => project.steps[k].status === "completed",
   ).length;
@@ -102,11 +105,11 @@ function pipelineSummary(project: Project) {
   }
 }
 
-function HeaderActions({ project }: { project: Project }) {
+function HeaderActions({ project }: { project: AdProject }) {
   if (project.status !== "completed" || !project.finalVideoUrl) return null;
   return (
     <div className="flex items-center gap-3">
-      <Button href="/new" variant="secondary">
+      <Button href="/new/ad" variant="secondary">
         <Plus className="size-4" aria-hidden />
         Make another
       </Button>
@@ -118,7 +121,7 @@ function HeaderActions({ project }: { project: Project }) {
   );
 }
 
-function ResultCard({ project }: { project: Project }) {
+function ResultCard({ project }: { project: AdProject }) {
   if (project.status === "completed" && project.finalVideoUrl) {
     return (
       <Card>
@@ -141,7 +144,7 @@ function ResultCard({ project }: { project: Project }) {
               <Download className="size-[18px]" aria-hidden />
               Download video
             </Button>
-            <Button href="/new" variant="primary">
+            <Button href="/new/ad" variant="primary">
               <Plus className="size-4" aria-hidden />
               Make another
             </Button>
@@ -186,7 +189,7 @@ function ResultCard({ project }: { project: Project }) {
   );
 }
 
-function DetailsCard({ project }: { project: Project }) {
+function DetailsCard({ project }: { project: AdProject }) {
   return (
     <Card>
       <CardHeader>

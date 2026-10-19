@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Play } from "lucide-react";
+import { Languages, Play } from "lucide-react";
 import type { Project } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
+import { projectMonogram, projectPosterUrl, projectSubtitle, projectVideoCount } from "@/lib/projectMeta";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Poster } from "@/components/Poster";
 
@@ -19,8 +20,8 @@ export function ProjectTile({ project }: { project: Project }) {
             Real poster frames arrive with the final-edit output (Stage 8). */}
         <Poster
           seed={project.id}
-          monogram={project.productName.charAt(0)}
-          imageUrl={project.imageUrls[0]}
+          monogram={projectMonogram(project)}
+          imageUrl={projectPosterUrl(project)}
         />
 
         <StatusBadge
@@ -28,6 +29,15 @@ export function ProjectTile({ project }: { project: Project }) {
           variant="floating"
           className="absolute left-3 top-3"
         />
+        {project.workflow === "translate" && (
+          <span
+            className="label-mono absolute right-3 top-3 inline-flex h-7 items-center gap-1 rounded-full bg-surface px-2.5 text-ink shadow-card"
+            title="Translation project"
+          >
+            <Languages className="size-3" aria-hidden />
+            {project.targetLanguages.length}
+          </span>
+        )}
 
         {isCompleted && (
           <>
@@ -35,7 +45,9 @@ export function ProjectTile({ project }: { project: Project }) {
             <div className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-3 text-surface">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{project.name}</p>
-                <p className="label-mono mt-1 opacity-80">0:24 · 9:16</p>
+                <p className="label-mono mt-1 opacity-80">
+                  {projectVideoCount(project) > 1 ? `${projectVideoCount(project)} videos · 9:16` : "0:24 · 9:16"}
+                </p>
               </div>
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-surface text-ink shadow-card transition-transform group-hover:scale-105">
                 <Play className="ml-0.5 size-4" fill="currentColor" aria-hidden />
@@ -55,7 +67,7 @@ export function ProjectTile({ project }: { project: Project }) {
           {project.name}
         </h3>
         <p className="truncate text-[13px] text-muted">
-          {project.productName} · {formatDate(project.createdAt)}
+          {projectSubtitle(project)} · {formatDate(project.createdAt)}
         </p>
       </div>
     </Link>

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 import { Loader2, Sparkles } from "lucide-react";
-import type { Project } from "@/lib/types";
+import type { AdProject } from "@/lib/types";
 import { addProject } from "@/lib/mock/store";
 import { fileToThumbnail } from "@/lib/mock/images";
 import { Button } from "@/components/ui/Button";
@@ -95,8 +95,9 @@ export function ProjectForm() {
     try {
       const imageUrls = await Promise.all(images.map((img) => fileToThumbnail(img.file)));
       const now = new Date().toISOString();
-      const project: Project = {
+      const project: AdProject = {
         id: `prj_${Date.now().toString(36)}`,
+        workflow: "ad",
         name: values.projectName.trim(),
         productName: values.productName.trim(),
         productUrl: values.productUrl.trim() || undefined,

@@ -37,8 +37,11 @@ const emptyCopy: Record<Filter, { title: string; description: string }> = {
   },
 };
 
+/** A project paused for review still counts as "processing" in the filter: it is not finished. */
 function matches(project: Project, filter: Filter) {
-  return filter === "all" || project.status === filter;
+  if (filter === "all") return true;
+  if (filter === "processing") return project.status === "processing" || project.status === "review";
+  return project.status === filter;
 }
 
 export function ProjectsGrid() {

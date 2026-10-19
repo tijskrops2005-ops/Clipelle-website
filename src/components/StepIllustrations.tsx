@@ -68,3 +68,26 @@ export function FinalVideoIllustration(props: Props) {
     </svg>
   );
 }
+
+/** Workflow B — a video with speech becomes the same video in another language. */
+export function TranslateIllustration(props: Props) {
+  return (
+    <svg {...common} {...props}>
+      {/* source clip with speech bubble */}
+      <rect x="8" y="16" width="30" height="40" rx="6" />
+      <circle cx="23" cy="31" r="5" />
+      <path d="M15 48c2-5 5-7 8-7s6 2 8 7" />
+      <path d="M30 14h12a4 4 0 0 1 4 4v4l-5-3h-7a4 4 0 0 1-4-4z" />
+      {/* arrow */}
+      <path d="M44 36h8" />
+      <path d="M48 31l5 5-5 5" />
+      {/* translated clip with captions */}
+      <rect x="58" y="16" width="30" height="40" rx="6" />
+      <circle cx="73" cy="31" r="5" />
+      <path d="M65 48c2-5 5-7 8-7s6 2 8 7" />
+      <path d="M63 60h20M67 65h12" />
+      {/* language mark */}
+      <path d="M78 10h10M83 6v4M80 19c3-2 5-5 6-9M86 19c-2-2-3-4-4-6" />
+    </svg>
+  );
+}

@@ -1,10 +1,10 @@
 "use client";
 
-import type { Project } from "@/lib/types";
+import type { AdProject } from "@/lib/types";
 import { PipelineStep } from "@/components/pipeline/PipelineStep";
 
 /** Product clip and presenter side by side (they run in parallel), final edit below (it needs both). */
-export function Pipeline({ project }: { project: Project }) {
+export function Pipeline({ project }: { project: AdProject }) {
   return (
     <div>
       <div className="grid gap-5 md:grid-cols-2 md:gap-6">

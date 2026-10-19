@@ -53,6 +53,8 @@ export const statusMeta: Record<
   draft: { tone: "neutral", label: "Draft" },
   waiting: { tone: "warning", label: "Waiting" },
   processing: { tone: "accent", label: "Processing" },
+  review: { tone: "warning", label: "Needs review" },
+  needs_input: { tone: "warning", label: "Waiting for you" },
   completed: { tone: "success", label: "Completed" },
   failed: { tone: "danger", label: "Failed" },
 };
@@ -71,7 +73,11 @@ export function StatusBadge({
     <Badge tone={tone} variant={variant} className={className}>
       <span
         aria-hidden
-        className={cn("size-1.5 rounded-full", dot[tone], status === "processing" && "animate-pulse")}
+        className={cn(
+          "size-1.5 rounded-full",
+          dot[tone],
+          (status === "processing" || status === "needs_input" || status === "review") && "animate-pulse",
+        )}
       />
       {label}
     </Badge>

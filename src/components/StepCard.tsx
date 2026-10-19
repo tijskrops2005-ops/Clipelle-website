@@ -34,12 +34,14 @@ export function StepCard({
   className,
 }: StepCardProps) {
   const active = status === "processing";
+  const needsInput = status === "needs_input";
 
   return (
     <article
       className={cn(
         "flex flex-col rounded-card bg-surface p-5 shadow-card transition-shadow sm:p-7",
         active && "ring-1 ring-accent/40",
+        needsInput && "ring-1 ring-warning/50",
         className,
       )}
     >
@@ -94,7 +96,9 @@ function StepNumber({
     <span
       className={cn(
         base,
-        status === "processing" ? "bg-accent text-white" : "bg-ink text-surface",
+        status === "processing" && "bg-accent text-white",
+        status === "needs_input" && "bg-warning text-white",
+        (status === undefined || status === "waiting") && "bg-ink text-surface",
       )}
     >
       {number}

@@ -32,7 +32,7 @@ function loadFromStorage() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
-    const stored = JSON.parse(raw) as Project[];
+    const stored = (JSON.parse(raw) as Project[]).map(normalise);
     // Seed projects always stay; stored ones are the user's demo creations.
     const seedIds = new Set(mockProjects.map((p) => p.id));
     const extra = stored.filter((p) => !seedIds.has(p.id));
@@ -41,6 +41,11 @@ function loadFromStorage() {
   } catch {
     // Corrupt or blocked storage: keep the seed data.
   }
+}
+
+/** Projects stored before the translate workflow existed have no `workflow` field. */
+function normalise(project: Project): Project {
+  return project.workflow ? project : { ...(project as Omit<Project, "workflow">), workflow: "ad" } as Project;
 }
 
 function saveToStorage() {

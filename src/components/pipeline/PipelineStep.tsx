@@ -1,17 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Clock, RotateCcw } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Clock, RotateCcw, UserRoundCheck } from "lucide-react";
 import { config } from "@/lib/config";
-import type { Project, Step, StepKey } from "@/lib/types";
+import type { AdProject, Step, StepKey } from "@/lib/types";
 import { retryStep } from "@/lib/mock/runner";
 import { Button } from "@/components/ui/Button";
 import { Poster } from "@/components/Poster";
 import { StepCard } from "@/components/StepCard";
 
-type Meta = { number: number; title: string; service: string; description: string; waitingNote: string };
+export type StepMeta = {
+  number: number;
+  title: string;
+  service: string;
+  description: string;
+  waitingNote: string;
+  /** Shown while the step waits for the user (status "needs_input"). */
+  needsInputNote?: string;
+  /** Label on the completed panel, e.g. "Clip ready". */
+  doneLabel?: string;
+};
 
-export const stepMeta: Record<StepKey, Meta> = {
+export const stepMeta: Record<StepKey, StepMeta> = {
   productClip: {
     number: 1,
     title: "Product clip",
@@ -35,7 +45,7 @@ export const stepMeta: Record<StepKey, Meta> = {
   },
 };
 
-function formatSeconds(ms: number) {
+export function formatSeconds(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(total / 60);
   const s = total % 60;
@@ -56,21 +66,28 @@ function useElapsed(step: Step) {
   return elapsed;
 }
 
-export function PipelineStep({
-  project,
-  stepKey,
+/**
+ * Generic live step card: renders the right inner panel for a step's status.
+ * Used by both workflows; the workflow-specific wrappers supply meta, poster and retry.
+ */
+export function StepProgressCard({
+  meta,
+  step,
+  poster,
+  onRetry,
   className,
 }: {
-  project: Project;
-  stepKey: StepKey;
+  meta: StepMeta;
+  step: Step;
+  /** Thumbnail shown on the completed panel. */
+  poster?: ReactNode;
+  onRetry?: () => void;
   className?: string;
 }) {
-  const meta = stepMeta[stepKey];
-  const step = project.steps[stepKey];
   const elapsed = useElapsed(step);
 
-  let panel: React.ReactNode;
-  let footer: React.ReactNode;
+  let panel: ReactNode;
+  let footer: ReactNode;
 
   switch (step.status) {
     case "waiting":
@@ -78,6 +95,15 @@ export function PipelineStep({
         <div className="flex items-center gap-3 text-sm text-muted">
           <Clock className="size-4 shrink-0" aria-hidden />
           <span>{meta.waitingNote}</span>
+        </div>
+      );
+      break;
+
+    case "needs_input":
+      panel = (
+        <div className="flex items-center gap-3 text-sm text-ink">
+          <UserRoundCheck className="size-4 shrink-0 text-warning" aria-hidden />
+          <span>{meta.needsInputNote ?? "This step waits for you."}</span>
         </div>
       );
       break;
@@ -109,11 +135,11 @@ export function PipelineStep({
           : undefined;
       panel = (
         <div className="flex items-center gap-4">
-          <div className="relative aspect-[9/16] w-14 shrink-0 overflow-hidden rounded-[8px] shadow-card">
-            <Poster seed={`${project.id}:${stepKey}`} imageUrl={stepKey === "productClip" ? project.imageUrls[0] : undefined} />
-          </div>
+          {poster && (
+            <div className="relative aspect-[9/16] w-14 shrink-0 overflow-hidden rounded-[8px] shadow-card">{poster}</div>
+          )}
           <div className="min-w-0">
-            <p className="text-sm font-medium text-ink">Clip ready</p>
+            <p className="text-sm font-medium text-ink">{meta.doneLabel ?? "Clip ready"}</p>
             <p className="text-[13px] text-muted">
               {took !== undefined ? `Done in ${formatSeconds(took)}` : "Done"}
               {step.attempt && step.attempt > 1 ? ` · attempt ${step.attempt}` : ""}
@@ -131,12 +157,12 @@ export function PipelineStep({
           <p className="text-sm leading-relaxed text-ink/80">{step.error ?? "An unknown error occurred."}</p>
         </div>
       );
-      footer = (
-        <Button size="sm" onClick={() => retryStep(project.id, stepKey)}>
+      footer = onRetry ? (
+        <Button size="sm" onClick={onRetry}>
           <RotateCcw className="size-4" aria-hidden />
           Retry this step
         </Button>
-      );
+      ) : undefined;
       break;
   }
 
@@ -149,6 +175,27 @@ export function PipelineStep({
       status={step.status}
       panel={panel}
       footer={footer}
+      className={className}
+    />
+  );
+}
+
+/** One live step card of the ad workflow. */
+export function PipelineStep({
+  project,
+  stepKey,
+  className,
+}: {
+  project: AdProject;
+  stepKey: StepKey;
+  className?: string;
+}) {
+  return (
+    <StepProgressCard
+      meta={stepMeta[stepKey]}
+      step={project.steps[stepKey]}
+      poster={<Poster seed={`${project.id}:${stepKey}`} imageUrl={stepKey === "productClip" ? project.imageUrls[0] : undefined} />}
+      onRetry={() => retryStep(project.id, stepKey)}
       className={className}
     />
   );
