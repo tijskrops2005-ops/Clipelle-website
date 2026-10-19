@@ -9,6 +9,7 @@ import { costGuardResponse, costLimits, creativeSpent, getProjectSpend, reserveS
 import { estimateAdCost, estimateTranslateCost } from "@/lib/pricing";
 import { workflowSettings } from "@/lib/workflow/settings";
 import { DEFAULT_TONE, isAdTone, type AdTone } from "@/lib/adOptions";
+import type { UploadKind } from "@/lib/data/uploads";
 
 /**
  * Data access for real projects (database mode). The UI calls this through the routes in
@@ -85,6 +86,8 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       offer: input.offer,
       direction: input.direction,
       tone: input.tone && isAdTone(input.tone) ? input.tone : DEFAULT_TONE,
+      background: input.background?.type === "color" ? input.background : input.background?.type === "image" ? { type: "image", url: await urlFor(assetsById.get(input.background.assetId)) } : undefined,
+      brand: input.brand ? { accent: input.brand.accent, captionStyle: input.brand.captionStyle, font: input.brand.font, logoUrl: input.brand.logoAssetId ? await urlFor(assetsById.get(input.brand.logoAssetId)) : undefined } : undefined,
       productName: input.productName,
       productUrl: input.productUrl,
       description: input.description,
@@ -173,7 +176,7 @@ export async function getProjectRow(id: string) {
 
 /* ---------- creation: draft → upload assets → start ---------- */
 
-export type NewAdProject = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: LanguageCode; offer?: string; direction?: string; tone: AdTone; productName: string; productUrl?: string; description: string; script?: string };
+export type NewAdProject = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: LanguageCode; offer?: string; direction?: string; tone: AdTone; backgroundColor?: string; brand?: { accent?: string; captionStyle?: string; font?: string }; productName: string; productUrl?: string; description: string; script?: string };
 export type NewTranslateProject = {
   name: string;
   sourceFileName: string;
@@ -198,7 +201,7 @@ export async function createDraft(input: { workflow: "ad"; ad: NewAdProject } | 
         workflow: "ad",
         name: a.name,
         status: "draft",
-        input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, offer: a.offer, direction: a.direction, tone: a.tone, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
+        input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, offer: a.offer, direction: a.direction, tone: a.tone, background: a.backgroundColor ? { type: "color", value: a.backgroundColor } : undefined, brand: a.brand, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
       })
       .returning();
     await d.insert(steps).values(AD_STEPS.map((key) => ({ projectId: row.id, key, status: "waiting" as const })));
@@ -232,7 +235,7 @@ export async function createDraft(input: { workflow: "ad"; ad: NewAdProject } | 
 }
 
 /** Registers an object the browser uploaded with a signed URL. Verifies it really exists. */
-export async function attachUploadedAsset(projectId: string, file: { kind: "image" | "source"; storagePath: string; fileName: string; seconds?: number }) {
+export async function attachUploadedAsset(projectId: string, file: { kind: UploadKind; storagePath: string; fileName: string; seconds?: number }) {
   const row = await getProjectRow(projectId);
   if (!row) throw new DataError("Project not found.", 404, "not_found");
   if (row.status !== "draft") throw new DataError("Files can only be added before the project starts.", 409, "not_draft");
@@ -246,6 +249,14 @@ export async function attachUploadedAsset(projectId: string, file: { kind: "imag
   if (row.workflow === "ad" && file.kind === "image") {
     const input = row.input as AdInput;
     await db().update(projects).set({ input: { ...input, imageAssetIds: [...input.imageAssetIds, asset.id] }, updatedAt: new Date() }).where(eq(projects.id, projectId));
+  }
+  if (row.workflow === "ad" && file.kind === "background") {
+    const input = row.input as AdInput;
+    await db().update(projects).set({ input: { ...input, background: { type: "image", assetId: asset.id } }, updatedAt: new Date() }).where(eq(projects.id, projectId));
+  }
+  if (row.workflow === "ad" && file.kind === "logo") {
+    const input = row.input as AdInput;
+    await db().update(projects).set({ input: { ...input, brand: { ...(input.brand ?? {}), logoAssetId: asset.id } }, updatedAt: new Date() }).where(eq(projects.id, projectId));
   }
   if (row.workflow === "translate" && file.kind === "source") {
     const input = row.input as TranslateInput;

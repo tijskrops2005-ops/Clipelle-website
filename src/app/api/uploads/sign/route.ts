@@ -1,6 +1,7 @@
 import { config } from "@/lib/config";
 import { dataErrorResponse, DataError, getProjectRow } from "@/lib/data/server";
 import { createSignedUpload, MAX_OBJECT_BYTES, objectPath } from "@/lib/storage";
+import { isUploadKind } from "@/lib/data/uploads";
 import { databaseModeOnly, readJson } from "../../projects/_guard";
 
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -13,9 +14,9 @@ const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 export async function POST(request: Request) {
   const blocked = databaseModeOnly();
   if (blocked) return blocked;
-  const body = await readJson<{ projectId?: string; kind?: "image" | "source"; fileName?: string; bytes?: number; mime?: string }>(request);
-  if (!body?.projectId || !body.fileName || (body.kind !== "image" && body.kind !== "source")) {
-    return Response.json({ error: "projectId, kind (image|source) and fileName are required." }, { status: 400 });
+  const body = await readJson<{ projectId?: string; kind?: string; fileName?: string; bytes?: number; mime?: string }>(request);
+  if (!body?.projectId || !body.fileName || !isUploadKind(body.kind)) {
+    return Response.json({ error: "projectId, kind (image|source|background|logo) and fileName are required." }, { status: 400 });
   }
   try {
     const row = await getProjectRow(body.projectId);

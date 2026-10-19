@@ -289,6 +289,10 @@ export type CreateAvatarVideoInput = {
   title?: string;
   /** How the look is fitted to the 9:16 canvas: "cover" fills (may crop), "contain" letterboxes. Omitted: HeyGen decides. */
   fit?: "cover" | "contain";
+  /** Replace the look's background with a solid colour (hex) or a public image URL (verified 2026-10-19: `background.type`, `value`, `url`). */
+  background?: { type: "color"; value: string } | { type: "image"; url: string };
+  /** Required with a background on video avatars: "Video avatars must be trained with matting enabled" (HeyGen). A look without matting gets a 400. */
+  removeBackground?: boolean;
   /** Stable key so a retried identical request is not created twice by HeyGen (24 h). */
   idempotencyKey?: string;
 };
@@ -306,6 +310,8 @@ export async function createAvatarVideo(input: CreateAvatarVideoInput) {
       resolution: input.resolution ?? "720p",
       // "cover" fills the frame (a portrait look needs no crop); omitted, HeyGen letterboxes a landscape look.
       ...(input.fit ? { fit: input.fit } : {}),
+      ...(input.background ? { background: input.background } : {}),
+      ...(input.removeBackground ? { remove_background: true } : {}),
       engine: { type: input.engine },
       title: input.title ?? "Reelay test",
     }),

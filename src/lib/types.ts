@@ -65,6 +65,10 @@ export interface AdProject extends ProjectBase {
   direction?: string;
   /** Tone of the script: elegant | playful | direct | warm. */
   tone?: "elegant" | "playful" | "direct" | "warm";
+  /** Presenter background: a colour, or a signed/object URL of the customer's image. Missing = the look's own. */
+  background?: { type: "color"; value: string } | { type: "image"; url?: string };
+  /** Brand style for the final edit (accent hex, caption style key, font key, logo URL). */
+  brand?: { accent?: string; captionStyle?: string; font?: string; logoUrl?: string };
   productName: string;
   productUrl?: string;
   description: string;

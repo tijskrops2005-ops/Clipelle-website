@@ -4,7 +4,7 @@ import { LANGUAGES } from "@/lib/languages";
 import type { LanguageCode } from "@/lib/types";
 import { config } from "@/lib/config";
 import { DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, isAdLength, isPresenterEngine } from "@/lib/pricing";
-import { AD_TONES, DEFAULT_AD_LANGUAGE, DEFAULT_TONE, DIRECTION_MAX_CHARS, OFFER_MAX_CHARS } from "@/lib/adOptions";
+import { AD_TONES, DEFAULT_AD_LANGUAGE, DEFAULT_TONE, DIRECTION_MAX_CHARS, HEX_COLOR, OFFER_MAX_CHARS, CAPTION_STYLES, FONT_KEYS } from "@/lib/adOptions";
 import { createDraft, dataErrorResponse, listProjects } from "@/lib/data/server";
 import { databaseModeOnly, readJson } from "./_guard";
 
@@ -32,6 +32,14 @@ const AdBody = z.object({
   offer: z.string().trim().max(OFFER_MAX_CHARS).optional().or(z.literal("")),
   direction: z.string().trim().max(DIRECTION_MAX_CHARS).optional().or(z.literal("")),
   tone: z.enum(AD_TONES).default(DEFAULT_TONE),
+  backgroundColor: z.string().regex(HEX_COLOR).optional(),
+  brand: z
+    .object({
+      accent: z.string().regex(HEX_COLOR).optional(),
+      captionStyle: z.enum(CAPTION_STYLES).optional(),
+      font: z.enum(FONT_KEYS).optional(),
+    })
+    .optional(),
   productName: z.string().trim().min(1).max(120),
   productUrl: z.string().trim().url().optional().or(z.literal("")),
   description: z.string().trim().min(20).max(4000),
@@ -61,7 +69,7 @@ export async function POST(request: Request) {
   try {
     if (body.workflow === "ad") {
       const a = AdBody.parse(body);
-      const row = await createDraft({ workflow: "ad", ad: { name: a.name, seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language as LanguageCode, offer: a.offer || undefined, direction: a.direction || undefined, tone: a.tone, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
+      const row = await createDraft({ workflow: "ad", ad: { name: a.name, seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language as LanguageCode, offer: a.offer || undefined, direction: a.direction || undefined, tone: a.tone, backgroundColor: a.backgroundColor, brand: a.brand, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
       return Response.json({ id: row.id, status: row.status }, { status: 201 });
     }
     if (body.workflow === "translate") {

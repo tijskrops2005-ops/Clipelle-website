@@ -12,7 +12,7 @@ import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRE
 import { cn } from "@/lib/utils";
 import { LANGUAGES } from "@/lib/languages";
 import type { LanguageCode } from "@/lib/types";
-import { AD_TONES, DEFAULT_AD_LANGUAGE, DEFAULT_TONE, DIRECTION_MAX_CHARS, OFFER_MAX_CHARS, TONE_META, type AdTone } from "@/lib/adOptions";
+import { AD_TONES, BACKGROUND_COLORS, DEFAULT_AD_LANGUAGE, DEFAULT_TONE, DIRECTION_MAX_CHARS, OFFER_MAX_CHARS, TONE_META, type AdTone } from "@/lib/adOptions";
 import { controlClass, controlStateClass } from "@/components/ui/Field";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -86,6 +86,9 @@ export function ProjectForm() {
   const [seconds, setSeconds] = useState<AdLength>(DEFAULT_AD_SECONDS);
   const [engine, setEngine] = useState<PresenterEngine>(DEFAULT_PRESENTER_ENGINE);
   const [lookId, setLookId] = useState<string | undefined>(undefined);
+  /** Presenter background: undefined = the presenter's own; a colour key; or "image" with one uploaded file. */
+  const [backgroundChoice, setBackgroundChoice] = useState<"own" | "image" | string>("own");
+  const [backgroundImages, setBackgroundImages] = useState<UploadedImage[]>([]);
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -126,6 +129,12 @@ export function ProjectForm() {
         seconds,
         engine,
         lookId,
+        background:
+          backgroundChoice === "image" && backgroundImages[0]
+            ? { type: "image", file: backgroundImages[0].file }
+            : backgroundChoice !== "own" && backgroundChoice !== "image"
+              ? { type: "color", value: BACKGROUND_COLORS.find((c) => c.key === backgroundChoice)?.value ?? "#FFFFFF" }
+              : undefined,
         language,
         offer: values.offer.trim() || undefined,
         direction: values.direction.trim() || undefined,
@@ -253,6 +262,38 @@ export function ProjectForm() {
           <div>
             <p className="mb-1.5 text-sm font-medium text-ink">Presenter</p>
             <PresenterPicker engine={engine} value={lookId} onChange={setLookId} disabled={submitting} />
+          </div>
+
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-ink">Background</p>
+            <p className="mb-3 text-[13px] text-muted">A solid colour or your own image behind the presenter. Not every presenter can swap their background; then the original is kept and the project page says so.</p>
+            <div className="flex flex-wrap gap-2">
+              {[{ key: "own", label: "Presenter's own", value: "" }, ...BACKGROUND_COLORS, { key: "image", label: "Your own image", value: "" }].map((c) => {
+                const selected = backgroundChoice === c.key;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setBackgroundChoice(c.key)}
+                    disabled={submitting}
+                    aria-pressed={selected}
+                    className={cn(
+                      "flex items-center gap-2 rounded-full border px-3 py-1.5 text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40",
+                      selected ? "border-ink bg-surface-muted text-ink" : "border-border bg-surface text-muted hover:text-ink",
+                    )}
+                  >
+                    {c.value ? <span className="size-4 rounded-full border border-border" style={{ backgroundColor: c.value }} aria-hidden /> : null}
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+            {backgroundChoice === "image" && (
+              <div className="mt-3">
+                <UploadDropzone id="backgroundImage" images={backgroundImages} onChange={setBackgroundImages} max={1} disabled={submitting} onReject={(message) => setErrors((e) => ({ ...e, form: message }))} />
+                <p className="mt-1.5 text-[13px] text-muted">A calm, plain picture works best: the hook text and captions sit on top of it.</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -45,6 +45,8 @@ export const assetKind = pgEnum("asset_kind", [
   "srt", // subtitle file (B)
   "enhanced", // after picture enhancement (B)
   "captioned", // finished translated video with captions (B)
+  "background", // customer's own presenter background image (A)
+  "logo", // customer's logo for the final edit (A)
 ]);
 export const costService = pgEnum("cost_service", ["heygen", "anthropic", "fal", "shotstack"]);
 export const costStatus = pgEnum("cost_status", ["started", "completed", "failed"]);
@@ -67,6 +69,10 @@ export type AdInput = {
   direction?: string;
   /** elegant | playful | direct | warm. Missing = direct. */
   tone?: string;
+  /** Presenter background: a solid colour or the customer's image. Missing = the look's own background. */
+  background?: { type: "color"; value: string } | { type: "image"; assetId: string };
+  /** Brand style for the final edit. Missing fields = app defaults. */
+  brand?: { accent?: string; captionStyle?: string; font?: string; logoAssetId?: string };
   productName: string;
   productUrl?: string;
   description: string;

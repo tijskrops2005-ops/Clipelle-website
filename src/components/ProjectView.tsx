@@ -262,6 +262,19 @@ function DetailsCard({ project }: { project: AdProject }) {
             <p className="text-ink/90">{project.seconds ?? 30} s · {project.engine === "avatar_iii" ? "Standard" : "Premium"}</p>
           </div>
         </div>
+        {project.background && (
+          <div>
+            <p className="label-mono mb-1.5 text-muted">Presenter background</p>
+            {project.background.type === "color" ? (
+              <p className="flex items-center gap-2 text-ink/90"><span className="size-4 rounded-full border border-border" style={{ backgroundColor: project.background.value }} aria-hidden />{project.background.value}</p>
+            ) : project.background.url ? (
+              // eslint-disable-next-line @next/next/no-img-element -- uploaded background preview
+              <img src={project.background.url} alt="Presenter background" className="h-16 w-12 rounded-[8px] object-cover shadow-card" />
+            ) : (
+              <p className="text-ink/90">Your own image</p>
+            )}
+          </div>
+        )}
         {project.direction && (
           <div>
             <p className="label-mono mb-1.5 text-muted">Direction</p>

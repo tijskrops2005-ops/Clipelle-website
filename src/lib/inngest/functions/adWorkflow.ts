@@ -220,10 +220,20 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
       const estimate = estimateCostUsd(engine, seconds);
       const reserved = await reserveSpend({ service: "heygen", action: "avatar_video", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, engine, resolution: cfg.heygenResolution, seconds } });
       try {
-        const created = await withRetries("Starting the presenter video", () =>
-          createAvatarVideo({ avatarId: lookId, voiceId, script: script.presenterScript, engine, resolution: cfg.heygenResolution, fit: "cover", title: `Reelay ${projectId.slice(0, 8)}`, idempotencyKey: reserved.fingerprint }),
-        );
-        return { videoId: created.video_id, entryId: reserved.entryId, estimate, stepId: row.id, engine };
+        // Customer background (colour or own image). HeyGen needs remove_background, which only works on
+        // looks trained with matting; a look without it answers 400, and then we keep the look's own background.
+        const background = await presenterBackground(adInput);
+        const base = { avatarId: lookId, voiceId, script: script.presenterScript, engine, resolution: cfg.heygenResolution, fit: "cover" as const, title: `Reelay ${projectId.slice(0, 8)}`, idempotencyKey: reserved.fingerprint };
+        let backgroundWarning: string | undefined;
+        let created;
+        try {
+          created = await withRetries("Starting the presenter video", () => createAvatarVideo(background ? { ...base, background, removeBackground: true } : base));
+        } catch (error) {
+          if (!background || !isBackgroundRejection(error)) throw error;
+          backgroundWarning = "This presenter's own background cannot be replaced, so the chosen background was not applied.";
+          created = await withRetries("Starting the presenter video", () => createAvatarVideo({ ...base, idempotencyKey: `${reserved.fingerprint}-nobg` }));
+        }
+        return { videoId: created.video_id, entryId: reserved.entryId, estimate, stepId: row.id, engine, backgroundWarning };
       } catch (error) {
         await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
         throw error;
@@ -240,7 +250,7 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
         try {
           const asset = await storeFromUrl({ projectId, stepId: job.stepId, kind: "presenter", url: video.video_url!, fileName: "presenter.mp4", seconds: video.duration ?? undefined, fallbackMime: "video/mp4" });
           await settleSpend(job.entryId, { status: "completed", actualUsd: video.duration ? estimateCostUsd(job.engine, video.duration) : job.estimate, basis: "list", meta: { durationSeconds: video.duration ?? null, videoId: job.videoId } });
-          await markCompleted(projectId, key, { output: { assetId: asset.id, seconds: video.duration ?? null }, externalJobId: job.videoId, costUsd: job.estimate });
+          await markCompleted(projectId, key, { output: { assetId: asset.id, seconds: video.duration ?? null, ...(job.backgroundWarning ? { warning: job.backgroundWarning } : {}) }, externalJobId: job.videoId, costUsd: job.estimate });
           return asset.id;
         } catch (error) {
           return failStep(projectId, key, error);
@@ -256,6 +266,20 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
     await step.sleep(`presenter-wait-${i}`, `${cfg.pollSeconds}s`);
   }
   return step.run("presenter-timeout", () => failStep(projectId, key, new StepFailure(`The presenter video took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
+}
+
+/** The customer's presenter background as HeyGen expects it: a hex colour, or a 6-hour signed URL of the uploaded image. */
+async function presenterBackground(input: AdInput): Promise<{ type: "color"; value: string } | { type: "image"; url: string } | undefined> {
+  if (!input.background) return undefined;
+  if (input.background.type === "color") return { type: "color", value: input.background.value };
+  const asset = await loadAsset(input.background.assetId);
+  return { type: "image", url: await providerUrl(asset) };
+}
+
+/** HeyGen refuses remove_background on a look without matting with a 400 that names the background. */
+function isBackgroundRejection(error: unknown) {
+  const e = error as { status?: number; code?: string; message?: string };
+  return e?.status === 400 && /background|matting/i.test(`${e.code ?? ""} ${e.message ?? ""}`);
 }
 
 /**

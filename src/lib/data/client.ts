@@ -5,6 +5,7 @@ import { config } from "@/lib/config";
 import type { AdProject, LanguageCode, PresenterPage, Project, Segment, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { mockPresenterPage } from "@/lib/mock/presenters";
 import type { AdTone } from "@/lib/adOptions";
+import type { UploadKind } from "@/lib/data/uploads";
 import * as mockStore from "@/lib/mock/store";
 import * as mockRunner from "@/lib/mock/runner";
 import { demoAdToneRewrite, emptyTranslations } from "@/lib/mock/translations";
@@ -122,7 +123,19 @@ export async function listPresenters(params: { engine: "avatar_iii" | "avatar_iv
   return api<PresenterPage>(`/api/presenters?${q}`);
 }
 
-export type AdProjectDraft = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: LanguageCode; offer?: string; direction?: string; tone: AdTone; productName: string; productUrl?: string; description: string; script?: string; images: File[] };
+export type AdProjectDraft = {
+  name: string;
+  seconds: number;
+  engine: "avatar_iii" | "avatar_iv";
+  lookId?: string;
+  language: LanguageCode;
+  offer?: string;
+  direction?: string;
+  tone: AdTone;
+  /** Presenter background: a hex colour, the customer's image, or nothing (the look's own). */
+  background?: { type: "color"; value: string } | { type: "image"; file: File };
+  brand?: { accent?: string; captionStyle?: string; font?: string; logo?: File };
+  productName: string; productUrl?: string; description: string; script?: string; images: File[] };
 
 export async function createAdProject(draft: AdProjectDraft): Promise<{ id: string }> {
   if (config.demoMode) {
@@ -139,6 +152,8 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
       offer: draft.offer,
       direction: draft.direction,
       tone: draft.tone,
+      background: draft.background?.type === "image" ? { type: "image", url: URL.createObjectURL(draft.background.file) } : draft.background,
+      brand: draft.brand ? { accent: draft.brand.accent, captionStyle: draft.brand.captionStyle, font: draft.brand.font, logoUrl: draft.brand.logo ? URL.createObjectURL(draft.brand.logo) : undefined } : undefined,
       productName: draft.productName,
       productUrl: draft.productUrl,
       description: draft.description,
@@ -156,8 +171,17 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
     mockStore.addProject(project);
     return { id: project.id };
   }
-  const { id } = await api<{ id: string }>("/api/projects", { method: "POST", body: JSON.stringify({ workflow: "ad", ...draft, images: undefined }) });
-  for (const file of draft.images) await uploadAndAttach(id, "image", file);
+  const { background, brand, images, ...rest } = draft;
+  const body = {
+    workflow: "ad",
+    ...rest,
+    backgroundColor: background?.type === "color" ? background.value : undefined,
+    brand: brand ? { accent: brand.accent, captionStyle: brand.captionStyle, font: brand.font } : undefined,
+  };
+  const { id } = await api<{ id: string }>("/api/projects", { method: "POST", body: JSON.stringify(body) });
+  for (const file of images) await uploadAndAttach(id, "image", file);
+  if (background?.type === "image") await uploadAndAttach(id, "background", background.file);
+  if (brand?.logo) await uploadAndAttach(id, "logo", brand.logo);
   await startWithClearMessage(id);
   await refresh();
   return { id };
@@ -223,7 +247,7 @@ async function startWithClearMessage(id: string) {
 }
 
 /** Browser → signed URL → storage, then tell the server which object belongs to the project. */
-async function uploadAndAttach(projectId: string, kind: "image" | "source", file: File, seconds?: number) {
+async function uploadAndAttach(projectId: string, kind: UploadKind, file: File, seconds?: number) {
   const signed = await api<{ path: string; token: string }>("/api/uploads/sign", {
     method: "POST",
     body: JSON.stringify({ projectId, kind, fileName: file.name, bytes: file.size, mime: file.type }),
