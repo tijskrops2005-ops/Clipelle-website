@@ -2,7 +2,8 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { config } from "@/lib/config";
-import type { AdProject, LanguageCode, Project, Segment, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
+import type { AdProject, LanguageCode, PresenterPage, Project, Segment, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
+import { mockPresenterPage } from "@/lib/mock/presenters";
 import * as mockStore from "@/lib/mock/store";
 import * as mockRunner from "@/lib/mock/runner";
 import { demoAdToneRewrite, emptyTranslations } from "@/lib/mock/translations";
@@ -112,7 +113,15 @@ export function useProjectsReady(): boolean {
 
 /* ---------- actions ---------- */
 
-export type AdProjectDraft = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; productName: string; productUrl?: string; description: string; script?: string; images: File[] };
+/** Presenter looks for the picker: demo placeholders, or the cached catalogue behind /api/presenters. */
+export async function listPresenters(params: { engine: "avatar_iii" | "avatar_iv"; gender?: "female" | "male"; page?: number }): Promise<PresenterPage> {
+  if (config.demoMode) return mockPresenterPage(params);
+  const q = new URLSearchParams({ engine: params.engine, page: String(params.page ?? 0) });
+  if (params.gender) q.set("gender", params.gender);
+  return api<PresenterPage>(`/api/presenters?${q}`);
+}
+
+export type AdProjectDraft = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; productName: string; productUrl?: string; description: string; script?: string; images: File[] };
 
 export async function createAdProject(draft: AdProjectDraft): Promise<{ id: string }> {
   if (config.demoMode) {
@@ -124,6 +133,7 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
       name: draft.name,
       seconds: draft.seconds,
       engine: draft.engine,
+      lookId: draft.lookId,
       productName: draft.productName,
       productUrl: draft.productUrl,
       description: draft.description,

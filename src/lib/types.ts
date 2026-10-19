@@ -55,6 +55,8 @@ export interface AdProject extends ProjectBase {
   seconds?: number;
   /** Presenter quality: "avatar_iii" (Standard) or "avatar_iv" (Premium). Customers only ever see the labels. */
   engine?: "avatar_iii" | "avatar_iv";
+  /** Chosen presenter look id; undefined = the configured default look. */
+  lookId?: string;
   productName: string;
   productUrl?: string;
   description: string;
@@ -118,3 +120,24 @@ export interface TranslateProject extends ProjectBase {
 }
 
 export type Project = AdProject | TranslateProject;
+
+/** A presenter look the customer can pick (portrait only; provider names never reach the UI). */
+export interface Presenter {
+  id: string;
+  name: string;
+  gender: "female" | "male" | "other";
+  /** Preview photo; undefined in demo mode (a placeholder is shown). */
+  previewUrl?: string;
+  /** Qualities this presenter supports: "avatar_iii" = Standard, "avatar_iv" = Premium. */
+  engines: ("avatar_iii" | "avatar_iv")[];
+  /** Shown first in the picker. */
+  featured: boolean;
+}
+
+export interface PresenterPage {
+  items: Presenter[];
+  page: number;
+  hasMore: boolean;
+  /** The look used when the customer picks nothing. */
+  defaultId: string;
+}

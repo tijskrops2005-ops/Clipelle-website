@@ -7,6 +7,7 @@ import { config } from "@/lib/config";
 import { createAdProject } from "@/lib/data/client";
 import { useHydrated } from "@/lib/useHydrated";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
+import { PresenterPicker } from "@/components/PresenterPicker";
 import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, formatUsd, type AdLength, type PresenterEngine } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { controlClass, controlStateClass } from "@/components/ui/Field";
@@ -75,6 +76,7 @@ export function ProjectForm() {
   });
   const [seconds, setSeconds] = useState<AdLength>(DEFAULT_AD_SECONDS);
   const [engine, setEngine] = useState<PresenterEngine>(DEFAULT_PRESENTER_ENGINE);
+  const [lookId, setLookId] = useState<string | undefined>(undefined);
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -114,6 +116,7 @@ export function ProjectForm() {
         name: values.projectName.trim(),
         seconds,
         engine,
+        lookId,
         productName: values.productName.trim(),
         productUrl: values.productUrl.trim() || undefined,
         description: values.description.trim(),
@@ -140,7 +143,7 @@ export function ProjectForm() {
       {/* 1. The main input first: product images + the product itself */}
       <Card>
         <CardHeader>
-          <p className="label-mono text-muted">Step 1 of 2</p>
+          <p className="label-mono text-muted">Step 1 of 3</p>
           <CardTitle className="mt-2 text-xl">Your product</CardTitle>
           <p className="mt-1 text-[15px] text-muted">
             Clear photos are the single biggest factor in a good product clip.
@@ -195,10 +198,56 @@ export function ProjectForm() {
         </CardContent>
       </Card>
 
-      {/* 2. Details that shape the script and the final edit */}
+      {/* 2. The presenter: quality and look. Nothing picked = the default look. */}
       <Card>
         <CardHeader>
-          <p className="label-mono text-muted">Step 2 of 2</p>
+          <p className="label-mono text-muted">Step 2 of 3</p>
+          <CardTitle className="mt-2 text-xl">Your presenter</CardTitle>
+          <p className="mt-1 text-[15px] text-muted">Who presents the product, and in which quality. The default works well for most products.</p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <fieldset>
+            <legend className="mb-1.5 text-sm font-medium text-ink">Presenter quality</legend>
+            <p className="mb-3 text-[13px] text-muted">How the presenter looks and moves. The price is for the whole video at the chosen length.</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {PRESENTER_QUALITIES.map((q) => {
+                const est = estimateFor(seconds, q.key);
+                const over = est.total > budget;
+                const selected = engine === q.key;
+                return (
+                  <button
+                    key={q.key}
+                    type="button"
+                    onClick={() => setEngine(q.key)}
+                    disabled={submitting}
+                    aria-pressed={selected}
+                    className={cn(
+                      "rounded-[14px] border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40",
+                      selected ? "border-ink bg-surface-muted" : "border-border bg-surface hover:shadow-card",
+                    )}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-[15px] font-semibold text-ink">{q.label}</span>
+                      <Badge tone={over ? "danger" : "neutral"}>{over ? `${formatUsd(est.total)} · over budget` : `about ${formatUsd(est.total)}`}</Badge>
+                    </span>
+                    <span className="mt-1 block text-[13px] text-muted">{q.blurb}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-ink">Presenter</p>
+            <PresenterPicker engine={engine} value={lookId} onChange={setLookId} disabled={submitting} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 3. Details that shape the script and the final edit */}
+      <Card>
+        <CardHeader>
+          <p className="label-mono text-muted">Step 3 of 3</p>
           <CardTitle className="mt-2 text-xl">Details</CardTitle>
           <p className="mt-1 text-[15px] text-muted">
             What should the video say? Keep it short and concrete.
@@ -232,37 +281,6 @@ export function ProjectForm() {
               disabled={submitting}
             />
           </Field>
-
-          <fieldset>
-            <legend className="mb-1.5 text-sm font-medium text-ink">Presenter quality</legend>
-            <p className="mb-3 text-[13px] text-muted">How the presenter looks and moves. The price is for the whole video at the chosen length.</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {PRESENTER_QUALITIES.map((q) => {
-                const est = estimateFor(seconds, q.key);
-                const over = est.total > budget;
-                const selected = engine === q.key;
-                return (
-                  <button
-                    key={q.key}
-                    type="button"
-                    onClick={() => setEngine(q.key)}
-                    disabled={submitting}
-                    aria-pressed={selected}
-                    className={cn(
-                      "rounded-[14px] border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40",
-                      selected ? "border-ink bg-surface-muted" : "border-border bg-surface hover:shadow-card",
-                    )}
-                  >
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="text-[15px] font-semibold text-ink">{q.label}</span>
-                      <Badge tone={over ? "danger" : "neutral"}>{over ? `${formatUsd(est.total)} · over budget` : `about ${formatUsd(est.total)}`}</Badge>
-                    </span>
-                    <span className="mt-1 block text-[13px] text-muted">{q.blurb}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
 
           <Field id="seconds" label="Video length" hint="The presenter talks the whole video. The estimate below follows your choice.">
             <select

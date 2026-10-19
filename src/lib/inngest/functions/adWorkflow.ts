@@ -209,8 +209,9 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
   const job = await step.run("presenter-submit", async () => {
     const row = await markProcessing(projectId, key);
     try {
-      const engine = ((await loadProject(projectId)).input as AdInput).engine ?? cfg.heygenEngine;
-      const { lookId, voiceId } = await pickPresenter(engine);
+      const adInput = (await loadProject(projectId)).input as AdInput;
+      const engine = adInput.engine ?? cfg.heygenEngine;
+      const { lookId, voiceId } = await pickPresenter(engine, adInput.lookId);
       const seconds = estimateSeconds(script.presenterScript);
       const estimate = estimateCostUsd(engine, seconds);
       const reserved = await reserveSpend({ service: "heygen", action: "avatar_video", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, engine, resolution: cfg.heygenResolution, seconds } });
@@ -258,11 +259,13 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
  * A landscape look is refused: HeyGen letterboxes it in 9:16 (picture 720×406 in a 720×1280 frame) and
  * a centre crop would be a blurry strip, so the ad would be unusable.
  */
-async function pickPresenter(engine: HeygenEngine) {
+async function pickPresenter(engine: HeygenEngine, chosenLookId?: string) {
   let look: AvatarLook | undefined;
-  if (cfg.heygenLookId) {
-    look = await withRetries("Checking the presenter", () => getLook(cfg.heygenLookId));
-    if (!look) throw new StepFailure(`The configured presenter (HEYGEN_DEFAULT_LOOK_ID) was not found at HeyGen.`);
+  // The customer's pick wins; otherwise the configured default look.
+  const wanted = chosenLookId || cfg.heygenLookId;
+  if (wanted) {
+    look = await withRetries("Checking the presenter", () => getLook(wanted));
+    if (!look) throw new StepFailure(chosenLookId ? "The chosen presenter is no longer available. Pick another presenter and retry." : "The configured presenter (HEYGEN_DEFAULT_LOOK_ID) was not found.");
     if (!isPortraitLook(look)) {
       throw new StepFailure(
         `The configured presenter "${look.name}" is a ${lookOrientation(look)} look. The ad is vertical (9:16) and a ${lookOrientation(look)} presenter would come back with grey bars above and below. Choose a portrait look (HEYGEN_DEFAULT_LOOK_ID in .env.local; /dev/heygen marks portrait looks).`,

@@ -57,6 +57,8 @@ export type AdInput = {
   seconds?: number;
   /** Presenter quality chosen by the customer: avatar_iii = Standard, avatar_iv = Premium. Missing = Premium. */
   engine?: "avatar_iii" | "avatar_iv";
+  /** Chosen presenter look id (HeyGen look). Missing = HEYGEN_DEFAULT_LOOK_ID. */
+  lookId?: string;
   productName: string;
   productUrl?: string;
   description: string;
