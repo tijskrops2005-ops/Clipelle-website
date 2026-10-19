@@ -73,6 +73,8 @@ export type AdInput = {
   background?: { type: "color"; value: string } | { type: "image"; assetId: string };
   /** Brand style for the final edit. Missing fields = app defaults. */
   brand?: { accent?: string; captionStyle?: string; font?: string; logoAssetId?: string };
+  /** Pause after the script for the customer's approval (before the paid presenter/clip steps). */
+  reviewScript?: boolean;
   productName: string;
   productUrl?: string;
   description: string;

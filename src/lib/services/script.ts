@@ -22,9 +22,17 @@ export type AdAngle = (typeof AD_ANGLES)[number];
 export const AdScriptSchema = z.object({
   angle: z.enum(AD_ANGLES),
   language: z.string().describe("BCP-47 language of all text, e.g. en or nl"),
+  hooks: z
+    .array(
+      z.object({
+        spoken: z.string().describe("The first sentence the presenter says, max 12 words. Same message as onScreen, worded for speech"),
+        onScreen: z.string().describe("Large on-screen text for the first 2 seconds, max 6 words. Same message as spoken, shorter"),
+      }),
+    )
+    .describe("Exactly three clearly different hooks for this ad, best first; the customer picks one"),
   hook: z.object({
-    spoken: z.string().describe("The first sentence the presenter says, max 12 words. Same message as onScreen, worded for speech"),
-    onScreen: z.string().describe("Large on-screen text for the first 2 seconds, max 6 words. Same message as spoken, shorter"),
+    spoken: z.string().describe("Identical to hooks[0].spoken"),
+    onScreen: z.string().describe("Identical to hooks[0].onScreen"),
   }),
   presenterScript: z
     .string()
@@ -145,7 +153,8 @@ export function estimateScriptCost(input: Omit<ScriptInput, "image"> & { hasImag
   const promptChars =
     SYSTEM_PROMPT.length + userPrompt(input).length;
   const inputTokens = Math.ceil(promptChars / 4) + (input.hasImage ? IMAGE_TOKEN_ALLOWANCE : 0);
-  const outputTokens = 900;
+  // ~900 output tokens for the script, plus ~60 for the two extra hooks (3 hooks since 2026-10-19).
+  const outputTokens = 960;
   return {
     model,
     inputTokens,
@@ -171,6 +180,7 @@ Rules:
 - The presenter talks during the whole ad, also while the product clip, the benefits and the end card are on screen. presenterScript covers the full length.
 - The presenter speaks about ${WORDS_PER_SECOND} words per second. presenterScript must stay within the word limit given in the request; aim about one second (2-3 words) under it and count the words before you answer. This is a hard limit, not a target.
 - Order of the spoken text: the hook, the problem or a moment the viewer recognises, the product, the benefits, and as the last sentence a call to action that tells the viewer what to do next (tap the link, shop now, order today). The call to action is mandatory. For a 10-second ad: only hook, product and call to action, and an empty benefits list.
+- hooks: write three clearly different hooks (different angle or emotion, not rewordings), best first; hook is a copy of hooks[0] and presenterScript starts with hooks[0].spoken.
 - hook.spoken and hook.onScreen carry the same message: the on-screen version is the short written form, the spoken version is the same idea said out loud. Do not give them different messages.
 - scenes describe what is on screen while the presenter keeps talking, not how long the presenter talks. Return the scene plan from the request exactly, in order, with the given seconds; only fill in onScreenText (null where nothing is shown).
 - All text in the requested language.`;
@@ -286,6 +296,7 @@ export async function writeScriptWithinLimit(
     estimateUsd: estimateScriptCost({ ...rest, hasImage: Boolean(image) }).costUsd,
     run: () => generateAdScript(input),
   });
+  normaliseHooks(first.script);
   const firstWords = countWords(first.script.presenterScript);
   if (firstWords <= maxWords) return { ...first, attempts: 1, wordCount: firstWords, maxWords, presenterSeconds };
 
@@ -303,6 +314,7 @@ export async function writeScriptWithinLimit(
     },
     costUsd: Math.round((first.costUsd + second.costUsd) * 10_000) / 10_000,
   };
+  normaliseHooks(second.script);
   const secondWords = countWords(second.script.presenterScript);
   if (secondWords <= maxWords) return { ...merged, attempts: 2, wordCount: secondWords, maxWords, presenterSeconds };
 
@@ -317,4 +329,24 @@ export async function writeScriptWithinLimit(
     presenterSeconds,
     warning: `The presenter text was still ${secondWords} words after one shortening pass; the limit for a ${input.targetSeconds}-second ad is ${maxWords} (${presenterSeconds} s of speech). It was cut to the last full sentences that fit (${trimmedWords} words). Check that the message and the call to action survived.`,
   };
+}
+
+/** Guarantees hooks[0] and hook agree (the model occasionally returns them differently). */
+export function normaliseHooks(script: AdScript) {
+  if (!script.hooks?.length) script.hooks = [script.hook];
+  script.hook = script.hooks[0];
+}
+
+/**
+ * Applies the customer's review: a chosen hook and (optionally) an edited presenter text.
+ * The presenter text keeps starting with the chosen spoken hook; the word limit is enforced by the caller.
+ */
+export function applyScriptReview(script: AdScript, review: { hookIndex: number; presenterScript?: string }): AdScript {
+  const hooks = script.hooks?.length ? script.hooks : [script.hook];
+  const hook = hooks[Math.min(Math.max(0, review.hookIndex), hooks.length - 1)];
+  let presenterScript = (review.presenterScript ?? script.presenterScript).replace(/\s+/g, " ").trim();
+  if (review.presenterScript === undefined && script.hook.spoken && presenterScript.startsWith(script.hook.spoken) && hook.spoken !== script.hook.spoken) {
+    presenterScript = hook.spoken + presenterScript.slice(script.hook.spoken.length);
+  }
+  return { ...script, hook, presenterScript };
 }

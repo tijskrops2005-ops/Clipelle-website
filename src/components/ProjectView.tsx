@@ -20,6 +20,7 @@ import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { Pipeline } from "@/components/pipeline/Pipeline";
 import { stepMeta } from "@/components/pipeline/PipelineStep";
 import { TranslateProjectView } from "@/components/translate/TranslateProjectView";
+import { ScriptReviewPanel } from "@/components/ScriptReviewPanel";
 
 export function ProjectView({ id }: { id: string }) {
   const project = useProject(id);
@@ -66,6 +67,7 @@ export function ProjectView({ id }: { id: string }) {
 
       <div className="grid gap-8 xl:grid-cols-3">
         <section className="space-y-5 xl:col-span-2">
+          {project.steps.script.status === "needs_input" && <ScriptReviewPanel project={project} />}
           <SectionHeader title="Pipeline" description={pipelineSummary(project)} />
           <Pipeline project={project} />
         </section>

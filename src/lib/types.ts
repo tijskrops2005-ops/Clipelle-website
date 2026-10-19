@@ -69,6 +69,10 @@ export interface AdProject extends ProjectBase {
   background?: { type: "color"; value: string } | { type: "image"; url?: string };
   /** Brand style for the final edit (accent hex, caption style key, font key, logo URL). */
   brand?: { accent?: string; captionStyle?: string; font?: string; logoUrl?: string };
+  /** Pause after the script, before the paid presenter step, until the customer approves. */
+  reviewScript?: boolean;
+  /** The generated script, shown for review while the script step waits for the customer. */
+  generatedScript?: GeneratedScript;
   productName: string;
   productUrl?: string;
   description: string;
@@ -152,4 +156,14 @@ export interface PresenterPage {
   hasMore: boolean;
   /** The look used when the customer picks nothing. */
   defaultId: string;
+}
+
+/** What the customer sees and edits on the script review. */
+export interface GeneratedScript {
+  hooks: { spoken: string; onScreen: string }[];
+  presenterScript: string;
+  benefits: string[];
+  offer: { headline: string; cta: string };
+  /** Hard word limit for presenterScript at this ad length. */
+  maxWords: number;
 }

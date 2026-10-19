@@ -28,6 +28,7 @@ export const stepMeta: Record<StepKey, StepMeta> = {
     service: config.stepLabels.script,
     description: "A hook, the presenter's lines, three benefits and a call to action, written from your product description.",
     waitingNote: "Queued. Starts as soon as the workflow begins.",
+    needsInputNote: "Your review: pick a hook, adjust the text if you like, and approve. Nothing paid starts before that.",
     doneLabel: "Script ready",
   },
   productClip: {

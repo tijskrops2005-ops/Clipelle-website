@@ -117,6 +117,7 @@ export function ProjectForm() {
   const [captionStyle, setCaptionStyle] = useState<CaptionStyle>(DEFAULT_CAPTION_STYLE);
   const [font, setFont] = useState<FontKey>(DEFAULT_FONT);
   const [logoImages, setLogoImages] = useState<UploadedImage[]>([]);
+  const [reviewScript, setReviewScript] = useState(false);
   const effectiveAccent = HEX_COLOR.test(customAccent) ? customAccent.toUpperCase() : accent;
   // White text sits on the accent (hook sticker, CTA pill, active caption word): warn below 3:1.
   const accentContrast = contrastRatio(effectiveAccent, "#FFFFFF");
@@ -173,6 +174,7 @@ export function ProjectForm() {
           font: font !== DEFAULT_FONT ? font : undefined,
           logo: logoImages[0]?.file,
         },
+        reviewScript,
         language,
         offer: values.offer.trim() || undefined,
         direction: values.direction.trim() || undefined,
@@ -488,6 +490,14 @@ export function ProjectForm() {
               </Field>
             </div>
           </fieldset>
+
+          <label className="flex items-start gap-3 rounded-[14px] border border-border p-4 text-sm text-ink">
+            <input type="checkbox" checked={reviewScript} onChange={(e) => setReviewScript(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 accent-ink" />
+            <span>
+              <span className="font-medium">Review script first</span>
+              <span className="block text-[13px] text-muted">The video pauses after the script. You pick one of three hooks, adjust the text, and approve before the presenter and product clip are made. Off: the video is made in one go.</span>
+            </span>
+          </label>
 
           <Field
             id="script"

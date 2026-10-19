@@ -2,7 +2,9 @@ import "server-only";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { AdProject, LanguageCode, Project, Segment, Step, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { assets, db, projects, steps, translations, type AdInput, type AssetRow, type ProjectRow, type StepRow, type TranslateInput, type TranslationRow } from "@/lib/db";
-import { adProjectCreated, inngest, reviewApproved, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
+import { adProjectCreated, adScriptApproved, inngest, reviewApproved, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
+import { applyScriptReview, countWords, normaliseHooks, type AdScript } from "@/lib/services/script";
+import { maxSpokenWords } from "@/lib/pricing";
 import { objectInfo, signedDownloadUrl } from "@/lib/storage";
 import { rewriteSegmentsInAdTone } from "@/lib/services/adTone";
 import { costGuardResponse, costLimits, creativeSpent, getProjectSpend, reserveSpend, settleSpend } from "@/lib/services/costGuard";
@@ -28,6 +30,14 @@ export class DataError extends Error {
 }
 
 /* ---------- row → Project (what the screens render) ---------- */
+
+/** The script step's output as the review screen needs it (hooks, text, limit). */
+function generatedScriptOf(step: StepRow | undefined, seconds: number) {
+  const script = step?.output?.script as AdScript | undefined;
+  if (!script) return undefined;
+  const hooks = script.hooks?.length ? script.hooks : [script.hook];
+  return { hooks, presenterScript: script.presenterScript, benefits: script.benefits ?? [], offer: script.offer, maxWords: maxSpokenWords(seconds) };
+}
 
 function toStep(row: StepRow | undefined): Step {
   if (!row) return { status: "waiting" };
@@ -88,6 +98,8 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       tone: input.tone && isAdTone(input.tone) ? input.tone : DEFAULT_TONE,
       background: input.background?.type === "color" ? input.background : input.background?.type === "image" ? { type: "image", url: await urlFor(assetsById.get(input.background.assetId)) } : undefined,
       brand: input.brand ? { accent: input.brand.accent, captionStyle: input.brand.captionStyle, font: input.brand.font, logoUrl: input.brand.logoAssetId ? await urlFor(assetsById.get(input.brand.logoAssetId)) : undefined } : undefined,
+      reviewScript: input.reviewScript ?? false,
+      generatedScript: generatedScriptOf(stepsByKey.get("script"), input.seconds ?? workflowSettings.adSeconds),
       productName: input.productName,
       productUrl: input.productUrl,
       description: input.description,
@@ -176,7 +188,7 @@ export async function getProjectRow(id: string) {
 
 /* ---------- creation: draft → upload assets → start ---------- */
 
-export type NewAdProject = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: LanguageCode; offer?: string; direction?: string; tone: AdTone; backgroundColor?: string; brand?: { accent?: string; captionStyle?: string; font?: string }; productName: string; productUrl?: string; description: string; script?: string };
+export type NewAdProject = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: LanguageCode; offer?: string; direction?: string; tone: AdTone; backgroundColor?: string; brand?: { accent?: string; captionStyle?: string; font?: string }; reviewScript: boolean; productName: string; productUrl?: string; description: string; script?: string };
 export type NewTranslateProject = {
   name: string;
   sourceFileName: string;
@@ -201,7 +213,7 @@ export async function createDraft(input: { workflow: "ad"; ad: NewAdProject } | 
         workflow: "ad",
         name: a.name,
         status: "draft",
-        input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, offer: a.offer, direction: a.direction, tone: a.tone, background: a.backgroundColor ? { type: "color", value: a.backgroundColor } : undefined, brand: a.brand, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
+        input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, offer: a.offer, direction: a.direction, tone: a.tone, background: a.backgroundColor ? { type: "color", value: a.backgroundColor } : undefined, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
       })
       .returning();
     await d.insert(steps).values(AD_STEPS.map((key) => ({ projectId: row.id, key, status: "waiting" as const })));
@@ -333,6 +345,34 @@ export async function approveReview(projectId: string) {
     await tx.update(steps).set({ status: "completed", finishedAt: new Date(), updatedAt: new Date() }).where(and(eq(steps.projectId, projectId), eq(steps.key, "review")));
   });
   await inngest.send(reviewApproved.create({ projectId }));
+  return (await getProjectRow(projectId))!;
+}
+
+/**
+ * "Review script first": the customer picked a hook and maybe edited the presenter text.
+ * Stores the approved script on the script step, marks it completed and wakes the waiting run.
+ */
+export async function approveScript(projectId: string, review: { hookIndex: number; presenterScript?: string }) {
+  const row = await getProjectRow(projectId);
+  if (!row || row.workflow !== "ad") throw new DataError("Project not found.", 404, "not_found");
+  const [step] = await db().select().from(steps).where(and(eq(steps.projectId, projectId), eq(steps.key, "script"))).limit(1);
+  const script = step?.output?.script as AdScript | undefined;
+  if (!step || !script) throw new DataError("There is no script to approve yet.", 409, "no_script");
+  if (step.status !== "needs_input") return row; // already approved: idempotent
+  normaliseHooks(script);
+  const approved = applyScriptReview(script, review);
+  const max = maxSpokenWords((row.input as AdInput).seconds ?? workflowSettings.adSeconds);
+  const words = countWords(approved.presenterScript);
+  if (words === 0) throw new DataError("The presenter text cannot be empty.", 400, "empty_script");
+  if (words > max) throw new DataError(`The presenter text is ${words} words; the limit for this length is ${max}. Shorten it to continue.`, 400, "too_long");
+  await db().transaction(async (tx) => {
+    await tx
+      .update(steps)
+      .set({ status: "completed", finishedAt: new Date(), output: { ...(step.output ?? {}), script: approved, approvedAt: new Date().toISOString(), hookIndex: review.hookIndex, wordCount: words }, updatedAt: new Date() })
+      .where(eq(steps.id, step.id));
+    await tx.update(projects).set({ status: "processing", updatedAt: new Date() }).where(eq(projects.id, projectId));
+  });
+  await inngest.send(adScriptApproved.create({ projectId }));
   return (await getProjectRow(projectId))!;
 }
 

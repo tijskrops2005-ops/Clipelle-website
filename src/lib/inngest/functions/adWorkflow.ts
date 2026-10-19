@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import { adProjectCreated, inngest, stepRetry } from "@/lib/inngest/client";
+import { adProjectCreated, adScriptApproved, inngest, stepRetry } from "@/lib/inngest/client";
 import type { AdInput } from "@/lib/db";
 import { writeScriptWithinLimit, SCRIPT_MODEL, type AdScript } from "@/lib/services/script";
 import { clipPrompt } from "@/lib/clipPrompt";
@@ -33,6 +33,7 @@ import {
   loadStep,
   markCompleted,
   markProcessing,
+  markWaitingForUser,
   providerUrl,
   setProjectFinal,
   StepFailure,
@@ -109,16 +110,44 @@ export const adWorkflow = inngest.createFunction(
       }
     });
 
+    /* ---------- 1b. "Review script first": wait for the customer before anything paid starts ---------- */
+    const reviewed = await runScriptReview(projectId, script, step);
+
     /* ---------- 2 + 3. product clip and presenter, in parallel ---------- */
-    const [clipAssetId, presenterAssetId] = await Promise.all([runProductClip(projectId, script, step), runPresenter(projectId, script, step)]);
+    const [clipAssetId, presenterAssetId] = await Promise.all([runProductClip(projectId, reviewed, step), runPresenter(projectId, reviewed, step)]);
 
     /* ---------- 4. final edit ---------- */
-    const final = await runFinalEdit(projectId, script, clipAssetId, presenterAssetId, step);
+    const final = await runFinalEdit(projectId, reviewed, clipAssetId, presenterAssetId, step);
     return { projectId, finalAssetId: final };
   },
 );
 
 type StepTools = Parameters<Parameters<typeof inngest.createFunction>[1]>[0]["step"];
+
+/* ---------- script review (optional pause) ---------- */
+
+/**
+ * With reviewScript the script step goes to "needs_input" and the run waits (up to 7 days) for
+ * project/ad-script.approved, sent by approveScript() once the customer picked a hook and maybe
+ * edited the text. The approved script is read back from the step row, so a retry of a later step
+ * (which re-enters this function) skips the wait and uses the same approved text.
+ */
+async function runScriptReview(projectId: string, script: AdScript, step: StepTools): Promise<AdScript> {
+  const state = await step.run("script-review-check", async () => {
+    const project = await loadProject(projectId);
+    const row = await loadStep(projectId, "script");
+    const approved = typeof row.output?.approvedAt === "string";
+    return { wanted: Boolean((project.input as AdInput).reviewScript), approved, script: (row.output?.script as AdScript | undefined) ?? null };
+  });
+  if (!state.wanted || state.approved) return state.script ?? script;
+
+  await step.run("script-review-wait", () => markWaitingForUser(projectId, "script"));
+  const event = await step.waitForEvent("script-review-approval", { event: adScriptApproved, timeout: "7d", if: `async.data.projectId == "${projectId}"` });
+  if (!event) {
+    await step.run("script-review-timeout", () => failStep(projectId, "script", new StepFailure("The script was not approved within 7 days. Retry to continue with the generated script.")));
+  }
+  return step.run("script-review-load", async () => (await loadStep(projectId, "script")).output?.script as AdScript);
+}
 
 /** Downscale the first product photo for Claude (≤ ~1 MP keeps the token cost small). */
 async function imageForClaude(bytes: Uint8Array) {

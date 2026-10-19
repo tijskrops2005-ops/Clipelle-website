@@ -135,6 +135,7 @@ export type AdProjectDraft = {
   /** Presenter background: a hex colour, the customer's image, or nothing (the look's own). */
   background?: { type: "color"; value: string } | { type: "image"; file: File };
   brand?: { accent?: string; captionStyle?: string; font?: string; logo?: File };
+  reviewScript: boolean;
   productName: string; productUrl?: string; description: string; script?: string; images: File[] };
 
 export async function createAdProject(draft: AdProjectDraft): Promise<{ id: string }> {
@@ -154,6 +155,7 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
       tone: draft.tone,
       background: draft.background?.type === "image" ? { type: "image", url: URL.createObjectURL(draft.background.file) } : draft.background,
       brand: draft.brand ? { accent: draft.brand.accent, captionStyle: draft.brand.captionStyle, font: draft.brand.font, logoUrl: draft.brand.logo ? URL.createObjectURL(draft.brand.logo) : undefined } : undefined,
+      reviewScript: draft.reviewScript,
       productName: draft.productName,
       productUrl: draft.productUrl,
       description: draft.description,
@@ -259,6 +261,13 @@ async function uploadAndAttach(projectId: string, kind: UploadKind, file: File, 
 export async function saveReviewedSegments(projectId: string, language: LanguageCode, segments: Segment[]) {
   if (config.demoMode) return mockRunner.saveReviewedSegments(projectId, language, segments);
   await api(`/api/projects/${projectId}/review`, { method: "PUT", body: JSON.stringify({ language, segments }) });
+}
+
+/** "Review script first": approve the generated script with a chosen hook and optional edits. */
+export async function approveScript(projectId: string, review: { hookIndex: number; presenterScript?: string }) {
+  if (config.demoMode) return mockRunner.approveScript(projectId, review);
+  await api(`/api/projects/${projectId}/script`, { method: "POST", body: JSON.stringify(review) });
+  await refresh();
 }
 
 export async function approveReview(projectId: string) {

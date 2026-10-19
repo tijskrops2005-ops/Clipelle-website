@@ -3,6 +3,7 @@
 import { config } from "@/lib/config";
 import type {
   AdProject,
+  GeneratedScript,
   LanguageCode,
   Project,
   Segment,
@@ -89,6 +90,15 @@ function tickAd(project: AdProject, now: number, nowIso: string) {
 
     updateProject(project.id, (p) => {
       if (p.workflow !== "ad") return p;
+      // "Review script first": the script step waits for the customer instead of completing.
+      if (key === "script" && p.reviewScript) {
+        return {
+          ...p,
+          status: "review",
+          generatedScript: p.generatedScript ?? demoGeneratedScript(p),
+          steps: { ...p.steps, script: { ...p.steps.script, status: "needs_input" } },
+        };
+      }
       const steps = {
         ...p.steps,
         [key]: { ...p.steps[key], status: "completed" as const, finishedAt: nowIso, outputUrl: key === "script" ? undefined : config.demoVideoUrl },
@@ -99,6 +109,7 @@ function tickAd(project: AdProject, now: number, nowIso: string) {
         steps,
         status: finished ? "completed" : p.status,
         finalVideoUrl: finished ? config.demoVideoUrl : p.finalVideoUrl,
+        generatedScript: key === "script" ? p.generatedScript ?? demoGeneratedScript(p) : p.generatedScript,
       };
     });
   }
@@ -141,6 +152,43 @@ function tickAd(project: AdProject, now: number, nowIso: string) {
         : p,
     );
   }
+}
+
+/** A plausible demo script (no provider call) so the review screen has something to show. */
+function demoGeneratedScript(p: AdProject): GeneratedScript {
+  const name = p.productName || "this product";
+  const seconds = p.seconds ?? 30;
+  const maxWords = Math.floor(seconds * 2.5);
+  const cta = p.offer ? `Tap the link: ${p.offer}.` : "Tap the link and shop now.";
+  const body = `Meet ${name}. ${p.description.split(/(?<=[.!?])\s+/)[0] ?? ""} It is made for everyday use and it shows. ${cta}`;
+  const presenterScript = body.split(/\s+/).slice(0, maxWords).join(" ");
+  return {
+    hooks: [
+      { spoken: `Still looking for the right ${name.toLowerCase()}?`, onScreen: "Still looking?" },
+      { spoken: `This is the ${name.toLowerCase()} people keep asking about.`, onScreen: "Everyone asks about this" },
+      { spoken: `Here is why ${name.toLowerCase()} is worth it.`, onScreen: "Worth it. Here's why" },
+    ],
+    presenterScript: `${"Still looking for the right " + name.toLowerCase() + "?"} ${presenterScript}`.split(/\s+/).slice(0, maxWords).join(" "),
+    benefits: seconds <= 10 ? [] : ["Made for every day", "Easy to use", "Looks the part"],
+    offer: { headline: p.offer || `${name}: ready when you are`, cta: "Shop now" },
+    maxWords,
+  };
+}
+
+/** The customer approved the script (chosen hook, maybe edited text): the script completes and the paid steps start. */
+export function approveScript(projectId: string, review: { hookIndex: number; presenterScript?: string }) {
+  const nowIso = new Date().toISOString();
+  updateProject(projectId, (p) => {
+    if (p.workflow !== "ad" || p.steps.script.status !== "needs_input" || !p.generatedScript) return p;
+    const hooks = p.generatedScript.hooks;
+    const hook = hooks[Math.min(Math.max(0, review.hookIndex), hooks.length - 1)] ?? hooks[0];
+    return {
+      ...p,
+      status: "processing",
+      generatedScript: { ...p.generatedScript, hooks: [hook, ...hooks.filter((h) => h !== hook)], presenterScript: review.presenterScript?.trim() || p.generatedScript.presenterScript },
+      steps: { ...p.steps, script: { ...p.steps.script, status: "completed", finishedAt: nowIso } },
+    };
+  });
 }
 
 /* ---------------- Workflow B ---------------- */

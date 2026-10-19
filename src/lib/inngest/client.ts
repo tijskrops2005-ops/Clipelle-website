@@ -38,6 +38,11 @@ export const reviewApproved = eventType("project/review.approved", {
   schema: z.object({ projectId: z.string().uuid() }),
 });
 
+/** Workflow A with "Review script first": the user approved (and maybe edited) the script. */
+export const adScriptApproved = eventType("project/ad-script.approved", {
+  schema: z.object({ projectId: z.string().uuid() }),
+});
+
 /** Retry one failed step of a project; the workflow resumes from there. */
 export const stepRetry = eventType("project/step.retry", {
   schema: z.object({ projectId: z.string().uuid(), stepKey: z.string() }),
