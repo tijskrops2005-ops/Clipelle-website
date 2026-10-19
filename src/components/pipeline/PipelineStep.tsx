@@ -131,7 +131,7 @@ export function StepProgressCard({
             <div className="h-full w-1/3 animate-[slide_1.6s_ease-in-out_infinite] rounded-full bg-accent" />
           </div>
           <p className="text-[13px] text-muted">
-            Demo mode: this takes seconds here. The real service usually needs a few minutes.
+            {config.demoMode ? "Demo mode: this takes seconds here. The real service usually needs a few minutes." : "This usually takes a few minutes. You can leave this page; progress continues."}
           </p>
         </div>
       );
