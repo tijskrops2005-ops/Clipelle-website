@@ -2,9 +2,11 @@ import { connection } from "next/server";
 import { z } from "zod";
 import { LANGUAGES } from "@/lib/languages";
 import type { LanguageCode } from "@/lib/types";
+import type { AdLanguageCode, SpeedKey } from "@/lib/voiceOptions";
 import { config } from "@/lib/config";
 import { DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, isAdLength, isPresenterEngine } from "@/lib/pricing";
 import { AD_TONES, DEFAULT_AD_LANGUAGE, DEFAULT_TONE, DIRECTION_MAX_CHARS, HEX_COLOR, OFFER_MAX_CHARS, CAPTION_STYLES, FONT_KEYS } from "@/lib/adOptions";
+import { AD_LANGUAGE_CODES, DEFAULT_SPEED, SPEEDS } from "@/lib/voiceOptions";
 import { createDraft, dataErrorResponse, listProjects } from "@/lib/data/server";
 import { databaseModeOnly, readJson } from "./_guard";
 
@@ -28,7 +30,10 @@ const AdBody = z.object({
   seconds: z.number().refine(isAdLength, { error: "Choose one of the offered ad lengths." }).default(DEFAULT_AD_SECONDS),
   engine: z.string().refine(isPresenterEngine, { error: "Choose Standard or Premium." }).default(DEFAULT_PRESENTER_ENGINE),
   lookId: z.string().regex(/^[a-f0-9]{32}$/).optional(),
-  language: z.enum(codes).default(DEFAULT_AD_LANGUAGE),
+  language: z.enum(AD_LANGUAGE_CODES as [string, ...string[]]).default(DEFAULT_AD_LANGUAGE),
+  accent: z.string().trim().max(12).optional().or(z.literal("")),
+  voiceId: z.string().trim().regex(/^[A-Za-z0-9_-]{6,64}$/).optional().or(z.literal("")),
+  speed: z.enum(SPEEDS.map((s) => s.key) as [string, ...string[]]).default(DEFAULT_SPEED),
   offer: z.string().trim().max(OFFER_MAX_CHARS).optional().or(z.literal("")),
   direction: z.string().trim().max(DIRECTION_MAX_CHARS).optional().or(z.literal("")),
   tone: z.enum(AD_TONES).default(DEFAULT_TONE),
@@ -70,7 +75,7 @@ export async function POST(request: Request) {
   try {
     if (body.workflow === "ad") {
       const a = AdBody.parse(body);
-      const row = await createDraft({ workflow: "ad", ad: { name: a.name, seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language as LanguageCode, offer: a.offer || undefined, direction: a.direction || undefined, tone: a.tone, backgroundColor: a.backgroundColor, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
+      const row = await createDraft({ workflow: "ad", ad: { name: a.name, seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language as AdLanguageCode, accent: a.accent || undefined, voiceId: a.voiceId || undefined, speed: a.speed as SpeedKey, offer: a.offer || undefined, direction: a.direction || undefined, tone: a.tone, backgroundColor: a.backgroundColor, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
       return Response.json({ id: row.id, status: row.status }, { status: 201 });
     }
     if (body.workflow === "translate") {

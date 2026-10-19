@@ -112,17 +112,22 @@ export function captionsUsd(seconds: number) {
   return round2((Math.max(1, seconds) / 30) * PRICING.captionsUsdPer30s);
 }
 
-export type AdEstimateInput = { seconds: number; clipModel: ClipModelKey; engine: PresenterEngine; at?: Date };
+export type AdEstimateInput = { seconds: number; clipModel: ClipModelKey; engine: PresenterEngine; at?: Date; /** Voice speed multiplier (0.9 slower, 1 normal, 1.1 faster). */ speed?: number };
 
-/** One click on "Generate video" in Workflow A. The presenter video is as long as the ad. */
+/**
+ * One click on "Generate video" in Workflow A. The presenter video is as long as the ad. The word
+ * limit is set for normal speed; a slower voice makes the same words last longer (seconds ÷ speed),
+ * so the presenter and caption parts are estimated on that expected duration.
+ */
 export function estimateAdCost(input: AdEstimateInput) {
-  const presenterSeconds = input.seconds;
+  const speed = input.speed && input.speed > 0 ? input.speed : 1;
+  const presenterSeconds = Math.round((input.seconds / speed) * 10) / 10;
   const parts = {
     script: PRICING.scriptUsd,
     expand: PRICING.expandUsd,
     clip: round2(PRICING.clipSeconds * clipUsdPerSecond(input.clipModel, input.at)),
     presenter: round2(presenterSeconds * PRICING.presenterUsdPerSecond[input.engine]),
-    captions: captionsUsd(input.seconds),
+    captions: captionsUsd(presenterSeconds),
   };
   const total = round2(Object.values(parts).reduce((a, b) => a + b, 0));
   return { parts, total, presenterSeconds };

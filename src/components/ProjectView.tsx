@@ -14,7 +14,7 @@ import { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
 import { PageHeaderSkeleton, Skeleton } from "@/components/ui/Skeleton";
 import { DemoBadge } from "@/components/DemoModeBadge";
 import { formatUsd } from "@/lib/pricing";
-import { languageLabel } from "@/lib/languages";
+import { AD_LANGUAGES, isAdLanguage, SPEEDS } from "@/lib/voiceOptions";
 import { DEFAULT_TONE, TONE_META } from "@/lib/adOptions";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { Pipeline } from "@/components/pipeline/Pipeline";
@@ -249,7 +249,11 @@ function DetailsCard({ project }: { project: AdProject }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="label-mono mb-1.5 text-muted">Language</p>
-            <p className="text-ink/90">{languageLabel(project.language ?? "en")}</p>
+            <p className="text-ink/90">
+              {isAdLanguage(project.language) ? AD_LANGUAGES[project.language].label : "English"}
+              {project.accent ? ` · ${project.accent.toUpperCase()}` : ""}
+              {project.speed && project.speed !== "normal" ? ` · ${SPEEDS.find((s) => s.key === project.speed)?.label.toLowerCase()} voice` : ""}
+            </p>
           </div>
           <div>
             <p className="label-mono mb-1.5 text-muted">Tone</p>

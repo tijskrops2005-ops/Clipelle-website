@@ -16,6 +16,8 @@ type Body = {
   /** Chosen ad length; a shorter presenter clip is repeated to reach it (sandbox check of the layout). */
   seconds?: number;
   confirmed?: boolean;
+  /** Build and return the edit JSON without sending anything to Shotstack (template check). */
+  dryRun?: boolean;
 };
 
 async function demoAsset(file: string, contentType: string) {
@@ -60,6 +62,7 @@ export async function POST(request: Request) {
       musicUrl: music.url,
       fillToSeconds: seconds,
     });
+    if (body.dryRun) return Response.json({ dryRun: true, edit: { timeline: edit.timeline, output: edit.output }, meta: edit.meta });
     // Production renders cost credits: run them through the cost guard. Sandbox renders are free.
     let entryId = "";
     const estimateUsd = env === "v1" ? Math.round((edit.meta.totalSeconds / 60) * SHOTSTACK_USD_PER_MINUTE * 1000) / 1000 : 0;

@@ -58,6 +58,8 @@ export type ScriptInput = {
   tone?: AdTone;
   /** Language code for the output, e.g. "en" or "nl". */
   language: string;
+  /** Spelling variant from the chosen accent, e.g. "British English spelling". */
+  spelling?: string;
   /** Total ad length to plan for, in seconds. */
   targetSeconds: number;
   angle: AdAngle;
@@ -187,7 +189,7 @@ function userPrompt(input: Omit<ScriptInput, "image">) {
     ">>>",
     `Tone: ${tone.prompt}`,
     `Angle: ${input.angle}`,
-    `Language: ${input.language}`,
+    `Language: ${input.language}${input.spelling ? ` (${input.spelling})` : ""}`,
     `Ad length: ${input.targetSeconds} seconds. The presenter talks for the full ${input.targetSeconds} seconds.`,
     `Word limit for presenterScript: at most ${layout.maxWords} words (${input.targetSeconds} s × ${WORDS_PER_SECOND} words per second). Aim for ${Math.round(layout.maxWords * 0.85)} to ${layout.maxWords - 2} words so the voice fills the whole ad; more than ${layout.maxWords} is not allowed.`,
     "Scene plan (what is on screen; the voice continues throughout):",

@@ -10,8 +10,9 @@ import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { PresenterPicker } from "@/components/PresenterPicker";
 import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, formatUsd, type AdLength, type PresenterEngine } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
-import { LANGUAGES } from "@/lib/languages";
-import type { LanguageCode } from "@/lib/types";
+import type { Presenter } from "@/lib/types";
+import { VoicePicker } from "@/components/VoicePicker";
+import { AD_LANGUAGES, AD_LANGUAGE_CODES, DEFAULT_SPEED, SPEEDS, isAdLanguage, type AdLanguageCode, type SpeedKey, type VoiceOptions } from "@/lib/voiceOptions";
 import {
   AD_TONES,
   BACKGROUND_COLORS,
@@ -103,7 +104,13 @@ export function ProjectForm() {
     offer: "",
     direction: "",
   });
-  const [language, setLanguage] = useState<LanguageCode>(DEFAULT_AD_LANGUAGE);
+  const [language, setLanguage] = useState<AdLanguageCode>(isAdLanguage(DEFAULT_AD_LANGUAGE) ? DEFAULT_AD_LANGUAGE : "en");
+  const [voiceAccent, setVoiceAccent] = useState<string | undefined>(undefined);
+  const [voiceId, setVoiceId] = useState<string | undefined>(undefined);
+  const [speed, setSpeed] = useState<SpeedKey>(DEFAULT_SPEED);
+  const [voiceOptions, setVoiceOptions] = useState<VoiceOptions | null>(null);
+  /** The presenter in effect (picked or default): its gender filters the voices, its own voice is the default. */
+  const [presenter, setPresenter] = useState<Presenter | undefined>(undefined);
   const [tone, setTone] = useState<AdTone>(DEFAULT_TONE);
   const [seconds, setSeconds] = useState<AdLength>(DEFAULT_AD_SECONDS);
   const [engine, setEngine] = useState<PresenterEngine>(DEFAULT_PRESENTER_ENGINE);
@@ -130,7 +137,7 @@ export function ProjectForm() {
   const hydrated = useHydrated();
   const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 1.5;
   // Estimate per combination of length and presenter quality; the budget applies to the combination.
-  const estimateFor = (len: AdLength, eng: PresenterEngine = engine) => estimateAdCost({ seconds: len, clipModel: DEFAULTS.clipModel, engine: eng });
+  const estimateFor = (len: AdLength, eng: PresenterEngine = engine) => estimateAdCost({ seconds: len, clipModel: DEFAULTS.clipModel, engine: eng, speed: SPEEDS.find((s) => s.key === speed)?.value ?? 1 });
   const estimate = estimateFor(seconds);
   const overBudget = estimate.total > budget;
   const lengthsWithinBudget = AD_LENGTHS.filter((len) => estimateFor(len).total <= budget);
@@ -176,6 +183,9 @@ export function ProjectForm() {
         },
         reviewScript,
         language,
+        accent: voiceAccent,
+        voiceId,
+        speed,
         offer: values.offer.trim() || undefined,
         direction: values.direction.trim() || undefined,
         tone,
@@ -301,7 +311,86 @@ export function ProjectForm() {
 
           <div>
             <p className="mb-1.5 text-sm font-medium text-ink">Presenter</p>
-            <PresenterPicker engine={engine} value={lookId} onChange={setLookId} disabled={submitting} />
+            <PresenterPicker
+              engine={engine}
+              value={lookId}
+              onChange={(id, p) => {
+                setLookId(id);
+                if (p) setPresenter(p);
+              }}
+              disabled={submitting}
+            />
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field id="language" label="Language" hint="One language for the script, the captions and the voice.">
+                <select
+                  id="language"
+                  value={language}
+                  onChange={(e) => {
+                    setLanguage(e.target.value as AdLanguageCode);
+                    setVoiceAccent(undefined);
+                    setVoiceId(undefined);
+                  }}
+                  disabled={submitting}
+                  className={cn(controlClass, controlStateClass(false), "h-11")}
+                >
+                  {(voiceOptions?.languages.length ? voiceOptions.languages.map((l) => l.code) : AD_LANGUAGE_CODES).map((code) => (
+                    <option key={code} value={code}>{AD_LANGUAGES[code].label}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field id="accent" label="Accent" hint={voiceOptions && voiceOptions.accents.length === 0 ? "No regional variants for this language yet." : "Only variants that have voices are listed."}>
+                <select
+                  id="accent"
+                  value={voiceAccent ?? ""}
+                  onChange={(e) => {
+                    setVoiceAccent(e.target.value || undefined);
+                    setVoiceId(undefined);
+                  }}
+                  disabled={submitting || !voiceOptions || voiceOptions.accents.length === 0}
+                  className={cn(controlClass, controlStateClass(false), "h-11")}
+                >
+                  <option value="">Any</option>
+                  {voiceOptions?.accents.map((a) => (
+                    <option key={a.key} value={a.key}>{a.label}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-ink">Voice</p>
+              <VoicePicker
+                language={language}
+                accent={voiceAccent}
+                gender={presenter?.gender === "female" || presenter?.gender === "male" ? presenter.gender : undefined}
+                lookVoiceId={presenter?.defaultVoiceId}
+                value={voiceId}
+                onChange={setVoiceId}
+                onOptions={setVoiceOptions}
+                disabled={submitting}
+              />
+            </div>
+            <fieldset>
+              <legend className="mb-1.5 text-sm font-medium text-ink">Speaking speed</legend>
+              <div className="flex gap-1 rounded-full bg-surface-muted p-1 w-fit" role="radiogroup" aria-label="Speaking speed">
+                {SPEEDS.map((sp) => (
+                  <button
+                    key={sp.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={speed === sp.key}
+                    disabled={submitting}
+                    onClick={() => setSpeed(sp.key)}
+                    className={cn("rounded-full px-3 py-1 text-[13px] font-medium transition-colors", speed === sp.key ? "bg-ink text-white" : "text-muted hover:text-ink")}
+                  >
+                    {sp.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-[13px] text-muted">The word limit stays the same; a slower voice makes the video about 10% longer and a faster one about 10% shorter. The estimate follows.</p>
+            </fieldset>
           </div>
 
           <div>
@@ -392,18 +481,9 @@ export function ProjectForm() {
             </select>
           </Field>
 
-          <div className="grid gap-5 md:grid-cols-2">
-            <Field id="language" label="Script language" hint="The presenter speaks this language.">
-              <select id="language" value={language} onChange={(e) => setLanguage(e.target.value as LanguageCode)} disabled={submitting} className={cn(controlClass, controlStateClass(false), "h-11")}>
-                {LANGUAGES.map((l) => (
-                  <option key={l.code} value={l.code}>{l.label}</option>
-                ))}
-              </select>
-            </Field>
-            <Field id="offer" label="Offer" optional hint={`Used in the call to action. Leave empty and no offer is mentioned. Max ${OFFER_MAX_CHARS} characters.`}>
-              <Input id="offer" value={values.offer} maxLength={OFFER_MAX_CHARS} onChange={(e) => update("offer", e.target.value)} placeholder="e.g. 20% off this week" disabled={submitting} />
-            </Field>
-          </div>
+          <Field id="offer" label="Offer" optional hint={`Used in the call to action. Leave empty and no offer is mentioned. Max ${OFFER_MAX_CHARS} characters.`}>
+            <Input id="offer" value={values.offer} maxLength={OFFER_MAX_CHARS} onChange={(e) => update("offer", e.target.value)} placeholder="e.g. 20% off this week" disabled={submitting} />
+          </Field>
 
           <fieldset>
             <legend className="mb-1.5 text-sm font-medium text-ink">Tone</legend>

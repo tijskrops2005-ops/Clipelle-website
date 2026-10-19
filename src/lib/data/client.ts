@@ -5,6 +5,8 @@ import { config } from "@/lib/config";
 import type { AdProject, LanguageCode, PresenterPage, Project, Segment, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { mockPresenterPage } from "@/lib/mock/presenters";
 import type { AdTone } from "@/lib/adOptions";
+import { mockVoiceOptions } from "@/lib/mock/voices";
+import type { AdLanguageCode, SpeedKey, VoiceOptions } from "@/lib/voiceOptions";
 import type { UploadKind } from "@/lib/data/uploads";
 import * as mockStore from "@/lib/mock/store";
 import * as mockRunner from "@/lib/mock/runner";
@@ -123,12 +125,25 @@ export async function listPresenters(params: { engine: "avatar_iii" | "avatar_iv
   return api<PresenterPage>(`/api/presenters?${q}`);
 }
 
+/** Voices for the picker: demo placeholders, or the cached catalogue behind /api/voices. */
+export async function listVoices(params: { language: AdLanguageCode; accent?: string; gender?: "female" | "male"; lookVoiceId?: string }): Promise<VoiceOptions> {
+  if (config.demoMode) return mockVoiceOptions(params);
+  const q = new URLSearchParams({ language: params.language });
+  if (params.accent) q.set("accent", params.accent);
+  if (params.gender) q.set("gender", params.gender);
+  if (params.lookVoiceId) q.set("lookVoiceId", params.lookVoiceId);
+  return api<VoiceOptions>(`/api/voices?${q}`);
+}
+
 export type AdProjectDraft = {
   name: string;
   seconds: number;
   engine: "avatar_iii" | "avatar_iv";
   lookId?: string;
-  language: LanguageCode;
+  language: AdLanguageCode;
+  accent?: string;
+  voiceId?: string;
+  speed: SpeedKey;
   offer?: string;
   direction?: string;
   tone: AdTone;
@@ -150,6 +165,9 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
       engine: draft.engine,
       lookId: draft.lookId,
       language: draft.language,
+      accent: draft.accent,
+      voiceId: draft.voiceId,
+      speed: draft.speed,
       offer: draft.offer,
       direction: draft.direction,
       tone: draft.tone,

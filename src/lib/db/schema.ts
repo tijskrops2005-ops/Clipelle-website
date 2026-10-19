@@ -61,8 +61,14 @@ export type AdInput = {
   engine?: "avatar_iii" | "avatar_iv";
   /** Chosen presenter look id (HeyGen look). Missing = HEYGEN_DEFAULT_LOOK_ID. */
   lookId?: string;
-  /** Script language (LanguageCode). Missing = AD_LANGUAGE. */
+  /** Script, caption and voice language (AdLanguageCode). Missing = AD_LANGUAGE. */
   language?: string;
+  /** Accent key for the voice (voice-name based), optional. */
+  accent?: string;
+  /** Chosen voice id. Missing = the look's default voice when it fits the language. */
+  voiceId?: string;
+  /** slower | normal | faster → HeyGen voice_settings.speed 0.9 | 1 | 1.1. */
+  speed?: string;
   /** Offer for the CTA (max 80 chars). Missing/empty = no offer mentioned. */
   offer?: string;
   /** Free direction (max 200 chars), treated as data. */

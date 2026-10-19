@@ -7,6 +7,8 @@ import { assets, db, type AdInput } from "@/lib/db";
 import { writeScriptWithinLimit, SCRIPT_MODEL, type AdScript } from "@/lib/services/script";
 import { clipPrompt } from "@/lib/clipPrompt";
 import { isAdTone } from "@/lib/adOptions";
+import { ACCENTS, AD_LANGUAGES, isAdLanguage, speedValue } from "@/lib/voiceOptions";
+import { findVoice, listVoiceOptions } from "@/lib/voices";
 import {
   analyzeProductPhoto,
   cropToNineSixteen,
@@ -19,7 +21,7 @@ import {
   planNineSixteen,
   submitProductClip,
 } from "@/lib/services/productClip";
-import { createAvatarVideo, estimateCostUsd, estimateSeconds, getLook, getVideo, listAllLooks, listVoices, type AvatarLook, type HeygenEngine } from "@/lib/services/heygen";
+import { createAvatarVideo, estimateCostUsd, estimateSeconds, getLook, getVideo, listAllLooks, type AvatarLook, type HeygenEngine } from "@/lib/services/heygen";
 import { isPortraitLook, lookOrientation } from "@/lib/lookOrientation";
 import { buildAdEdit, getRender, shotstackEnv, startRender } from "@/lib/services/finalEdit";
 import { annotateSpend, reserveSpend, settleSpend } from "@/lib/services/costGuard";
@@ -88,6 +90,7 @@ export const adWorkflow = inngest.createFunction(
           offer: input.offer,
           tone: input.tone && isAdTone(input.tone) ? input.tone : undefined,
           language: input.language ?? cfg.adLanguage,
+          spelling: input.language && isAdLanguage(input.language) ? ACCENTS[input.language].find((a) => a.key === input.accent)?.spelling : undefined,
           targetSeconds: input.seconds ?? cfg.adSeconds,
           angle: "problem_solution" as const,
         };
@@ -245,7 +248,7 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
     try {
       const adInput = (await loadProject(projectId)).input as AdInput;
       const engine = adInput.engine ?? cfg.heygenEngine;
-      const { lookId, voiceId } = await pickPresenter(engine, adInput.lookId);
+      const { lookId, voiceId } = await pickPresenter(engine, adInput.lookId, adInput);
       const seconds = estimateSeconds(script.presenterScript);
       const estimate = estimateCostUsd(engine, seconds);
       const reserved = await reserveSpend({ service: "heygen", action: "avatar_video", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, engine, resolution: cfg.heygenResolution, seconds } });
@@ -253,7 +256,8 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
         // Customer background (colour or own image). HeyGen needs remove_background, which only works on
         // looks trained with matting; a look without it answers 400, and then we keep the look's own background.
         const background = await presenterBackground(adInput);
-        const base = { avatarId: lookId, voiceId, script: script.presenterScript, engine, resolution: cfg.heygenResolution, fit: "cover" as const, title: `Reelay ${projectId.slice(0, 8)}`, idempotencyKey: reserved.fingerprint };
+        const speed = speedValue(adInput.speed);
+        const base = { avatarId: lookId, voiceId, script: script.presenterScript, engine, resolution: cfg.heygenResolution, fit: "cover" as const, voiceSettings: speed !== 1 ? { speed } : undefined, title: `Reelay ${projectId.slice(0, 8)}`, idempotencyKey: reserved.fingerprint };
         let backgroundWarning: string | undefined;
         let created;
         try {
@@ -317,7 +321,7 @@ function isBackgroundRejection(error: unknown) {
  * A landscape look is refused: HeyGen letterboxes it in 9:16 (picture 720×406 in a 720×1280 frame) and
  * a centre crop would be a blurry strip, so the ad would be unusable.
  */
-async function pickPresenter(engine: HeygenEngine, chosenLookId?: string) {
+async function pickPresenter(engine: HeygenEngine, chosenLookId: string | undefined, input: AdInput) {
   let look: AvatarLook | undefined;
   // The customer's pick wins; otherwise the configured default look.
   const wanted = chosenLookId || cfg.heygenLookId;
@@ -338,13 +342,32 @@ async function pickPresenter(engine: HeygenEngine, chosenLookId?: string) {
     look = (await withRetries("Listing presenters", () => listAllLooks("studio_avatar"))).find(fits) ?? (await withRetries("Listing presenters", () => listAllLooks("digital_twin"))).find(fits);
     if (!look) throw new StepFailure("No portrait presenter supports the chosen quality. Set HEYGEN_DEFAULT_LOOK_ID in .env.local to a portrait look.");
   }
-  let voiceId = cfg.heygenVoiceId || look.default_voice_id || "";
-  if (!voiceId) {
-    const voices = await withRetries("Listing voices", () => listVoices({ language: "English", limit: 20 }));
-    voiceId = voices[0]?.voice_id ?? "";
+  return { lookId: look.id, voiceId: await pickVoice(look, input) };
+}
+
+/**
+ * The voice for the run, checked before anything is paid: the customer's pick when it exists and
+ * speaks the chosen language; otherwise the look's own voice when that fits the language; otherwise
+ * the first public voice of the language (and its accent, when chosen). A plain message, never a crash.
+ */
+async function pickVoice(look: AvatarLook, input: AdInput): Promise<string> {
+  const language = isAdLanguage(input.language) ? input.language : isAdLanguage(cfg.adLanguage) ? cfg.adLanguage : "en";
+  const label = AD_LANGUAGES[language].label;
+  if (input.voiceId) {
+    const found = await withRetries("Checking the voice", () => findVoice(input.voiceId!));
+    if (!found) throw new StepFailure("The chosen voice is no longer available. Pick another voice and retry.");
+    if (found.language !== language) throw new StepFailure(`The chosen voice does not speak ${label}. Pick a ${label} voice and retry.`);
+    return found.voice.voice_id;
   }
-  if (!voiceId) throw new StepFailure("No voice available. Set HEYGEN_DEFAULT_VOICE_ID in .env.local.");
-  return { lookId: look.id, voiceId };
+  const candidates = [cfg.heygenVoiceId, look.default_voice_id].filter((v): v is string => Boolean(v));
+  for (const id of candidates) {
+    const found = await withRetries("Checking the voice", () => findVoice(id));
+    if (found?.language === language) return found.voice.voice_id;
+  }
+  const options = await withRetries("Listing voices", () => listVoiceOptions({ language, accent: input.accent, gender: (look.gender ?? "").toLowerCase() === "male" ? "male" : "female", limit: 5 }));
+  const first = options.voices[0];
+  if (!first) throw new StepFailure(`No voice speaks ${label}${input.accent ? ` with the chosen accent` : ""}. Choose another language or accent and retry.`);
+  return first.id;
 }
 
 /* ---------- final edit ---------- */

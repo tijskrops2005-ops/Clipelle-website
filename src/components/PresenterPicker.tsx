@@ -26,7 +26,7 @@ export function PresenterPicker({
   engine: PresenterEngine;
   /** Chosen look id, or undefined for the default. */
   value: string | undefined;
-  onChange: (lookId: string | undefined) => void;
+  onChange: (lookId: string | undefined, presenter?: Presenter) => void;
   disabled?: boolean;
 }) {
   const [gender, setGender] = useState<Gender>("all");
@@ -55,12 +55,16 @@ export function PresenterPicker({
         setPage(0);
         setHasMore(res.hasMore);
         setDefaultId(res.defaultId);
+        // Tell the form which presenter is in effect (the default when nothing is picked), for the voice filter.
+        const effective = res.items.find((p) => p.id === (value ?? res.defaultId));
+        if (effective) onChange(value, effective);
       })
       .catch((e: Error) => !cancelled && setError(e.message))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload on the filters only; value/onChange are read at that moment
   }, [engine, gender]);
 
   // Quality switched: a pick that does not support the new quality falls back to the default, and we say so.
@@ -71,7 +75,7 @@ export function PresenterPicker({
       const defaultName = items.find((p) => p.id === defaultId)?.name;
       setNotice(`${unsupported.name} is not available in this quality, so we switched back to ${defaultName ?? "the default presenter"}.`);
       setPicked(null);
-      onChange(undefined);
+      onChange(undefined, items.find((p) => p.id === defaultId));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- react to the quality switch only
   }, [engine]);
@@ -142,7 +146,7 @@ export function PresenterPicker({
               onClick={() => {
                 setNotice(null);
                 setPicked(p);
-                onChange(p.id === defaultId ? undefined : p.id);
+                onChange(p.id === defaultId ? undefined : p.id, p);
               }}
               className={cn(
                 "group relative overflow-hidden rounded-tile bg-surface-muted text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40",

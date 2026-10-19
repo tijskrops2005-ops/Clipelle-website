@@ -11,6 +11,7 @@ import { costGuardResponse, costLimits, creativeSpent, getProjectSpend, reserveS
 import { estimateAdCost, estimateTranslateCost } from "@/lib/pricing";
 import { workflowSettings } from "@/lib/workflow/settings";
 import { DEFAULT_TONE, isAdTone, type AdTone } from "@/lib/adOptions";
+import { DEFAULT_SPEED, isSpeedKey, speedValue, type AdLanguageCode, type SpeedKey } from "@/lib/voiceOptions";
 import type { UploadKind } from "@/lib/data/uploads";
 
 /**
@@ -66,7 +67,7 @@ async function urlFor(asset: AssetRow | undefined) {
 export function estimateForProject(row: ProjectRow) {
   if (row.workflow === "ad") {
     const input = row.input as AdInput;
-    return estimateAdCost({ seconds: input.seconds ?? workflowSettings.adSeconds, clipModel: workflowSettings.clipModel, engine: input.engine ?? workflowSettings.heygenEngine }).total;
+    return estimateAdCost({ seconds: input.seconds ?? workflowSettings.adSeconds, clipModel: workflowSettings.clipModel, engine: input.engine ?? workflowSettings.heygenEngine, speed: speedValue(input.speed) }).total;
   }
   const input = row.input as TranslateInput;
   return estimateTranslateCost({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }).perLanguageTotal;
@@ -92,7 +93,10 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       seconds: input.seconds ?? workflowSettings.adSeconds,
       engine: input.engine ?? workflowSettings.heygenEngine,
       lookId: input.lookId,
-      language: (input.language as LanguageCode | undefined) ?? "en",
+      language: input.language ?? "en",
+      accent: input.accent,
+      voiceId: input.voiceId,
+      speed: isSpeedKey(input.speed) ? input.speed : DEFAULT_SPEED,
       offer: input.offer,
       direction: input.direction,
       tone: input.tone && isAdTone(input.tone) ? input.tone : DEFAULT_TONE,
@@ -188,7 +192,7 @@ export async function getProjectRow(id: string) {
 
 /* ---------- creation: draft → upload assets → start ---------- */
 
-export type NewAdProject = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: LanguageCode; offer?: string; direction?: string; tone: AdTone; backgroundColor?: string; brand?: { accent?: string; captionStyle?: string; font?: string }; reviewScript: boolean; productName: string; productUrl?: string; description: string; script?: string };
+export type NewAdProject = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: AdLanguageCode; accent?: string; voiceId?: string; speed: SpeedKey; offer?: string; direction?: string; tone: AdTone; backgroundColor?: string; brand?: { accent?: string; captionStyle?: string; font?: string }; reviewScript: boolean; productName: string; productUrl?: string; description: string; script?: string };
 export type NewTranslateProject = {
   name: string;
   sourceFileName: string;
@@ -213,7 +217,7 @@ export async function createDraft(input: { workflow: "ad"; ad: NewAdProject } | 
         workflow: "ad",
         name: a.name,
         status: "draft",
-        input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, offer: a.offer, direction: a.direction, tone: a.tone, background: a.backgroundColor ? { type: "color", value: a.backgroundColor } : undefined, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
+        input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, accent: a.accent, voiceId: a.voiceId, speed: a.speed, offer: a.offer, direction: a.direction, tone: a.tone, background: a.backgroundColor ? { type: "color", value: a.backgroundColor } : undefined, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
       })
       .returning();
     await d.insert(steps).values(AD_STEPS.map((key) => ({ projectId: row.id, key, status: "waiting" as const })));

@@ -249,11 +249,21 @@ export async function getLook(lookId: string) {
   return heygenFetch<AvatarLook>(`/v3/avatars/looks/${encodeURIComponent(lookId)}`);
 }
 
-export async function listVoices(params: { language?: string; limit?: number } = {}) {
-  const q = new URLSearchParams({ type: "public", limit: String(params.limit ?? 100) });
-  if (params.language) q.set("language", params.language);
-  const page = await heygenFetch<Page<Voice> | Voice[]>(`/v3/voices?${q}`);
-  return itemsOf(page, "voices");
+export async function listVoices(params: { language?: string; limit?: number; all?: boolean; maxPages?: number } = {}) {
+  const items: Voice[] = [];
+  let token: string | undefined;
+  for (let i = 0; i < (params.all ? (params.maxPages ?? 30) : 1); i++) {
+    const q = new URLSearchParams({ type: "public", limit: String(params.limit ?? 100) });
+    if (params.language) q.set("language", params.language);
+    if (token) q.set("token", token);
+    const envelope = await heygenFetchEnvelope<Page<Voice> | Voice[]>(`/v3/voices?${q}`);
+    const page = envelope.data as Page<Voice> | Voice[];
+    items.push(...itemsOf(page, "voices"));
+    const paging = Array.isArray(page) ? envelope : { has_more: page.has_more ?? envelope.has_more, next_token: page.next_token ?? envelope.next_token };
+    if (!paging.has_more || !paging.next_token) break;
+    token = paging.next_token;
+  }
+  return items;
 }
 
 export async function getVideo(videoId: string) {
@@ -291,6 +301,8 @@ export type CreateAvatarVideoInput = {
   fit?: "cover" | "contain";
   /** Replace the look's background with a solid colour (hex) or a public image URL (verified 2026-10-19: `background.type`, `value`, `url`). */
   background?: { type: "color"; value: string } | { type: "image"; url: string };
+  /** HeyGen voice_settings: speed 0.5–1.5 (1 = normal), optional locale hint for multilingual voices. */
+  voiceSettings?: { speed?: number; locale?: string };
   /** Required with a background on video avatars: "Video avatars must be trained with matting enabled" (HeyGen). A look without matting gets a 400. */
   removeBackground?: boolean;
   /** Stable key so a retried identical request is not created twice by HeyGen (24 h). */
@@ -312,6 +324,7 @@ export async function createAvatarVideo(input: CreateAvatarVideoInput) {
       ...(input.fit ? { fit: input.fit } : {}),
       ...(input.background ? { background: input.background } : {}),
       ...(input.removeBackground ? { remove_background: true } : {}),
+      ...(input.voiceSettings ? { voice_settings: input.voiceSettings } : {}),
       engine: { type: input.engine },
       title: input.title ?? "Reelay test",
     }),

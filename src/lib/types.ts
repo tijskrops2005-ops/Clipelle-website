@@ -57,8 +57,14 @@ export interface AdProject extends ProjectBase {
   engine?: "avatar_iii" | "avatar_iv";
   /** Chosen presenter look id; undefined = the configured default look. */
   lookId?: string;
-  /** Language of the script and the voice (AD_LANGUAGE when missing). */
-  language?: LanguageCode;
+  /** Language of the script, the captions and the voice (AD_LANGUAGE when missing). */
+  language?: string;
+  /** Accent/region key for the voice (from the voice list), e.g. "uk". */
+  accent?: string;
+  /** Chosen voice id; missing = the look's default voice when it fits the language. */
+  voiceId?: string;
+  /** Speaking speed: slower | normal | faster. */
+  speed?: "slower" | "normal" | "faster";
   /** Offer line used in the call to action, e.g. "20% off this week". Empty: no offer is mentioned. */
   offer?: string;
   /** Free direction for the script (audience, emphasis). Data, never instructions. */
@@ -148,6 +154,8 @@ export interface Presenter {
   engines: ("avatar_iii" | "avatar_iv")[];
   /** Shown first in the picker. */
   featured: boolean;
+  /** The look's default voice; preselected when it fits the chosen language. */
+  defaultVoiceId?: string;
 }
 
 export interface PresenterPage {

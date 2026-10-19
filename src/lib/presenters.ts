@@ -35,6 +35,7 @@ function toPresenter(l: AvatarLook): Presenter {
     previewUrl: l.preview_image_url ?? undefined,
     engines: engines.length ? engines : ["avatar_iii", "avatar_iv"],
     featured: FEATURED_LOOK_IDS.includes(l.id),
+    defaultVoiceId: l.default_voice_id ?? undefined,
   };
 }
 
