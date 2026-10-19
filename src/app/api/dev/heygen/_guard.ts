@@ -1,12 +1,7 @@
 import { HeygenError } from "@/lib/services/heygen";
+import { devOnly, errorResponse as genericErrorResponse } from "../_guard";
 
-/** Dev tools are invisible outside development: plain 404, no hint. */
-export function devOnly(): Response | null {
-  if (process.env.NODE_ENV !== "development") {
-    return new Response(null, { status: 404 });
-  }
-  return null;
-}
+export { devOnly };
 
 export function errorResponse(error: unknown) {
   if (error instanceof HeygenError) {
@@ -15,6 +10,5 @@ export function errorResponse(error: unknown) {
       { status: error.status >= 400 && error.status < 600 ? error.status : 502 },
     );
   }
-  const message = error instanceof Error ? error.message : "Unexpected error.";
-  return Response.json({ error: message }, { status: 500 });
+  return genericErrorResponse(error);
 }
