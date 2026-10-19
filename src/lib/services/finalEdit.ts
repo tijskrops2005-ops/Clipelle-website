@@ -92,6 +92,21 @@ export async function uploadAsset(
   throw new FinalEditError("Timed out waiting for Shotstack to import the file.", "ingest_timeout", 504);
 }
 
+/** Lets Shotstack fetch a file from a URL and reports its dimensions and length (free). */
+export async function ingestFromUrl(url: string): Promise<{ url: string; width?: number; height?: number; duration?: number; fps?: number }> {
+  const env = shotstackEnv();
+  const base = `https://api.shotstack.io/ingest/${env}`;
+  const created = await shotstackFetch<{ data: { id: string } }>(`${base}/sources`, { method: "POST", body: JSON.stringify({ url }) });
+  for (let i = 0; i < 90; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    const src = await shotstackFetch<{ data: { attributes: { status: string; source?: string; width?: number; height?: number; duration?: number; fps?: number } } }>(`${base}/sources/${created.data.id}`);
+    const a = src.data.attributes;
+    if (a.status === "ready" && a.source) return { url: a.source, width: a.width, height: a.height, duration: a.duration, fps: a.fps };
+    if (a.status === "failed") throw new FinalEditError("Shotstack could not import the video.", "ingest_failed", 502);
+  }
+  throw new FinalEditError("Timed out waiting for Shotstack to import the video.", "ingest_timeout", 504);
+}
+
 /* ---------- The ad composition ---------- */
 
 export type AdEditInput = {
@@ -266,6 +281,8 @@ export type CaptionEditInput = {
   srtUrl?: string;
   /** "crop" fills the 9:16 frame (centred); "contain" letterboxes the whole picture on an ink background. */
   fit?: "crop" | "contain";
+  /** Keep the source format: output exactly this size (max 1920 per side) instead of 1080×1920. */
+  size?: { width: number; height: number };
   colors?: { accent?: string; ink?: string; light?: string };
 };
 
@@ -312,11 +329,21 @@ export function buildCaptionEdit(input: CaptionEditInput) {
     ],
   };
 
+  const output = input.size
+    ? { format: "mp4", size: fitSize(input.size), fps: 25 }
+    : { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 };
   return {
     timeline: { background: ink, tracks: [captions, video] },
-    output: { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 },
+    output,
     meta: { totalSeconds: total },
   };
+}
+
+/** Shotstack renders at most 1920 px per side and wants even numbers. */
+function fitSize(size: { width: number; height: number }) {
+  const scale = Math.min(1, 1920 / Math.max(size.width, size.height));
+  const even = (n: number) => Math.max(2, Math.round((n * scale) / 2) * 2);
+  return { width: even(size.width), height: even(size.height) };
 }
 
 /* ---------- Render ---------- */

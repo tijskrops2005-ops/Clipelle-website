@@ -107,6 +107,8 @@ Elke stap: eerst de relevante bestanden lezen, dan de wijziging, dan lint/typech
 
 Afgesproken op 19 oktober 2026: plan akkoord, met de opslagmeter (stap 2) en de push-controle op sleutels en logs (stap 11, en als vaste regel vóór elke push).
 
+**Stand 19 oktober 2026:** stappen 1 t/m 7 gebouwd en gecommit. Beide orchestrators zijn zonder betaalde aanroepen getest (cost guard op $0): de keten start, slaat voltooide stappen over bij een retry, en meldt een weigering in gewone taal. Stap 8 (webhooks) is de volgende.
+
 1. **Supabase**: account en één project (regio EU, Frankfurt). Uit het dashboard komen `DATABASE_URL` (connection string, pooler), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (alleen server) en `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Zet ze in `.env.local`; ik lees ze niet.
 2. **Inngest**: account pas nodig bij stap 11 (productie). Lokaal werkt het zonder.
 3. **GitHub**: account en een privé-repository; ik push de bestaande git-geschiedenis.
