@@ -24,15 +24,15 @@ Bron: https://platform.claude.com/docs/en/about-claude/pricing
 | MiniMax H3 Max | 1080p | $0,104 (promo) | $0,52 | $0,80 |
 | MiniMax H3 Max Turbo | 768p | $0,026 (promo) | $0,13 | $0,20 |
 | MiniMax H3 Max Turbo | 1080p | $0,052 (promo) | $0,26 | $0,40 |
-| Kling v3 Standard (audio uit) | tot 1080p | $0,084 | $0,42 | $0,42 |
-| Kling v3 Pro (audio uit) | tot 1080p | $0,112 | $0,56 | $0,56 |
+| Kling v3 Standard (audio uit) | 720p (gemeten: 720×1280; fal.ai biedt geen resolutiekeuze) | $0,084 | $0,42 | $0,42 |
+| Kling v3 Pro (audio uit) | niet gepubliceerd door fal.ai (aparte 4K-variant bestaat) | $0,112 | $0,56 | $0,56 |
 | Seedance 1.5 Pro | 1080p | per token | ≈ $0,25 | ≈ $0,25 |
 
 Bronnen: https://fal.ai/models/minimax/h3-max/image-to-video, https://fal.ai/models/minimax/h3-max-turbo/image-to-video, https://fal.ai/models/fal-ai/kling-video/v3/standard/image-to-video, https://fal.ai/models/fal-ai/kling-video/v3/pro/image-to-video, https://fal.ai/pricing
 
 Wat telt bij een productclip: het product moet exact blijven zoals op de foto (logo, kleur, vorm), de beweging moet rustig zijn, en de uitvoer moet scherp zijn op een telefoonscherm van 1080×1920. Een 768p-clip wordt door Shotstack opgeschaald naar 1080p en oogt daardoor zachter dan de presentator ernaast.
 
-**Keuze: Kling v3 Standard als standaard vanaf 1 november; tot die datum MiniMax H3 Max Turbo op 1080p.** Kling staat bekend om het vasthouden van productdetails en levert 1080p voor $0,42, wat na de promo nagenoeg gelijk is aan MiniMax op 1080p-turbo ($0,40) en goedkoper dan MiniMax H3 Max 1080p ($0,80). Tot 31 oktober is Turbo op 1080p ($0,26) de beste koop, mits de vergelijkingstest (§9) bevestigt dat Turbo het product even trouw weergeeft als H3 Max. Kling Pro ($0,56) is de duurste optie zonder zichtbaar voordeel voor een stilstaand product; Seedance is goedkoop maar moet eerst bewijzen dat het logo's niet vervormt. Let op: de code kent nu `minimax` (H3 Max 768p) en `kling` (Pro); de Turbo- en Standard-varianten komen er bij na akkoord.
+**Keuze: Kling v3 Standard als standaard vanaf 1 november; tot die datum MiniMax H3 Max Turbo op 1080p.** Kling staat bekend om het vasthouden van productdetails en kost $0,42, nagenoeg gelijk aan MiniMax Turbo 1080p na de promo ($0,40) en goedkoper dan MiniMax H3 Max 1080p ($0,80). Kanttekening (19 oktober 2026): Kling v3 Standard levert 720×1280, geen 1080p; de montage schaalt de clip op naar 1080×1920 (`fit: crop`). Omdat de productclip maar 3–4 s per keer in beeld is, is dat acceptabel, maar MiniMax Turbo is na 1 november op 1080p vrijwel even duur ($0,40), dus die keuze wordt bij de vergelijkingstest opnieuw bekeken. Tot 31 oktober is Turbo op 1080p ($0,26) de beste koop, mits de vergelijkingstest (§9) bevestigt dat Turbo het product even trouw weergeeft als H3 Max. Kling Pro ($0,56) is de duurste optie zonder zichtbaar voordeel voor een stilstaand product; Seedance is goedkoop maar moet eerst bewijzen dat het logo's niet vervormt. Let op: de code kent nu `minimax` (H3 Max 768p) en `kling` (Pro); de Turbo- en Standard-varianten komen er bij na akkoord.
 
 ## 3. Foto aanvullen (Bria Expand)
 

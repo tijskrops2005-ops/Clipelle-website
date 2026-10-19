@@ -188,6 +188,8 @@ export function buildAdEdit(input: AdEditInput) {
   };
 
   // The one product clip, laid over the presenter at fixed moments; different pieces, alternating zoom.
+  // volume 0: MiniMax clips carry a sound track and Kling can too; only the presenter's voice and the music are heard.
+  // fit "crop": a 720×1280 clip (Kling v3 Standard) is scaled up to fill the 1080×1920 frame.
   const productOverlays = {
     clips: layout.overlays.map((o) => ({
       asset: { type: "video", src: input.productClipUrl, volume: 0, trim: o.trim },

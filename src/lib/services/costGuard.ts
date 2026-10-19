@@ -289,6 +289,13 @@ export async function settleSpend(
     .where(eq(costEntries.id, entryId));
 }
 
+/** One entry by id (e.g. to settle it with its own estimate once the provider reports completion). */
+export async function getEntry(entryId: string): Promise<CostEntry | null> {
+  if (!entryId) return null;
+  const [row] = await db().select().from(costEntries).where(eq(costEntries.id, entryId)).limit(1);
+  return row ? toEntry(row) : null;
+}
+
 /** Adds details to an entry without changing its status (e.g. the provider's request id once known). */
 export async function annotateSpend(entryId: string, meta: Record<string, unknown>) {
   if (!entryId) return;

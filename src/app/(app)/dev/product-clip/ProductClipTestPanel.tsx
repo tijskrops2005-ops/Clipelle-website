@@ -22,8 +22,8 @@ const PROMO = new Date() < new Date("2026-11-01");
 const MODELS: Record<ModelKey, { label: string; blurb: string; usdPerSecond: number }> = {
   minimax: { label: "MiniMax H3 Max (768p)", blurb: "Cheapest, fast, photo as first frame. Upscaled to 1080p in the edit.", usdPerSecond: PROMO ? 0.052 : 0.08 },
   minimax_turbo: { label: "MiniMax H3 Max Turbo (1080p)", blurb: "Tuned for prompt adherence and aesthetics, native 1080p. Default until 31 October.", usdPerSecond: PROMO ? 0.052 : 0.08 },
-  kling_standard: { label: "Kling v3 Standard", blurb: "Strong product fidelity at 1080p, audio off. Default from 1 November.", usdPerSecond: 0.084 },
-  kling: { label: "Kling v3 Pro", blurb: "Highest fidelity, audio off. Costs more without a visible gain for a still product.", usdPerSecond: 0.112 },
+  kling_standard: { label: "Kling v3 Standard (720p)", blurb: "Strong product fidelity. No resolution option on fal.ai; returned 720×1280 in our test, upscaled to 1080p in the edit. Audio off. Default from 1 November.", usdPerSecond: 0.084 },
+  kling: { label: "Kling v3 Pro", blurb: "Highest fidelity, audio off. fal.ai does not publish the output size. Costs more without a visible gain for a still product.", usdPerSecond: 0.112 },
 };
 
 type Analysis = {

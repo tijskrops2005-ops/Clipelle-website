@@ -76,8 +76,8 @@ export const CLIP_MODELS: Record<ClipModelKey, ClipModel> = {
   kling_standard: {
     key: "kling_standard",
     endpointId: "fal-ai/kling-video/v3/standard/image-to-video",
-    label: "Kling v3 Standard",
-    blurb: "Strong product fidelity at 1080p, audio off. Default from 1 November.",
+    label: "Kling v3 Standard (720p)",
+    blurb: "Strong product fidelity. fal.ai offers no resolution option; it returned 720×1280 in our test, which the edit upscales to 1080p. Audio off. Default from 1 November.",
     usdPerSecond: 0.084,
     buildInput: ({ imageUrl, prompt, durationSeconds }) => ({
       prompt,
@@ -91,7 +91,7 @@ export const CLIP_MODELS: Record<ClipModelKey, ClipModel> = {
     key: "kling",
     endpointId: "fal-ai/kling-video/v3/pro/image-to-video",
     label: "Kling v3 Pro",
-    blurb: "Highest fidelity, audio off. Costs more without a visible gain for a still product.",
+    blurb: "Highest fidelity, audio off. fal.ai does not publish the output size (a separate 4K variant exists). Costs more without a visible gain for a still product.",
     usdPerSecond: 0.112,
     buildInput: ({ imageUrl, prompt, durationSeconds }) => ({
       prompt,

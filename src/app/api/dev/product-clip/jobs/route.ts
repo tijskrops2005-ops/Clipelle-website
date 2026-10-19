@@ -5,7 +5,7 @@ import {
   submitProductClip,
   type ClipModelKey,
 } from "@/lib/services/productClip";
-import { costGuardResponse, reserveSpend, settleSpend } from "@/lib/services/costGuard";
+import { annotateSpend, costGuardResponse, reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { devOnly, errorResponse } from "../../_guard";
 import { loadImage } from "../_store";
 
@@ -45,7 +45,8 @@ export async function POST(request: Request) {
       action: `clip_${model}`,
       estimatedUsd: estimateUsd,
       fingerprintInput: { imageId: body.imageId, method, model, prompt },
-      meta: { model, method },
+      // endpointId is what fal.ai's usage API reports per model, so /dev/costs can match the two.
+      meta: { model: CLIP_MODELS[model].label, modelKey: model, endpointId: CLIP_MODELS[model].endpointId, seconds: CLIP_SECONDS, method },
     });
     entryId = reserved.entryId;
   } catch (error) {
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
 
   try {
     const job = await submitProductClip({ image, model, prompt, durationSeconds: CLIP_SECONDS });
+    await annotateSpend(entryId, { requestId: job.requestId }).catch(() => {});
     return Response.json({
       ...job,
       model,
