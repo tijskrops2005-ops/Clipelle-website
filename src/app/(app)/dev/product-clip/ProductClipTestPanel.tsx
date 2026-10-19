@@ -55,7 +55,7 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
   const [expandCost, setExpandCost] = useState<number | null>(null);
 
   const [model, setModel] = useState<ModelKey>(PROMO ? "minimax_turbo" : "kling_standard");
-  const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
+  const [prompt, setPrompt] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [run, setRun] = useState<Run | null>(null);
   const [queueNote, setQueueNote] = useState("");
@@ -154,11 +154,11 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
     try {
       const res = await fetch("/api/dev/product-clip/jobs", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageId: prepared.imageId, method, model, prompt, confirmed: true }),
+        body: JSON.stringify({ imageId: prepared.imageId, method, model, prompt: effectivePrompt, confirmed: true }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
-      setRun({ requestId: body.requestId, endpointId: body.endpointId, model, method, prompt, startedAt: body.startedAt, estimateUsd: body.estimateUsd, entryId: body.entryId });
+      setRun({ requestId: body.requestId, endpointId: body.endpointId, model, method, prompt: effectivePrompt, startedAt: body.startedAt, estimateUsd: body.estimateUsd, entryId: body.entryId });
       setElapsed(0); setPhase("polling");
       setMeterKey((k) => k + 1);
     } catch (e) {
@@ -170,7 +170,9 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
   const clipEstimate = Math.round(MODELS[model].usdPerSecond * CLIP_SECONDS * 1000) / 1000;
   const methodReady = method === "crop" || Boolean(expandPreview);
   const busy = phase === "submitting" || phase === "polling";
-  const canStart = Boolean(prepared) && methodReady && prompt.trim().length > 0 && !busy;
+  /* The grey example text is the real default: an empty field sends it. */
+  const effectivePrompt = prompt.trim() || DEFAULT_PROMPT;
+  const canStart = Boolean(prepared) && methodReady && !busy;
   const a = prepared?.analysis;
   const bboxStyle = a ? {
     left: `${(a.bbox.left / a.width) * 100}%`, top: `${(a.bbox.top / a.height) * 100}%`,
@@ -283,8 +285,8 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
                 </button>
               ))}
             </div>
-            <Field id="prompt" label="Motion prompt" hint="Describe camera and motion only. The product itself must stay unchanged.">
-              <Textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={busy} className="min-h-20" />
+            <Field id="prompt" label="Motion prompt" hint="Describe camera and motion only. The product itself must stay unchanged. Leave empty to use the example shown.">
+              <Textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={busy} className="min-h-20" placeholder={DEFAULT_PROMPT} />
             </Field>
             <div className="rounded-[14px] bg-surface-muted p-4 text-sm">
               <p className="font-semibold text-ink">

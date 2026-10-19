@@ -9,6 +9,29 @@ import type { TranslationQuality } from "@/lib/types";
  * counted as $0.10 per 30-second video everywhere, even when the sandbox renders for free.
  */
 
+/**
+ * Claude models the script step may use, USD per million tokens
+ * (https://platform.claude.com/docs/en/about-claude/pricing, checked 2026-10-19).
+ * Haiku 5.5 has a higher tier for prompts over 100k tokens; our prompts stay far below that.
+ */
+export const CLAUDE_MODELS = {
+  "claude-opus-5-5": { label: "Opus 5.5", input: 4, output: 20, cacheRead: 0.2, note: "best quality, default" },
+  "claude-sonnet-5-5": { label: "Sonnet 5.5", input: 2, output: 10, cacheRead: 0.1, note: "half the price" },
+  "claude-haiku-5-5": { label: "Haiku 5.5", input: 0.1, output: 0.5, cacheRead: 0.01, note: "cheapest, prompts up to 100k tokens" },
+} as const;
+
+export type ScriptModel = keyof typeof CLAUDE_MODELS;
+
+export function isScriptModel(model: string): model is ScriptModel {
+  return model in CLAUDE_MODELS;
+}
+
+export function claudeTokensToUsd(model: ScriptModel, inputTokens: number, outputTokens: number, cacheReadTokens = 0) {
+  const p = CLAUDE_MODELS[model];
+  const usd = (inputTokens * p.input + outputTokens * p.output + cacheReadTokens * p.cacheRead) / 1_000_000;
+  return Math.round(usd * 10_000) / 10_000;
+}
+
 export const PRICING = {
   /** Claude script: ~1.5k input + 900 output tokens on claude-opus-5-5 ($4 / $20 per MTok). */
   scriptUsd: 0.03,

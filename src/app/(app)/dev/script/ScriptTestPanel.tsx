@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Copy, ImagePlus, Loader2, Sparkles, X } from "lucide-react";
+import { ImagePlus, Loader2, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -10,8 +10,9 @@ import { Field, controlClass, controlStateClass } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { SpendMeter } from "@/components/dev/SpendMeter";
+import { CLAUDE_MODELS, type ScriptModel } from "@/lib/pricing";
 
-type Estimate = { inputTokens: number; outputTokens: number; costUsd: number };
+type Estimate = { model: ScriptModel; inputTokens: number; outputTokens: number; costUsd: number };
 type Scene = { kind: string; seconds: number; onScreenText: string | null };
 type AdScript = {
   angle: string;
@@ -48,12 +49,11 @@ async function fileToDataUrl(file: File, maxSide = 1024): Promise<string> {
 }
 
 export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
-  const [productName, setProductName] = useState("Glow Vitamin C Serum");
-  const [description, setDescription] = useState(
-    "A lightweight vitamin C serum that brightens dull skin in 14 days. Vegan, fragrance-free, 30 ml glass bottle with dropper.",
-  );
+  const [productName, setProductName] = useState("");
+  const [description, setDescription] = useState("");
   const [productUrl, setProductUrl] = useState("");
   const [hint, setHint] = useState("");
+  const [model, setModel] = useState<ScriptModel>("claude-opus-5-5");
   const [language, setLanguage] = useState("en");
   const [targetSeconds, setTargetSeconds] = useState(30);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
@@ -62,11 +62,10 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
   const [phase, setPhase] = useState<"idle" | "confirm" | "running" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RunResult | null>(null);
-  const [showRaw, setShowRaw] = useState(false);
   const [meterKey, setMeterKey] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const payload = { productName, description, productUrl, hint, language, targetSeconds, imageDataUrl };
+  const payload = { productName, description, productUrl, hint, model, language, targetSeconds, imageDataUrl };
 
   /* Free estimate, refreshed when inputs change (debounced). */
   useEffect(() => {
@@ -82,7 +81,7 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
     }, 400);
     return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productName, description, productUrl, hint, language, targetSeconds, imageDataUrl]);
+  }, [productName, description, productUrl, hint, model, language, targetSeconds, imageDataUrl]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -126,6 +125,7 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
 
   const busy = phase === "running";
   const valid = productName.trim().length >= 2 && description.trim().length >= 20;
+  const price = CLAUDE_MODELS[model];
 
   return (
     <div className="grid gap-8 xl:grid-cols-5">
@@ -179,17 +179,32 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
             </Field>
             <div className="grid gap-5 md:grid-cols-2">
               <Field id="productName" label="Product name">
-                <Input id="productName" value={productName} onChange={(e) => setProductName(e.target.value)} disabled={busy} />
+                <Input id="productName" value={productName} onChange={(e) => setProductName(e.target.value)} disabled={busy} placeholder="e.g. Linen Summer Dress" />
               </Field>
               <Field id="productUrl" label="Product URL" optional>
-                <Input id="productUrl" value={productUrl} onChange={(e) => setProductUrl(e.target.value)} disabled={busy} placeholder="https://…" />
+                <Input id="productUrl" value={productUrl} onChange={(e) => setProductUrl(e.target.value)} disabled={busy} placeholder="e.g. https://yourstore.com/products/linen-dress" />
               </Field>
             </div>
-            <Field id="description" label="Description" hint="Only facts in here may end up in the script.">
-              <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} disabled={busy} />
+            <Field id="description" label="Description" hint="Only facts in here may end up in the script. The product URL is passed along as text; nothing is fetched from it.">
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={busy}
+                placeholder="e.g. A midi dress in 100% washed linen, available in sand and olive, sizes XS–XL. Machine washable, made in Portugal."
+              />
             </Field>
             <Field id="hint" label="Direction" optional hint="Audience, tone, something to emphasise.">
               <Input id="hint" value={hint} onChange={(e) => setHint(e.target.value)} disabled={busy} placeholder="e.g. women 25–40, calm and confident tone" />
+            </Field>
+            <Field id="model" label="Model" hint="Prices per million tokens (input / output). The default for the real workflow is Opus 5.5.">
+              <select id="model" value={model} onChange={(e) => setModel(e.target.value as ScriptModel)} disabled={busy} className={cn(controlClass, controlStateClass(false), "h-11")}>
+                {(Object.keys(CLAUDE_MODELS) as ScriptModel[]).map((m) => (
+                  <option key={m} value={m}>
+                    {CLAUDE_MODELS[m].label} · ${CLAUDE_MODELS[m].input} / ${CLAUDE_MODELS[m].output} · {CLAUDE_MODELS[m].note}
+                  </option>
+                ))}
+              </select>
             </Field>
             <div className="grid gap-5 md:grid-cols-2">
               <Field id="language" label="Language">
@@ -210,9 +225,9 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
 
             <div className="rounded-[14px] bg-surface-muted p-4 text-sm">
               <p className="font-semibold text-ink">
-                Estimated cost: {estimate ? usd(estimate.costUsd) : "…"}{" "}
+                Estimated cost: {valid && estimate ? usd(estimate.costUsd) : "…"}{" "}
                 <span className="font-normal text-muted">
-                  ({estimate ? `${estimate.inputTokens.toLocaleString()} in / ${estimate.outputTokens} out tokens` : "calculating"}, claude-opus-5-5 at $4 / $20 per million)
+                  ({!valid ? "fill in a product name and a description first" : estimate ? `${estimate.inputTokens.toLocaleString()} in / ${estimate.outputTokens} out tokens` : "calculating"}, {model} at ${price.input} / ${price.output} per million)
                 </span>
               </p>
               <p className="mt-1 text-[13px] text-muted">The real cost is calculated from the usage the API reports back.</p>
@@ -308,24 +323,6 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
                     </div>
                   ))}
                 </dl>
-                <div className="flex gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => setShowRaw((v) => !v)}>
-                    {showRaw ? "Hide JSON" : "Show JSON"}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => navigator.clipboard.writeText(JSON.stringify(result.script, null, 2))}
-                  >
-                    <Copy className="size-4" aria-hidden />
-                    Copy JSON
-                  </Button>
-                </div>
-                {showRaw && (
-                  <pre className="max-h-80 overflow-auto rounded-[14px] bg-ink p-4 text-xs leading-relaxed text-surface">
-                    {JSON.stringify(result.script, null, 2)}
-                  </pre>
-                )}
               </>
             )}
           </CardContent>

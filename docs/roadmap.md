@@ -58,6 +58,18 @@ Kostenindicatie per advertentie van 30 s (ruw, uit de bronnen in `docs/api-verif
 | U6 | Muziekkeuze en merkstijl | Keuze uit enkele tracks, kleuren en lettertype voor overlays. | Shotstack-templates met merge-velden | Muziekbibliotheek met licenties. |
 | U7 | Eigen productfoto in HeyGen-achtergrond | Presentator vóór de productfoto in plaats van een egale achtergrond. | HeyGen `background: {type: "image"}` met `remove_background` | Avatar met matting-ondersteuning kiezen. |
 
+### Verbeteringen aan de scriptstap (nog niet gebouwd, 19 oktober 2026)
+
+Uit de eerste tests op `/dev/script` kwamen deze wensen. Ze staan hier geparkeerd tot de MVP end-to-end werkt; geen ervan is nodig voor de eerste echte video.
+
+| # | Verbetering | Wat het oplevert | Hoe | Opmerking |
+|---|---|---|---|---|
+| S1 | Shopify-import | Productnaam, beschrijving, prijs en foto's automatisch uit de winkel halen in plaats van overtypen. | Shopify Storefront/Admin API of de publieke `products/<handle>.json`-route van een winkel. | Vraagt een Shopify-app of toegangstoken per winkel. Nu wordt de product-URL alleen als tekst meegegeven, niet opgehaald. |
+| S2 | Veld voor het aanbod | Een eigen veld voor korting, bundel of gratis verzending, zodat de eindkaart het echte aanbod toont. | Extra veld in het formulier en in `ScriptInput`; de prompt mag alleen dít aanbod gebruiken. | Nu mag Claude geen prijzen of kortingen verzinnen, dus zonder dit veld blijft het aanbod algemeen. |
+| S3 | Controle op tegenstrijdigheden | Waarschuwing vóór het starten als naam, beschrijving en foto niet bij elkaar passen (bijvoorbeeld "serum" in de naam, een jurk op de foto). | Goedkope controle met Haiku 5.5 (één korte aanroep, ~$0,001) vóór de betaalde scriptstap. | Voorkomt een verspilde run van ~$1. |
+| S4 | Filteren van ruis | Winkeltekst zoals verzendinformatie, retourvoorwaarden en SEO-vulling uit de beschrijving halen vóór het script. | Zelfde Haiku-aanroep als S3, of een vaste lijst met patronen. | Vooral nuttig in combinatie met S1. |
+| S5 | Meerdere hooks | Drie tot vijf hook-varianten per script, de gebruiker kiest er één of laat alles maken. | Eén Claude-aanroep met een array van hooks in het schema; sluit aan op U1 en U3. | Meer hooks is pas zinvol als de montage per hook een variant kan maken (U3). |
+
 Niet op de roadmap, conform CLAUDE.md: analytics, campagnebeheer, advertenties plaatsen, een node-editor of een volledige video-editor.
 
 ## Volgorde van bouwen (fase 7 en verder)

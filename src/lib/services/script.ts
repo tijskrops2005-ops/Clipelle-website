@@ -2,6 +2,7 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
+import { CLAUDE_MODELS, claudeTokensToUsd, isScriptModel, type ScriptModel } from "@/lib/pricing";
 
 /**
  * Step 2 — hook + script for one ad angle, via the Claude API (server-only).
@@ -9,9 +10,7 @@ import { z } from "zod";
  * Model and prices verified 2026-10-19 (see docs/vendors/anthropic/capabilities.md).
  */
 
-export const SCRIPT_MODEL = "claude-opus-5-5";
-/** USD per million tokens for claude-opus-5-5. Update when Anthropic changes pricing. */
-export const PRICE_PER_MTOK = { input: 4, output: 20, cacheRead: 0.2 };
+export const SCRIPT_MODEL: ScriptModel = "claude-opus-5-5";
 /** A product photo of up to ~1.15 megapixels costs at most this many input tokens. */
 export const IMAGE_TOKEN_ALLOWANCE = 1600;
 
@@ -58,6 +57,8 @@ export type ScriptInput = {
   /** Total ad length to plan for, in seconds. */
   targetSeconds: number;
   angle: AdAngle;
+  /** Claude model; defaults to SCRIPT_MODEL. Prices per model live in src/lib/pricing.ts. */
+  model?: ScriptModel;
   image?: { base64: string; mediaType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" };
 };
 
@@ -89,25 +90,25 @@ function requireApiKey() {
 
 /** Rough pre-call estimate so the UI can ask for confirmation. */
 export function estimateScriptCost(input: Omit<ScriptInput, "image"> & { hasImage: boolean }) {
+  const model = resolveModel(input.model);
   const promptChars =
     SYSTEM_PROMPT.length + userPrompt(input).length;
   const inputTokens = Math.ceil(promptChars / 4) + (input.hasImage ? IMAGE_TOKEN_ALLOWANCE : 0);
   const outputTokens = 900;
   return {
+    model,
     inputTokens,
     outputTokens,
-    costUsd: tokensToUsd(inputTokens, outputTokens, 0),
+    costUsd: claudeTokensToUsd(model, inputTokens, outputTokens, 0),
   };
 }
 
-export function tokensToUsd(inputTokens: number, outputTokens: number, cacheReadTokens: number) {
-  const usd =
-    (inputTokens * PRICE_PER_MTOK.input +
-      outputTokens * PRICE_PER_MTOK.output +
-      cacheReadTokens * PRICE_PER_MTOK.cacheRead) /
-    1_000_000;
-  return Math.round(usd * 10_000) / 10_000;
+/** Unknown or missing model names fall back to the default so a typo can never pick an unpriced model. */
+export function resolveModel(model: string | undefined): ScriptModel {
+  return model && isScriptModel(model) ? model : SCRIPT_MODEL;
 }
+
+export { CLAUDE_MODELS };
 
 const SYSTEM_PROMPT = `You write short, direct-response video ads for e-commerce products, in the style of high-performing TikTok and Meta ads. The video is vertical 9:16 and has a fixed structure: hook (0-2 s), presenter talking to camera, product footage, three benefits as on-screen text, and an offer with a call to action.
 
@@ -136,6 +137,7 @@ function userPrompt(input: Omit<ScriptInput, "image">) {
 export async function generateAdScript(input: ScriptInput): Promise<ScriptResult> {
   const client = new Anthropic({ apiKey: requireApiKey() });
   const { image, ...rest } = input;
+  const model = resolveModel(input.model);
 
   const content: Anthropic.ContentBlockParam[] = [];
   if (image) {
@@ -147,7 +149,7 @@ export async function generateAdScript(input: ScriptInput): Promise<ScriptResult
   content.push({ type: "text", text: userPrompt(rest) });
 
   const response = await client.messages.parse({
-    model: SCRIPT_MODEL,
+    model,
     max_tokens: 4000,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content }],
@@ -174,7 +176,7 @@ export async function generateAdScript(input: ScriptInput): Promise<ScriptResult
     script: response.parsed_output,
     model: response.model,
     usage,
-    costUsd: tokensToUsd(usage.inputTokens, usage.outputTokens, usage.cacheReadTokens),
+    costUsd: claudeTokensToUsd(model, usage.inputTokens, usage.outputTokens, usage.cacheReadTokens),
     stopReason: response.stop_reason,
   };
 }

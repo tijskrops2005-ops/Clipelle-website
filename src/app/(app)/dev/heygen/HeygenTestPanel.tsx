@@ -83,9 +83,7 @@ export function HeygenTestPanel() {
   const [engine, setEngine] = useState<Engine>("avatar_iv");
   const [lookId, setLookId] = useState("");
   const [voiceId, setVoiceId] = useState("");
-  const [script, setScript] = useState(
-    "Hi! This is a quick test of our presenter step. If you can hear me clearly, the connection works.",
-  );
+  const [script, setScript] = useState("");
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [run, setRun] = useState<Run | null>(null);
@@ -417,6 +415,7 @@ export function HeygenTestPanel() {
                 invalid={script.length > MAX_CHARS}
                 onChange={(e) => setScript(e.target.value)}
                 className="min-h-24"
+                placeholder="e.g. Hi! This is a quick test of our presenter step. If you can hear me clearly, the connection works."
               />
             </Field>
 

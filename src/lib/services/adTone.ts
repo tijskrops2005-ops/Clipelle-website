@@ -6,6 +6,7 @@ import { workflowSettings } from "@/lib/workflow/settings";
 import { languageOf } from "@/lib/languages";
 import type { LanguageCode } from "@/lib/types";
 import { maxCharsForSegment } from "@/lib/translatePricing";
+import { claudeTokensToUsd, isScriptModel } from "@/lib/pricing";
 
 /**
  * Workflow B, step "Review" — Claude rewrites translated subtitle fragments in ad tone.
@@ -59,20 +60,9 @@ function requireApiKey() {
   return key;
 }
 
-/** USD per million tokens per model (platform.claude.com/docs/en/about-claude/pricing, 2026-10-19). */
-const PRICES: Record<string, { input: number; output: number; cacheRead: number }> = {
-  "claude-opus-5-5": { input: 4, output: 20, cacheRead: 0.2 },
-  "claude-sonnet-5-5": { input: 2, output: 10, cacheRead: 0.1 },
-  "claude-haiku-5-5": { input: 0.1, output: 0.5, cacheRead: 0.01 },
-};
-
-function priceFor(model: string) {
-  return PRICES[model] ?? PRICES["claude-opus-5-5"];
-}
-
+/** Prices per model live in src/lib/pricing.ts (CLAUDE_MODELS); unknown names are priced as Opus 5.5. */
 function usdFor(model: string, inputTokens: number, outputTokens: number, cacheReadTokens = 0) {
-  const p = priceFor(model);
-  return Math.round(((inputTokens * p.input + outputTokens * p.output + cacheReadTokens * p.cacheRead) / 1_000_000) * 10_000) / 10_000;
+  return claudeTokensToUsd(isScriptModel(model) ? model : "claude-opus-5-5", inputTokens, outputTokens, cacheReadTokens);
 }
 
 /** Rough pre-call estimate: ~4 characters per token, output about the size of the input text. */

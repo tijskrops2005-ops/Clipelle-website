@@ -30,10 +30,10 @@ type Run = {
 const STORAGE_KEY = "reelay.dev.final-edit.runs";
 
 export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; env: "stage" | "v1" }) {
-  const [hook, setHook] = useState("Tired of dull skin?");
-  const [benefits, setBenefits] = useState(["Brighter in 14 days", "Vegan & fragrance-free", "One drop a day"]);
-  const [headline, setHeadline] = useState("Glow Vitamin C Serum");
-  const [cta, setCta] = useState("Shop now");
+  const [hook, setHook] = useState("");
+  const [benefits, setBenefits] = useState(["", "", ""]);
+  const [headline, setHeadline] = useState("");
+  const [cta, setCta] = useState("");
   const [presenterUrl, setPresenterUrl] = useState("");
   const [productClipUrl, setProductClipUrl] = useState("");
   const [musicUrl, setMusicUrl] = useState("");
@@ -135,18 +135,18 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
           </CardHeader>
           <CardContent className="space-y-5">
             <Field id="hook" label="Hook (first 2 seconds)" hint="Short and loud; shown as a sticker over the product clip.">
-              <Input id="hook" value={hook} onChange={(e) => setHook(e.target.value)} disabled={busy} />
+              <Input id="hook" value={hook} onChange={(e) => setHook(e.target.value)} disabled={busy} placeholder="e.g. Still wearing last summer's dress?" />
             </Field>
             <div className="grid gap-3 md:grid-cols-3">
               {benefits.map((b, i) => (
                 <Field key={i} id={`benefit-${i}`} label={`Benefit ${i + 1}`}>
-                  <Input id={`benefit-${i}`} value={b} disabled={busy} onChange={(e) => setBenefits((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))} />
+                  <Input id={`benefit-${i}`} value={b} disabled={busy} placeholder={["e.g. 100% washed linen", "e.g. Sizes XS–XL", "e.g. Machine washable"][i]} onChange={(e) => setBenefits((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))} />
                 </Field>
               ))}
             </div>
             <div className="grid gap-5 md:grid-cols-2">
-              <Field id="headline" label="End card headline"><Input id="headline" value={headline} onChange={(e) => setHeadline(e.target.value)} disabled={busy} /></Field>
-              <Field id="cta" label="Call to action"><Input id="cta" value={cta} onChange={(e) => setCta(e.target.value)} disabled={busy} /></Field>
+              <Field id="headline" label="End card headline"><Input id="headline" value={headline} onChange={(e) => setHeadline(e.target.value)} disabled={busy} placeholder="e.g. Linen Summer Dress" /></Field>
+              <Field id="cta" label="Call to action"><Input id="cta" value={cta} onChange={(e) => setCta(e.target.value)} disabled={busy} placeholder="e.g. Shop now" /></Field>
             </div>
           </CardContent>
         </Card>

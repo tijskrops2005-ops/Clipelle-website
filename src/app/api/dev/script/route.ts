@@ -3,6 +3,7 @@ import {
   AD_ANGLES,
   estimateScriptCost,
   generateAdScript,
+  resolveModel,
   type AdAngle,
   type ScriptInput,
 } from "@/lib/services/script";
@@ -64,6 +65,7 @@ export async function POST(request: Request) {
     language: body.language?.trim() || "en",
     targetSeconds: Math.min(60, Math.max(15, Number(body.targetSeconds) || 30)),
     angle,
+    model: resolveModel(body.model),
   };
 
   const estimate = estimateScriptCost({ ...base, hasImage: Boolean(image) });
@@ -83,7 +85,7 @@ export async function POST(request: Request) {
       action: "script",
       estimatedUsd: estimate.costUsd,
       fingerprintInput: { ...base, imageHash: image ? createHash("sha256").update(image.base64).digest("hex") : null },
-      meta: { language: base.language, targetSeconds: base.targetSeconds, hasImage: Boolean(image) },
+      meta: { model: base.model, language: base.language, targetSeconds: base.targetSeconds, hasImage: Boolean(image) },
     });
     entryId = reserved.entryId;
   } catch (error) {
