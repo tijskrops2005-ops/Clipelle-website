@@ -15,6 +15,7 @@ import { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { DemoBadge } from "@/components/DemoModeBadge";
 import { formatDuration } from "@/components/ui/VideoDropzone";
+import { formatUsd } from "@/lib/pricing";
 import { TranslatePipeline } from "./TranslatePipeline";
 import { ReviewPanel } from "./ReviewPanel";
 import { TRANSLATE_STEPS, translateStepMeta } from "./translateSteps";
@@ -120,9 +121,16 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {t.videoUrl && <VideoPlayer src={t.videoUrl} simulated={config.demoMode} />}
-                  <p className="text-[13px] leading-relaxed text-muted">
-                    Stand-in clip. The real translated video arrives here once the services are connected.
-                  </p>
+                  {t.error && (
+                    <p role="alert" className="rounded-[10px] bg-danger/10 p-3 text-[13px] leading-relaxed text-ink">
+                      {t.error}
+                    </p>
+                  )}
+                  {config.demoMode && (
+                    <p className="text-[13px] leading-relaxed text-muted">
+                      Stand-in clip. The real translated video arrives here once the services are connected.
+                    </p>
+                  )}
                   {t.videoUrl && (
                     <Button href={t.videoUrl} variant="primary" className="w-full" download>
                       <Download className="size-4" aria-hidden />
@@ -166,12 +174,24 @@ function StatusCard({ project }: { project: TranslateProject }) {
       <CardContent className="space-y-4">
         <ul className="space-y-2">
           {project.translations.map((t) => (
-            <li key={t.language} className="flex items-center justify-between text-sm">
-              <span className="text-ink">{languageOf(t.language).label}</span>
+            <li key={t.language} className="flex items-center justify-between gap-3 text-sm">
+              <span className="text-ink">
+                {languageOf(t.language).label}
+                {t.spentUsd !== undefined && !config.demoMode && <span className="label-mono ml-2 text-muted">{formatUsd(t.spentUsd)}</span>}
+              </span>
               <StatusBadge status={project.status === "review" ? "needs_input" : t.status} />
             </li>
           ))}
         </ul>
+        {(project.budgetUsd !== undefined || project.estimateUsd !== undefined) && (
+          <p className="flex items-center justify-between rounded-[10px] bg-surface-muted px-3 py-2 text-[13px]">
+            <span className="text-muted">{config.demoMode ? "Estimated cost per language" : "Budget per language"}</span>
+            <span className="font-medium text-ink">
+              {config.demoMode ? formatUsd(project.estimateUsd ?? 0) : formatUsd(project.budgetUsd ?? 0)}
+              {!config.demoMode && project.spentUsd !== undefined ? <span className="text-muted"> · spent in total {formatUsd(project.spentUsd)}</span> : null}
+            </span>
+          </p>
+        )}
         <ul className="space-y-2 border-t border-divider pt-4">
           {TRANSLATE_STEPS.map((k) => (
             <li key={k} className="flex items-center justify-between text-sm">

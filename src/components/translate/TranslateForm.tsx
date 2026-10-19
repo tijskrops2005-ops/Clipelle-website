@@ -6,7 +6,9 @@ import { Check, Languages, Loader2 } from "lucide-react";
 import { config } from "@/lib/config";
 import type { LanguageCode, TranslationQuality } from "@/lib/types";
 import { LANGUAGES } from "@/lib/languages";
-import { estimatePerLanguageUsd, estimateTotalUsd, formatUsd } from "@/lib/translatePricing";
+import { formatUsd } from "@/lib/translatePricing";
+import { estimateTranslateCost } from "@/lib/pricing";
+import { Badge } from "@/components/ui/Badge";
 import { createTranslateProject } from "@/lib/data/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -40,8 +42,11 @@ export function TranslateForm() {
   const submitLock = useRef(false);
 
   const seconds = video?.seconds ?? 30;
-  const perLanguage = estimatePerLanguageUsd(seconds, quality);
-  const total = estimateTotalUsd(seconds, quality, targets.length);
+  const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 1.5;
+  const estimateFor = (q: TranslationQuality, enh = enhance) =>
+    estimateTranslateCost({ seconds, quality: q, enhance: enh, languages: Math.max(1, targets.length), hasSourceTranscript: source !== "auto" });
+  const estimate = estimateFor(quality);
+  const overBudget = estimate.perLanguageTotal > budget;
   const tooLong = video?.seconds !== undefined && video.seconds > config.limits.translateVideoMaxSeconds;
 
   function toggleTarget(code: LanguageCode) {
@@ -200,7 +205,7 @@ export function TranslateForm() {
             <div className="grid gap-3 md:grid-cols-2">
               {QUALITY.map((q) => {
                 const selected = quality === q.key;
-                const est = estimatePerLanguageUsd(seconds, q.key);
+                const est = estimateFor(q.key);
                 return (
                   <label
                     key={q.key}
@@ -223,7 +228,7 @@ export function TranslateForm() {
                         />
                         {q.title}
                       </span>
-                      <span className="label-mono text-muted">≈ {formatUsd(est.total)} / language</span>
+                      <span className="label-mono text-muted">≈ {formatUsd(est.perLanguageTotal)} / language</span>
                     </span>
                     <span className="text-[13px] leading-relaxed text-muted">{q.text}</span>
                   </label>
@@ -231,8 +236,8 @@ export function TranslateForm() {
               })}
             </div>
             <p className="text-[13px] text-muted">
-              Indication for {Math.round(seconds)} s of video: translation {formatUsd(perLanguage.translation)}, review {formatUsd(perLanguage.proofread)}, captions {formatUsd(perLanguage.captions)} per language.
-              {targets.length > 0 ? ` Total for ${targets.length} ${targets.length === 1 ? "language" : "languages"}: ${formatUsd(total)}.` : ""}
+              Indication for {Math.round(seconds)} s of video, per language: translation {formatUsd(estimate.perLanguage.proofread + estimate.perLanguage.render)}, ad-tone rewrite {formatUsd(estimate.perLanguage.rewrite)}, captions {formatUsd(estimate.perLanguage.captions)}
+              {enhance ? `, enhancement ${formatUsd(estimate.perLanguage.enhance)}` : ""}.
             </p>
           </fieldset>
         </CardContent>
@@ -278,7 +283,7 @@ export function TranslateForm() {
             <input id="enhance" type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 shrink-0 accent-ink" />
             <span>
               <span className="block text-sm font-medium text-ink">Enhance picture quality</span>
-              <span className="block text-[13px] leading-relaxed text-muted">Sharper, cleaner picture before the captions go on. Adds about {formatUsd(Math.max(0.3, seconds * 0.02))} per language and a few minutes.</span>
+              <span className="block text-[13px] leading-relaxed text-muted">Sharper, cleaner picture before the captions go on. Adds about {formatUsd(estimateFor(quality, true).perLanguage.enhance)} per language and a few minutes.</span>
             </span>
           </label>
         </CardContent>
@@ -321,6 +326,22 @@ export function TranslateForm() {
         </CardContent>
       </Card>
 
+      {/* Estimate before the start */}
+      <div className={`flex flex-col gap-2 rounded-[14px] border p-4 sm:flex-row sm:items-center sm:justify-between ${overBudget ? "border-danger/40 bg-danger/5" : "border-border bg-surface-muted"}`}>
+        <div>
+          <p className="text-sm font-medium text-ink">
+            Estimated cost {formatUsd(estimate.perLanguageTotal)} per language · budget {formatUsd(budget)} per language
+            {targets.length > 1 ? ` · total for ${targets.length} languages ${formatUsd(estimate.total)}` : ""}
+          </p>
+          <p className="text-[13px] text-muted">
+            {overBudget
+              ? "Above the budget per language version. Choose speed, turn off enhancement, or use a shorter video."
+              : "Each language version has its own budget. If one version would exceed it, only that version stops; the others finish."}
+          </p>
+        </div>
+        <Badge tone={overBudget ? "danger" : "success"}>{overBudget ? "over budget" : "within budget"}</Badge>
+      </div>
+
       {/* Submit row */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-[13px] text-muted">
@@ -335,7 +356,7 @@ export function TranslateForm() {
           <Button href="/new" variant="ghost" aria-disabled={submitting || undefined} className={submitting ? "pointer-events-none opacity-50" : undefined}>
             Back
           </Button>
-          <Button type="submit" variant="accent" size="lg" disabled={submitting || !rights}>
+          <Button type="submit" variant="accent" size="lg" disabled={submitting || !rights || overBudget}>
             {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
             {submitting ? "Starting…" : "Start translation"}
           </Button>

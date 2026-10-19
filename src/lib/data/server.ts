@@ -5,7 +5,9 @@ import { assets, db, projects, steps, translations, type AdInput, type AssetRow,
 import { adProjectCreated, inngest, reviewApproved, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
 import { objectInfo, signedDownloadUrl } from "@/lib/storage";
 import { rewriteSegmentsInAdTone } from "@/lib/services/adTone";
-import { costGuardResponse, reserveSpend, settleSpend } from "@/lib/services/costGuard";
+import { costGuardResponse, costLimits, creativeSpent, getProjectSpend, reserveSpend, settleSpend } from "@/lib/services/costGuard";
+import { estimateAdCost, estimateTranslateCost } from "@/lib/pricing";
+import { workflowSettings } from "@/lib/workflow/settings";
 
 /**
  * Data access for real projects (database mode). The UI calls this through the routes in
@@ -47,9 +49,21 @@ async function urlFor(asset: AssetRow | undefined) {
   }
 }
 
+/** Estimate for one click, with the same numbers the forms show. */
+export function estimateForProject(row: ProjectRow) {
+  if (row.workflow === "ad") {
+    return estimateAdCost({ seconds: workflowSettings.adSeconds, clipModel: workflowSettings.clipModel, engine: workflowSettings.heygenEngine }).total;
+  }
+  const input = row.input as TranslateInput;
+  return estimateTranslateCost({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }).perLanguageTotal;
+}
+
 async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: TranslationRow[], assetRows: AssetRow[]): Promise<Project> {
   const stepsByKey = new Map(stepRows.map((s) => [s.key, s]));
   const assetsById = new Map(assetRows.map((a) => [a.id, a]));
+  const spend = await getProjectSpend(row.id);
+  const budgetUsd = costLimits().maxPerCreativeUsd;
+  const estimateUsd = estimateForProject(row);
 
   if (row.workflow === "ad") {
     const input = row.input as AdInput;
@@ -68,6 +82,9 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       imageUrls,
       steps: Object.fromEntries(AD_STEPS.map((k) => [k, toStep(stepsByKey.get(k))])) as Record<StepKey, Step>,
       finalVideoUrl: row.finalAssetId ? await urlFor(assetsById.get(row.finalAssetId)) : undefined,
+      spentUsd: spend.totalUsd,
+      budgetUsd,
+      estimateUsd,
     };
     return project;
   }
@@ -95,8 +112,13 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
         status: t.status,
         segments: t.segments,
         videoUrl: await urlFor(assetsById.get(t.captionedAssetId ?? t.enhancedAssetId ?? t.videoAssetId ?? "")),
+        error: t.error ?? undefined,
+        spentUsd: creativeSpent(spend, t.language, input.targetLanguages.length),
       })),
     ),
+    spentUsd: spend.totalUsd,
+    budgetUsd,
+    estimateUsd,
   };
   return project;
 }
@@ -230,6 +252,18 @@ export async function startProject(projectId: string) {
   if (row.workflow === "ad" && (row.input as AdInput).imageAssetIds.length === 0) throw new DataError("Add at least one product image.", 400, "no_images");
   if (row.workflow === "translate" && !(row.input as TranslateInput).sourceAssetId) throw new DataError("Upload the video first.", 400, "no_source");
 
+  // Budget check before anything is spent: the estimate for one creative must fit the budget.
+  const budget = costLimits().maxPerCreativeUsd;
+  const estimate = estimateForProject(row);
+  if (estimate > budget) {
+    const what = row.workflow === "translate" ? "per language version" : "for this video";
+    throw new DataError(
+      `This would cost about $${estimate.toFixed(2)} ${what}, above the budget of $${budget.toFixed(2)} per video. Choose cheaper options (shorter video, speed instead of precision, no enhancement) or raise MAX_COST_PER_CREATIVE_USD in .env.local.`,
+      409,
+      "creative_budget",
+    );
+  }
+
   const firstStep = row.workflow === "ad" ? "script" : "upload";
   await db().transaction(async (tx) => {
     await tx.update(projects).set({ status: "processing", updatedAt: new Date() }).where(eq(projects.id, projectId));
@@ -291,6 +325,8 @@ export async function rewriteForProject(projectId: string, language: LanguageCod
     estimatedUsd: estimate,
     fingerprintInput: { projectId, language, text: segments.map((s) => s.text) },
     projectId,
+    language,
+    languageCount: (row.input as TranslateInput).targetLanguages.length,
   });
   try {
     const result = await rewriteSegmentsInAdTone({ segments: segments.map((s) => ({ index: s.index, start: s.start, end: s.end, original: s.original, text: s.text })), language });

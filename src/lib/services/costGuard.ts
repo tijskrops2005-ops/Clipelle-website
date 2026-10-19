@@ -2,9 +2,13 @@
  * Central cost guard for every paid API call (HeyGen, Claude, fal.ai, Shotstack production).
  * Server-only by usage: imported from route handlers, services and the orchestrator, never from client code.
  *
- * - Per-action and per-day limits from .env.local (MAX_COST_PER_ACTION_USD, MAX_DAILY_SPEND_USD).
- * - Every paid action is a row in `cost_entries` (Stage 8; before that a JSON-lines file under .reelay/).
- * - Duplicate protection: the same request fingerprint within 10 minutes is not run again.
+ * Two limits from .env.local:
+ * - MAX_COST_PER_ACTION_USD (default 1.50): no single paid call may cost more.
+ * - MAX_COST_PER_CREATIVE_USD (default 1.50): what one click on "Generate video" may cost in total.
+ *   Workflow A: the whole project. Workflow B: per language version (shared costs such as the
+ *   source transcript are split evenly over the languages). Every paid call counts, including
+ *   failed attempts and retries.
+ * Plus: the same request fingerprint within 10 minutes is not run again.
  *
  * Usage: `const { entryId } = await reserveSpend(...)` BEFORE the paid call; it throws CostGuardError
  * when a limit or duplicate blocks it. Then `await settleSpend(entryId, { status, actualUsd })`.
@@ -28,12 +32,13 @@ export type CostEntry = {
   finishedAt: string | null;
   projectId?: string | null;
   stepId?: string | null;
+  language?: string | null;
   meta?: Record<string, unknown>;
 };
 
 export const DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
 
-export type CostGuardCode = "per_action_limit" | "daily_limit" | "duplicate";
+export type CostGuardCode = "per_action_limit" | "creative_budget" | "duplicate";
 
 export class CostGuardError extends Error {
   readonly code: CostGuardCode;
@@ -56,8 +61,8 @@ function envNumber(name: string, fallback: number) {
 
 export function costLimits() {
   return {
-    maxPerActionUsd: envNumber("MAX_COST_PER_ACTION_USD", 1.0),
-    maxDailyUsd: envNumber("MAX_DAILY_SPEND_USD", 5.0),
+    maxPerActionUsd: envNumber("MAX_COST_PER_ACTION_USD", 1.5),
+    maxPerCreativeUsd: envNumber("MAX_COST_PER_CREATIVE_USD", 1.5),
   };
 }
 
@@ -76,6 +81,7 @@ function toEntry(r: CostEntryRow): CostEntry {
     finishedAt: r.finishedAt ? r.finishedAt.toISOString() : null,
     projectId: r.projectId,
     stepId: r.stepId,
+    language: r.language,
     meta: r.meta ?? undefined,
   };
 }
@@ -109,7 +115,7 @@ function startOfToday() {
 }
 
 /** What an entry counts for: the real cost when known, otherwise the estimate (reserved). Failed = what it actually cost (usually 0). */
-function chargeOf(e: Pick<CostEntry, "status" | "actualUsd" | "estimatedUsd">) {
+export function chargeOf(e: Pick<CostEntry, "status" | "actualUsd" | "estimatedUsd">) {
   if (e.status === "failed") return e.actualUsd ?? 0;
   return e.actualUsd ?? e.estimatedUsd;
 }
@@ -121,29 +127,55 @@ export function fingerprintOf(service: CostService, action: string, input: unkno
 
 export const round4 = (n: number) => Math.round(n * 10_000) / 10_000;
 
+/* ---------- per-project / per-language spend ---------- */
+
+export type ProjectSpend = {
+  totalUsd: number;
+  /** Costs not tied to one language (Workflow A: everything; B: e.g. the source transcript). */
+  sharedUsd: number;
+  byLanguage: Record<string, number>;
+};
+
+export async function getProjectSpend(projectId: string): Promise<ProjectSpend> {
+  const rows = await db().select().from(costEntries).where(eq(costEntries.projectId, projectId));
+  const byLanguage: Record<string, number> = {};
+  let shared = 0;
+  let total = 0;
+  for (const r of rows) {
+    const c = chargeOf(r);
+    total += c;
+    if (r.language) byLanguage[r.language] = (byLanguage[r.language] ?? 0) + c;
+    else shared += c;
+  }
+  return { totalUsd: round4(total), sharedUsd: round4(shared), byLanguage: Object.fromEntries(Object.entries(byLanguage).map(([k, v]) => [k, round4(v)])) };
+}
+
+/** Spent so far for one creative: the project (A) or one language version plus its share of shared costs (B). */
+export function creativeSpent(spend: ProjectSpend, language: string | null | undefined, languageCount: number) {
+  if (!language) return spend.totalUsd;
+  return round4((spend.byLanguage[language] ?? 0) + spend.sharedUsd / Math.max(1, languageCount));
+}
+
 /* ---------- public API ---------- */
 
 export type SpendSummary = {
   day: string;
   spentTodayUsd: number;
-  remainingTodayUsd: number;
-  maxDailyUsd: number;
-  maxPerActionUsd: number;
   actionsToday: number;
+  maxPerActionUsd: number;
+  maxPerCreativeUsd: number;
   recent: CostEntry[];
 };
 
 export async function getSpendSummary(recentLimit = 10): Promise<SpendSummary> {
   const limits = costLimits();
   const today = await db().select().from(costEntries).where(gte(costEntries.startedAt, startOfToday()));
-  const spent = round4(today.reduce((sum, e) => sum + chargeOf(e), 0));
   return {
     day: todayKey(),
-    spentTodayUsd: spent,
-    remainingTodayUsd: round4(Math.max(0, limits.maxDailyUsd - spent)),
-    maxDailyUsd: limits.maxDailyUsd,
-    maxPerActionUsd: limits.maxPerActionUsd,
+    spentTodayUsd: round4(today.reduce((sum, e) => sum + chargeOf(e), 0)),
     actionsToday: today.length,
+    maxPerActionUsd: limits.maxPerActionUsd,
+    maxPerCreativeUsd: limits.maxPerCreativeUsd,
     recent: await listEntries(recentLimit),
   };
 }
@@ -154,14 +186,18 @@ export type ReserveInput = {
   estimatedUsd: number;
   /** The request inputs that make two calls "the same". */
   fingerprintInput: unknown;
-  /** Set by the orchestrator so costs add up per project and step. */
+  /** Set by the orchestrator so costs add up per project and the creative budget applies. */
   projectId?: string | null;
   stepId?: string | null;
+  /** Workflow B: the language version this call belongs to (budget per language). */
+  language?: string | null;
+  /** Workflow B: number of language versions, to split shared costs. */
+  languageCount?: number;
   meta?: Record<string, unknown>;
 };
 
 /**
- * Checks the limits and the duplicate window, then records the action as started.
+ * Checks the limits, the creative budget and the duplicate window, then records the action as started.
  * Throws CostGuardError with a plain-language message when the call must not run.
  */
 export async function reserveSpend(input: ReserveInput): Promise<{ entryId: string; fingerprint: string; summary: SpendSummary }> {
@@ -176,12 +212,18 @@ export async function reserveSpend(input: ReserveInput): Promise<{ entryId: stri
       { estimatedUsd: estimated, maxPerActionUsd: limits.maxPerActionUsd },
     );
   }
-  if (summary.spentTodayUsd + estimated > limits.maxDailyUsd) {
-    throw new CostGuardError(
-      `Today's spend is $${summary.spentTodayUsd.toFixed(2)} of the $${limits.maxDailyUsd.toFixed(2)} daily limit; this $${estimated.toFixed(2)} action would exceed it. Try again tomorrow or raise MAX_DAILY_SPEND_USD in .env.local.`,
-      "daily_limit",
-      { spentTodayUsd: summary.spentTodayUsd, estimatedUsd: estimated, maxDailyUsd: limits.maxDailyUsd },
-    );
+
+  if (input.projectId) {
+    const spend = await getProjectSpend(input.projectId);
+    const spent = creativeSpent(spend, input.language, input.languageCount ?? 1);
+    if (spent + estimated > limits.maxPerCreativeUsd) {
+      const what = input.language ? `the ${input.language.toUpperCase()} version` : "this video";
+      throw new CostGuardError(
+        `This step would bring the total for ${what} to $${(spent + estimated).toFixed(2)}, above the budget of $${limits.maxPerCreativeUsd.toFixed(2)} per video. Spent so far: $${spent.toFixed(2)}.`,
+        "creative_budget",
+        { spentUsd: spent, estimatedUsd: estimated, maxPerCreativeUsd: limits.maxPerCreativeUsd, language: input.language ?? null },
+      );
+    }
   }
 
   const fingerprint = fingerprintOf(input.service, input.action, input.fingerprintInput);
@@ -212,6 +254,7 @@ export async function reserveSpend(input: ReserveInput): Promise<{ entryId: stri
       fingerprint,
       projectId: input.projectId ?? null,
       stepId: input.stepId ?? null,
+      language: input.language ?? null,
       meta: input.meta ?? null,
     })
     .returning({ id: costEntries.id });

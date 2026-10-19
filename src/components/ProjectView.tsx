@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
 import { PageHeaderSkeleton, Skeleton } from "@/components/ui/Skeleton";
 import { DemoBadge } from "@/components/DemoModeBadge";
+import { formatUsd } from "@/lib/pricing";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { Pipeline } from "@/components/pipeline/Pipeline";
 import { stepMeta } from "@/components/pipeline/PipelineStep";
@@ -114,6 +115,21 @@ function HeaderActions({ project }: { project: AdProject }) {
   );
 }
 
+function SpentLine({ project }: { project: AdProject }) {
+  if (project.spentUsd === undefined && project.estimateUsd === undefined) return null;
+  const spent = project.spentUsd ?? 0;
+  const budget = project.budgetUsd;
+  return (
+    <p className="flex items-center justify-between rounded-[10px] bg-surface-muted px-3 py-2 text-[13px]">
+      <span className="text-muted">{config.demoMode ? "Estimated cost" : "Spent so far"}</span>
+      <span className="font-medium text-ink">
+        {config.demoMode ? formatUsd(project.estimateUsd ?? 0) : formatUsd(spent)}
+        {budget !== undefined ? <span className="text-muted"> of {formatUsd(budget)}</span> : null}
+      </span>
+    </p>
+  );
+}
+
 function ResultCard({ project }: { project: AdProject }) {
   if (project.status === "completed" && project.finalVideoUrl) {
     return (
@@ -129,9 +145,12 @@ function ResultCard({ project }: { project: AdProject }) {
             simulated={config.demoMode}
             className="mx-auto w-full max-w-xs"
           />
-          <p className="text-[13px] leading-relaxed text-muted">
-            This clip is a stand-in. The real ad arrives here once the final edit is connected.
-          </p>
+          {config.demoMode && (
+            <p className="text-[13px] leading-relaxed text-muted">
+              This clip is a stand-in. The real ad arrives here once the final edit is connected.
+            </p>
+          )}
+          <SpentLine project={project} />
           <div className="grid gap-3">
             <Button href={project.finalVideoUrl} variant="accent" size="lg" download>
               <Download className="size-[18px]" aria-hidden />
@@ -167,6 +186,7 @@ function ResultCard({ project }: { project: AdProject }) {
             </p>
           </div>
         </div>
+        <SpentLine project={project} />
         <ul className="space-y-2">
           {(["script", "productClip", "presenter", "finalEdit"] as const).map((k) => (
             <li key={k} className="flex items-center justify-between text-sm">

@@ -164,6 +164,8 @@ export const translations = pgTable(
     status: stepStatus("status").default("waiting").notNull(),
     /** Subtitle fragments with original, machine translation and the user's text. */
     segments: jsonb("segments").$type<Segment[]>().default([]).notNull(),
+    /** Plain-language reason when this language version stopped (e.g. its budget was reached). */
+    error: text("error"),
     proofreadId: text("proofread_id"),
     translationId: text("translation_id"),
     videoAssetId: uuid("video_asset_id").references(() => assets.id, { onDelete: "set null" }),
@@ -189,11 +191,13 @@ export const costEntries = pgTable(
     fingerprint: text("fingerprint").notNull(),
     projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
     stepId: uuid("step_id").references(() => steps.id, { onDelete: "set null" }),
+    /** Language version this cost belongs to (Workflow B); null = shared by the whole project. */
+    language: text("language"),
     startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
     meta: jsonb("meta").$type<Record<string, unknown>>(),
   },
-  (t) => [index("cost_entries_fingerprint_idx").on(t.fingerprint, t.startedAt), index("cost_entries_started_idx").on(t.startedAt)],
+  (t) => [index("cost_entries_fingerprint_idx").on(t.fingerprint, t.startedAt), index("cost_entries_started_idx").on(t.startedAt), index("cost_entries_project_idx").on(t.projectId)],
 ).enableRLS();
 
 /** Every webhook delivery, stored before it is acted on. The unique index makes duplicates harmless. */

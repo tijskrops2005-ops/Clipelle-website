@@ -5,6 +5,8 @@ import { useRef, useState, type FormEvent } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { config } from "@/lib/config";
 import { createAdProject } from "@/lib/data/client";
+import { DEFAULTS, estimateAdCost, formatUsd } from "@/lib/pricing";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
@@ -71,6 +73,9 @@ export function ProjectForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   const submitLock = useRef(false);
+  const estimate = estimateAdCost({ seconds: DEFAULTS.adSeconds, clipModel: DEFAULTS.clipModel, engine: DEFAULTS.engine });
+  const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 1.5;
+  const overBudget = estimate.total > budget;
 
   function update<K extends keyof Values>(key: K, value: Values[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -231,6 +236,19 @@ export function ProjectForm() {
         </CardContent>
       </Card>
 
+      {/* Estimate before the start */}
+      <div className={`flex flex-col gap-2 rounded-[14px] border p-4 sm:flex-row sm:items-center sm:justify-between ${overBudget ? "border-danger/40 bg-danger/5" : "border-border bg-surface-muted"}`}>
+        <div>
+          <p className="text-sm font-medium text-ink">
+            Estimated cost {formatUsd(estimate.total)} · budget {formatUsd(budget)} per video
+          </p>
+          <p className="text-[13px] text-muted">
+            Script {formatUsd(estimate.parts.script)} · product clip {formatUsd(estimate.parts.clip)} (+{formatUsd(estimate.parts.expand)} if the photo needs expanding) · presenter {formatUsd(estimate.parts.presenter)} · captions and edit {formatUsd(estimate.parts.captions)}. Based on a {DEFAULTS.adSeconds} s ad.
+          </p>
+        </div>
+        <Badge tone={overBudget ? "danger" : "success"}>{overBudget ? "over budget" : "within budget"}</Badge>
+      </div>
+
       {/* Submit row */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] text-muted">
@@ -247,7 +265,7 @@ export function ProjectForm() {
           >
             Cancel
           </Button>
-          <Button type="submit" variant="accent" size="lg" disabled={submitting}>
+          <Button type="submit" variant="accent" size="lg" disabled={submitting || overBudget}>
             {submitting ? (
               <Loader2 className="size-5 animate-spin" aria-hidden />
             ) : (

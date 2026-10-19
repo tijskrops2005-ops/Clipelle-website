@@ -20,7 +20,16 @@ export async function POST() {
       if (error instanceof CostGuardError) duplicate = { refused: true, message: error.message, code: error.code };
       else throw error;
     }
-    return Response.json({ ok: duplicate.refused, entryId: first.entryId, duplicate });
+    // Creative budget: a huge estimate on a fictitious project id must be refused before anything is written.
+    let budget: { refused: boolean; message?: string; code?: string } = { refused: false };
+    try {
+      await reserveSpend({ service: "shotstack", action: "selftest_budget", estimatedUsd: 0.5, fingerprintInput: { ...input, budget: true }, projectId: "00000000-0000-0000-0000-000000000000", language: "de", languageCount: 2 });
+      budget = { refused: false };
+    } catch (error) {
+      if (error instanceof CostGuardError) budget = { refused: error.code === "creative_budget" || error.code === "per_action_limit", message: error.message, code: error.code };
+      else throw error;
+    }
+    return Response.json({ ok: duplicate.refused, entryId: first.entryId, duplicate, budget, note: "budget.refused is true only when MAX_COST_PER_CREATIVE_USD or the per-action limit is below $0.50" });
   } catch (error) {
     return costGuardResponse(error) ?? errorResponse(error);
   }

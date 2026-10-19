@@ -38,6 +38,12 @@ interface ProjectBase {
   name: string;
   status: ProjectStatus;
   createdAt: string; // ISO date
+  /** Paid calls so far for this project (database mode). Demo projects show an estimate instead. */
+  spentUsd?: number;
+  /** Budget per creative: the whole ad (A) or each language version (B). */
+  budgetUsd?: number;
+  /** Estimate shown before the start, kept for the project page. */
+  estimateUsd?: number;
 }
 
 /** Workflow A: one product → one finished 9:16 ad. */
@@ -76,8 +82,12 @@ export interface Translation {
   language: LanguageCode;
   status: StepStatus;
   segments: Segment[];
-  /** Finished 9:16 video with captions for this language. */
+  /** Finished video with captions for this language. */
   videoUrl?: string;
+  /** Plain-language reason when this language version stopped (e.g. its budget was reached). */
+  error?: string;
+  /** Paid calls so far for this language version, including its share of shared costs. */
+  spentUsd?: number;
 }
 
 /** Workflow B: an existing video → the same video in other languages. */

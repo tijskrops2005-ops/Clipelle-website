@@ -14,7 +14,7 @@ export const workflowSettings = {
   heygenEngine: (process.env.HEYGEN_DEFAULT_ENGINE?.trim() === "avatar_iii" ? "avatar_iii" : "avatar_iv") as HeygenEngine,
   /** fal.ai image-to-video model for the product clip. */
   clipModel: (process.env.PRODUCT_CLIP_MODEL?.trim() === "kling" ? "kling" : "minimax") as ClipModelKey,
-  /** Planned ad length in seconds (script planning). */
+  /** Planned ad length in seconds (script planning). Mirrors DEFAULTS in src/lib/pricing.ts. */
   adSeconds: Number(process.env.AD_TARGET_SECONDS) > 0 ? Number(process.env.AD_TARGET_SECONDS) : 30,
   /** Language of the generated script (BCP-47). */
   adLanguage: process.env.AD_LANGUAGE?.trim() || "en",

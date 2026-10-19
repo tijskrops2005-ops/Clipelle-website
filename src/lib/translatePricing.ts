@@ -1,4 +1,5 @@
 import type { TranslationQuality } from "@/lib/types";
+import { PRICING } from "@/lib/pricing";
 
 /**
  * Cost indication for the translate workflow. Shared by the form (demo mode),
@@ -8,16 +9,13 @@ import type { TranslationQuality } from "@/lib/types";
  * 1 credit = $0.50; translations are billed on the source duration per target language.
  * Self-serve rates sit behind a login, so treat these as an indication.
  */
-export const HEYGEN_TRANSLATE_USD_PER_SECOND: Record<TranslationQuality, number> = {
-  speed: 0.05 * 0.5, // 0.05 credit/s
-  precision: 0.1 * 0.5, // 0.1 credit/s
-};
+export const HEYGEN_TRANSLATE_USD_PER_SECOND: Record<TranslationQuality, number> = PRICING.translateUsdPerSecond;
 
 /** Proofread session (translation + editable subtitles before the render). */
-export const HEYGEN_PROOFREAD_USD_PER_SECOND = 0.00833 * 0.5;
+export const HEYGEN_PROOFREAD_USD_PER_SECOND = PRICING.proofreadUsdPerSecond;
 
-/** Shotstack pay-as-you-go: $10 per 50 minutes of output. Sandbox renders are free. */
-export const SHOTSTACK_USD_PER_SECOND = 10 / (50 * 60);
+/** Shotstack: $0.10 per 30 s video, counted even when the sandbox renders for free. */
+export const SHOTSTACK_USD_PER_SECOND = PRICING.captionsUsdPer30s / 30;
 
 /**
  * Reading/speaking speed used to cap the translated text per fragment.

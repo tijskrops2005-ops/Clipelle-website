@@ -9,17 +9,16 @@ type Entry = { id: string; service: string; action: string; estimatedUsd: number
 type Summary = {
   day: string;
   spentTodayUsd: number;
-  remainingTodayUsd: number;
-  maxDailyUsd: number;
-  maxPerActionUsd: number;
   actionsToday: number;
+  maxPerActionUsd: number;
+  maxPerCreativeUsd: number;
   recent: Entry[];
 };
 
 const usd = (n: number) => `$${n.toFixed(2)}`;
 
 /**
- * Shows today's spend across all paid services and what is left under the daily limit.
+ * Shows today's spend across all paid services and the two limits (per action, per creative).
  * Re-fetches when `refreshKey` changes (pages bump it after a paid action settles).
  */
 export function SpendMeter({ refreshKey = 0, className }: { refreshKey?: number; className?: string }) {
@@ -40,7 +39,7 @@ export function SpendMeter({ refreshKey = 0, className }: { refreshKey?: number;
 
   useEffect(() => { load(); }, [load, refreshKey]);
 
-  const pct = summary ? Math.min(100, Math.round((summary.spentTodayUsd / Math.max(0.01, summary.maxDailyUsd)) * 100)) : 0;
+  const pct = summary ? Math.min(100, Math.round((summary.spentTodayUsd / Math.max(0.01, summary.maxPerCreativeUsd * 5)) * 100)) : 0;
   const tone = pct >= 90 ? "bg-danger" : pct >= 60 ? "bg-warning" : "bg-success";
 
   return (
@@ -53,7 +52,7 @@ export function SpendMeter({ refreshKey = 0, className }: { refreshKey?: number;
               <p className="label-mono text-muted">Spend today · all services</p>
               {summary ? (
                 <p className="text-lg font-semibold text-ink">
-                  {usd(summary.spentTodayUsd)} <span className="text-sm font-normal text-muted">of {usd(summary.maxDailyUsd)} · {usd(summary.remainingTodayUsd)} left · max {usd(summary.maxPerActionUsd)} per action</span>
+                  {usd(summary.spentTodayUsd)} <span className="text-sm font-normal text-muted">today · max {usd(summary.maxPerActionUsd)} per action · max {usd(summary.maxPerCreativeUsd)} per video</span>
                 </p>
               ) : (
                 <p className="text-sm text-muted">{error ?? "Loading…"}</p>
