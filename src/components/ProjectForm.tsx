@@ -12,7 +12,29 @@ import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRE
 import { cn } from "@/lib/utils";
 import { LANGUAGES } from "@/lib/languages";
 import type { LanguageCode } from "@/lib/types";
-import { AD_TONES, BACKGROUND_COLORS, DEFAULT_AD_LANGUAGE, DEFAULT_TONE, DIRECTION_MAX_CHARS, OFFER_MAX_CHARS, TONE_META, type AdTone } from "@/lib/adOptions";
+import {
+  AD_TONES,
+  BACKGROUND_COLORS,
+  BRAND_COLORS,
+  CAPTION_STYLES,
+  CAPTION_STYLE_META,
+  DEFAULT_ACCENT,
+  DEFAULT_AD_LANGUAGE,
+  DEFAULT_CAPTION_STYLE,
+  DEFAULT_FONT,
+  DEFAULT_TONE,
+  DIRECTION_MAX_CHARS,
+  FONT_KEYS,
+  FONT_META,
+  HEX_COLOR,
+  MIN_LARGE_TEXT_CONTRAST,
+  OFFER_MAX_CHARS,
+  TONE_META,
+  contrastRatio,
+  type AdTone,
+  type CaptionStyle,
+  type FontKey,
+} from "@/lib/adOptions";
 import { controlClass, controlStateClass } from "@/components/ui/Field";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -89,6 +111,16 @@ export function ProjectForm() {
   /** Presenter background: undefined = the presenter's own; a colour key; or "image" with one uploaded file. */
   const [backgroundChoice, setBackgroundChoice] = useState<"own" | "image" | string>("own");
   const [backgroundImages, setBackgroundImages] = useState<UploadedImage[]>([]);
+  /** Brand style for the final edit; everything optional with app defaults. */
+  const [accent, setAccent] = useState(DEFAULT_ACCENT);
+  const [customAccent, setCustomAccent] = useState("");
+  const [captionStyle, setCaptionStyle] = useState<CaptionStyle>(DEFAULT_CAPTION_STYLE);
+  const [font, setFont] = useState<FontKey>(DEFAULT_FONT);
+  const [logoImages, setLogoImages] = useState<UploadedImage[]>([]);
+  const effectiveAccent = HEX_COLOR.test(customAccent) ? customAccent.toUpperCase() : accent;
+  // White text sits on the accent (hook sticker, CTA pill, active caption word): warn below 3:1.
+  const accentContrast = contrastRatio(effectiveAccent, "#FFFFFF");
+  const lowContrast = accentContrast < MIN_LARGE_TEXT_CONTRAST;
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -135,6 +167,12 @@ export function ProjectForm() {
             : backgroundChoice !== "own" && backgroundChoice !== "image"
               ? { type: "color", value: BACKGROUND_COLORS.find((c) => c.key === backgroundChoice)?.value ?? "#FFFFFF" }
               : undefined,
+        brand: {
+          accent: effectiveAccent !== DEFAULT_ACCENT ? effectiveAccent : undefined,
+          captionStyle: captionStyle !== DEFAULT_CAPTION_STYLE ? captionStyle : undefined,
+          font: font !== DEFAULT_FONT ? font : undefined,
+          logo: logoImages[0]?.file,
+        },
         language,
         offer: values.offer.trim() || undefined,
         direction: values.direction.trim() || undefined,
@@ -393,6 +431,63 @@ export function ProjectForm() {
           <Field id="direction" label="Direction" optional hint={`Who it is for and what to emphasise. Max ${DIRECTION_MAX_CHARS} characters.`}>
             <Input id="direction" value={values.direction} maxLength={DIRECTION_MAX_CHARS} onChange={(e) => update("direction", e.target.value)} placeholder="e.g. for mums, light-hearted, no exaggerated claims" disabled={submitting} />
           </Field>
+
+          <fieldset className="rounded-[14px] bg-surface-muted p-4">
+            <legend className="px-1 text-sm font-medium text-ink">Brand style</legend>
+            <p className="mb-4 mt-1 text-[13px] text-muted">All optional. Your colour goes on the hook, the call-to-action button and the spoken caption word; the logo sits top right.</p>
+            <div className="space-y-5">
+              <div>
+                <p className="mb-2 text-[13px] font-medium text-ink">Accent colour</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  {BRAND_COLORS.map((c) => {
+                    const selected = !HEX_COLOR.test(customAccent) && accent === c.value;
+                    return (
+                      <button
+                        key={c.key}
+                        type="button"
+                        onClick={() => {
+                          setAccent(c.value);
+                          setCustomAccent("");
+                        }}
+                        disabled={submitting}
+                        aria-pressed={selected}
+                        title={c.label}
+                        className={cn("grid size-8 place-items-center rounded-full border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40", selected ? "border-ink" : "border-transparent")}
+                      >
+                        <span className="size-6 rounded-full border border-border" style={{ backgroundColor: c.value }} aria-hidden />
+                        <span className="sr-only">{c.label}</span>
+                      </button>
+                    );
+                  })}
+                  <Input id="customAccent" value={customAccent} onChange={(e) => setCustomAccent(e.target.value.trim())} placeholder="#1F3A5F" maxLength={7} disabled={submitting} className="h-9 w-28 text-[13px]" aria-label="Custom accent colour (hex)" />
+                </div>
+                {lowContrast && (
+                  <p role="status" className="mt-2 text-[13px] font-medium text-danger">
+                    This colour is too light: white text on it is hard to read (contrast {accentContrast.toFixed(1)}:1, we recommend at least {MIN_LARGE_TEXT_CONTRAST}:1). Pick a darker colour.
+                  </p>
+                )}
+              </div>
+              <div className="grid gap-5 md:grid-cols-2">
+                <Field id="captionStyle" label="Captions" hint={CAPTION_STYLE_META[captionStyle].blurb}>
+                  <select id="captionStyle" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value as CaptionStyle)} disabled={submitting} className={cn(controlClass, controlStateClass(false), "h-11")}>
+                    {CAPTION_STYLES.map((k) => (
+                      <option key={k} value={k}>{CAPTION_STYLE_META[k].label}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field id="font" label="Font" hint={FONT_META[font].blurb}>
+                  <select id="font" value={font} onChange={(e) => setFont(e.target.value as FontKey)} disabled={submitting} className={cn(controlClass, controlStateClass(false), "h-11")}>
+                    {FONT_KEYS.map((k) => (
+                      <option key={k} value={k}>{FONT_META[k].label}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+              <Field id="logo" label="Logo" optional hint="PNG with a transparent background works best. Shown small, top right, for the whole video.">
+                <UploadDropzone id="logo" images={logoImages} onChange={setLogoImages} max={1} disabled={submitting} onReject={(message) => setErrors((e) => ({ ...e, form: message }))} />
+              </Field>
+            </div>
+          </fieldset>
 
           <Field
             id="script"

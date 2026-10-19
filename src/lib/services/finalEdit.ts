@@ -1,5 +1,6 @@
 import "server-only";
 import { adLayout, END_CARD_SECONDS, HOOK_SECONDS } from "@/lib/adLayout";
+import { DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, type CaptionStyle } from "@/lib/adOptions";
 
 /**
  * Step 5 — final edit via Shotstack (server-only).
@@ -124,6 +125,8 @@ export type AdEditInput = {
   offer: { headline: string; cta: string };
   /** Brand colours (hex). Defaults match the app tokens. */
   colors?: { accent?: string; ink?: string; light?: string };
+  /** Brand style (Shotstack built-in font, caption look, logo URL top-right). Missing = defaults. */
+  brand?: { font?: string; captionStyle?: string; logoUrl?: string };
   captionLanguage?: string;
   /**
    * Dev/sandbox only: when the presenter clip is shorter than this, repeat it back to back
@@ -152,18 +155,41 @@ export function buildAdEdit(input: AdEditInput) {
   const endStart = Math.round((total - END_CARD_SECONDS) * 10) / 10;
   const benefits = input.benefits.map((b) => b.trim()).filter(Boolean).slice(0, 3);
 
+  // Fonts: only Shotstack's built-in families (rich-text docs, 2026-10-19); anything else falls back to Roboto.
+  const family = (FONT_KEYS as readonly string[]).includes(input.brand?.font ?? "") ? (input.brand!.font as string) : DEFAULT_FONT;
+  const captionLook = (["bold", "clean", "karaoke"].includes(input.brand?.captionStyle ?? "") ? input.brand!.captionStyle : DEFAULT_CAPTION_STYLE) as CaptionStyle;
   const textBase = {
-    font: { family: "Roboto", size: 64, weight: 900, color: light, opacity: 1 },
+    font: { family, size: 64, weight: 900, color: light, opacity: 1 },
     align: { horizontal: "center", vertical: "middle" },
     stroke: { width: 0, color: ink, opacity: 1 },
   };
+  // Three caption looks on Shotstack rich-caption (animation styles pop | fade | karaoke; active word colours).
+  const captionVariants: Record<CaptionStyle, Record<string, unknown>> = {
+    bold: {
+      font: { family, size: 62, color: light, opacity: 1, weight: 900 },
+      style: { textTransform: "uppercase" },
+      stroke: { width: 7, color: ink, opacity: 1 },
+      animation: { style: "pop" },
+      active: { font: { color: light, background: accent }, stroke: { width: 7, color: ink, opacity: 1 } },
+    },
+    clean: {
+      font: { family, size: 46, color: light, opacity: 1, weight: 700 },
+      style: { textTransform: "none" },
+      stroke: { width: 4, color: ink, opacity: 1 },
+      animation: { style: "fade" },
+      active: { font: { color: accent } },
+    },
+    karaoke: {
+      font: { family, size: 54, color: light, opacity: 1, weight: 800 },
+      style: { textTransform: "none" },
+      stroke: { width: 6, color: ink, opacity: 1 },
+      animation: { style: "karaoke" },
+      active: { font: { color: accent } },
+    },
+  };
   const captionStyle = {
     type: "rich-caption",
-    font: { family: "Roboto", size: 62, color: light, opacity: 1, weight: 900 },
-    style: { textTransform: "uppercase" },
-    stroke: { width: 7, color: ink, opacity: 1 },
-    animation: { style: "pop" },
-    active: { font: { color: light, background: accent }, stroke: { width: 7, color: ink, opacity: 1 } },
+    ...captionVariants[captionLook],
     border: { width: 0, color: ink, opacity: 1, radius: 16 },
     padding: { top: 6, right: 10, bottom: 6, left: 10 },
     align: { vertical: "middle" },
@@ -280,6 +306,10 @@ export function buildAdEdit(input: AdEditInput) {
     ],
   };
 
+  // Logo: small, top-right, the whole ad (Shotstack positioning docs: scale + position + offset).
+  const logo = input.brand?.logoUrl
+    ? { clips: [{ asset: { type: "image", src: input.brand.logoUrl }, start: 0, length: total, fit: "contain", scale: 0.14, position: "topRight", offset: { x: -0.04, y: -0.03 }, opacity: 0.95 }] }
+    : null;
   const presenter = { clips: presenterClips };
   const music = input.musicUrl
     ? { clips: [{ asset: { type: "audio", src: input.musicUrl, volume: 0.18, effect: "fadeInFadeOut" }, start: 0, length: total }] }
@@ -288,7 +318,7 @@ export function buildAdEdit(input: AdEditInput) {
   return {
     timeline: {
       background: ink,
-      tracks: [captions, overlays, productOverlays, presenter, ...(music ? [music] : [])],
+      tracks: [...(logo ? [logo] : []), captions, overlays, productOverlays, presenter, ...(music ? [music] : [])],
     },
     output: { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 },
     meta: { totalSeconds: total, endStart, layout, filled: Boolean(fill) },

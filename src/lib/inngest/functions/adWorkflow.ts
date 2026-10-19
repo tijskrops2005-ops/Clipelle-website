@@ -331,16 +331,20 @@ async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: st
     try {
       const [clip, presenter] = await Promise.all([loadAsset(clipAssetId), loadAsset(presenterAssetId)]);
       const musicUrl = await ensureSharedMusic();
+      const adInput = (await loadProject(projectId)).input as AdInput;
+      const logoAsset = adInput.brand?.logoAssetId ? await loadAsset(adInput.brand.logoAssetId) : null;
       const edit = buildAdEdit({
         presenterUrl: await providerUrl(presenter),
-        presenterSeconds: presenter.seconds ?? ((await loadProject(projectId)).input as AdInput).seconds ?? cfg.adSeconds,
+        presenterSeconds: presenter.seconds ?? adInput.seconds ?? cfg.adSeconds,
         productClipUrl: await providerUrl(clip),
         productClipSeconds: clip.seconds ?? CLIP_SECONDS,
         musicUrl,
         hook: script.hook.onScreen,
         benefits: script.benefits,
         offer: script.offer,
-        captionLanguage: cfg.adLanguage,
+        colors: adInput.brand?.accent ? { accent: adInput.brand.accent } : undefined,
+        brand: { font: adInput.brand?.font, captionStyle: adInput.brand?.captionStyle, logoUrl: logoAsset ? await providerUrl(logoAsset) : undefined },
+        captionLanguage: adInput.language ?? cfg.adLanguage,
       });
       const env = shotstackEnv();
       const estimate = env === "v1" ? Math.round(edit.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000 : 0;

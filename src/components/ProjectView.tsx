@@ -275,6 +275,20 @@ function DetailsCard({ project }: { project: AdProject }) {
             )}
           </div>
         )}
+        {project.brand && (project.brand.accent || project.brand.captionStyle || project.brand.font || project.brand.logoUrl) && (
+          <div>
+            <p className="label-mono mb-1.5 text-muted">Brand style</p>
+            <p className="flex flex-wrap items-center gap-2 text-ink/90">
+              {project.brand.accent && <span className="flex items-center gap-1.5"><span className="size-4 rounded-full border border-border" style={{ backgroundColor: project.brand.accent }} aria-hidden />{project.brand.accent}</span>}
+              {project.brand.captionStyle && <span>· captions {project.brand.captionStyle}</span>}
+              {project.brand.font && <span>· {project.brand.font}</span>}
+              {project.brand.logoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element -- uploaded logo preview
+                <img src={project.brand.logoUrl} alt="Logo" className="h-8 w-8 rounded-[6px] object-contain bg-surface-muted" />
+              )}
+            </p>
+          </div>
+        )}
         {project.direction && (
           <div>
             <p className="label-mono mb-1.5 text-muted">Direction</p>
