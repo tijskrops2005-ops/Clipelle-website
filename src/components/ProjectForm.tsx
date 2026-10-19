@@ -7,7 +7,8 @@ import { config } from "@/lib/config";
 import { createAdProject } from "@/lib/data/client";
 import { useHydrated } from "@/lib/useHydrated";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
-import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, estimateAdCost, formatUsd, type AdLength } from "@/lib/pricing";
+import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, formatUsd, type AdLength, type PresenterEngine } from "@/lib/pricing";
+import { cn } from "@/lib/utils";
 import { controlClass, controlStateClass } from "@/components/ui/Field";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -73,6 +74,7 @@ export function ProjectForm() {
     script: "",
   });
   const [seconds, setSeconds] = useState<AdLength>(DEFAULT_AD_SECONDS);
+  const [engine, setEngine] = useState<PresenterEngine>(DEFAULT_PRESENTER_ENGINE);
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -80,10 +82,12 @@ export function ProjectForm() {
   // Before React is attached a click would submit the form natively and reload the page with nothing saved.
   const hydrated = useHydrated();
   const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 1.5;
-  const estimateFor = (len: AdLength) => estimateAdCost({ seconds: len, clipModel: DEFAULTS.clipModel, engine: DEFAULTS.engine });
+  // Estimate per combination of length and presenter quality; the budget applies to the combination.
+  const estimateFor = (len: AdLength, eng: PresenterEngine = engine) => estimateAdCost({ seconds: len, clipModel: DEFAULTS.clipModel, engine: eng });
   const estimate = estimateFor(seconds);
   const overBudget = estimate.total > budget;
   const lengthsWithinBudget = AD_LENGTHS.filter((len) => estimateFor(len).total <= budget);
+  const qualityLabel = PRESENTER_QUALITIES.find((q) => q.key === engine)?.label ?? "Premium";
 
   function update<K extends keyof Values>(key: K, value: Values[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -109,6 +113,7 @@ export function ProjectForm() {
       const { id } = await createAdProject({
         name: values.projectName.trim(),
         seconds,
+        engine,
         productName: values.productName.trim(),
         productUrl: values.productUrl.trim() || undefined,
         description: values.description.trim(),
@@ -228,6 +233,37 @@ export function ProjectForm() {
             />
           </Field>
 
+          <fieldset>
+            <legend className="mb-1.5 text-sm font-medium text-ink">Presenter quality</legend>
+            <p className="mb-3 text-[13px] text-muted">How the presenter looks and moves. The price is for the whole video at the chosen length.</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {PRESENTER_QUALITIES.map((q) => {
+                const est = estimateFor(seconds, q.key);
+                const over = est.total > budget;
+                const selected = engine === q.key;
+                return (
+                  <button
+                    key={q.key}
+                    type="button"
+                    onClick={() => setEngine(q.key)}
+                    disabled={submitting}
+                    aria-pressed={selected}
+                    className={cn(
+                      "rounded-[14px] border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40",
+                      selected ? "border-ink bg-surface-muted" : "border-border bg-surface hover:shadow-card",
+                    )}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-[15px] font-semibold text-ink">{q.label}</span>
+                      <Badge tone={over ? "danger" : "neutral"}>{over ? `${formatUsd(est.total)} · over budget` : `about ${formatUsd(est.total)}`}</Badge>
+                    </span>
+                    <span className="mt-1 block text-[13px] text-muted">{q.blurb}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
           <Field id="seconds" label="Video length" hint="The presenter talks the whole video. The estimate below follows your choice.">
             <select
               id="seconds"
@@ -269,12 +305,13 @@ export function ProjectForm() {
             Estimated cost {formatUsd(estimate.total)} · budget {formatUsd(budget)} per video
           </p>
           <p className="text-[13px] text-muted">
-            Script {formatUsd(estimate.parts.script)} · product clip {formatUsd(estimate.parts.clip)} (+{formatUsd(estimate.parts.expand)} if the photo needs expanding) · presenter {seconds} s {formatUsd(estimate.parts.presenter)} · captions and edit {formatUsd(estimate.parts.captions)}.
+            Script {formatUsd(estimate.parts.script)} · product clip {formatUsd(estimate.parts.clip)} (+{formatUsd(estimate.parts.expand)} if the photo needs expanding) · {qualityLabel} presenter {seconds} s {formatUsd(estimate.parts.presenter)} · captions and edit {formatUsd(estimate.parts.captions)}.
           </p>
           {overBudget && (
             <p className="mt-1.5 text-[13px] font-medium text-danger">
-              A {seconds}-second video is above the budget, so it cannot start.{" "}
-              {lengthsWithinBudget.length > 0 ? `Choose ${lengthsWithinBudget.join(" or ")} seconds.` : "No length fits the current budget."}
+              A {seconds}-second video with the {qualityLabel} presenter is above the budget, so it cannot start.{" "}
+              {lengthsWithinBudget.length > 0 ? `With ${qualityLabel}, choose ${lengthsWithinBudget.join(" or ")} seconds` : `No length fits the budget with ${qualityLabel}`}
+              {engine === "avatar_iv" ? ", or switch to Standard." : "."}
             </p>
           )}
         </div>

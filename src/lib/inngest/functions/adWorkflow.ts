@@ -17,7 +17,8 @@ import {
   planNineSixteen,
   submitProductClip,
 } from "@/lib/services/productClip";
-import { createAvatarVideo, estimateCostUsd, estimateSeconds, getVideo, listLookSelection, listVoices } from "@/lib/services/heygen";
+import { createAvatarVideo, estimateCostUsd, estimateSeconds, getLook, getVideo, listAllLooks, listVoices, type AvatarLook, type HeygenEngine } from "@/lib/services/heygen";
+import { isPortraitLook, lookOrientation } from "@/lib/lookOrientation";
 import { buildAdEdit, getRender, shotstackEnv, startRender } from "@/lib/services/finalEdit";
 import { annotateSpend, reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { putObject, signedDownloadUrl } from "@/lib/storage";
@@ -208,15 +209,16 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
   const job = await step.run("presenter-submit", async () => {
     const row = await markProcessing(projectId, key);
     try {
-      const { lookId, voiceId } = await pickPresenter();
+      const engine = ((await loadProject(projectId)).input as AdInput).engine ?? cfg.heygenEngine;
+      const { lookId, voiceId } = await pickPresenter(engine);
       const seconds = estimateSeconds(script.presenterScript);
-      const estimate = estimateCostUsd(cfg.heygenEngine, seconds);
-      const reserved = await reserveSpend({ service: "heygen", action: "avatar_video", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, engine: cfg.heygenEngine, resolution: cfg.heygenResolution, seconds } });
+      const estimate = estimateCostUsd(engine, seconds);
+      const reserved = await reserveSpend({ service: "heygen", action: "avatar_video", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, engine, resolution: cfg.heygenResolution, seconds } });
       try {
         const created = await withRetries("Starting the presenter video", () =>
-          createAvatarVideo({ avatarId: lookId, voiceId, script: script.presenterScript, engine: cfg.heygenEngine, resolution: cfg.heygenResolution, title: `Reelay ${projectId.slice(0, 8)}`, idempotencyKey: reserved.fingerprint }),
+          createAvatarVideo({ avatarId: lookId, voiceId, script: script.presenterScript, engine, resolution: cfg.heygenResolution, fit: "cover", title: `Reelay ${projectId.slice(0, 8)}`, idempotencyKey: reserved.fingerprint }),
         );
-        return { videoId: created.video_id, entryId: reserved.entryId, estimate, stepId: row.id };
+        return { videoId: created.video_id, entryId: reserved.entryId, estimate, stepId: row.id, engine };
       } catch (error) {
         await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
         throw error;
@@ -232,7 +234,7 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
       return step.run("presenter-store", async () => {
         try {
           const asset = await storeFromUrl({ projectId, stepId: job.stepId, kind: "presenter", url: video.video_url!, fileName: "presenter.mp4", seconds: video.duration ?? undefined, fallbackMime: "video/mp4" });
-          await settleSpend(job.entryId, { status: "completed", actualUsd: video.duration ? estimateCostUsd(cfg.heygenEngine, video.duration) : job.estimate, basis: "list", meta: { durationSeconds: video.duration ?? null, videoId: job.videoId } });
+          await settleSpend(job.entryId, { status: "completed", actualUsd: video.duration ? estimateCostUsd(job.engine, video.duration) : job.estimate, basis: "list", meta: { durationSeconds: video.duration ?? null, videoId: job.videoId } });
           await markCompleted(projectId, key, { output: { assetId: asset.id, seconds: video.duration ?? null }, externalJobId: job.videoId, costUsd: job.estimate });
           return asset.id;
         } catch (error) {
@@ -251,12 +253,30 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
   return step.run("presenter-timeout", () => failStep(projectId, key, new StepFailure(`The presenter video took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
 }
 
-/** Configured look/voice, or the first public look that supports the engine (free listing calls). */
-async function pickPresenter() {
-  if (cfg.heygenLookId && cfg.heygenVoiceId) return { lookId: cfg.heygenLookId, voiceId: cfg.heygenVoiceId };
-  const looks = await withRetries("Listing presenters", () => listLookSelection({ pages: 2, perCharacter: 1 }));
-  const look = cfg.heygenLookId ? looks.find((l) => l.id === cfg.heygenLookId) : looks.find((l) => !l.supported_api_engines || l.supported_api_engines.includes(cfg.heygenEngine));
-  if (!look) throw new StepFailure("No presenter supports the configured engine. Set HEYGEN_DEFAULT_LOOK_ID in .env.local.");
+/**
+ * Configured look/voice, or the first public portrait look that supports the engine (free listing calls).
+ * A landscape look is refused: HeyGen letterboxes it in 9:16 (picture 720×406 in a 720×1280 frame) and
+ * a centre crop would be a blurry strip, so the ad would be unusable.
+ */
+async function pickPresenter(engine: HeygenEngine) {
+  let look: AvatarLook | undefined;
+  if (cfg.heygenLookId) {
+    look = await withRetries("Checking the presenter", () => getLook(cfg.heygenLookId));
+    if (!look) throw new StepFailure(`The configured presenter (HEYGEN_DEFAULT_LOOK_ID) was not found at HeyGen.`);
+    if (!isPortraitLook(look)) {
+      throw new StepFailure(
+        `The configured presenter "${look.name}" is a ${lookOrientation(look)} look. The ad is vertical (9:16) and a ${lookOrientation(look)} presenter would come back with grey bars above and below. Choose a portrait look (HEYGEN_DEFAULT_LOOK_ID in .env.local; /dev/heygen marks portrait looks).`,
+      );
+    }
+    if (look.supported_api_engines && !look.supported_api_engines.includes(engine)) {
+      throw new StepFailure(`The configured presenter "${look.name}" does not support the chosen quality (${engine === "avatar_iv" ? "Premium" : "Standard"}). Pick another presenter or quality.`);
+    }
+  } else {
+    // No default configured: first public portrait studio look (then digital twin) that supports the engine.
+    const fits = (l: AvatarLook) => isPortraitLook(l) && (!l.supported_api_engines || l.supported_api_engines.includes(engine));
+    look = (await withRetries("Listing presenters", () => listAllLooks("studio_avatar"))).find(fits) ?? (await withRetries("Listing presenters", () => listAllLooks("digital_twin"))).find(fits);
+    if (!look) throw new StepFailure("No portrait presenter supports the chosen quality. Set HEYGEN_DEFAULT_LOOK_ID in .env.local to a portrait look.");
+  }
   let voiceId = cfg.heygenVoiceId || look.default_voice_id || "";
   if (!voiceId) {
     const voices = await withRetries("Listing voices", () => listVoices({ language: "English", limit: 20 }));

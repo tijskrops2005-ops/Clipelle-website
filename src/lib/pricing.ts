@@ -69,7 +69,14 @@ export const PRICING = {
     kling: { until: null, promo: 0.112, regular: 0.112 }, // Pro
   },
   clipSeconds: 5,
-  /** HeyGen presenter, USD per second of video (enterprise rate card, 1 credit = $0.50). The presenter talks the whole ad. */
+  /**
+   * HeyGen presenter, USD per second of video; the presenter talks the whole ad. The one place to change.
+   * Source: enterprise rate card (1 credit = $0.50; Avatar IV 0.1 credit/s, Avatar III 0.0167 credit/s).
+   * Measured on /dev/heygen on 2026-10-19 with one 3.6 s video per engine (wallet difference, rounded to
+   * cents): Avatar IV $0.12 ≈ $0.033/s, Avatar III $0.06 ≈ $0.017/s. That is only ~2× apart, not 6×, and
+   * may include a minimum charge per video; 3.6 s at cent precision is too coarse to rely on. Kept
+   * conservative until the ~10 s confirmation test (docs/roadmap.md). Avatar IV is "Premium", III "Standard".
+   */
   presenterUsdPerSecond: { avatar_iv: 0.05, avatar_iii: 0.0083 },
   /** Shotstack: $10 per 50 minutes ⇒ $0.10 per 30 s video. Always counted, sandbox or not. */
   captionsUsdPer30s: 0.1,
@@ -83,6 +90,16 @@ export const PRICING = {
 
 export type ClipModelKey = keyof typeof PRICING.clipUsdPerSecond;
 export type PresenterEngine = keyof typeof PRICING.presenterUsdPerSecond;
+
+/** Customer-facing names for the presenter engines (provider and engine names stay on /dev pages and Settings). */
+export const PRESENTER_QUALITIES: { key: PresenterEngine; label: string; blurb: string }[] = [
+  { key: "avatar_iii", label: "Standard", blurb: "A solid presenter at the lowest price. Movement is a little stiffer." },
+  { key: "avatar_iv", label: "Premium", blurb: "Natural head and hand movement, best lip-sync. The default." },
+];
+export const DEFAULT_PRESENTER_ENGINE: PresenterEngine = "avatar_iv";
+export function isPresenterEngine(value: string): value is PresenterEngine {
+  return value in PRICING.presenterUsdPerSecond;
+}
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 

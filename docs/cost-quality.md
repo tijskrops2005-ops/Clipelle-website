@@ -50,7 +50,9 @@ Sinds 19 oktober 2026 praat de presentator de hele advertentie door (ook terwijl
 
 Geen toeslag voor 1080p in de API-tarieven; 1080p is dus de keuze. Limieten (developers.heygen.com/docs/usage-limits, 19 oktober 2026): script maximaal 5.000 tekens, maximaal 30 minuten per video, 10 gelijktijdige video's op pay-as-you-go. Een advertentie van 60 s is 150 woorden ≈ 900 tekens; één video volstaat, splitsen is niet nodig. Bron tarieven: https://developers.heygen.com/docs/enterprise-pricing
 
-**Keuze: Avatar IV op 1080p.** Dit is de stap die de klant het eerst ziet en beoordeelt, en met een doorpratende presentator is het ook veruit de grootste kostenpost. Avatar III is 6× goedkoper maar oogt als een jaar oud.
+**Keuze: Avatar IV op 1080p als standaard ("Premium"); de klant kan "Standard" (Avatar III) kiezen.** Dit is de stap die de klant het eerst ziet en beoordeelt, en met een doorpratende presentator is het ook veruit de grootste kostenpost.
+
+**Meting 19 oktober 2026 (`/dev/heygen`, 3,6 s per video, saldoverschil op centen):** Avatar IV $0,12 ≈ $0,033/s, Avatar III $0,06 ≈ $0,017/s. Dat wijkt af van de enterprise-tarieven hierboven ($0,05 en $0,0083): IV is goedkoper dan gedacht, III duurder, en het verschil is ~2× in plaats van 6×. Mogelijk een minimumprijs per video; 3,6 s is te kort om op te bouwen. De bevestigingstest van ~10 s (docs/roadmap.md) volgt nog. Klopt $0,033/s, dan kost de presentator voor 30 s ongeveer $0,99 en wordt het totaal ongeveer $1,42 (binnen $1,50). Tot die bevestiging blijven de tarieven in `src/lib/pricing.ts` op de lijstwaarden en blijft de uitkomst "30 s is over budget" staan.
 
 ## 5. Montage (Shotstack)
 
@@ -100,6 +102,8 @@ De presentator praat de hele advertentie; één productclip van 5 s; Shotstack $
 | 30 s | 75 | $0,03 | $0,04 | $0,26 → $0,42 | $1,50 | $0,10 | **$1,93** | **$2,09** | nee |
 | 45 s | 112 | $0,03 | $0,04 | $0,26 → $0,42 | $2,25 | $0,15 | **$2,73** | **$2,89** | nee |
 | 60 s | 150 | $0,03 | $0,04 | $0,26 → $0,42 | $3,00 | $0,20 | **$3,53** | **$3,69** | nee |
+
+De presentatorkolom rekent met het lijsttarief $0,05/s (Premium). Gemeten op 19 oktober: ≈ $0,033/s (zie §4); klopt dat, dan is 30 s Premium ≈ $0,99 en het totaal ≈ $1,42. Met Standard (Avatar III, lijst $0,0083/s; gemeten ≈ $0,017/s) kost de presentator $0,08 tot $0,50 (lijst) of $0,17 tot $1,02 (gemeten). De tabel verandert pas na de bevestigingstest.
 
 Let op de tweede grens: `MAX_COST_PER_ACTION_USD` ($1,50 per aanroep). De presentatorvideo is één aanroep: bij 30 s precies $1,50 (nog toegestaan), bij 45 en 60 s erboven, dus die stap wordt door de cost guard geweigerd zolang die grens staat. Met Avatar III kost de presentator $0,08 tot $0,50 en past elke lengte ($0,44 tot $1,03 totaal).
 

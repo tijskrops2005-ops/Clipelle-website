@@ -26,9 +26,18 @@ type Look = {
   preview_image_url?: string;
   supported_api_engines?: string[];
   default_voice_id?: string;
+  image_width?: number | null;
+  image_height?: number | null;
+  orientation: "portrait" | "landscape" | "square" | "unknown";
+  bothEngines: boolean;
 };
 type Voice = { voice_id: string; name: string; language?: string; gender?: string; preview_audio_url?: string };
-type Options = { looks: Look[]; voices: Voice[]; account: { billingType: string | null; balance: Balance } };
+type Inventory = {
+  total: number; portrait: number; landscape: number; square: number; unknown: number; portraitBothEngines: number;
+  portraitByGender: { female: number; male: number; other: number };
+  portraitBothEnginesByGender: { female: number; male: number };
+};
+type Options = { looks: Look[]; inventory: Inventory; voices: Voice[]; account: { billingType: string | null; balance: Balance } };
 
 type Phase = "idle" | "confirm" | "creating" | "polling" | "completed" | "failed";
 
@@ -52,7 +61,7 @@ type Run = {
 const STORAGE_KEY = "reelay.dev.heygen.runs";
 const ENGINE_META: Record<Engine, { label: string; blurb: string }> = {
   avatar_iv: { label: "Avatar IV", blurb: "Newest look and motion. Default engine." },
-  avatar_iii: { label: "Avatar III", blurb: "Older engine, roughly six times cheaper." },
+  avatar_iii: { label: "Avatar III", blurb: "Older engine. List price 6× cheaper; measured 2026-10-19 only ~2× (see pricing.ts)." },
 };
 
 function estimateSeconds(script: string) {
@@ -82,6 +91,8 @@ export function HeygenTestPanel() {
 
   const [engine, setEngine] = useState<Engine>("avatar_iv");
   const [lookId, setLookId] = useState("");
+  /* The ad needs a portrait look (a landscape one comes back letterboxed in 9:16), so the filter is on by default. */
+  const [portraitOnly, setPortraitOnly] = useState(true);
   const [voiceId, setVoiceId] = useState("");
   const [script, setScript] = useState("");
 
@@ -126,7 +137,7 @@ export function HeygenTestPanel() {
         } catch {
           /* ignore */
         }
-        const firstLook = data.looks.find((l) => !l.supported_api_engines || l.supported_api_engines.includes("avatar_iv"));
+        const firstLook = data.looks.find((l) => l.orientation === "portrait" && (!l.supported_api_engines || l.supported_api_engines.includes("avatar_iv")));
         if (firstLook) setLookId(firstLook.id);
         const firstVoice = data.voices[0];
         if (firstVoice) setVoiceId(firstVoice.voice_id);
@@ -325,13 +336,20 @@ export function HeygenTestPanel() {
             <p className="label-mono text-muted">Step 2</p>
             <CardTitle className="mt-2">Avatar</CardTitle>
             <p className="mt-1 text-[15px] text-muted">
-              Public looks. Greyed-out ones do not support {ENGINE_META[engine].label}.
+              Public looks. Greyed-out ones do not support {ENGINE_META[engine].label} or are landscape (the ad needs portrait: a landscape look renders with grey bars in 9:16).
             </p>
+            <p className="mt-2 text-[13px] text-muted">
+              {options.inventory.total} looks: {options.inventory.portrait} portrait ({options.inventory.portraitBothEngines} on both engines; {options.inventory.portraitByGender.female} female, {options.inventory.portraitByGender.male} male), {options.inventory.landscape} landscape, {options.inventory.square} square{options.inventory.unknown ? `, ${options.inventory.unknown} unknown` : ""}.
+            </p>
+            <label className="mt-3 flex items-center gap-2 text-sm text-ink">
+              <input type="checkbox" checked={portraitOnly} onChange={(e) => setPortraitOnly(e.target.checked)} className="size-4 accent-ink" />
+              Portrait only
+            </label>
           </CardHeader>
           <CardContent>
             <div className="grid max-h-[420px] grid-cols-3 gap-3 overflow-y-auto p-1 sm:grid-cols-4 md:grid-cols-5">
-              {options.looks.map((l) => {
-                const supported = !l.supported_api_engines || l.supported_api_engines.includes(engine);
+              {options.looks.filter((l) => !portraitOnly || l.orientation === "portrait").map((l) => {
+                const supported = (!l.supported_api_engines || l.supported_api_engines.includes(engine)) && l.orientation === "portrait";
                 const selected = l.id === lookId;
                 return (
                   <button
@@ -353,7 +371,8 @@ export function HeygenTestPanel() {
                         <img src={l.preview_image_url} alt={l.name} className="size-full object-cover" />
                       ) : null}
                     </div>
-                    <p className="truncate px-2 py-1.5 text-xs font-medium text-ink">{l.name}</p>
+                    <p className="truncate px-2 pt-1.5 text-xs font-medium text-ink">{l.name}</p>
+                    <p className={cn("label-mono px-2 pb-1.5", l.orientation === "portrait" ? "text-success" : "text-warning")}>{l.orientation}{l.bothEngines ? " · III+IV" : ""}</p>
                     {selected && (
                       <span className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-accent text-white">
                         <Check className="size-3.5" strokeWidth={3} aria-hidden />

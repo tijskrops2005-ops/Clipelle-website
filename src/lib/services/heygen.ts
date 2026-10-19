@@ -22,6 +22,11 @@ export type AvatarLook = {
   preview_video_url?: string;
   supported_api_engines?: string[];
   default_voice_id?: string;
+  tags?: string[];
+  /** Native size and HeyGen's own orientation label (portrait | landscape | square). */
+  image_width?: number | null;
+  image_height?: number | null;
+  preferred_orientation?: string | null;
 };
 
 export type Voice = {
@@ -183,9 +188,12 @@ function itemsOf<T>(page: Page<T> | T[], key: string): T[] {
   return Array.isArray(alt) ? (alt as T[]) : [];
 }
 
-export async function listLooks(params: { groupId?: string; limit?: number; token?: string } = {}) {
+export type LookType = "studio_avatar" | "digital_twin" | "photo_avatar";
+
+export async function listLooks(params: { groupId?: string; avatarType?: LookType; limit?: number; token?: string } = {}) {
   const q = new URLSearchParams({ ownership: "public", limit: String(params.limit ?? 50) });
   if (params.groupId) q.set("group_id", params.groupId);
+  if (params.avatarType) q.set("avatar_type", params.avatarType);
   if (params.token) q.set("token", params.token);
   const envelope = await heygenFetchEnvelope<Page<AvatarLook> | AvatarLook[]>(`/v3/avatars/looks?${q}`);
   const page = envelope.data as Page<AvatarLook> | AvatarLook[];
@@ -216,6 +224,29 @@ export async function listLookSelection({ pages = 4, perCharacter = 2 } = {}) {
     token = nextToken;
   }
   return [...perGroup.values()].flat();
+}
+
+/**
+ * Every public look of one type (free; walks the pages, 50 per call). Counted on 2026-10-19:
+ * studio_avatar 1,247 (455 portrait), digital_twin 818 (325 portrait), photo_avatar over 4,000
+ * (mostly landscape). The unfiltered list starts with thousands of landscape looks, so callers
+ * pass a type; the ad picker uses studio avatars first, then digital twins.
+ */
+export async function listAllLooks(avatarType: LookType, maxPages = 40) {
+  const all: AvatarLook[] = [];
+  let token: string | undefined;
+  for (let i = 0; i < maxPages; i++) {
+    const { items, nextToken } = await listLooks({ limit: 50, token, avatarType });
+    all.push(...items);
+    if (!nextToken) break;
+    token = nextToken;
+  }
+  return all;
+}
+
+/** One look by id (free), e.g. to check the configured default before a paid render. */
+export async function getLook(lookId: string) {
+  return heygenFetch<AvatarLook>(`/v3/avatars/looks/${encodeURIComponent(lookId)}`);
 }
 
 export async function listVoices(params: { language?: string; limit?: number } = {}) {
@@ -256,6 +287,8 @@ export type CreateAvatarVideoInput = {
   /** 720p for cheap tests, 1080p for customer videos (same price per second). */
   resolution?: "720p" | "1080p";
   title?: string;
+  /** How the look is fitted to the 9:16 canvas: "cover" fills (may crop), "contain" letterboxes. Omitted: HeyGen decides. */
+  fit?: "cover" | "contain";
   /** Stable key so a retried identical request is not created twice by HeyGen (24 h). */
   idempotencyKey?: string;
 };
@@ -271,6 +304,8 @@ export async function createAvatarVideo(input: CreateAvatarVideoInput) {
       script: input.script,
       aspect_ratio: "9:16",
       resolution: input.resolution ?? "720p",
+      // "cover" fills the frame (a portrait look needs no crop); omitted, HeyGen letterboxes a landscape look.
+      ...(input.fit ? { fit: input.fit } : {}),
       engine: { type: input.engine },
       title: input.title ?? "Reelay test",
     }),

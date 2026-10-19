@@ -53,6 +53,8 @@ export interface AdProject extends ProjectBase {
   workflow: "ad";
   /** Chosen ad length in seconds (one of AD_LENGTHS). Older projects: undefined = 30. */
   seconds?: number;
+  /** Presenter quality: "avatar_iii" (Standard) or "avatar_iv" (Premium). Customers only ever see the labels. */
+  engine?: "avatar_iii" | "avatar_iv";
   productName: string;
   productUrl?: string;
   description: string;

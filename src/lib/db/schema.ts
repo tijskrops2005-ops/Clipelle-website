@@ -55,6 +55,8 @@ export const costStatus = pgEnum("cost_status", ["started", "completed", "failed
 export type AdInput = {
   /** Chosen ad length in seconds (AD_LENGTHS in src/lib/pricing.ts). Missing on older rows = 30. */
   seconds?: number;
+  /** Presenter quality chosen by the customer: avatar_iii = Standard, avatar_iv = Premium. Missing = Premium. */
+  engine?: "avatar_iii" | "avatar_iv";
   productName: string;
   productUrl?: string;
   description: string;

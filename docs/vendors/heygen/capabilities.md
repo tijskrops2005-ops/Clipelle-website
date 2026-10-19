@@ -70,6 +70,32 @@ Legenda voor de kolom "Voor ons": zie `docs/roadmap.md`, sectie "HeyGen-functies
 - **Kosten:** gratis.
 - **Bron:** https://developers.heygen.com/docs/avatars.md, https://developers.heygen.com/docs/avatar-looks.md
 
+### 2.1a Staande en liggende looks, en hoe 9:16 werkt (gecontroleerd 19 okt 2026)
+
+- Elke look heeft `preferred_orientation` (`portrait | landscape | square`) en de eigen maat `image_width` × `image_height` (bron: https://developers.heygen.com/reference/list-avatar-looks.md). De publieke looks zijn grotendeels liggend: op 19 okt 2026 geteld (`GET /v3/avatars/looks?ownership=public&avatar_type=…`): studio_avatar 1.247 (455 staand), digital_twin 818 (325 staand), photo_avatar meer dan 4.000 (de eerste 4.000: 559 staand). De ongefilterde lijst begint met duizenden liggende looks.
+- **Hoe 9:16 bij een liggende look werkt:** `POST /v3/videos` heeft het veld `fit`: `cover` schaalt tot het kader gevuld is (snijdt randen af), `contain` past de hele bron in het kader (toont achtergrond). Zonder `fit` kiest HeyGen zelf op basis van bron- en kaderoriëntatie; bij een liggende look in 9:16 is dat `contain`, en dat zijn de grijze balken die we zagen (beeld 720×406 in 720×1280). `cover` op een liggende look zou een onscherpe middenstrook van ongeveer 228×406 opleveren. Er is geen schaal-, offset- of positieveld voor de avatar zelf (alleen voor het watermerk). Conclusie: voor de advertentie moet de look staand zijn; `fit: cover` sturen we mee zodat ook een vierkante look het kader vult.
+- Staande looks die zowel Avatar III als IV (en V) ondersteunen zijn allemaal digital twins (325; 235 vrouw, 88 man). Staande studio-looks (455) ondersteunen alleen Avatar III. De staande digital twins zijn 720×1280 van zichzelf; 1080p-uitvoer is dus opgeschaald.
+- De orchestrator weigert een liggende look met een melding in gewone taal en kiest zonder `HEYGEN_DEFAULT_LOOK_ID` de eerste staande look die de gekozen engine ondersteunt (`src/lib/lookOrientation.ts`, `pickPresenter` in `adWorkflow.ts`); `/dev/heygen` toont per look staand/liggend met een filter "Portrait only".
+
+### 2.1b Gemeten kosten (19 okt 2026, `/dev/heygen`, look "Elise", 3,6 s per video)
+
+| Engine | Saldoverschil (afgerond op centen) | Per seconde | Schatting vooraf (lijsttarief) |
+|---|---|---|---|
+| Avatar IV | $0,12 | ≈ $0,033 | $0,18 ($0,05/s) |
+| Avatar III | $0,06 | ≈ $0,017 | $0,03 ($0,0083/s) |
+
+Kanttekening: Avatar III is hiermee ~2× goedkoper dan IV, niet 6× zoals het enterprise-tarief zegt; mogelijk zit er een minimum per video in. 3,6 s en centenprecisie zijn te grof om op te bouwen. De tarieven in `src/lib/pricing.ts` blijven de lijsttarieven tot de bevestigingstest van ~10 s (docs/roadmap.md).
+
+### 2.1c Instellingen die het resultaat bepalen (bron: create-video, list-avatar-looks, list-voices, avatar-iv; 19 okt 2026)
+
+- `voice_settings`: `speed` 0,5–1,5, `pitch` −50…+50 halve tonen, `volume` 0–1, `locale` (bv. `en-US`), `engine_settings`. Geen emotieveld. Stemmen hebben `language`, `gender`, `available_engines` (`starfish | orca/heygen_voice | elevenlabs`), `support_locale`, `support_pause`; filter per `language` en `gender`.
+- `background`: `color` (hex) of `image` (`url` of `asset_id`); geen video-achtergrond in het schema. `remove_background` vereist een video-avatar met matting. `output_format: webm` geeft transparantie.
+- `caption`: alleen `file_format: srt` en `style: default`; SRT komt altijd mee via `subtitle_url`.
+- `motion_prompt` (lichaamsbeweging en handgebaren): alleen foto-avatars en losse afbeeldingen; wordt geweigerd voor video-avatars op Avatar IV. `expressiveness` `low | medium | high` (standaard low): alleen foto-avatars op Avatar IV.
+- `resolution` `720p | 1080p | 4k` (4k alleen Avatar III digital twins en studio-avatars). `brand_glossary_id` voor uitspraak. Brand kits (logo, kleuren, lettertypen) werken alleen in de Video Agent, niet in `POST /v3/videos`.
+- Eigen foto-avatar: `POST /v3/avatars` met `type: photo`, pollen op de look-status; kosten niet vermeld in de documentatie; geen consentstap, toestemming is onze verantwoordelijkheid. Avatar-groepen (`GET /v3/avatars`) geven `gender`, `consent_status`, `default_voice_id`, `looks_count`; geen taal- of regioveld, dus "looks per taal" bestaat niet in de API.
+- Muziek: `GET /v3/audio/sounds` (zoeken in gewone taal, `duration`, tijdelijke WAV-URL); prijs en licentie voor advertenties staan niet in de documentatie.
+
 ### 2.2 Eigen avatar maken
 - **Wat:** drie routes: `digital_twin` uit video-opname (vereist toestemmingsflow van de gefilmde persoon), `photo` uit één foto (minuten), `prompt` uit een tekstbeschrijving (synthetisch persoon, geen consent nodig). Look packs voegen outfits/omgevingen toe aan een bestaand karakter.
 - **Endpoints:** `POST /v3/avatars` (`type`, `name`, `file` of `prompt`, `reference_images`, `aspect_ratio`), `POST /v3/avatars/looks` (`type: look_pack | template`, `reference_look_id`, `template_id`), `POST /v3/avatars/{group_id}/consent`, `PATCH`/`DELETE` voor groepen en looks. Webhooks `instant_avatar.success|fail`.
