@@ -4,6 +4,7 @@ import { NonRetriableError } from "inngest";
 import { assets, db, projects, steps, type AssetRow, type ProjectRow, type StepRow } from "@/lib/db";
 import { copyFromUrl, objectPath, putObject, signedDownloadUrl } from "@/lib/storage";
 import { CostGuardError } from "@/lib/services/costGuard";
+import { TimeoutError, withTimeout } from "@/lib/timeout";
 
 /**
  * Shared helpers for the orchestrators (src/lib/inngest/functions/*Workflow.ts).
@@ -97,6 +98,18 @@ export function isTransient(error: unknown) {
   return /timeout|timed out|econnreset|enotfound|network|fetch failed|socket|rate limit/.test(text);
 }
 
+/**
+ * A hard deadline for one pipeline step (2026-10-19): a step that waits on a stuck database
+ * connection or a provider that never answers would otherwise sit on "Processing" forever.
+ * On timeout the caller's failStep() puts the step on "Failed" with this plain message.
+ */
+export function withDeadline<T>(label: string, minutes: number, work: () => Promise<T>): Promise<T> {
+  return withTimeout(minutes * 60_000, `${label} took longer than ${minutes} minutes and was stopped. Retry the step; if it happens again, check the service status.`, work).catch((error) => {
+    if (error instanceof TimeoutError) throw new StepFailure(error.message, error);
+    throw error;
+  });
+}
+
 /** Up to `attempts` tries with backoff for transient errors; other errors surface immediately. */
 export async function withRetries<T>(label: string, fn: () => Promise<T>, attempts = 3): Promise<T> {
   let last: unknown;
@@ -180,7 +193,7 @@ export async function providerUrl(asset: AssetRow, hours = 6) {
 
 export async function downloadAsset(asset: AssetRow): Promise<Uint8Array> {
   const url = await providerUrl(asset, 1);
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(180_000) });
   if (!res.ok) throw new StepFailure(`Could not read ${asset.kind} from storage (${res.status}).`);
   return new Uint8Array(await res.arrayBuffer());
 }

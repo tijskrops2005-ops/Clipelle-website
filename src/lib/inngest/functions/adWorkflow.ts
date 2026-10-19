@@ -42,6 +42,7 @@ import {
   StepFailure,
   storeBytes,
   storeFromUrl,
+  withDeadline,
   withRetries,
 } from "@/lib/workflow/steps";
 
@@ -73,7 +74,7 @@ export const adWorkflow = inngest.createFunction(
     if (project.status === "completed") return { skipped: "already completed" };
 
     /* ---------- 1. script ---------- */
-    const script = await step.run("script", async () => {
+    const script = await step.run("script", () => withDeadline("Writing the script", 10, async () => {
       const existing = await loadStep(projectId, "script");
       if (existing.status === "completed" && existing.output?.script) return existing.output.script as AdScript;
       const row = await markProcessing(projectId, "script");
@@ -112,7 +113,7 @@ export const adWorkflow = inngest.createFunction(
       } catch (error) {
         return failStep(projectId, "script", error);
       }
-    });
+    }));
 
     /* ---------- 1b. "Review script first": wait for the customer before anything paid starts ---------- */
     const reviewed = await runScriptReview(projectId, script, step);
@@ -167,7 +168,7 @@ async function runProductClip(projectId: string, script: AdScript, step: StepToo
   if (existing.status === "completed" && typeof existing.output?.assetId === "string") return existing.output.assetId;
 
   // a. Prepare the 9:16 image (crop when the product fits, otherwise paid AI expansion) and submit the clip.
-  const job = await step.run("clip-submit", async () => {
+  const job = await step.run("clip-submit", () => withDeadline("Preparing the product clip", 10, async () => {
     const row = await markProcessing(projectId, key);
     try {
       const input = (await loadProject(projectId)).input as AdInput;
@@ -208,13 +209,13 @@ async function runProductClip(projectId: string, script: AdScript, step: StepToo
     } catch (error) {
       return failStep(projectId, key, error);
     }
-  });
+  }));
 
   // b. Poll until the clip is ready.
   for (let i = 0; i < MAX_POLLS; i++) {
     const status = await step.run(`clip-status-${i}`, () => getProductClipStatus(job.endpointId, job.requestId));
     if (status.status === "COMPLETED") {
-      return step.run("clip-store", async () => {
+      return step.run("clip-store", () => withDeadline("Saving the product clip", 10, async () => {
         try {
           const asset = await storeFromUrl({ projectId, stepId: job.stepId, kind: "product_clip", url: status.videoUrl, fileName: "product-clip.mp4", seconds: CLIP_SECONDS, fallbackMime: "video/mp4" });
           await settleSpend(job.entryId, { status: "completed", actualUsd: job.estimate });
@@ -223,7 +224,7 @@ async function runProductClip(projectId: string, script: AdScript, step: StepToo
         } catch (error) {
           return failStep(projectId, key, error);
         }
-      });
+      }));
     }
     if (status.status === "FAILED") {
       await step.run("clip-failed", async () => {
@@ -243,7 +244,7 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
   const existing = await step.run("presenter-check", () => loadStep(projectId, key));
   if (existing.status === "completed" && typeof existing.output?.assetId === "string") return existing.output.assetId;
 
-  const job = await step.run("presenter-submit", async () => {
+  const job = await step.run("presenter-submit", () => withDeadline("Starting the presenter video", 5, async () => {
     const row = await markProcessing(projectId, key);
     try {
       const adInput = (await loadProject(projectId)).input as AdInput;
@@ -275,12 +276,12 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
     } catch (error) {
       return failStep(projectId, key, error);
     }
-  });
+  }));
 
   for (let i = 0; i < MAX_POLLS; i++) {
     const video = await step.run(`presenter-status-${i}`, () => getVideo(job.videoId));
     if (video.status === "completed" && video.video_url) {
-      return step.run("presenter-store", async () => {
+      return step.run("presenter-store", () => withDeadline("Saving the presenter video", 10, async () => {
         try {
           const asset = await storeFromUrl({ projectId, stepId: job.stepId, kind: "presenter", url: video.video_url!, fileName: "presenter.mp4", seconds: video.duration ?? undefined, fallbackMime: "video/mp4" });
           await settleSpend(job.entryId, { status: "completed", actualUsd: video.duration ? estimateCostUsd(job.engine, video.duration) : job.estimate, basis: "list", meta: { durationSeconds: video.duration ?? null, videoId: job.videoId } });
@@ -289,7 +290,7 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
         } catch (error) {
           return failStep(projectId, key, error);
         }
-      });
+      }));
     }
     if (video.status === "failed") {
       await step.run("presenter-failed", async () => {
@@ -379,7 +380,7 @@ async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: st
   const existing = await step.run("final-check", () => loadStep(projectId, key));
   if (existing.status === "completed" && typeof existing.output?.assetId === "string") return existing.output.assetId;
 
-  const job = await step.run("final-submit", async () => {
+  const job = await step.run("final-submit", () => withDeadline("Starting the final edit", 5, async () => {
     const row = await markProcessing(projectId, key);
     try {
       const [clip, presenter] = await Promise.all([loadAsset(clipAssetId), loadAsset(presenterAssetId)]);
@@ -414,12 +415,12 @@ async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: st
     } catch (error) {
       return failStep(projectId, key, error);
     }
-  });
+  }));
 
   for (let i = 0; i < MAX_POLLS; i++) {
     const render = await step.run(`final-status-${i}`, () => getRender(job.renderId));
     if (render.status === "done" && render.url) {
-      return step.run("final-store", async () => {
+      return step.run("final-store", () => withDeadline("Saving the final video", 10, async () => {
         try {
           const asset = await storeFromUrl({ projectId, stepId: job.stepId, kind: "final", url: render.url!, fileName: "ad-9x16.mp4", seconds: render.duration ?? job.totalSeconds, width: 1080, height: 1920, fallbackMime: "video/mp4" });
           if (job.entryId) await settleSpend(job.entryId, { status: "completed", actualUsd: job.estimate });
@@ -429,7 +430,7 @@ async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: st
         } catch (error) {
           return failStep(projectId, key, error);
         }
-      });
+      }));
     }
     if (render.status === "failed") {
       await step.run("final-failed", async () => {

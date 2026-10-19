@@ -81,7 +81,8 @@ export async function putObject(path: string, data: Uint8Array | Blob, contentTy
  * results are tens of MB at most, well under a serverless function's limits.
  */
 export async function copyFromUrl(url: string, path: string, fallbackMime = "application/octet-stream") {
-  const res = await fetch(url, { cache: "no-store" });
+  // A provider download that stalls must not hang a job step: give up after 3 minutes.
+  const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(180_000) });
   if (!res.ok) throw new StorageError(`Could not download the provider file (${res.status}).`, "download_failed", 502);
   const mime = res.headers.get("content-type")?.split(";")[0] || fallbackMime;
   const blob = await res.blob();

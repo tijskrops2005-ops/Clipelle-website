@@ -134,7 +134,9 @@ export async function heygenFetchEnvelope<T>(path: string, init: RequestInit = {
   const key = requireApiKey();
   // A FormData body (asset upload) must set its own multipart boundary: no JSON content type then.
   const isForm = typeof FormData !== "undefined" && init.body instanceof FormData;
+  // Never wait forever on HeyGen: 60 s for API calls, 5 minutes for a multipart upload (≤ 32 MB).
   const res = await fetch(`${BASE_URL}${path}`, {
+    signal: init.signal ?? AbortSignal.timeout(isForm ? 300_000 : 60_000),
     ...init,
     headers: {
       "X-Api-Key": key,

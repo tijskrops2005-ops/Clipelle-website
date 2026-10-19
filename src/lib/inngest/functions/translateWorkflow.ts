@@ -40,6 +40,7 @@ import {
   providerUrl,
   StepFailure,
   storeFromUrl,
+  withDeadline,
   withRetries,
 } from "@/lib/workflow/steps";
 
@@ -74,7 +75,7 @@ export const translateWorkflow = inngest.createFunction(
     const input = project.input as TranslateInput;
 
     /* ---------- 1. upload ---------- */
-    const upload = await step.run("upload", async () => {
+    const upload = await step.run("upload", () => withDeadline("Uploading the video", 10, async () => {
       const existing = await loadStep(projectId, "upload");
       if (existing.status === "completed" && typeof existing.output?.heygenAssetId === "string") return existing.output as UploadOutput;
       const row = await markProcessing(projectId, "upload");
@@ -99,7 +100,7 @@ export const translateWorkflow = inngest.createFunction(
       } catch (error) {
         return failStep(projectId, "upload", error);
       }
-    });
+    }));
 
     /* ---------- 2. translate (proofread sessions) ---------- */
     const sessions = await runTranslate(projectId, input, upload, step);
@@ -126,7 +127,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
   const existing = await step.run("translate-check", () => loadStep(projectId, key));
   if (existing.status === "completed" && existing.output?.sessions) return existing.output.sessions as SessionMap;
 
-  const started = await step.run("translate-submit", async () => {
+  const started = await step.run("translate-submit", () => withDeadline("Starting the translation", 5, async () => {
     const row = await markProcessing(projectId, key);
     try {
       const matched = matchLanguages(await withRetries("Listing languages", () => listTranslationLanguages()));
@@ -181,7 +182,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
     } catch (error) {
       return failStep(projectId, key, error);
     }
-  });
+  }));
 
   // Poll every session until all are completed.
   const sessionMap = started.sessions as SessionMap;
@@ -204,7 +205,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       });
     }
     if (statuses.every((s) => s.status === "completed")) {
-      await step.run("translate-store", async () => {
+      await step.run("translate-store", () => withDeadline("Saving the translation", 10, async () => {
         try {
           const cuesBy: Record<string, SrtCue[]> = {};
           for (const [code, id] of Object.entries(sessionMap)) {
@@ -227,7 +228,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
         } catch (error) {
           return failStep(projectId, key, error);
         }
-      });
+      }));
       return sessionMap;
     }
     await step.sleep(`translate-wait-${i}`, `${cfg.pollSeconds}s`);
@@ -253,7 +254,7 @@ async function runReview(projectId: string, input: TranslateInput, step: StepToo
   }
 
   // No review: Claude rewrites every language in ad tone, within the per-fragment limit.
-  await step.run("review-auto", async () => {
+  await step.run("review-auto", () => withDeadline("Rewriting the subtitles", 10, async () => {
     const row = await markProcessing(projectId, key);
     try {
       const rows = await db().select().from(translations).where(eq(translations.projectId, projectId));
@@ -267,7 +268,7 @@ async function runReview(projectId: string, input: TranslateInput, step: StepToo
     } catch (error) {
       return failStep(projectId, key, error);
     }
-  });
+  }));
 }
 
 /** One Claude pass; fragments still over the limit get a second, stricter pass; then the literal translation stays. */
@@ -351,7 +352,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
   };
 
   // a. Approved subtitles back to HeyGen and the paid render.
-  const gen = await step.run(`${code}-generate`, async (): Promise<{ translationId: string; entryId: string; estimate: number; done: boolean } | { error: string }> => {
+  const gen = await step.run(`${code}-generate`, () => withDeadline("Starting the video render", 5, async (): Promise<{ translationId: string; entryId: string; estimate: number; done: boolean } | { error: string }> => {
     try {
       const [t] = await db().select().from(translations).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).limit(1);
       if (!t) throw new LanguageFailure(`No translation row for ${lang}.`);
@@ -380,7 +381,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
     } catch (error) {
       return { error: budgetMessage(error) };
     }
-  });
+  }));
   if ("error" in gen) return fail(gen.error);
 
   // b. Wait for the translated video; copy it and its SRT into our storage.
@@ -394,7 +395,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         return { status: t.status, video_url: t.video_url ?? null, srt_caption_url: t.srt_caption_url ?? null, failure_message: t.failure_message ?? null };
       });
       if (tr.status === "completed" && tr.video_url) {
-        const stored = await step.run(`${code}-store`, async (): Promise<{ videoAssetId: string; srtAssetId: string } | { error: string }> => {
+        const stored = await step.run(`${code}-store`, () => withDeadline("Saving the translated video", 10, async (): Promise<{ videoAssetId: string; srtAssetId: string } | { error: string }> => {
           try {
             const stepRow = await loadStep(projectId, "captions");
             const video = await storeFromUrl({ projectId, stepId: stepRow.id, kind: "translated", url: tr.video_url!, fileName: `translated-${code}.mp4`, language: code, seconds: input.sourceSeconds, fallbackMime: "video/mp4" });
@@ -405,7 +406,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
           } catch (error) {
             return { error: budgetMessage(error) };
           }
-        });
+        }));
         if ("error" in stored) return fail(stored.error);
         translatedAssetId = stored.videoAssetId;
         srtAssetId = stored.srtAssetId;
@@ -433,7 +434,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
   // c. Optional picture enhancement.
   let sourceForCaptions = translatedAssetId;
   if (input.enhance) {
-    const enh = await step.run(`${code}-enhance-submit`, async (): Promise<{ requestId: string; entryId: string; estimate: number; stepId: string } | { error: string }> => {
+    const enh = await step.run(`${code}-enhance-submit`, () => withDeadline("Starting the enhancement", 5, async (): Promise<{ requestId: string; entryId: string; estimate: number; stepId: string } | { error: string }> => {
       try {
         const stepRow = await loadStep(projectId, "captions");
         const asset = await loadAsset(translatedAssetId);
@@ -449,13 +450,13 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
       } catch (error) {
         return { error: budgetMessage(error) };
       }
-    });
+    }));
     if ("error" in enh) return fail(enh.error);
     let enhanced = "";
     for (let i = 0; i < MAX_POLLS && !enhanced; i++) {
       const st = await step.run(`${code}-enhance-status-${i}`, () => getEnhanceStatus(enh.requestId));
       if (st.status === "COMPLETED") {
-        const stored = await step.run(`${code}-enhance-store`, async (): Promise<{ assetId: string } | { error: string }> => {
+        const stored = await step.run(`${code}-enhance-store`, () => withDeadline("Saving the enhanced video", 10, async (): Promise<{ assetId: string } | { error: string }> => {
           try {
             const asset = await storeFromUrl({ projectId, stepId: enh.stepId, kind: "enhanced", url: st.videoUrl, fileName: `enhanced-${code}.mp4`, language: code, seconds: input.sourceSeconds, fallbackMime: "video/mp4" });
             await db().update(translations).set({ enhancedAssetId: asset.id, updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, code)));
@@ -464,7 +465,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
           } catch (error) {
             return { error: budgetMessage(error) };
           }
-        });
+        }));
         if ("error" in stored) return fail(stored.error);
         enhanced = stored.assetId;
         break;
@@ -480,7 +481,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
   }
 
   // d. Captions and format via Shotstack.
-  const render = await step.run(`${code}-captions-submit`, async (): Promise<{ renderId: string; entryId: string; estimate: number; stepId: string; seconds: number } | { error: string }> => {
+  const render = await step.run(`${code}-captions-submit`, () => withDeadline("Starting the captions", 10, async (): Promise<{ renderId: string; entryId: string; estimate: number; stepId: string; seconds: number } | { error: string }> => {
     try {
       const stepRow = await loadStep(projectId, "captions");
       const video = await loadAsset(sourceForCaptions);
@@ -505,7 +506,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
     } catch (error) {
       return { error: budgetMessage(error) };
     }
-  });
+  }));
   if ("error" in render) return fail(render.error);
 
   for (let i = 0; i < MAX_POLLS; i++) {
@@ -514,7 +515,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
       return { status: x.status, url: x.url ?? null, duration: x.duration ?? null, error: x.error ?? null };
     });
     if (r.status === "done" && r.url) {
-      const stored = await step.run(`${code}-captions-store`, async (): Promise<{ assetId: string } | { error: string }> => {
+      const stored = await step.run(`${code}-captions-store`, () => withDeadline("Saving the final video", 10, async (): Promise<{ assetId: string } | { error: string }> => {
         try {
           const asset = await storeFromUrl({ projectId, stepId: render.stepId, kind: "captioned", url: r.url!, fileName: `final-${code}.mp4`, language: code, seconds: r.duration ?? render.seconds, fallbackMime: "video/mp4" });
           await db().update(translations).set({ captionedAssetId: asset.id, status: "completed", error: null, updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, code)));
@@ -523,7 +524,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         } catch (error) {
           return { error: budgetMessage(error) };
         }
-      });
+      }));
       if ("error" in stored) return fail(stored.error);
       return { ok: true, assetId: stored.assetId };
     }

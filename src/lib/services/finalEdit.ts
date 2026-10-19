@@ -33,6 +33,7 @@ function requireApiKey() {
 
 async function shotstackFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
+    signal: init.signal ?? AbortSignal.timeout(30_000),
     ...init,
     headers: { "x-api-key": requireApiKey(), Accept: "application/json", ...(init.body ? { "Content-Type": "application/json" } : {}), ...(init.headers ?? {}) },
     cache: "no-store",

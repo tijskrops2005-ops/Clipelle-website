@@ -17,7 +17,7 @@ export function ServiceStatusBanner() {
     if (config.demoMode) return;
     let stopped = false;
     const check = () =>
-      fetch("/api/health", { cache: "no-store" })
+      fetch("/api/health", { cache: "no-store", signal: AbortSignal.timeout(5000) })
         .then((r) => r.json())
         .then((h: Health) => {
           if (!stopped) setHealth(h);
@@ -26,7 +26,8 @@ export function ServiceStatusBanner() {
           if (!stopped) setHealth({ demoMode: false, database: false, jobs: false });
         });
     void check();
-    const id = window.setInterval(check, 15000);
+    // The server caches the result for 30 s; polling faster only adds requests.
+    const id = window.setInterval(check, 30000);
     return () => {
       stopped = true;
       window.clearInterval(id);

@@ -134,7 +134,7 @@ export async function downloadProofreadSrt(id: string) {
 
 /** Fetches the subtitle file behind a presigned URL. */
 export async function fetchSrtText(url: string) {
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new HeygenError(`Could not download the subtitle file (${res.status}).`, 502, "srt_download_failed");
   return res.text();
 }
