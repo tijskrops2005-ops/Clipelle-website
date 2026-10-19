@@ -1,0 +1,345 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import sharp from "sharp";
+import { adProjectCreated, inngest, stepRetry } from "@/lib/inngest/client";
+import type { AdInput } from "@/lib/db";
+import { generateAdScript, estimateScriptCost, type AdScript } from "@/lib/services/script";
+import {
+  analyzeProductPhoto,
+  cropToNineSixteen,
+  CLIP_MODELS,
+  CLIP_SECONDS,
+  estimateClipCost,
+  EXPAND_USD_PER_IMAGE,
+  expandToNineSixteen,
+  getProductClipStatus,
+  planNineSixteen,
+  submitProductClip,
+} from "@/lib/services/productClip";
+import { createAvatarVideo, estimateCostUsd, estimateSeconds, getVideo, listLookSelection, listVoices } from "@/lib/services/heygen";
+import { buildAdEdit, getRender, shotstackEnv, startRender } from "@/lib/services/finalEdit";
+import { reserveSpend, settleSpend } from "@/lib/services/costGuard";
+import { putObject, signedDownloadUrl } from "@/lib/storage";
+import { SHOTSTACK_USD_PER_SECOND } from "@/lib/translatePricing";
+import { workflowSettings as cfg } from "@/lib/workflow/settings";
+import {
+  downloadAsset,
+  failStep,
+  loadAsset,
+  loadProject,
+  loadStep,
+  markCompleted,
+  markProcessing,
+  providerUrl,
+  setProjectFinal,
+  StepFailure,
+  storeBytes,
+  storeFromUrl,
+  withRetries,
+} from "@/lib/workflow/steps";
+
+/**
+ * Workflow A — one product → one finished 9:16 ad.
+ *
+ *   script (Claude) ─┬→ productClip (fal.ai) ─┐
+ *                    └→ presenter (HeyGen)  ─┴→ finalEdit (Shotstack) → storage → completed
+ *
+ * Triggered by project/ad.created and by project/step.retry. Every step is idempotent (skips
+ * when the database says it is completed), so a retry resumes where the project stopped.
+ * Providers are polled with step.sleep; webhooks (step 8) will shorten the waits.
+ */
+
+const MAX_POLLS = Math.ceil((cfg.maxWaitMinutes * 60) / cfg.pollSeconds);
+
+export const adWorkflow = inngest.createFunction(
+  {
+    id: "workflow-ad",
+    name: "Workflow A: ad from a product photo",
+    retries: 0, // our own retry policy: withRetries() per call, Retry button per step
+    concurrency: 3,
+    triggers: [adProjectCreated, stepRetry],
+  },
+  async ({ event, step }) => {
+    const projectId = event.data.projectId;
+    const project = await step.run("load-project", () => loadProject(projectId));
+    if (project.workflow !== "ad") return { skipped: "not an ad project" };
+    if (project.status === "completed") return { skipped: "already completed" };
+
+    /* ---------- 1. script ---------- */
+    const script = await step.run("script", async () => {
+      const existing = await loadStep(projectId, "script");
+      if (existing.status === "completed" && existing.output?.script) return existing.output.script as AdScript;
+      const row = await markProcessing(projectId, "script");
+      try {
+        const input = (await loadProject(projectId)).input as AdInput;
+        const firstImage = input.imageAssetIds[0] ? await loadAsset(input.imageAssetIds[0]) : null;
+        const image = firstImage ? await imageForClaude(await downloadAsset(firstImage)) : undefined;
+        const base = {
+          productName: input.productName,
+          description: input.description,
+          productUrl: input.productUrl,
+          hint: input.script ? `The seller wrote these presenter lines; keep them as the presenter script, only trim for timing:\n${input.script}` : undefined,
+          language: cfg.adLanguage,
+          targetSeconds: cfg.adSeconds,
+          angle: "problem_solution" as const,
+        };
+        const estimate = estimateScriptCost({ ...base, hasImage: Boolean(image) }).costUsd;
+        const reserved = await reserveSpend({ service: "anthropic", action: "ad_script", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id });
+        let result;
+        try {
+          result = await withRetries("Writing the script", () => generateAdScript({ ...base, image }));
+        } catch (error) {
+          await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+          throw error;
+        }
+        await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd });
+        await storeBytes({ projectId, stepId: row.id, kind: "script", data: new TextEncoder().encode(JSON.stringify(result.script, null, 2)), mime: "application/json", fileName: "script.json" });
+        await markCompleted(projectId, "script", { output: { script: result.script }, costUsd: result.costUsd });
+        return result.script;
+      } catch (error) {
+        return failStep(projectId, "script", error);
+      }
+    });
+
+    /* ---------- 2 + 3. product clip and presenter, in parallel ---------- */
+    const [clipAssetId, presenterAssetId] = await Promise.all([runProductClip(projectId, script, step), runPresenter(projectId, script, step)]);
+
+    /* ---------- 4. final edit ---------- */
+    const final = await runFinalEdit(projectId, script, clipAssetId, presenterAssetId, step);
+    return { projectId, finalAssetId: final };
+  },
+);
+
+type StepTools = Parameters<Parameters<typeof inngest.createFunction>[1]>[0]["step"];
+
+/** Downscale the first product photo for Claude (≤ ~1 MP keeps the token cost small). */
+async function imageForClaude(bytes: Uint8Array) {
+  const buf = await sharp(Buffer.from(bytes)).rotate().resize({ width: 1024, height: 1024, fit: "inside" }).jpeg({ quality: 82 }).toBuffer();
+  return { base64: buf.toString("base64"), mediaType: "image/jpeg" as const };
+}
+
+/* ---------- product clip ---------- */
+
+async function runProductClip(projectId: string, script: AdScript, step: StepTools): Promise<string> {
+  const key = "productClip";
+  const existing = await step.run("clip-check", () => loadStep(projectId, key));
+  if (existing.status === "completed" && typeof existing.output?.assetId === "string") return existing.output.assetId;
+
+  // a. Prepare the 9:16 image (crop when the product fits, otherwise paid AI expansion) and submit the clip.
+  const job = await step.run("clip-submit", async () => {
+    const row = await markProcessing(projectId, key);
+    try {
+      const input = (await loadProject(projectId)).input as AdInput;
+      const photo = await loadAsset(input.imageAssetIds[0]);
+      const original = Buffer.from(await downloadAsset(photo));
+      const analysis = await analyzeProductPhoto(original);
+      const plan = planNineSixteen(analysis);
+      let prepared: Buffer;
+      let expandCost = 0;
+      if (plan.fits) {
+        prepared = await cropToNineSixteen(original, plan.crop);
+      } else {
+        const reserved = await reserveSpend({ service: "fal", action: "expand_image", estimatedUsd: EXPAND_USD_PER_IMAGE, fingerprintInput: { projectId, photo: photo.id, attempt: row.attempt }, projectId, stepId: row.id });
+        try {
+          const expanded = await withRetries("Expanding the photo to 9:16", () => expandToNineSixteen(original, analysis));
+          prepared = expanded.buffer;
+          expandCost = expanded.costUsd;
+          await settleSpend(reserved.entryId, { status: "completed", actualUsd: expanded.costUsd });
+        } catch (error) {
+          await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+          throw error;
+        }
+      }
+      await storeBytes({ projectId, stepId: row.id, kind: "image", data: new Uint8Array(prepared), mime: "image/jpeg", fileName: "prepared-9x16.jpg" });
+
+      const model = cfg.clipModel;
+      const prompt = clipPrompt(script);
+      const estimate = estimateClipCost(model, CLIP_SECONDS);
+      const reserved = await reserveSpend({ service: "fal", action: `clip_${model}`, estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { model } });
+      try {
+        const submitted = await withRetries("Starting the product clip", () => submitProductClip({ image: prepared, model, prompt, durationSeconds: CLIP_SECONDS }));
+        return { ...submitted, entryId: reserved.entryId, estimate, expandCost, stepId: row.id };
+      } catch (error) {
+        await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+        throw error;
+      }
+    } catch (error) {
+      return failStep(projectId, key, error);
+    }
+  });
+
+  // b. Poll until the clip is ready.
+  for (let i = 0; i < MAX_POLLS; i++) {
+    const status = await step.run(`clip-status-${i}`, () => getProductClipStatus(job.endpointId, job.requestId));
+    if (status.status === "COMPLETED") {
+      return step.run("clip-store", async () => {
+        try {
+          const asset = await storeFromUrl({ projectId, stepId: job.stepId, kind: "product_clip", url: status.videoUrl, fileName: "product-clip.mp4", seconds: CLIP_SECONDS, fallbackMime: "video/mp4" });
+          await settleSpend(job.entryId, { status: "completed", actualUsd: job.estimate });
+          await markCompleted(projectId, key, { output: { assetId: asset.id, model: CLIP_MODELS[cfg.clipModel].label }, externalJobId: job.requestId, costUsd: job.estimate + job.expandCost });
+          return asset.id;
+        } catch (error) {
+          return failStep(projectId, key, error);
+        }
+      });
+    }
+    if (status.status === "FAILED") {
+      await step.run("clip-failed", async () => {
+        await settleSpend(job.entryId, { status: "failed", actualUsd: 0 });
+        return failStep(projectId, key, new StepFailure(`The product clip could not be generated: ${status.error}`));
+      });
+    }
+    await step.sleep(`clip-wait-${i}`, `${cfg.pollSeconds}s`);
+  }
+  return step.run("clip-timeout", () => failStep(projectId, key, new StepFailure(`The product clip took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
+}
+
+function clipPrompt(script: AdScript) {
+  const product = script.scenes.find((s) => s.kind === "product")?.onScreenText;
+  return `Smooth, slow product showcase of the item in the photo on a clean background, soft studio light, subtle camera push-in, no text, no people, keep the product exactly as shown.${product ? ` Mood: ${product}.` : ""}`;
+}
+
+/* ---------- presenter ---------- */
+
+async function runPresenter(projectId: string, script: AdScript, step: StepTools): Promise<string> {
+  const key = "presenter";
+  const existing = await step.run("presenter-check", () => loadStep(projectId, key));
+  if (existing.status === "completed" && typeof existing.output?.assetId === "string") return existing.output.assetId;
+
+  const job = await step.run("presenter-submit", async () => {
+    const row = await markProcessing(projectId, key);
+    try {
+      const { lookId, voiceId } = await pickPresenter();
+      const seconds = estimateSeconds(script.presenterScript);
+      const estimate = estimateCostUsd(cfg.heygenEngine, seconds);
+      const reserved = await reserveSpend({ service: "heygen", action: "avatar_video", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { engine: cfg.heygenEngine, seconds } });
+      try {
+        const created = await withRetries("Starting the presenter video", () =>
+          createAvatarVideo({ avatarId: lookId, voiceId, script: script.presenterScript, engine: cfg.heygenEngine, title: `Reelay ${projectId.slice(0, 8)}`, idempotencyKey: reserved.fingerprint }),
+        );
+        return { videoId: created.video_id, entryId: reserved.entryId, estimate, stepId: row.id };
+      } catch (error) {
+        await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+        throw error;
+      }
+    } catch (error) {
+      return failStep(projectId, key, error);
+    }
+  });
+
+  for (let i = 0; i < MAX_POLLS; i++) {
+    const video = await step.run(`presenter-status-${i}`, () => getVideo(job.videoId));
+    if (video.status === "completed" && video.video_url) {
+      return step.run("presenter-store", async () => {
+        try {
+          const asset = await storeFromUrl({ projectId, stepId: job.stepId, kind: "presenter", url: video.video_url!, fileName: "presenter.mp4", seconds: video.duration ?? undefined, fallbackMime: "video/mp4" });
+          await settleSpend(job.entryId, { status: "completed", actualUsd: video.duration ? estimateCostUsd(cfg.heygenEngine, video.duration) : job.estimate });
+          await markCompleted(projectId, key, { output: { assetId: asset.id, seconds: video.duration ?? null }, externalJobId: job.videoId, costUsd: job.estimate });
+          return asset.id;
+        } catch (error) {
+          return failStep(projectId, key, error);
+        }
+      });
+    }
+    if (video.status === "failed") {
+      await step.run("presenter-failed", async () => {
+        await settleSpend(job.entryId, { status: "failed", actualUsd: 0 });
+        return failStep(projectId, key, new StepFailure(`The presenter video could not be generated: ${video.failure_message ?? video.failure_code ?? "unknown reason"}.`));
+      });
+    }
+    await step.sleep(`presenter-wait-${i}`, `${cfg.pollSeconds}s`);
+  }
+  return step.run("presenter-timeout", () => failStep(projectId, key, new StepFailure(`The presenter video took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
+}
+
+/** Configured look/voice, or the first public look that supports the engine (free listing calls). */
+async function pickPresenter() {
+  if (cfg.heygenLookId && cfg.heygenVoiceId) return { lookId: cfg.heygenLookId, voiceId: cfg.heygenVoiceId };
+  const looks = await withRetries("Listing presenters", () => listLookSelection({ pages: 2, perCharacter: 1 }));
+  const look = cfg.heygenLookId ? looks.find((l) => l.id === cfg.heygenLookId) : looks.find((l) => !l.supported_api_engines || l.supported_api_engines.includes(cfg.heygenEngine));
+  if (!look) throw new StepFailure("No presenter supports the configured engine. Set HEYGEN_DEFAULT_LOOK_ID in .env.local.");
+  let voiceId = cfg.heygenVoiceId || look.default_voice_id || "";
+  if (!voiceId) {
+    const voices = await withRetries("Listing voices", () => listVoices({ language: "English", limit: 20 }));
+    voiceId = voices[0]?.voice_id ?? "";
+  }
+  if (!voiceId) throw new StepFailure("No voice available. Set HEYGEN_DEFAULT_VOICE_ID in .env.local.");
+  return { lookId: look.id, voiceId };
+}
+
+/* ---------- final edit ---------- */
+
+const MUSIC_PATH = "shared/music/sample-music.mp3";
+
+async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: string, presenterAssetId: string, step: StepTools): Promise<string> {
+  const key = "finalEdit";
+  const existing = await step.run("final-check", () => loadStep(projectId, key));
+  if (existing.status === "completed" && typeof existing.output?.assetId === "string") return existing.output.assetId;
+
+  const job = await step.run("final-submit", async () => {
+    const row = await markProcessing(projectId, key);
+    try {
+      const [clip, presenter] = await Promise.all([loadAsset(clipAssetId), loadAsset(presenterAssetId)]);
+      const musicUrl = await ensureSharedMusic();
+      const edit = buildAdEdit({
+        presenterUrl: await providerUrl(presenter),
+        presenterSeconds: presenter.seconds ?? 10,
+        productClipUrl: await providerUrl(clip),
+        productClipSeconds: clip.seconds ?? CLIP_SECONDS,
+        musicUrl,
+        hook: script.hook.onScreen,
+        benefits: [script.benefits[0] ?? "", script.benefits[1] ?? "", script.benefits[2] ?? ""],
+        offer: script.offer,
+        captionLanguage: cfg.adLanguage,
+      });
+      const env = shotstackEnv();
+      const estimate = env === "v1" ? Math.round(edit.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000 : 0;
+      const reserved = env === "v1" ? await reserveSpend({ service: "shotstack", action: "ad_render", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id }) : null;
+      try {
+        const render = await withRetries("Starting the final edit", () => startRender(edit));
+        return { renderId: render.renderId, entryId: reserved?.entryId ?? "", estimate, totalSeconds: edit.meta.totalSeconds, stepId: row.id };
+      } catch (error) {
+        if (reserved) await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+        throw error;
+      }
+    } catch (error) {
+      return failStep(projectId, key, error);
+    }
+  });
+
+  for (let i = 0; i < MAX_POLLS; i++) {
+    const render = await step.run(`final-status-${i}`, () => getRender(job.renderId));
+    if (render.status === "done" && render.url) {
+      return step.run("final-store", async () => {
+        try {
+          const asset = await storeFromUrl({ projectId, stepId: job.stepId, kind: "final", url: render.url!, fileName: "ad-9x16.mp4", seconds: render.duration ?? job.totalSeconds, width: 1080, height: 1920, fallbackMime: "video/mp4" });
+          if (job.entryId) await settleSpend(job.entryId, { status: "completed", actualUsd: job.estimate });
+          await markCompleted(projectId, key, { output: { assetId: asset.id }, externalJobId: job.renderId, costUsd: job.estimate });
+          await setProjectFinal(projectId, asset.id);
+          return asset.id;
+        } catch (error) {
+          return failStep(projectId, key, error);
+        }
+      });
+    }
+    if (render.status === "failed") {
+      await step.run("final-failed", async () => {
+        if (job.entryId) await settleSpend(job.entryId, { status: "failed", actualUsd: 0 });
+        return failStep(projectId, key, new StepFailure(`The final edit failed: ${render.error || "unknown reason"}.`));
+      });
+    }
+    await step.sleep(`final-wait-${i}`, `${cfg.pollSeconds}s`);
+  }
+  return step.run("final-timeout", () => failStep(projectId, key, new StepFailure(`The final edit took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
+}
+
+/** The demo music track lives once in storage; a signed URL is handed to Shotstack. */
+async function ensureSharedMusic() {
+  try {
+    return await signedDownloadUrl(MUSIC_PATH, 6 * 3600);
+  } catch {
+    const data = await readFile(path.join(process.cwd(), "public", "demo", "sample-music.mp3"));
+    await putObject(MUSIC_PATH, new Uint8Array(data), "audio/mpeg");
+    return signedDownloadUrl(MUSIC_PATH, 6 * 3600);
+  }
+}
