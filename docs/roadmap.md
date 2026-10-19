@@ -197,7 +197,11 @@ Optie 2 bewaren we voor het geval HeyGen tegenvalt op één van twee punten: de 
 2. Eén vertaling in speed-modus van een clip van 20 s naar Duits, met glossary voor de productnaam.
 3. Dezelfde clip door Topaz op 720p; vergelijk beeld en kosten.
 
-## Instellingen die het resultaat bepalen (inventarisatie 19 oktober 2026, niets gebouwd)
+## Vaste regel: alleen ondertitels in beeld (19 oktober 2026)
+
+Na de eerste volledige run (26 s, Madison-jurk, Standard) bleek de video druk door tekst in beeld. Besluit: **het enige wat er aan tekst in beeld staat zijn de ondertitels onder in beeld, over de hele video, in de gekozen ondertitelstijl.** Geen hook-vak, geen voordeel-labels, geen eindkaart, geen knop, geen andere tekst-overlay. Hook, voordelen en oproep tot actie zijn gesproken tekst en verschijnen alleen als gewone ondertitel. Het logo van de klant (rechtsboven, optioneel) blijft. Deze regel staat ook in CLAUDE.md en wordt nooit teruggedraaid zonder expliciete opdracht.
+
+## Instellingen die het resultaat bepalen (inventarisatie 19 oktober 2026)
 
 Per stap: wat het is, waar het vandaan komt, effect op kwaliteit en kosten, of het nu vast of kiesbaar is, en het advies. Tijs beslist hierna wat de klant mag kiezen. Bronnen: developers.heygen.com (create-video, list-avatar-looks, list-voices, avatar-iv, avatar-from-photo, background-music, brand-kits), fal.ai-modelpagina's, shotstack.io-docs, onze eigen code.
 
@@ -207,9 +211,11 @@ Per stap: wat het is, waar het vandaan komt, effect op kwaliteit en kosten, of h
 |---|---|---|---|---|---|
 | Look (avatar) | `GET /v3/avatars/looks` (`id`, `name`, `avatar_type`, `preferred_orientation`, `image_width/height`, `tags`); alleen staande looks bruikbaar | Bepaalt gezicht, kleding, decor; grootste indruk op de klant | Geen | **Gebouwd** (19 okt 2026): picker op `/new/ad` (stap "Your presenter"), staande looks die de gekozen kwaliteit ondersteunen, 6 gecureerde looks eerst, "More presenters" met paginering; standaard Olivia (`HEYGEN_DEFAULT_LOOK_ID`); keuze opgeslagen als `AdInput.lookId` | Klant kiest (gebouwd) |
 | Geslacht | `gender` op look en groep | Past bij doelgroep | Geen | Filter All / Women / Men in de picker (gebouwd) | Filter, geen los veld |
-| Stem | `GET /v3/voices` (`language`, `gender`, `available_engines`, `support_locale`); look heeft `default_voice_id` | Groot: toon en accent bepalen geloofwaardigheid | Geen | Volgt de gekozen look (`default_voice_id`), tenzij `HEYGEN_DEFAULT_VOICE_ID` gevuld is; anders de eerste Engelse stem | Aparte prompt (stemkeuze); let op: bij een andere scripttaal dan Engels moet de stem die taal spreken |
-| Stemtaal | `language`-filter op `/v3/voices`; script in `AD_LANGUAGE` | Moet gelijk zijn aan de scripttaal | Geen | Onze stemlijst filtert hard op "English", niet op `AD_LANGUAGE` (gevonden bij de controle) | Koppelen aan `AD_LANGUAGE` zodra er een tweede taal komt |
-| Tempo, toonhoogte, volume, accent | `voice_settings.speed` 0,5–1,5, `pitch` −50…+50, `volume`, `locale`; geen emotieveld | Tempo raakt de woordgrens (2,5 w/s); accent per regio | Geen | Niet meegestuurd (standaard 1,0) | Vaste standaard; `speed` later eventueel 1,05 na een test |
+| Stem | `GET /v3/voices` (`language`, `gender`, `preview_audio_url`, `available_engines`); geen locale-veld (`support_locale` is false op alle 2.644 publieke stemmen) | Groot: toon en accent bepalen geloofwaardigheid | Geen | **Gebouwd**: keuze "Voice" op `/new/ad`, gefilterd op taal + accent + geslacht van de look, voorgeselecteerd op de default-stem van de look als die bij de taal past; luistervoorbeeld (één tegelijk); `pickVoice()` controleert vóór de betaalde stap dat de stem bestaat en de taal spreekt | Klant kiest (gebouwd) |
+| Taal | Eén keuze "Language" (talen met stemmen: en, nl, de, fr, es, it, pt, sk) bepaalt script, ondertitels en stem; `AD_LANGUAGE` is alleen de beginwaarde | Moet gelijk zijn voor script, ondertitels en stem | Geen | **Gebouwd**; geen hard filter op "English" meer | Klant kiest (gebouwd) |
+| Accent / regio | Uit de stemnamen (bv. "US", "British", "Vlaams", "Brazil"), omdat de API geen locale per stem geeft; alleen getoond als er stemmen zijn (Engels: US, UK, Indian; Nederlands: Vlaams; Portugees: Brazil); spelling volgt het accent in het script | Herkenbaarheid in de markt | Geen | **Gebouwd** (aanname: naam-gebaseerd, `voice_settings.locale` wordt niet gestuurd omdat geen publieke stem het ondersteunt) | Klant kiest waar beschikbaar |
+| Tempo | `voice_settings.speed` 0,5–1,5; drie standen Slower 0,9 / Normal 1 / Faster 1,1 | Leesbaarheid en energie | Langere video bij Slower (÷0,9) en kortere bij Faster (÷1,1); de schatting rekent presentator en ondertitels op seconden ÷ snelheid; de woordgrens blijft die van normaal tempo | **Gebouwd**, standaard Normal | Klant kiest (gebouwd) |
+| Toonhoogte, volume | `voice_settings.pitch` −50…+50, `volume` 0–1 | Zelden nuttig | Geen | Niet meegestuurd | Bewust niet (besluit 19 okt 2026) |
 | Engine | `engine.type` `avatar_iii | avatar_iv | avatar_v`; look moet hem ondersteunen | IV: natuurlijke beweging; III: stijver | Lijst $0,05/s vs $0,0083/s; gemeten ≈ $0,033 vs $0,017/s | Kiesbaar: Standard/Premium op `/new/ad` (gebouwd) | Klant laat kiezen (besloten) |
 | Resolutie | `resolution` `720p | 1080p | 4k` (4k alleen Avatar III twins/studio) | Staande twins zijn 720×1280 van zichzelf; 1080p is opgeschaald | Geen toeslag | Vast 1080p | Vast 1080p |
 | Achtergrond | `background.type: color` (`value` hex) of `image` (`url`/`asset_id`); geen video (create-video.md, 19 okt 2026) | Effen kleur of eigen foto achter de presentator | Geen | **Gebouwd**: keuze in "Your presenter" (eigen van de look, 5 kleuren, eigen afbeelding); opgeslagen als `AdInput.background` | Klant kiest (gebouwd) |
@@ -250,15 +256,47 @@ Per stap: wat het is, waar het vandaan komt, effect op kwaliteit en kosten, of h
 | Instelling | Wat / waar vandaan | Kwaliteit | Kosten | Nu | Advies |
 |---|---|---|---|---|---|
 | Muziek | **Bewust niet gebouwd** (19 okt 2026). HeyGen `GET /v3/audio/sounds`: catalogus met zoeken in gewone taal, `duration`, tijdelijke WAV; prijs en licentie staan niet in de documentatie. Shotstack: geen muziekbibliotheek; wel AI-muziek (`elevenlabs-music`, per begonnen minuut, bedrag en licentie niet op de prijspagina) en eigen audiobestanden (`audio`-asset met `src`, `volume`, `effect`). | Sfeer | Onbekend | Vast `sample-music.mp3` | Open vragen aan HeyGen en Shotstack: prijs per track/minuut en of de licentie betaalde advertenties dekt. Tot die antwoorden: één eigen gelicentieerde track |
-| Ondertitelstijl | Shotstack `rich-caption`: animatie `pop | fade | karaoke` (van de 8 stijlen), `active` kleur, stroke | Herkenbaarheid, leesbaarheid | Geen | **Gebouwd**: Bold pop (standaard), Clean, Karaoke | Klant kiest (gebouwd) |
+| Ondertitelstijl | Shotstack `rich-caption`: animatie `pop | fade | karaoke`, `active` kleur, stroke; over de hele video, onder in beeld | De enige tekst in beeld | Geen | **Gebouwd**: Bold pop (standaard), Clean, Karaoke | Klant kiest (gebouwd) |
 | Lettertype | Ingebouwde Shotstack-families (rich-text.md): Roboto, Montserrat, Open Sans, Work Sans (uit de lijst van 11); eigen fonts via `timeline.fonts[].src` | Merkgevoel | Geen | **Gebouwd**: vaste lijst van 4, standaard Roboto | Klant kiest (gebouwd); eigen font later |
 | Logo | `image`-clip, `scale` 0,14, `position: topRight`, `offset` (positioning.md) | Merkherkenning | Geen | **Gebouwd**: optionele upload (asset kind `logo`), hele video rechtsboven | Klant uploadt (gebouwd) |
-| Eindkaart | `offer.headline` + `offer.cta` uit het script, laatste 2 s | Conversie | Geen | Automatisch; tekst via "Offer" | Vast |
-| Accentkleur (hook, CTA-knop, actief woord) | `colors.accent` in `buildAdEdit`; contrast met wit tekst gecontroleerd (WCAG, waarschuwing onder 3:1) | Merkkleur | Geen | **Gebouwd**: 6 kleuren of eigen hex | Klant kiest (gebouwd) |
+| Hook-vak, voordeel-labels, eindkaart, knop | Waren `rich-text`-clips in `buildAdEdit` | Maakten de video druk en onrustig | Geen | **Bewust verwijderd** (19 okt 2026): zie de vaste regel hierboven; hook, voordelen en CTA zijn gesproken | Niet terugbouwen zonder opdracht |
+| Beweging productbeelden | Per overlay een eigen camerabeweging en uitsnede (`OVERLAY_MOTIONS` in `adLayout.ts`: langzame zoom in/uit, pan omhoog/omlaag/links met `scale` + `offset`), oneven overlays tonen de voorbereide productfoto met een langzame pan; overgangen 0,5 s fade of slide (Shotstack `Fast`-varianten), `opacity` 1, productclip gemuted; presentatorspoor loopt ononderbroken door | Rustiger beeld, geen harde sneden, geen doorschemeren | Geen | **Gebouwd**, alleen via het sjabloon gecontroleerd | Vast |
+| Accentkleur | `colors.accent` in `buildAdEdit`; kleurt nu alleen het actieve ondertitelwoord; contrast met wit gecontroleerd | Merkkleur | Geen | **Gebouwd**: 6 kleuren of eigen hex | Klant kiest (gebouwd) |
 
 **Niet toegevoegd (bewust, 19 okt 2026):** model, duur en prompt van de productclip; toonhoogte en volume van de stem; expressiveness en motion prompt; eigen foto-avatars; muziek (open vragen hierboven).
 
 **Controle stemmen en default-stem:** de orchestrator gebruikt `HEYGEN_DEFAULT_VOICE_ID`, anders `default_voice_id` van de gekozen look (komt mee in de looks-lijst, bij de staande kandidaten is hij gevuld), anders de eerste stem uit `GET /v3/voices?language=English`. Die lijst filtert op "English", niet op `AD_LANGUAGE`; zolang `AD_LANGUAGE` `en` is klopt dat, maar bij een andere taal moet de stemkeuze aan de taal gekoppeld worden.
+
+## Ideeën (uitgezocht op 19 oktober 2026, niet gebouwd)
+
+### a) Tweede productclip voor langere advertenties
+
+Nu wordt één clip van 5 s hergebruikt (verschillende stukken, bewegingen en uitsneden, plus de voorbereide productfoto als stilstaand beeld). Een tweede clip kost één extra fal.ai-aanroep: MiniMax Turbo 1080p $0,26 tot 31 oktober, daarna $0,40; Kling v3 Standard $0,42 (bron: fal.ai-modelpagina's, `docs/cost-quality.md` §2).
+
+| Lengte | Productmomenten nu | Totaal nu (Premium) | Met tweede clip | Oordeel |
+|---|---|---|---|---|
+| 10 s | 1 | $0,86 | $1,12 | Niet zinvol: één moment |
+| 20 s | 2 | $1,40 | $1,66 (over budget) | Niet zinvol binnen $1,50 |
+| 30 s | 2 | $1,93 | $2,19 | Mogelijk, alleen als het budget per lengte meegroeit (§13) |
+| 45 s | 3 | $2,73 | $2,99 | Zinvol: drie momenten uit één clip wordt herhalend |
+| 60 s | 4 | $3,53 | $3,79 | Zinvol; eventueel een derde clip ($4,05) |
+
+Wat het oplevert: echt ander beeld (een tweede foto of hoek) in plaats van dezelfde clip opnieuw. Advies: pas inbouwen bij 45 en 60 s, nadat het budget voor lange video's is besloten; tot dan is de gratis variatie (bewegingen, uitsneden, foto-stills) de oplossing. Vereist: een tweede productfoto als startbeeld en een tweede paid clip-reservering in de orchestrator.
+
+### b) Productidee: bestaande video alleen vertalen, ondertitelen en lipsyncen
+
+Dit is in de kern Workflow B zoals al gebouwd (`src/lib/inngest/functions/translateWorkflow.ts`, `/new/translate`): upload → HeyGen video-vertaling met proofread → optionele review → render met lipsync → Shotstack-ondertitels in 9:16 of het eigen formaat. Wat we al weten (HeyGen-vendordoc §4, roadmap "Workflow B"):
+
+- **Kosten per minuut per doeltaal:** speed 0,05 credit/s ≈ $1,50/min, precision 0,1 credit/s ≈ $3/min (betere lipsync); proofread 0,00833 credit/s ≈ $0,25/min per taal (plus één extra proofread voor het transcript van de brontaal). Ondertitels en formaat via Shotstack $0,10 per 30 s. Per taalversie van 30 s: speed $1,05–$1,11, precision $1,80–$1,86 (cost-quality §8).
+- **Ondertitels:** HeyGen levert SRT en VTT (`srt_caption_url`); Shotstack brandt ze in met onze drie stijlen en de merkkleur (zelfde `rich-caption` als Workflow A), dus stijl, kleur en lettertype zijn deelbaar.
+- **Limieten:** upload tot 32 MB in één call, tot 200 MiB via direct-uploads (niet gebouwd); onze UI begrenst op 32 MB en 180 s (`config.limits`). Een maximale videoduur voor vertaling noemt HeyGen niet apart; de algemene grens is 30 minuten per video (usage-limits).
+- **Talen en accenten:** `GET /v3/video-translations/languages` geeft 190 namen inclusief regiovarianten (bv. "Arabic (Egypt)"); de gekloonde stem van de spreker blijft, dus accentkeuze is hier een taalvariant, geen stemkeuze.
+- **Kwaliteit en beperkingen:** speed-modus toont bij close-ups zichtbaar mindere lipsync; precision is 2× zo duur en trager (≈ 5 min per minuut video); ingebrande tekst in de bronvideo wordt niet vertaald; muziek kan uitgezet worden (`disable_music_track`).
+- **Wat de klant nodig heeft:** rechten op de video en toestemming van de spreker (regel 7: verplicht vinkje, met tijdstempel opgeslagen); geen watermerkverwijdering.
+
+Naast Workflow A: **gedeeld** zijn upload via signed URLs, opslag, de cost guard en het budget per taalversie, de reviewstap, de ondertitelstijlen en merkkleur, taal- en accentlijst, en de projectpagina met één resultaat per taal. **Apart** zijn de stem (gekloond uit de bron, geen stemkeuze), het script (geen generatie, alleen correctie/herschrijving), en de productclip en presentator (niet van toepassing).
+
+Aanbeveling: de goedkoopste, simpelste eerste versie bestaat al bijna: Workflow B in speed-modus zonder beeldverbetering, met ondertitels in de bestaande stijl, voor $1,05–$1,11 per taal van 30 s. Nog te doen: dezelfde ondertitelstijl- en merkkeuzes als Workflow A op `/new/translate` zetten, en de eerste betaalde proofread-test (wacht op HeyGen-tegoed). Het volgende logische besluit: of dit als apart, goedkoper product ("vertaal mijn video") naast de advertentie-workflow wordt aangeboden, en tegen welke prijs per taal.
 
 ## Bevestigingstest HeyGen-tarieven (nog te doen, ≈ $0,60)
 

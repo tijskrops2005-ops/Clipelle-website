@@ -194,7 +194,9 @@ Met een doorpratende presentator op Avatar IV passen alleen 10 en 20 seconden bi
 | Keuze | Effect op de schatting | Effect op het budget van $1,50 |
 |---|---|---|
 | Scripttaal, toon, richting, aanbod | Geen: zelfde Claude-aanroep, enkele tokens meer | Geen |
-| Drie hooks | ≈ +60 uitvoertokens per script: +$0,001 (Opus), schatting in `estimateScriptCost` van 900 naar 960 uitvoertokens | Geen merkbaar |
+| Drie hooks | Gesproken hooks, geen tekst in beeld: de schatting in `estimateScriptCost` staat sinds 19 oktober op 700 uitvoertokens (was 960 met hook-teksten, voordeel-labels en eindkaart) | Geen merkbaar; iets goedkoper |
+| Taal, accent, stem | Geen: zelfde HeyGen-aanroep | Geen |
+| Spreeksnelheid | Slower maakt de presentatorvideo ≈ 11% langer (seconden ÷ 0,9), Faster ≈ 9% korter; de schatting rekent presentator en ondertitels op die verwachte duur, de woordgrens blijft die van normaal tempo | Kan een combinatie net over of onder het budget duwen; het formulier toont het |
 | Review script first | Geen extra aanroep; voorkomt dure stappen op een verkeerd script | Geen; de pauze zit vóór presentator en productclip |
 | Presentatorkwaliteit (Standard / Premium) | Presentator $0,0083/s of $0,05/s (lijst); zie §8 | Bepaalt samen met de lengte of een video past |
 | Presentatorlook | Geen | Geen |
