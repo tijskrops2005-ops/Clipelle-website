@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
+import { SpendMeter } from "@/components/dev/SpendMeter";
 
 type Phase = "idle" | "confirm" | "uploading" | "polling" | "done" | "failed";
 type Run = {
@@ -23,6 +24,7 @@ type Run = {
   edit?: unknown;
   assets?: { presenter: string; product: string; music: string; presenterSeconds: number };
   meta?: { totalSeconds: number };
+  entryId?: string;
 };
 
 const STORAGE_KEY = "reelay.dev.final-edit.runs";
@@ -42,6 +44,7 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
   const [elapsed, setElapsed] = useState(0);
   const [showJson, setShowJson] = useState(false);
   const [runs, setRuns] = useState<Run[]>([]);
+  const [meterKey, setMeterKey] = useState(0);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -64,7 +67,7 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
     let stopped = false;
     const tick = async () => {
       try {
-        const res = await fetch(`/api/dev/final-edit/render/${encodeURIComponent(run.renderId)}`);
+        const res = await fetch(`/api/dev/final-edit/render/${encodeURIComponent(run.renderId)}?entry=${encodeURIComponent(run.entryId ?? "")}`);
         const body = await res.json();
         if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
         if (stopped) return;
@@ -73,6 +76,7 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
           const finished: Run = { ...run, status: body.status, finishedAt: new Date().toISOString(), url: body.url, duration: body.duration, renderTime: body.renderTime, error: body.error };
           setRun(finished);
           setPhase(body.status === "done" ? "done" : "failed");
+          setMeterKey((k) => k + 1);
           setRuns((prev) => {
             const next = [finished, ...prev.filter((x) => x.renderId !== finished.renderId)].slice(0, 20);
             try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
@@ -102,12 +106,14 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
-      setRun({ renderId: body.renderId, env: body.env, startedAt: body.startedAt ?? startedAt, edit: body.edit, assets: body.assets, meta: body.meta, status: "queued" });
+      setRun({ renderId: body.renderId, env: body.env, startedAt: body.startedAt ?? startedAt, edit: body.edit, assets: body.assets, meta: body.meta, status: "queued", entryId: body.entryId });
       setPhase("polling");
+      setMeterKey((k) => k + 1);
     } catch (e) {
       setError((e as Error).message);
       setPhase("idle");
       setRun(null);
+      setMeterKey((k) => k + 1);
     }
   }
 
@@ -117,6 +123,7 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
   return (
     <div className="grid gap-8 xl:grid-cols-5">
       <div className="space-y-6 xl:col-span-3">
+        <SpendMeter refreshKey={meterKey} />
         {!keyPresent && (
           <Card><CardContent className="pt-5 sm:pt-7"><p className="text-sm font-semibold text-danger">SHOTSTACK_API_KEY is not set</p><p className="mt-1 text-sm text-muted">Add the sandbox key to <code>.env.local</code> (SHOTSTACK_ENV=stage) and restart the dev server.</p></CardContent></Card>
         )}

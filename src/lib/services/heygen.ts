@@ -250,12 +250,14 @@ export type CreateAvatarVideoInput = {
   script: string;
   engine: HeygenEngine;
   title?: string;
+  /** Stable key so a retried identical request is not created twice by HeyGen (24 h). */
+  idempotencyKey?: string;
 };
 
 export async function createAvatarVideo(input: CreateAvatarVideoInput) {
   const data = await heygenFetch<{ video_id: string; status?: string }>("/v3/videos", {
     method: "POST",
-    headers: { "Idempotency-Key": crypto.randomUUID() },
+    headers: { "Idempotency-Key": input.idempotencyKey ?? crypto.randomUUID() },
     body: JSON.stringify({
       type: "avatar",
       avatar_id: input.avatarId,

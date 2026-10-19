@@ -1,11 +1,14 @@
 import {
   balanceOf,
   createAvatarVideo,
+  estimateCostUsd,
+  estimateSeconds,
   getAccount,
   listLookSelection,
   MAX_TEST_SCRIPT_CHARS,
   type HeygenEngine,
 } from "@/lib/services/heygen";
+import { costGuardResponse, reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { devOnly, errorResponse } from "../_guard";
 
 const ENGINES: HeygenEngine[] = ["avatar_iii", "avatar_iv"];
@@ -57,21 +60,48 @@ export async function POST(request: Request) {
       );
     }
 
-    const before = balanceOf(await getAccount());
-    const created = await createAvatarVideo({
-      avatarId: body.lookId,
-      voiceId: body.voiceId,
-      script,
-      engine,
-      title: `Reelay test · ${engine} · ${new Date().toISOString()}`,
-    });
+    // Cost guard: limits + duplicate window, before anything is charged.
+    const estimateUsd = estimateCostUsd(engine, estimateSeconds(script));
+    let entryId = "";
+    let fingerprint = "";
+    try {
+      const reserved = await reserveSpend({
+        service: "heygen",
+        action: "avatar_video",
+        estimatedUsd: estimateUsd,
+        fingerprintInput: { lookId: body.lookId, voiceId: body.voiceId, engine, script },
+        meta: { engine, scriptChars: script.length },
+      });
+      entryId = reserved.entryId;
+      fingerprint = reserved.fingerprint;
+    } catch (error) {
+      const refused = costGuardResponse(error);
+      if (refused) return refused;
+      throw error;
+    }
 
-    return Response.json({
-      videoId: created.video_id,
-      status: created.status ?? "pending",
-      balanceBefore: before,
-      startedAt: new Date().toISOString(),
-    });
+    const before = balanceOf(await getAccount());
+    try {
+      const created = await createAvatarVideo({
+        avatarId: body.lookId,
+        voiceId: body.voiceId,
+        script,
+        engine,
+        title: `Reelay test · ${engine} · ${new Date().toISOString()}`,
+        idempotencyKey: fingerprint,
+      });
+      return Response.json({
+        videoId: created.video_id,
+        status: created.status ?? "pending",
+        balanceBefore: before,
+        estimateUsd,
+        entryId,
+        startedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      await settleSpend(entryId, { status: "failed", actualUsd: 0 });
+      throw error;
+    }
   } catch (error) {
     return errorResponse(error);
   }

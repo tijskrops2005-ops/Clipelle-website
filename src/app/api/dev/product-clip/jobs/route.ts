@@ -5,6 +5,7 @@ import {
   submitProductClip,
   type ClipModelKey,
 } from "@/lib/services/productClip";
+import { costGuardResponse, reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { devOnly, errorResponse } from "../../_guard";
 import { loadImage } from "../_store";
 
@@ -36,16 +37,35 @@ export async function POST(request: Request) {
     return Response.json({ error: "Give a prompt of 1–1000 characters." }, { status: 400 });
   }
 
+  const estimateUsd = estimateClipCost(model);
+  let entryId = "";
+  try {
+    const reserved = await reserveSpend({
+      service: "fal",
+      action: `clip_${model}`,
+      estimatedUsd: estimateUsd,
+      fingerprintInput: { imageId: body.imageId, method, model, prompt },
+      meta: { model, method },
+    });
+    entryId = reserved.entryId;
+  } catch (error) {
+    const refused = costGuardResponse(error);
+    if (refused) return refused;
+    return errorResponse(error);
+  }
+
   try {
     const job = await submitProductClip({ image, model, prompt, durationSeconds: CLIP_SECONDS });
     return Response.json({
       ...job,
       model,
       durationSeconds: CLIP_SECONDS,
-      estimateUsd: estimateClipCost(model),
+      estimateUsd,
+      entryId,
       startedAt: new Date().toISOString(),
     });
   } catch (error) {
+    await settleSpend(entryId, { status: "failed", actualUsd: 0 });
     return errorResponse(error);
   }
 }

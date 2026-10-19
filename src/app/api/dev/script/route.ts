@@ -6,6 +6,8 @@ import {
   type AdAngle,
   type ScriptInput,
 } from "@/lib/services/script";
+import { createHash } from "node:crypto";
+import { costGuardResponse, reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { devOnly, errorResponse } from "../_guard";
 
 type MediaType = "image/jpeg" | "image/png" | "image/webp" | "image/gif";
@@ -73,11 +75,30 @@ export async function POST(request: Request) {
     return Response.json({ error: "Confirmation required before calling the Claude API." }, { status: 400 });
   }
 
+  // Cost guard: limits + duplicate window, before anything is charged.
+  let entryId = "";
+  try {
+    const reserved = await reserveSpend({
+      service: "anthropic",
+      action: "script",
+      estimatedUsd: estimate.costUsd,
+      fingerprintInput: { ...base, imageHash: image ? createHash("sha256").update(image.base64).digest("hex") : null },
+      meta: { language: base.language, targetSeconds: base.targetSeconds, hasImage: Boolean(image) },
+    });
+    entryId = reserved.entryId;
+  } catch (error) {
+    const refused = costGuardResponse(error);
+    if (refused) return refused;
+    return errorResponse(error);
+  }
+
   try {
     const started = Date.now();
     const result = await generateAdScript({ ...base, image: image ?? undefined });
-    return Response.json({ ...result, estimate, elapsedMs: Date.now() - started });
+    await settleSpend(entryId, { status: "completed", actualUsd: result.costUsd, meta: result.usage });
+    return Response.json({ ...result, estimate, entryId, elapsedMs: Date.now() - started });
   } catch (error) {
+    await settleSpend(entryId, { status: "failed", actualUsd: 0 });
     if (error instanceof Anthropic.AuthenticationError) {
       return Response.json({ error: "Anthropic rejected the API key. Check ANTHROPIC_API_KEY in .env.local." }, { status: 401 });
     }

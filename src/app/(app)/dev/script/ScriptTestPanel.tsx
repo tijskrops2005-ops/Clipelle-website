@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Field, controlClass, controlStateClass } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
+import { SpendMeter } from "@/components/dev/SpendMeter";
 
 type Estimate = { inputTokens: number; outputTokens: number; costUsd: number };
 type Scene = { kind: string; seconds: number; onScreenText: string | null };
@@ -62,6 +63,7 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RunResult | null>(null);
   const [showRaw, setShowRaw] = useState(false);
+  const [meterKey, setMeterKey] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const payload = { productName, description, productUrl, hint, language, targetSeconds, imageDataUrl };
@@ -109,6 +111,7 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
       setResult(body as RunResult);
       setPhase("done");
+      setMeterKey((k) => k + 1);
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(body));
       } catch {
@@ -117,6 +120,7 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
     } catch (e) {
       setError((e as Error).message);
       setPhase("idle");
+      setMeterKey((k) => k + 1);
     }
   }
 
@@ -126,6 +130,7 @@ export function ScriptTestPanel({ keyPresent }: { keyPresent: boolean }) {
   return (
     <div className="grid gap-8 xl:grid-cols-5">
       <div className="space-y-6 xl:col-span-3">
+        <SpendMeter refreshKey={meterKey} />
         {!keyPresent && (
           <Card>
             <CardContent className="pt-5 sm:pt-7">

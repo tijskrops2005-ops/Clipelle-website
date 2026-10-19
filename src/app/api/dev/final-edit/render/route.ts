@@ -1,7 +1,11 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { buildAdEdit, shotstackEnv, startRender, uploadAsset } from "@/lib/services/finalEdit";
+import { costGuardResponse, reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { devOnly, errorResponse } from "../../_guard";
+
+/** Shotstack pay-as-you-go: $10 per 50 minutes of output = $0.20 per minute. */
+const SHOTSTACK_USD_PER_MINUTE = 0.2;
 
 type Body = {
   hook?: string;
@@ -65,11 +69,39 @@ export async function POST(request: Request) {
       benefits: [benefits[0], benefits[1], benefits[2]],
       offer: { headline, cta },
     });
-    const render = await startRender(edit);
+    // Production renders cost credits: run them through the cost guard. Sandbox renders are free.
+    let entryId = "";
+    const estimateUsd = env === "v1" ? Math.round((edit.meta.totalSeconds / 60) * SHOTSTACK_USD_PER_MINUTE * 1000) / 1000 : 0;
+    if (env === "v1") {
+      try {
+        const reserved = await reserveSpend({
+          service: "shotstack",
+          action: "render",
+          estimatedUsd: estimateUsd,
+          fingerprintInput: { hook, benefits, headline, cta, presenter: presenter.url, product: product.url, music: music.url },
+          meta: { totalSeconds: edit.meta.totalSeconds },
+        });
+        entryId = reserved.entryId;
+      } catch (error) {
+        const refused = costGuardResponse(error);
+        if (refused) return refused;
+        throw error;
+      }
+    }
+
+    let render;
+    try {
+      render = await startRender(edit);
+    } catch (error) {
+      if (entryId) await settleSpend(entryId, { status: "failed", actualUsd: 0 });
+      throw error;
+    }
     return Response.json({
       ...render,
       edit: { timeline: edit.timeline, output: edit.output },
       assets: { presenter: presenter.url, product: product.url, music: music.url, presenterSeconds },
+      estimateUsd,
+      entryId,
       uploadMs: Date.now() - started,
       startedAt: new Date().toISOString(),
     });

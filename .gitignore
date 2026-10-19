@@ -36,3 +36,6 @@ Thumbs.db
 /coverage
 *.pem
 .pnpm-debug.log*
+
+# Local cost log and other runtime data
+.reelay/

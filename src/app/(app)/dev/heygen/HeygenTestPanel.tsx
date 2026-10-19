@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Textarea } from "@/components/ui/Textarea";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { controlClass, controlStateClass } from "@/components/ui/Field";
+import { SpendMeter } from "@/components/dev/SpendMeter";
 
 /* Mirrors the constants in src/lib/services/heygen.ts (that file is server-only). */
 const MAX_CHARS = 160;
@@ -44,6 +45,8 @@ type Run = {
   balanceBefore: Balance;
   balanceAfter?: Balance;
   failureMessage?: string | null;
+  /** Cost-guard entry, settled with the real cost once the balance difference is known. */
+  entryId?: string;
 };
 
 const STORAGE_KEY = "reelay.dev.heygen.runs";
@@ -90,6 +93,7 @@ export function HeygenTestPanel() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [runs, setRuns] = useState<Run[]>([]);
+  const [meterKey, setMeterKey] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
@@ -168,6 +172,19 @@ export function HeygenTestPanel() {
           setRun(finished);
           setPhase(body.status);
           persistRun(finished);
+          // Report the real cost (balance difference) to the cost log, then refresh the meter.
+          const actual = costBetween(finished.balanceBefore, finished.balanceAfter);
+          if (finished.entryId) {
+            void fetch("/api/dev/cost/settle", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                entryId: finished.entryId,
+                status: body.status === "completed" ? "completed" : "failed",
+                actualUsd: body.status === "failed" ? 0 : actual && actual.unit === "usd" ? actual.amount : null,
+              }),
+            }).finally(() => setMeterKey((k) => k + 1));
+          }
         }
       } catch (e) {
         if (!stopped) setActionError((e as Error).message);
@@ -210,7 +227,9 @@ export function HeygenTestPanel() {
         script: script.trim(),
         startedAt: body.startedAt,
         balanceBefore: body.balanceBefore,
+        entryId: body.entryId,
       });
+      setMeterKey((k) => k + 1);
       setHeygenStatus(body.status);
       setElapsed(0);
       setPhase("polling");
@@ -260,6 +279,7 @@ export function HeygenTestPanel() {
   return (
     <div className="grid gap-8 xl:grid-cols-3">
       <div className="space-y-6 xl:col-span-2">
+        <SpendMeter refreshKey={meterKey} />
         {/* Account */}
         <Card>
           <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5 sm:pt-7">

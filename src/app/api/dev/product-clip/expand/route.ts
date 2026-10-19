@@ -1,8 +1,10 @@
 import {
   analyzeProductPhoto,
+  EXPAND_USD_PER_IMAGE,
   expandToNineSixteen,
   toPreviewDataUrl,
 } from "@/lib/services/productClip";
+import { costGuardResponse, reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { devOnly, errorResponse } from "../../_guard";
 import { loadImage, saveImage } from "../_store";
 
@@ -25,17 +27,35 @@ export async function POST(request: Request) {
     return Response.json({ error: "Upload and analyse a photo first." }, { status: 400 });
   }
 
+  let entryId = "";
+  try {
+    const reserved = await reserveSpend({
+      service: "fal",
+      action: "expand",
+      estimatedUsd: EXPAND_USD_PER_IMAGE,
+      fingerprintInput: { imageId: body.imageId, prompt: body.prompt ?? "" },
+    });
+    entryId = reserved.entryId;
+  } catch (error) {
+    const refused = costGuardResponse(error);
+    if (refused) return refused;
+    return errorResponse(error);
+  }
+
   try {
     const started = Date.now();
     const analysis = await analyzeProductPhoto(original);
     const result = await expandToNineSixteen(original, analysis, { prompt: body.prompt });
     await saveImage(body.imageId, "expand", result.buffer);
+    await settleSpend(entryId, { status: "completed", actualUsd: result.costUsd });
     return Response.json({
       preview: await toPreviewDataUrl(result.buffer, 480),
       costUsd: result.costUsd,
+      entryId,
       elapsedMs: Date.now() - started,
     });
   } catch (error) {
+    await settleSpend(entryId, { status: "failed", actualUsd: 0 });
     return errorResponse(error);
   }
 }

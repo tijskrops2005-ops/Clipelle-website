@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
 import { Textarea } from "@/components/ui/Textarea";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
+import { SpendMeter } from "@/components/dev/SpendMeter";
 
 /* Mirrors constants in src/lib/services/productClip.ts (server-only). */
 const EXPAND_USD = 0.04;
@@ -30,7 +31,7 @@ type Method = "crop" | "expand";
 type Phase = "idle" | "confirm" | "submitting" | "polling" | "completed" | "failed";
 type Run = {
   requestId: string; endpointId: string; model: ModelKey; method: Method; prompt: string;
-  startedAt: string; finishedAt?: string; videoUrl?: string; estimateUsd: number; error?: string;
+  startedAt: string; finishedAt?: string; videoUrl?: string; estimateUsd: number; error?: string; entryId?: string;
 };
 
 const STORAGE_KEY = "reelay.dev.product-clip.runs";
@@ -57,6 +58,7 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [runs, setRuns] = useState<Run[]>([]);
+  const [meterKey, setMeterKey] = useState(0);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -79,7 +81,7 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
     let stopped = false;
     const tick = async () => {
       try {
-        const res = await fetch(`/api/dev/product-clip/jobs/${encodeURIComponent(run.requestId)}?endpoint=${encodeURIComponent(run.endpointId)}`);
+        const res = await fetch(`/api/dev/product-clip/jobs/${encodeURIComponent(run.requestId)}?endpoint=${encodeURIComponent(run.endpointId)}&entry=${encodeURIComponent(run.entryId ?? "")}`);
         const body = await res.json();
         if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
         if (stopped) return;
@@ -87,6 +89,7 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
           const finished: Run = { ...run, finishedAt: new Date().toISOString(), videoUrl: body.videoUrl, error: body.error };
           setRun(finished);
           setPhase(body.status === "COMPLETED" ? "completed" : "failed");
+          setMeterKey((k) => k + 1);
           setRuns((prev) => {
             const next = [finished, ...prev.filter((r) => r.requestId !== finished.requestId)].slice(0, 20);
             try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
@@ -137,6 +140,7 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
       setError((e as Error).message);
     } finally {
       setExpandState("idle");
+      setMeterKey((k) => k + 1);
     }
   }
 
@@ -150,10 +154,12 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
-      setRun({ requestId: body.requestId, endpointId: body.endpointId, model, method, prompt, startedAt: body.startedAt, estimateUsd: body.estimateUsd });
+      setRun({ requestId: body.requestId, endpointId: body.endpointId, model, method, prompt, startedAt: body.startedAt, estimateUsd: body.estimateUsd, entryId: body.entryId });
       setElapsed(0); setPhase("polling");
+      setMeterKey((k) => k + 1);
     } catch (e) {
       setError((e as Error).message); setPhase("idle");
+      setMeterKey((k) => k + 1);
     }
   }
 
@@ -174,6 +180,7 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
   return (
     <div className="grid gap-8 xl:grid-cols-5">
       <div className="space-y-6 xl:col-span-3">
+        <SpendMeter refreshKey={meterKey} />
         {!keyPresent && (
           <Card>
             <CardContent className="pt-5 sm:pt-7">
