@@ -174,6 +174,12 @@ Aanbeveling voor deze stap: **Topaz via fal.ai** (goedkoopst, één sleutel die 
 
 Optie 2 bewaren we voor het geval HeyGen tegenvalt op één van twee punten: de proofread-stap blijkt toch Enterprise-only (dan vervalt de tekstcontrole), of de stemkwaliteit voldoet niet. Omdat lipsync en TTS achter dezelfde interface kunnen zitten als Workflow A (`src/lib/services/`), is die overstap per bouwsteen te doen.
 
+### Stand van zaken (19 oktober 2026)
+- **Deel 1 (gebouwd, demo mode):** keuzescherm op `/new`, formulier `/new/translate` (upload met preview, 32 MB-melding vóór upload, brontaal, vijf doeltalen, speed/precision met kostenindicatie, verplicht rechtenvinkje), projectpagina met pipeline Upload → Vertalen → Correctie (wacht op de gebruiker) → Ondertitels en 9:16, correctiescherm met origineel naast vertaling, tekenlimiet per fragment (15 tekens/s), "Herschrijf in advertentietoon", één resultaat per taal.
+- **Deel 2 (gebouwd, echte koppelingen op `/dev/translate`):** `src/lib/services/translate.ts` (HeyGen assets, talen, proofread-sessie, SRT ophalen/terugzetten, genereren, status, SRT-parser), `src/lib/services/adTone.ts` (Claude herschrijft binnen de tekenlimiet, zelfde aantal fragmenten en tijden), `buildCaptionEdit` in `finalEdit.ts` (Shotstack captions uit HeyGens SRT + 9:16). Alle betaalde routes via de cost guard met bevestiging; rechtenvinkje verplicht op elke route.
+- **Gratis geverifieerd:** HeyGen talenlijst (190 namen, onze vijf aanwezig), asset-upload van video en SRT, Shotstack-sandboxrender van captions met en zonder SRT.
+- **Wacht op saldo (eerste betaalde test):** proofread zonder Enterprise, brontaal als extra doeltaal voor de originele tekst, werkelijke kosten per taal, kwaliteit van stem en lipsync.
+
 ### Eerste verificatie (voor de bouw, met de cost guard aan)
 1. Eén proofread-sessie op het pay-as-you-go-account: bevestigt of proofread zonder Enterprise werkt en wat het kost (saldoverschil).
 2. Eén vertaling in speed-modus van een clip van 20 s naar Duits, met glossary voor de productnaam.

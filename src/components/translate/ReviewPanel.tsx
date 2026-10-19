@@ -25,6 +25,11 @@ type ReviewPanelProps = {
   onChange: (language: LanguageCode, segments: Segment[]) => void;
   /** Returns the rewritten fragments for one language (simulated in demo mode, Claude later). */
   onRewrite: (language: LanguageCode, segments: Segment[]) => Promise<Segment[]>;
+  /**
+   * When set, the rewrite is a paid call: this returns the estimate in USD and the panel asks
+   * for an inline confirmation showing it before calling onRewrite.
+   */
+  rewriteEstimate?: (language: LanguageCode, segments: Segment[]) => Promise<number>;
   /** Final approval; disabled while a fragment is over its limit or empty. */
   onApprove: () => void;
   approveLabel?: string;
@@ -44,6 +49,7 @@ export function ReviewPanel({
   sourceLanguage,
   onChange,
   onRewrite,
+  rewriteEstimate,
   onApprove,
   approveLabel = "Create videos",
   approving,
@@ -53,6 +59,7 @@ export function ReviewPanel({
   const [active, setActive] = useState<LanguageCode>(translations[0]?.language ?? "en");
   const [rewriting, setRewriting] = useState<LanguageCode | null>(null);
   const [rewriteError, setRewriteError] = useState<string | null>(null);
+  const [pendingEstimate, setPendingEstimate] = useState<number | null>(null);
   const current = translations.find((t) => t.language === active) ?? translations[0];
 
   if (!current) return null;
@@ -72,7 +79,18 @@ export function ReviewPanel({
     if (segment) updateSegment(index, segment.translated);
   }
 
+  async function askRewrite() {
+    if (!rewriteEstimate) return rewrite();
+    setRewriteError(null);
+    try {
+      setPendingEstimate(await rewriteEstimate(current.language, current.segments));
+    } catch (error) {
+      setRewriteError(error instanceof Error ? error.message : "Could not estimate the cost.");
+    }
+  }
+
   async function rewrite() {
+    setPendingEstimate(null);
     setRewriting(current.language);
     setRewriteError(null);
     try {
@@ -132,14 +150,27 @@ export function ReviewPanel({
           <p className="text-sm text-muted">
             {current.segments.length} fragments · {languageOf(sourceLanguage).label} → {languageOf(current.language).label}
           </p>
-          <Button size="sm" variant="secondary" onClick={rewrite} disabled={rewriting !== null || approving}>
-            {rewriting === current.language ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-            ) : (
-              <Sparkles className="size-4" aria-hidden />
-            )}
-            Rewrite in ad tone
-          </Button>
+          {pendingEstimate !== null ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-ink">Claude rewrite ≈ ${pendingEstimate.toFixed(3)}. Continue?</span>
+              <Button size="sm" onClick={rewrite} disabled={rewriting !== null || approving}>
+                <Check className="size-4" aria-hidden />
+                Confirm
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setPendingEstimate(null)}>
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <Button size="sm" variant="secondary" onClick={askRewrite} disabled={rewriting !== null || approving}>
+              {rewriting === current.language ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Sparkles className="size-4" aria-hidden />
+              )}
+              Rewrite in ad tone
+            </Button>
+          )}
         </div>
         {rewriteError && (
           <p role="alert" className="text-sm text-danger">

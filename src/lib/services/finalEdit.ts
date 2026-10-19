@@ -256,9 +256,80 @@ export function buildAdEdit(input: AdEditInput) {
 
 /* ---------- Render ---------- */
 
+/* ---------- Workflow B: captions + 9:16 on a translated video ---------- */
+
+export type CaptionEditInput = {
+  videoUrl: string;
+  /** Length of the translated video in seconds. */
+  seconds: number;
+  /** Public SRT URL (HeyGen's srt_caption_url). Omitted: Shotstack transcribes the audio itself. */
+  srtUrl?: string;
+  /** "crop" fills the 9:16 frame (centred); "contain" letterboxes the whole picture on an ink background. */
+  fit?: "crop" | "contain";
+  colors?: { accent?: string; ink?: string; light?: string };
+};
+
+/** One video track plus TikTok-style captions, output 1080×1920. Same caption style as the ad. */
+export function buildCaptionEdit(input: CaptionEditInput) {
+  const accent = input.colors?.accent ?? "#D43F1B";
+  const ink = input.colors?.ink ?? "#111114";
+  const light = input.colors?.light ?? "#FFFFFF";
+  const total = Math.max(1, Math.round(input.seconds * 10) / 10);
+
+  const captions = {
+    clips: [
+      {
+        asset: {
+          type: "rich-caption",
+          src: input.srtUrl ?? "alias://source",
+          font: { family: "Roboto", size: 62, color: light, opacity: 1, weight: 900 },
+          style: { textTransform: "uppercase" },
+          stroke: { width: 7, color: ink, opacity: 1 },
+          animation: { style: "pop" },
+          active: { font: { color: light, background: accent }, stroke: { width: 7, color: ink, opacity: 1 } },
+          border: { width: 0, color: ink, opacity: 1, radius: 16 },
+          padding: { top: 6, right: 10, bottom: 6, left: 10 },
+          align: { vertical: "middle" },
+        },
+        start: 0,
+        length: total,
+        width: 900,
+        height: 500,
+        offset: { x: 0, y: -0.18 },
+      },
+    ],
+  };
+
+  const video = {
+    clips: [
+      {
+        alias: "source",
+        asset: { type: "video", src: input.videoUrl, volume: 1, trim: 0 },
+        start: 0,
+        length: total,
+        fit: input.fit ?? "crop",
+      },
+    ],
+  };
+
+  return {
+    timeline: { background: ink, tracks: [captions, video] },
+    output: { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 },
+    meta: { totalSeconds: total },
+  };
+}
+
+/* ---------- Render ---------- */
+
+export type ShotstackEdit = {
+  timeline: Record<string, unknown>;
+  output: Record<string, unknown>;
+  meta: { totalSeconds: number } & Record<string, unknown>;
+};
+
 export type RenderStatus = "queued" | "fetching" | "preprocessing" | "rendering" | "generating" | "saving" | "done" | "failed";
 
-export async function startRender(edit: ReturnType<typeof buildAdEdit>, callbackUrl?: string) {
+export async function startRender(edit: ShotstackEdit, callbackUrl?: string) {
   const env = shotstackEnv();
   const { meta, ...payload } = edit;
   const body = callbackUrl ? { ...payload, callback: callbackUrl } : payload;

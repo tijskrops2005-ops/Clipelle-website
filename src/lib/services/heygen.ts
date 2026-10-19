@@ -119,19 +119,22 @@ type Envelope<T> = {
   next_token?: string | null;
 };
 
-async function heygenFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+/** JSON call to HeyGen v3; returns `data`. Shared by heygen.ts and translate.ts. */
+export async function heygenFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (await heygenFetchEnvelope<T>(path, init)).data as T;
 }
 
 /** Like heygenFetch but keeps the envelope, for list endpoints whose paging fields sit next to `data`. */
-async function heygenFetchEnvelope<T>(path: string, init: RequestInit = {}): Promise<Envelope<T>> {
+export async function heygenFetchEnvelope<T>(path: string, init: RequestInit = {}): Promise<Envelope<T>> {
   const key = requireApiKey();
+  // A FormData body (asset upload) must set its own multipart boundary: no JSON content type then.
+  const isForm = typeof FormData !== "undefined" && init.body instanceof FormData;
   const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
     headers: {
       "X-Api-Key": key,
       Accept: "application/json",
-      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...(init.body && !isForm ? { "Content-Type": "application/json" } : {}),
       ...(init.headers ?? {}),
     },
     cache: "no-store",
@@ -161,6 +164,7 @@ async function heygenFetchEnvelope<T>(path: string, init: RequestInit = {}): Pro
 
 function humanMessage(status: number, code?: string, detail?: string) {
   if (status === 401) return "HeyGen rejected the API key. Check HEYGEN_API_KEY in .env.local.";
+  if (status === 403) return `HeyGen refused this action for your account/plan${detail ? `: ${detail}` : "."}`;
   if (status === 402 || code === "insufficient_credit")
     return "Not enough HeyGen credits. Top up at platform.heygen.com and try again.";
   if (status === 429) return "HeyGen rate limit reached. Wait a moment and try again.";
