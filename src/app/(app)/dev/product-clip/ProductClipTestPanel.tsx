@@ -243,25 +243,27 @@ export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {
                         selected={method === "expand"} onSelect={() => expandPreview && setMethod("expand")} disabled={busy || !expandPreview}
                         preview={expandPreview}
                         placeholder={
-                          expandState === "confirm" ? (
-                            <div className="space-y-2 p-3 text-center text-xs">
-                              <p className="text-ink">Bria Expand paints only the missing top and bottom. Original pixels are pasted back. Cost {usd(EXPAND_USD)}.</p>
-                              <div className="flex justify-center gap-2">
-                                <Button size="sm" variant="ghost" onClick={() => setExpandState("idle")}>Cancel</Button>
-                                <Button size="sm" variant="accent" onClick={expand}>Expand</Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <Button size="sm" variant="secondary" className="h-auto flex-col gap-1 px-3 py-2 text-xs" onClick={() => setExpandState("confirm")} disabled={expandState === "running" || !keyPresent || busy}>
-                              {expandState === "running" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Wand2 className="size-4" aria-hidden />}
-                              {expandState === "running" ? "Expanding…" : "Preview"}
-                            </Button>
-                          )
+                          <Button size="sm" variant="secondary" className="h-auto flex-col gap-1 px-3 py-2 text-xs" onClick={() => setExpandState("confirm")} disabled={expandState !== "idle" || !keyPresent || busy}>
+                            {expandState === "running" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Wand2 className="size-4" aria-hidden />}
+                            {expandState === "running" ? "Expanding…" : expandState === "confirm" ? "Confirm below" : "Preview"}
+                          </Button>
                         }
                       />
                     </div>
                   </div>
                 </div>
+                {/* The confirmation sits under the whole photo/tiles block at full card width: the tile column is too narrow for text, cost and two buttons. */}
+                {expandState === "confirm" && (
+                  <div className="mt-5 flex flex-col gap-3 rounded-[14px] border border-accent/40 bg-accent/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-ink">
+                      This sends the photo to Bria Expand, which paints only the missing top and bottom; the original pixels are pasted back. Cost about <strong>{usd(EXPAND_USD)}</strong>. Continue?
+                    </p>
+                    <div className="flex shrink-0 gap-2">
+                      <Button variant="ghost" onClick={() => setExpandState("idle")}>Cancel</Button>
+                      <Button variant="accent" onClick={expand}>Expand</Button>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </CardContent>
