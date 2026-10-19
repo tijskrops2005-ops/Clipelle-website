@@ -108,6 +108,75 @@ Beoordeling van alles wat de HeyGen-API kan (volledige referentie: `docs/vendors
 
 **Gevolg voor de MVP-keuze van de montagedienst:** fase 7, stap 4 test eerst een HeyGen-template (hook-tekst, productclip als `video`-variabele, presentator als `character`, muziek als `audio`, CTA-tekst, captions) naast Shotstack. Werkt het sjabloon goed en is de prijs acceptabel, dan wordt HeyGen de montagedienst en vervalt Shotstack; anders blijft Shotstack met HyperFrames als reserve.
 
+## Workflow B: bestaande video vertalen
+
+Datum onderzoek: 19 oktober 2026, actuele officiële documentatie (bronnen per onderdeel). Nog geen code.
+
+**Doel:** de gebruiker uploadt een bestaande video (eigen opname, eerdere advertentie, presentatorclip) en krijgt dezelfde video terug in een andere taal: vertaalde tekst, een stem die op de spreker lijkt, mondbewegingen die kloppen, ondertitels, 9:16. De gebruiker mag elke video gebruiken die hij zelf aanlevert; rechten op het beeldmateriaal en de stem liggen bij hem. Watermerken verwijderen bouwen we niet.
+
+```
+Upload ─→ Vertalen (tekst + stem + lipsync) ─→ Correctie door gebruiker ─→ Ondertitels + 9:16 ─→ (optioneel) Verbetering ─→ Download
+```
+
+### Optie 1: HeyGen Video Translation (v3), met proofread
+
+- **Wat het doet:** één aanroep vertaalt de video in 175+ talen, kloont de stem van de spreker, past lipsync toe en levert SRT/VTT-ondertitels. `mode: "speed"` (standaard lipsync) of `"precision"` (hertekent de mond, hogere kwaliteit, langzamer). Meerdere doeltalen in één verzoek. Bron: https://developers.heygen.com/docs/video-translate.md
+- **Tekst aanpassen vóór het renderen:** ja, via **proofread-sessies**: `POST /v3/video-translations/proofreads` → pollen → `GET …/{id}/srt` (vertaalde SRT downloaden) → bewerken → `PUT …/{id}/srt` (geüploade correctie) → `POST …/{id}/generate` → `video_translation_id`. In de documentatie staat **geen Enterprise-vereiste** op proofread; alleen het meesturen van een eigen SRT als startpunt (`srt`, `srt_role`) is "Enterprise plan only". Zelf verifiëren met één sessie op het pay-as-you-go-account vóór we erop bouwen. Bronnen: https://developers.heygen.com/docs/video-translation-precision.md, https://developers.heygen.com/reference/create-proofread-session.md
+- **Advertentietoon:** in de proofread-stap laten we **Claude** de vertaalde SRT herschrijven in advertentietoon (kort, direct, zonder nieuwe claims), tonen we het resultaat aan de gebruiker voor correctie, en uploaden we de goedgekeurde SRT. Zo krijgen we de controle van optie 2 zonder de stem- en lipsync-pipeline zelf te bouwen. Let op: timing per ondertitel blijft leidend; langere zinnen worden sneller uitgesproken of `enable_dynamic_duration` rekt de video.
+- **Talen:** 175+ (lijst via `GET /v3/video-translations/languages`). **Brand glossary** voor productnamen die onvertaald moeten blijven.
+- **Kosten (enterprise-tarieven als indicatie, 1 credit = $0,50; self-serve staat achter login):** speed 0,05 credit per seconde bron per doeltaal (≈ $0,75 per 30 s), precision 0,1 (≈ $1,50 per 30 s), proofread 0,00833 (≈ $0,13 per 30 s). Bron: https://developers.heygen.com/docs/enterprise-pricing
+- **Beperkingen:** ingebrande teksten in de video vertalen niet mee; één spreker werkt het best (`speaker_num` instelbaar); verwerkingstijd ongeveer 5 minuten per minuut video; output-URL's verlopen (naar eigen opslag kopiëren).
+
+### Optie 2: eigen pipeline met maximale controle
+
+| Stap | Dienst | Kosten per 30 s (lijstprijs) | Bron |
+|---|---|---|---|
+| Transcriptie met woordtijden | fal.ai `fal-ai/whisper` (`chunk_level: word`, taalherkenning) of HeyGen `POST /v3/audio/transcriptions` (scribe-v2) | fal: pagina toont "$0 per compute second" (praktisch gratis tot centen); HeyGen: leverancierstarief, niet gepubliceerd | https://fal.ai/models/fal-ai/whisper/api, OpenAPI HeyGen |
+| Vertaling in advertentietoon | Claude (`claude-opus-5-5`, gestructureerde output per segment) | ≈ $0,01–0,02 | `docs/vendors/anthropic/capabilities.md` |
+| Correctie door gebruiker | eigen UI (segmenten met tijden) | – | – |
+| Stemkloon | fal.ai `fal-ai/minimax/voice-clone` ($1,50 per kloon, voorbeeld $0,30 per 1.000 tekens) of HeyGen `POST /v3/voices/clone` (prijs niet vermeld) | $1,50 eenmalig per spreker | https://fal.ai/models/fal-ai/minimax/voice-clone |
+| Nieuwe spraak per segment | fal.ai TTS (MiniMax Speech-02 HD $0,10 per 1.000 tekens, ElevenLabs Turbo v2.5 $0,05) of HeyGen `POST /v3/voices/speech` (Starfish ≈ $0,01/min) | ≈ $0,01–0,05 | https://fal.ai/explore/text-to-speech-apis, `docs/vendors/heygen/capabilities.md` |
+| Timing passend maken | eigen code: per segment spraak genereren, versnellen of pauzes inkorten, audio samenstellen (ffmpeg) | – | – |
+| Lipsync | fal.ai `fal-ai/sync-lipsync/v2` ($3/min, pro $5/min), VEED Lipsync 2.0 ($0,07/s via api.veed.io), HeyGen `POST /v3/lipsyncs` (speed 0,05 credit/s, precision 0,1) | $1,50 (sync v2) · $2,10 (VEED) · $0,75–1,50 (HeyGen) | https://fal.ai/models/fal-ai/sync-lipsync/v2, `docs/api-verification.md`, `docs/vendors/heygen/capabilities.md` |
+| Ondertitels en 9:16 | Shotstack `rich-caption` + `aspectRatio: "9:16"` | ≈ $0,10 | `docs/vendors/shotstack/capabilities.md` |
+
+- **Voordelen:** volledige controle over de tekst (toon, lengte, CTA erin), vrije stemkeuze (eigen kloon of catalogusstem), elke bouwsteen los vervangbaar.
+- **Nadelen:** de moeilijkste stap is niet vertalen maar **timing**: vertaalde zinnen zijn langer of korter dan het origineel, dus spraak moet per segment worden gegenereerd en gepast, anders loopt lipsync vast. HeyGen lost dat intern op (`enable_dynamic_duration`); wij zouden het zelf bouwen. Daarnaast vier leveranciers in één keten, elk met eigen limieten en tijdelijke URL's.
+- **Kosten:** eerste video ≈ $3,20 (inclusief $1,50 stemkloon), daarna ≈ $1,70 per 30 s met sync-lipsync, of ≈ $1,00 met HeyGen-lipsync.
+
+### Optie 3 (optionele laatste stap): videoverbetering
+
+| Dienst | Wat | Kosten per 30 s | Opmerking |
+|---|---|---|---|
+| Vmake API (Plus/Pro) `hdvideoallinone` | kwaliteitsverbetering, upscaling | niet gepubliceerd (achter login), HMAC-signing | enige echte Vmake-API-functie; zie `docs/api-verification.md` |
+| fal.ai `fal-ai/topaz/upscale/video` | Topaz Proteus: upscale tot 8×, ruis/compressie herstel, frame-interpolatie | $0,01/s tot 720p, $0,02/s tot 1080p ⇒ $0,30–0,60 | https://fal.ai/models/fal-ai/topaz/upscale/video |
+| fal.ai `fal-ai/flashvsr/upscale/video` | snelle upscaler | $0,0005 per megapixel-frame ⇒ ≈ $0,75 voor 30 s 1080p | https://fal.ai/models/fal-ai/flashvsr/upscale/video |
+| fal.ai `fal-ai/seedvr/upscale/video` | hoge kwaliteit upscaler | $0,001 per megapixel-frame ⇒ ≈ $1,50 | https://fal.ai/models/fal-ai/seedvr/upscale/video |
+
+Aanbeveling voor deze stap: **Topaz via fal.ai** (goedkoopst, één sleutel die we al hebben, gedocumenteerde prijs). Alleen aanbieden als keuze "Verbeter beeldkwaliteit", niet standaard: het verdubbelt de verwerkingstijd en is bij goed bronmateriaal zinloos. Geen watermerk-verwijdering.
+
+### Vergelijking
+
+| | Optie 1: HeyGen + proofread + Claude-herschrijving | Optie 2: eigen pipeline |
+|---|---|---|
+| Kwaliteit | Stem en lipsync van één leverancier, op elkaar afgestemd; precision voor eindproduct | Afhankelijk van de zwakste schakel; timing is het risico |
+| Controle over tekst | Ja, via SRT-correctie (Claude + gebruiker) | Volledig |
+| Controle over stem | Alleen de gekloonde stem van de spreker (of Enterprise stock voice) | Vrij: kloon of catalogus |
+| Kosten per 30 s | ≈ $1,00 (speed) tot $1,75 (precision), incl. ondertitels | ≈ $1,70 (eerste video $3,20) |
+| Complexiteit | Laag: 5 aanroepen bij één leverancier plus Shotstack | Hoog: 6 stappen, 4 leveranciers, eigen audio-assemblage |
+| Bouwtijd | Dagen | Weken |
+
+### Aanbeveling
+
+**Optie 1 als Workflow B, met Claude in de proofread-stap.** Dat geeft de controle die we willen (vertaling in advertentietoon, correctie door de gebruiker) tegen de laagste complexiteit en kosten, en het hergebruikt de HeyGen-koppeling en de cost guard die al bestaan. Shotstack doet daarna ondertitels in TikTok-stijl en 9:16, net als in Workflow A. Verbetering via Topaz als optionele knop.
+
+Optie 2 bewaren we voor het geval HeyGen tegenvalt op één van twee punten: de proofread-stap blijkt toch Enterprise-only (dan vervalt de tekstcontrole), of de stemkwaliteit voldoet niet. Omdat lipsync en TTS achter dezelfde interface kunnen zitten als Workflow A (`src/lib/services/`), is die overstap per bouwsteen te doen.
+
+### Eerste verificatie (voor de bouw, met de cost guard aan)
+1. Eén proofread-sessie op het pay-as-you-go-account: bevestigt of proofread zonder Enterprise werkt en wat het kost (saldoverschil).
+2. Eén vertaling in speed-modus van een clip van 20 s naar Duits, met glossary voor de productnaam.
+3. Dezelfde clip door Topaz op 720p; vergelijk beeld en kosten.
+
 ## Accounts en sleutels die Tijs zelf aanmaakt
 
 Alle sleutels komen in `.env.local` (zie `.env.example`), nooit in code, commits of chat.
