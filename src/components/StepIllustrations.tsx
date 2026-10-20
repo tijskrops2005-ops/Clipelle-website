@@ -91,3 +91,53 @@ export function TranslateIllustration(props: Props) {
     </svg>
   );
 }
+
+/** Workflow A, step 1 — product information becomes a script. */
+export function ScriptIllustration(props: Props) {
+  return (
+    <svg {...common} {...props}>
+      {/* product card */}
+      <rect x="8" y="18" width="26" height="36" rx="6" />
+      <circle cx="16" cy="28" r="3" />
+      <path d="M10 46l7-8 5 5 4-3 6 6" />
+      {/* arrow */}
+      <path d="M40 36h10" />
+      <path d="M46 31l5 5-5 5" />
+      {/* script sheet */}
+      <rect x="56" y="12" width="32" height="48" rx="6" />
+      <path d="M62 22h20M62 29h14M62 36h20M62 43h11M62 50h16" />
+      {/* sparkle */}
+      <path d="M86 8v6M83 11h6" />
+    </svg>
+  );
+}
+
+/** Workflow B, step 1 — a video file is uploaded and checked. */
+export function UploadIllustration(props: Props) {
+  return (
+    <svg {...common} {...props}>
+      <rect x="22" y="22" width="52" height="40" rx="8" />
+      <path d="M48 52V30" />
+      <path d="M40 38l8-8 8 8" />
+      <path d="M30 62h36" strokeDasharray="4 4" />
+      <path d="M78 18l3 3 6-6" />
+    </svg>
+  );
+}
+
+/** Workflow B, step 3 — captions and the vertical 9:16 format. */
+export function CaptionsIllustration(props: Props) {
+  return (
+    <svg {...common} {...props}>
+      {/* wide source */}
+      <rect x="6" y="22" width="34" height="24" rx="5" />
+      <path d="M44 34h8" />
+      <path d="M48 29l5 5-5 5" />
+      {/* 9:16 phone with captions */}
+      <rect x="60" y="8" width="30" height="56" rx="7" />
+      <circle cx="75" cy="28" r="5" />
+      <path d="M66 44c2-5 5-7 9-7s7 2 9 7" />
+      <path d="M66 52h18M69 57h12" />
+    </svg>
+  );
+}

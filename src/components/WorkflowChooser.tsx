@@ -83,9 +83,9 @@ export function WorkflowChooser() {
           <Link
             key={href}
             href={href}
-            className="group flex flex-col rounded-card bg-surface p-6 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-4 focus-visible:ring-offset-bg sm:p-7"
+            className="focus-ring group flex flex-col rounded-card bg-surface p-6 shadow-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card-hover sm:p-7"
           >
-            <div className="relative overflow-hidden rounded-[14px] bg-surface-muted p-6">
+            <div className="panel relative overflow-hidden p-6">
               <Preview />
             </div>
             <h2 className="mt-6 text-xl font-semibold leading-tight text-ink">{title}</h2>
@@ -115,9 +115,9 @@ export function WorkflowChooser() {
                 </div>
               </div>
             </dl>
-            <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-ink">
+            <span className="mt-6 inline-flex h-10 w-fit items-center gap-2 rounded-control bg-ink px-4 text-sm font-medium text-surface transition-colors duration-150 group-hover:bg-ink/90">
               Start
-              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+              <ArrowRight className="size-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden />
             </span>
           </Link>
         );

@@ -1,7 +1,8 @@
 "use client";
 
 import { ArrowRight, Plus, Video } from "lucide-react";
-import { useProjects } from "@/lib/data/client";
+import { useProjects, useProjectsReady } from "@/lib/data/client";
+import { TileGridSkeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionHeader } from "@/components/ui/PageHeader";
@@ -12,6 +13,7 @@ const LIMIT = 4;
 /** Client component: reads the reactive mock store so new demo projects appear immediately. */
 export function RecentProjects() {
   const all = useProjects();
+  const ready = useProjectsReady();
   const projects = all.slice(0, LIMIT);
 
   return (
@@ -19,7 +21,7 @@ export function RecentProjects() {
       <SectionHeader
         title="Recent projects"
         description={
-          all.length === 0 ? "Nothing here yet." : `Showing ${projects.length} of ${all.length}`
+          !ready ? "Loading…" : all.length === 0 ? "Nothing here yet." : `Showing ${projects.length} of ${all.length}`
         }
         aside={
           all.length > 0 && (
@@ -31,7 +33,9 @@ export function RecentProjects() {
         }
       />
 
-      {projects.length === 0 ? (
+      {!ready ? (
+        <TileGridSkeleton />
+      ) : projects.length === 0 ? (
         <EmptyState
           icon={<Video className="size-6" aria-hidden />}
           title="No videos yet"

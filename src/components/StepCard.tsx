@@ -39,7 +39,7 @@ export function StepCard({
   return (
     <article
       className={cn(
-        "flex flex-col rounded-card bg-surface p-5 shadow-card transition-shadow sm:p-7",
+        "flex flex-col rounded-card bg-surface p-5 shadow-card transition-[box-shadow,transform] duration-200 sm:p-6",
         active && "ring-1 ring-accent/40",
         needsInput && "ring-1 ring-warning/50",
         className,
@@ -59,10 +59,10 @@ export function StepCard({
       </header>
 
       {panel && (
-        <div className="mt-6 rounded-[14px] bg-surface-muted p-5">{panel}</div>
+        <div className="panel mt-5 p-5">{panel}</div>
       )}
 
-      <p className="mt-5 text-sm leading-relaxed text-muted">{description}</p>
+      <p className="mt-4 text-sm leading-relaxed text-muted">{description}</p>
       {footer && <div className="mt-5">{footer}</div>}
     </article>
   );

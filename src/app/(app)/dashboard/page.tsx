@@ -14,7 +14,7 @@ export default function DashboardPage() {
     <div className="space-y-12 lg:space-y-16">
       <PageHeader
         title="Welcome back"
-        description="Add your product once. We create the product clip, the presenter and the final ad, then bring the finished video back here."
+        description="Add a product once and get a finished 9:16 ad, or translate a video you own into other languages. Every finished video lands here."
         actions={
           <Button href="/new" variant="accent" size="lg">
             <Plus className="size-5" aria-hidden />
@@ -23,9 +23,9 @@ export default function DashboardPage() {
         }
       />
 
-      <HowItWorks />
-
       <RecentProjects />
+
+      <HowItWorks />
 
       <div className="grid gap-8 xl:grid-cols-3">
         <div className="min-w-0 xl:col-span-2">
