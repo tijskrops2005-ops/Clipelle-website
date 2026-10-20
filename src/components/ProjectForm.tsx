@@ -40,19 +40,25 @@ import {
 import { controlClass, controlStateClass } from "@/components/ui/Field";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { UploadDropzone, type UploadedImage } from "@/components/ui/UploadDropzone";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { OptionCard, OptionGrid } from "@/components/ui/OptionCard";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Disclosure } from "@/components/ui/Disclosure";
+import { SummaryPanel } from "@/components/ui/SummaryPanel";
 
 type Values = AdFormValues;
 type Errors = AdFormErrors;
 
 /**
- * The "New ad" form. Validates on submit, disables the button while submitting
- * (rule 4: no duplicate workflow starts) and creates the project through the data layer
- * (demo: simulated in the browser; database: uploads + the real workflow).
+ * The "New ad" form: three numbered blocks (product, presenter and voice, script and style) with
+ * the less-used options folded under "Advanced", and a fixed summary with the estimate and the
+ * button. Validates on submit, asks for one confirmation, disables the button while submitting
+ * (rule 4) and creates the project through the data layer. What it sends is built by
+ * buildAdDraft and covered by src/lib/forms/forms.test.ts.
  */
 export function ProjectForm() {
   const router = useRouter();
@@ -104,7 +110,8 @@ export function ProjectForm() {
   const estimate = estimateFor(seconds);
   const overBudget = estimate.total > budget;
   const lengthsWithinBudget = AD_LENGTHS.filter((len) => estimateFor(len).total <= budget);
-  const qualityLabel = PRESENTER_QUALITIES.find((q) => q.key === engine)?.label ?? "Premium";
+  const qualityLabel = PRESENTER_QUALITIES.find((q) => q.key === engine)?.label ?? "Standard";
+  const brandChanged = effectiveAccent !== DEFAULT_ACCENT || captionStyle !== DEFAULT_CAPTION_STYLE || font !== DEFAULT_FONT || logoImages.length > 0;
 
   function update<K extends keyof Values>(key: K, value: Values[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -119,7 +126,8 @@ export function ProjectForm() {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       const first = Object.keys(nextErrors)[0];
-      document.getElementById(first)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      // The fold opens on the error first; scroll after that paint.
+      requestAnimationFrame(() => document.getElementById(first)?.scrollIntoView({ behavior: "smooth", block: "center" }));
       setConfirming(false);
       return;
     }
@@ -169,19 +177,22 @@ export function ProjectForm() {
     }
   }
 
+  const summaryRows = [
+    { label: "Length", value: `${seconds} s · 9:16` },
+    { label: "Presenter", value: presenter ? `${presenter.name} · ${qualityLabel}` : qualityLabel },
+    { label: "Language", value: `${AD_LANGUAGES[language].label}${voiceAccent ? ` · ${voiceOptions?.accents.find((a) => a.key === voiceAccent)?.label ?? voiceAccent}` : ""}` },
+    { label: "Voice speed", value: SPEEDS.find((s) => s.key === speed)?.label ?? "Normal" },
+    { label: "Tone", value: TONE_META[tone].label },
+    { label: "Script", value: values.script.trim() ? "Your own" : reviewScript ? "Written, you review first" : "Written for you", muted: true },
+  ];
+
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-8">
-      <ServiceStatusBanner />
-      {/* 1. The main input first: product images + the product itself */}
-      <Card>
-        <CardHeader>
-          <p className="label-mono text-muted">Step 1 of 3</p>
-          <CardTitle className="mt-2 text-xl">Your product</CardTitle>
-          <p className="mt-1 text-[15px] text-muted">
-            Clear photos are the single biggest factor in a good product clip.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
+    <form onSubmit={onSubmit} noValidate className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+      <div className="min-w-0 space-y-6">
+        <ServiceStatusBanner />
+
+        {/* 1. The product: the photos and the words the script is written from */}
+        <SectionCard number={1} title="Your product" description="Clear photos are the single biggest factor in a good product clip. Two or three sentences are enough for the script.">
           <Field id="images" label="Product images" hint="Every ad is vertical 9:16, the format for TikTok, Reels and Shorts. Portrait or square photos work best." error={errors.images}>
             <UploadDropzone
               id="images"
@@ -196,25 +207,57 @@ export function ProjectForm() {
             />
           </Field>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <Field id="productName" label="Product name" error={errors.productName}>
-              <Input
-                id="productName"
-                value={values.productName}
-                onChange={(e) => update("productName", e.target.value)}
-                placeholder="e.g. Glow Vitamin C Serum"
-                invalid={Boolean(errors.productName)}
-                disabled={submitting}
-                autoComplete="off"
-              />
-            </Field>
-            <Field
-              id="productUrl"
-              label="Product URL"
-              optional
-              hint="We use it for context only. Nothing is scraped yet."
-              error={errors.productUrl}
-            >
+          <Field id="productName" label="Product name" error={errors.productName}>
+            <Input
+              id="productName"
+              value={values.productName}
+              onChange={(e) => update("productName", e.target.value)}
+              placeholder="e.g. Glow Vitamin C Serum"
+              invalid={Boolean(errors.productName)}
+              disabled={submitting}
+              autoComplete="off"
+            />
+          </Field>
+
+          <Field
+            id="description"
+            label="Product description"
+            hint="What it is, who it is for, why it is better. The script is written from this."
+            error={errors.description}
+          >
+            <Textarea
+              id="description"
+              value={values.description}
+              onChange={(e) => update("description", e.target.value)}
+              placeholder="A lightweight vitamin C serum that brightens dull skin in 14 days. Vegan and fragrance-free."
+              invalid={Boolean(errors.description)}
+              disabled={submitting}
+            />
+          </Field>
+
+          <fieldset>
+            <legend className="mb-1.5 text-sm font-medium text-ink">Video length</legend>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Video length" id="seconds">
+              {AD_LENGTHS.map((len) => {
+                const est = estimateFor(len).total;
+                return (
+                  <OptionCard
+                    key={len}
+                    size="chip"
+                    selected={seconds === len}
+                    onSelect={() => setSeconds(len)}
+                    disabled={submitting}
+                    title={`${len} s`}
+                    meta={est > budget ? `${formatUsd(est)} · over budget` : formatUsd(est)}
+                  />
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[13px] text-muted">Recommended: {DEFAULT_AD_SECONDS} s. The presenter talks the whole video; the price follows your choice.</p>
+          </fieldset>
+
+          <Disclosure title="Advanced" summary="Product link, offer and direction for the script" forceOpen={Boolean(errors.productUrl)}>
+            <Field id="productUrl" label="Product URL" optional hint="We use it for context only. Nothing is scraped yet." error={errors.productUrl}>
               <Input
                 id="productUrl"
                 type="url"
@@ -226,55 +269,49 @@ export function ProjectForm() {
                 disabled={submitting}
               />
             </Field>
-          </div>
-        </CardContent>
-      </Card>
+            <Field id="offer" label="Offer" optional hint={`Used in the call to action. Leave empty and no offer is mentioned. Max ${OFFER_MAX_CHARS} characters.`}>
+              <Input id="offer" value={values.offer} maxLength={OFFER_MAX_CHARS} onChange={(e) => update("offer", e.target.value)} placeholder="e.g. 20% off this week" disabled={submitting} />
+            </Field>
+            <Field id="direction" label="Direction" optional hint={`Who it is for and what to emphasise. Max ${DIRECTION_MAX_CHARS} characters.`}>
+              <Input id="direction" value={values.direction} maxLength={DIRECTION_MAX_CHARS} onChange={(e) => update("direction", e.target.value)} placeholder="e.g. for mums, light-hearted, no exaggerated claims" disabled={submitting} />
+            </Field>
+          </Disclosure>
+        </SectionCard>
 
-      {/* 2. The presenter: quality and look. Nothing picked = the default look. */}
-      <Card>
-        <CardHeader>
-          <p className="label-mono text-muted">Step 2 of 3</p>
-          <CardTitle className="mt-2 text-xl">Your presenter</CardTitle>
-          <p className="mt-1 text-[15px] text-muted">Who presents the product, and in which quality. The default works well for most products.</p>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        {/* 2. The presenter: quality, look, voice. Nothing picked = the defaults. */}
+        <SectionCard number={2} title="Presenter and voice" description="Who presents the product, how they sound, and in which quality. The defaults work well for most products.">
           <fieldset>
             <legend className="mb-1.5 text-sm font-medium text-ink">Presenter quality</legend>
             <p className="mb-3 text-[13px] text-muted">How the presenter looks and moves. The price is for the whole video at the chosen length.</p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <OptionGrid columns={2}>
               {PRESENTER_QUALITIES.map((q) => {
                 const est = estimateFor(seconds, q.key);
                 const over = est.total > budget;
-                const selected = engine === q.key;
                 // What this quality adds on top of the recommended one, for the same length.
                 const extra = est.total - estimateFor(seconds, DEFAULT_PRESENTER_ENGINE).total;
                 return (
-                  <button
+                  <OptionCard
                     key={q.key}
-                    type="button"
-                    onClick={() => setEngine(q.key)}
+                    selected={engine === q.key}
+                    onSelect={() => setEngine(q.key)}
                     disabled={submitting}
-                    aria-pressed={selected}
-                    className={cn(
-                      "rounded-[14px] border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40",
-                      selected ? "border-ink bg-surface-muted" : "border-border bg-surface hover:shadow-card",
-                    )}
-                  >
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+                    title={
+                      <span className="flex items-center gap-2">
                         {q.label}
                         {q.key === DEFAULT_PRESENTER_ENGINE && <Badge tone="success">Recommended</Badge>}
                       </span>
+                    }
+                    meta={
                       <Badge tone={over ? "danger" : "neutral"}>
                         {over ? `${formatUsd(est.total)} · over budget` : `about ${formatUsd(est.total)}`}
                         {extra > 0.005 ? ` · +${formatUsd(extra)}` : ""}
                       </Badge>
-                    </span>
-                    <span className="mt-1 block text-[13px] text-muted">{q.blurb}</span>
-                  </button>
+                    }
+                    description={q.blurb}
+                  />
                 );
               })}
-            </div>
+            </OptionGrid>
           </fieldset>
 
           <div>
@@ -290,121 +327,92 @@ export function ProjectForm() {
             />
           </div>
 
-          <div className="space-y-4">
-            <div className="grid gap-5 md:grid-cols-2">
-              <Field id="language" label="Language" hint="One language for the script, the captions and the voice.">
-                <select
-                  id="language"
-                  value={language}
-                  onChange={(e) => {
-                    setLanguage(e.target.value as AdLanguageCode);
-                    setVoiceAccent(undefined);
-                    setVoiceId(undefined);
-                  }}
-                  disabled={submitting}
-                  className={cn(controlClass, controlStateClass(false), "h-11")}
-                >
-                  {(voiceOptions?.languages.length ? voiceOptions.languages.map((l) => l.code) : AD_LANGUAGE_CODES).map((code) => (
-                    <option key={code} value={code}>{AD_LANGUAGES[code].label}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field id="accent" label="Accent" hint={voiceOptions && voiceOptions.accents.length === 0 ? "No regional variants for this language yet." : "Only variants that have voices are listed."}>
-                <select
-                  id="accent"
-                  value={voiceAccent ?? ""}
-                  onChange={(e) => {
-                    setVoiceAccent(e.target.value || undefined);
-                    setVoiceId(undefined);
-                  }}
-                  disabled={submitting || !voiceOptions || voiceOptions.accents.length === 0}
-                  className={cn(controlClass, controlStateClass(false), "h-11")}
-                >
-                  <option value="">Any</option>
-                  {voiceOptions?.accents.map((a) => (
-                    <option key={a.key} value={a.key}>{a.label}</option>
-                  ))}
-                </select>
-              </Field>
-            </div>
-            <div>
-              <p className="mb-1.5 text-sm font-medium text-ink">Voice</p>
-              <VoicePicker
-                language={language}
-                accent={voiceAccent}
-                gender={presenter?.gender === "female" || presenter?.gender === "male" ? presenter.gender : undefined}
-                lookVoiceId={presenter?.defaultVoiceId}
-                value={voiceId}
-                onChange={setVoiceId}
-                onOptions={setVoiceOptions}
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field id="language" label="Language" hint="One language for the script, the captions and the voice.">
+              <select
+                id="language"
+                value={language}
+                onChange={(e) => {
+                  setLanguage(e.target.value as AdLanguageCode);
+                  setVoiceAccent(undefined);
+                  setVoiceId(undefined);
+                }}
                 disabled={submitting}
-              />
-            </div>
-            <fieldset>
-              <legend className="mb-1.5 text-sm font-medium text-ink">Speaking speed</legend>
-              <div className="flex gap-1 rounded-full bg-surface-muted p-1 w-fit" role="radiogroup" aria-label="Speaking speed">
-                {SPEEDS.map((sp) => (
-                  <button
-                    key={sp.key}
-                    type="button"
-                    role="radio"
-                    aria-checked={speed === sp.key}
-                    disabled={submitting}
-                    onClick={() => setSpeed(sp.key)}
-                    className={cn("rounded-full px-3 py-1 text-[13px] font-medium transition-colors", speed === sp.key ? "bg-ink text-white" : "text-muted hover:text-ink")}
-                  >
-                    {sp.label}
-                  </button>
+                className={cn(controlClass, controlStateClass(false), "h-11")}
+              >
+                {(voiceOptions?.languages.length ? voiceOptions.languages.map((l) => l.code) : AD_LANGUAGE_CODES).map((code) => (
+                  <option key={code} value={code}>{AD_LANGUAGES[code].label}</option>
                 ))}
-              </div>
-              <p className="mt-1.5 text-[13px] text-muted">The word limit stays the same; a slower voice makes the video about 10% longer and a faster one about 10% shorter. The estimate follows.</p>
-            </fieldset>
+              </select>
+            </Field>
+            <Field id="accent" label="Accent" hint={voiceOptions && voiceOptions.accents.length === 0 ? "No regional variants for this language yet." : "Only variants that have voices are listed."}>
+              <select
+                id="accent"
+                value={voiceAccent ?? ""}
+                onChange={(e) => {
+                  setVoiceAccent(e.target.value || undefined);
+                  setVoiceId(undefined);
+                }}
+                disabled={submitting || !voiceOptions || voiceOptions.accents.length === 0}
+                className={cn(controlClass, controlStateClass(false), "h-11")}
+              >
+                <option value="">Any</option>
+                {voiceOptions?.accents.map((a) => (
+                  <option key={a.key} value={a.key}>{a.label}</option>
+                ))}
+              </select>
+            </Field>
           </div>
 
           <div>
-            <p className="mb-1.5 text-sm font-medium text-ink">Background</p>
-            <p className="mb-3 text-[13px] text-muted">A solid colour or your own image behind the presenter. Not every presenter can swap their background; then the original is kept and the project page says so.</p>
-            <div className="flex flex-wrap gap-2">
-              {[{ key: "own", label: "Presenter's own", value: "" }, ...BACKGROUND_COLORS, { key: "image", label: "Your own image", value: "" }].map((c) => {
-                const selected = backgroundChoice === c.key;
-                return (
-                  <button
-                    key={c.key}
-                    type="button"
-                    onClick={() => setBackgroundChoice(c.key)}
-                    disabled={submitting}
-                    aria-pressed={selected}
-                    className={cn(
-                      "flex items-center gap-2 rounded-full border px-3 py-1.5 text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40",
-                      selected ? "border-ink bg-surface-muted text-ink" : "border-border bg-surface text-muted hover:text-ink",
-                    )}
-                  >
-                    {c.value ? <span className="size-4 rounded-full border border-border" style={{ backgroundColor: c.value }} aria-hidden /> : null}
-                    {c.label}
-                  </button>
-                );
-              })}
-            </div>
-            {backgroundChoice === "image" && (
-              <div className="mt-3">
-                <UploadDropzone id="backgroundImage" images={backgroundImages} onChange={setBackgroundImages} max={1} disabled={submitting} title="Drop a background image here, or click to choose" hint="PNG or JPG, up to 10 MB. Portrait or square works best." onReject={(message) => setErrors((e) => ({ ...e, form: message }))} />
-                <p className="mt-1.5 text-[13px] text-muted">A calm, plain picture works best: the captions sit on top of it.</p>
-              </div>
-            )}
+            <p className="mb-1.5 text-sm font-medium text-ink">Voice</p>
+            <VoicePicker
+              language={language}
+              accent={voiceAccent}
+              gender={presenter?.gender === "female" || presenter?.gender === "male" ? presenter.gender : undefined}
+              lookVoiceId={presenter?.defaultVoiceId}
+              value={voiceId}
+              onChange={setVoiceId}
+              onOptions={setVoiceOptions}
+              disabled={submitting}
+            />
           </div>
-        </CardContent>
-      </Card>
 
-      {/* 3. Details that shape the script and the final edit */}
-      <Card>
-        <CardHeader>
-          <p className="label-mono text-muted">Step 3 of 3</p>
-          <CardTitle className="mt-2 text-xl">Details</CardTitle>
-          <p className="mt-1 text-[15px] text-muted">
-            What should the video say? Keep it short and concrete.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
+          <fieldset>
+            <legend className="mb-1.5 text-sm font-medium text-ink">Speaking speed</legend>
+            <SegmentedControl label="Speaking speed" options={SPEEDS.map((sp) => ({ key: sp.key, label: sp.label }))} value={speed} onChange={setSpeed} disabled={submitting} size="sm" />
+            <p className="mt-1.5 text-[13px] text-muted">The word limit stays the same; a slower voice makes the video about 10% longer and a faster one about 10% shorter. The estimate follows.</p>
+          </fieldset>
+
+          <Disclosure title="Advanced" summary={backgroundChoice === "own" ? "Background: the presenter's own" : backgroundChoice === "image" ? "Background: your own image" : `Background: ${BACKGROUND_COLORS.find((c) => c.key === backgroundChoice)?.label ?? backgroundChoice}`}>
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-ink">Background</p>
+              <p className="mb-3 text-[13px] text-muted">A solid colour or your own image behind the presenter. Not every presenter can swap their background; then the original is kept and the project page says so.</p>
+              <div className="flex flex-wrap gap-2">
+                {[{ key: "own", label: "Presenter's own", value: "" }, ...BACKGROUND_COLORS, { key: "image", label: "Your own image", value: "" }].map((c) => (
+                  <OptionCard
+                    key={c.key}
+                    size="chip"
+                    selected={backgroundChoice === c.key}
+                    onSelect={() => setBackgroundChoice(c.key)}
+                    disabled={submitting}
+                    title={c.label}
+                    leading={c.value ? <span className="size-4 rounded-full border border-border" style={{ backgroundColor: c.value }} aria-hidden /> : undefined}
+                  />
+                ))}
+              </div>
+              {backgroundChoice === "image" && (
+                <div className="mt-3">
+                  <UploadDropzone id="backgroundImage" images={backgroundImages} onChange={setBackgroundImages} max={1} disabled={submitting} title="Drop a background image here, or click to choose" hint="PNG or JPG, up to 10 MB. Portrait or square works best." onReject={(message) => setErrors((e) => ({ ...e, form: message }))} />
+                  <p className="mt-1.5 text-[13px] text-muted">A calm, plain picture works best: the captions sit on top of it.</p>
+                </div>
+              )}
+            </div>
+          </Disclosure>
+        </SectionCard>
+
+        {/* 3. The words: tone, optional script, review; brand style folded away */}
+        <SectionCard number={3} title="Script and style" description="What the video should say and how it should feel. Leave the script empty and we write one from your description.">
           <Field id="projectName" label="Project name" hint="Only you see this." error={errors.projectName}>
             <Input
               id="projectName"
@@ -417,135 +425,14 @@ export function ProjectForm() {
             />
           </Field>
 
-          <Field
-            id="description"
-            label="Product description"
-            hint="Two or three sentences: what it is, who it is for, why it is better."
-            error={errors.description}
-          >
-            <Textarea
-              id="description"
-              value={values.description}
-              onChange={(e) => update("description", e.target.value)}
-              placeholder="A lightweight vitamin C serum that brightens dull skin in 14 days. Vegan and fragrance-free."
-              invalid={Boolean(errors.description)}
-              disabled={submitting}
-            />
-          </Field>
-
-          <Field id="seconds" label="Video length" hint={`Recommended: ${DEFAULT_AD_SECONDS} s. The presenter talks the whole video; the estimate follows your choice.`}>
-            <select
-              id="seconds"
-              value={seconds}
-              onChange={(e) => setSeconds(Number(e.target.value) as AdLength)}
-              disabled={submitting}
-              className={`${controlClass} ${controlStateClass(false)} h-11`}
-            >
-              {AD_LENGTHS.map((len) => (
-                <option key={len} value={len}>
-                  {len} seconds · about {formatUsd(estimateFor(len).total)}{len === DEFAULT_AD_SECONDS ? " · recommended" : ""}{estimateFor(len).total > budget ? " · over budget" : ""}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field id="offer" label="Offer" optional hint={`Used in the call to action. Leave empty and no offer is mentioned. Max ${OFFER_MAX_CHARS} characters.`}>
-            <Input id="offer" value={values.offer} maxLength={OFFER_MAX_CHARS} onChange={(e) => update("offer", e.target.value)} placeholder="e.g. 20% off this week" disabled={submitting} />
-          </Field>
-
           <fieldset>
             <legend className="mb-1.5 text-sm font-medium text-ink">Tone</legend>
-            <div className="grid gap-3 sm:grid-cols-4">
-              {AD_TONES.map((t) => {
-                const selected = tone === t;
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTone(t)}
-                    disabled={submitting}
-                    aria-pressed={selected}
-                    className={cn(
-                      "rounded-[14px] border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40",
-                      selected ? "border-ink bg-surface-muted" : "border-border bg-surface hover:shadow-card",
-                    )}
-                  >
-                    <span className="block text-sm font-semibold text-ink">{TONE_META[t].label}</span>
-                    <span className="mt-0.5 block text-[13px] text-muted">{TONE_META[t].blurb}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <OptionGrid columns={2}>
+              {AD_TONES.map((t) => (
+                <OptionCard key={t} selected={tone === t} onSelect={() => setTone(t)} disabled={submitting} title={TONE_META[t].label} description={TONE_META[t].blurb} />
+              ))}
+            </OptionGrid>
           </fieldset>
-
-          <Field id="direction" label="Direction" optional hint={`Who it is for and what to emphasise. Max ${DIRECTION_MAX_CHARS} characters.`}>
-            <Input id="direction" value={values.direction} maxLength={DIRECTION_MAX_CHARS} onChange={(e) => update("direction", e.target.value)} placeholder="e.g. for mums, light-hearted, no exaggerated claims" disabled={submitting} />
-          </Field>
-
-          <fieldset className="rounded-[14px] bg-surface-muted p-4">
-            <legend className="px-1 text-sm font-medium text-ink">Brand style</legend>
-            <p className="mb-4 mt-1 text-[13px] text-muted">All optional. Your colour highlights the spoken caption word; the logo sits top right. Captions are the only text on screen.</p>
-            <div className="space-y-5">
-              <div>
-                <p className="mb-2 text-[13px] font-medium text-ink">Accent colour</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  {BRAND_COLORS.map((c) => {
-                    const selected = !HEX_COLOR.test(customAccent) && accent === c.value;
-                    return (
-                      <button
-                        key={c.key}
-                        type="button"
-                        onClick={() => {
-                          setAccent(c.value);
-                          setCustomAccent("");
-                        }}
-                        disabled={submitting}
-                        aria-pressed={selected}
-                        title={c.label}
-                        className={cn("grid size-8 place-items-center rounded-full border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40", selected ? "border-ink" : "border-transparent")}
-                      >
-                        <span className="size-6 rounded-full border border-border" style={{ backgroundColor: c.value }} aria-hidden />
-                        <span className="sr-only">{c.label}</span>
-                      </button>
-                    );
-                  })}
-                  <Input id="customAccent" value={customAccent} onChange={(e) => setCustomAccent(e.target.value.trim())} placeholder="#1F3A5F" maxLength={7} disabled={submitting} className="h-9 w-28 text-[13px]" aria-label="Custom accent colour (hex)" />
-                </div>
-                {lowContrast && (
-                  <p role="status" className="mt-2 text-[13px] font-medium text-danger">
-                    This colour is too light: white text on it is hard to read (contrast {accentContrast.toFixed(1)}:1, we recommend at least {MIN_LARGE_TEXT_CONTRAST}:1). Pick a darker colour.
-                  </p>
-                )}
-              </div>
-              <div className="grid gap-5 md:grid-cols-2">
-                <Field id="captionStyle" label="Captions" hint={CAPTION_STYLE_META[captionStyle].blurb}>
-                  <select id="captionStyle" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value as CaptionStyle)} disabled={submitting} className={cn(controlClass, controlStateClass(false), "h-11")}>
-                    {CAPTION_STYLES.map((k) => (
-                      <option key={k} value={k}>{CAPTION_STYLE_META[k].label}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field id="font" label="Font" hint={FONT_META[font].blurb}>
-                  <select id="font" value={font} onChange={(e) => setFont(e.target.value as FontKey)} disabled={submitting} className={cn(controlClass, controlStateClass(false), "h-11")}>
-                    {FONT_KEYS.map((k) => (
-                      <option key={k} value={k}>{FONT_META[k].label}</option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
-              <Field id="logo" label="Logo" optional hint="PNG with a transparent background works best. Shown small, top right, for the whole video.">
-                <UploadDropzone id="logo" images={logoImages} onChange={setLogoImages} max={1} disabled={submitting} title="Drop your logo here, or click to choose" hint="PNG or JPG, up to 10 MB, one file." onReject={(message) => setErrors((e) => ({ ...e, form: message }))} />
-              </Field>
-            </div>
-          </fieldset>
-
-          <label className="flex items-start gap-3 rounded-[14px] border border-border p-4 text-sm text-ink">
-            <input type="checkbox" checked={reviewScript} onChange={(e) => setReviewScript(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 accent-ink" />
-            <span>
-              <span className="font-medium">Review script first</span>
-              <span className="block text-[13px] text-muted">The video pauses after the script. You pick one of three hooks, adjust the text, and approve before the presenter and product clip are made. Off: the video is made in one go.</span>
-            </span>
-          </label>
 
           <Field
             id="script"
@@ -562,75 +449,127 @@ export function ProjectForm() {
               disabled={submitting}
             />
           </Field>
-        </CardContent>
-      </Card>
 
-      {/* Estimate before the start */}
-      <div className={`flex flex-col gap-2 rounded-[14px] border p-4 sm:flex-row sm:items-center sm:justify-between ${overBudget ? "border-danger/40 bg-danger/5" : "border-border bg-surface-muted"}`}>
-        <div>
-          <p className="text-sm font-medium text-ink">
-            Estimated cost {formatUsd(estimate.total)} · budget {formatUsd(budget)} per video
-          </p>
-          <p className="text-[13px] text-muted">
-            Script {formatUsd(estimate.parts.script)} · product clip {formatUsd(estimate.parts.clip)} (+{formatUsd(estimate.parts.expand)} if the photo needs expanding) · {qualityLabel} presenter {seconds} s {formatUsd(estimate.parts.presenter)} · captions and edit {formatUsd(estimate.parts.captions)}.
-          </p>
-          {overBudget && (
-            <p className="mt-1.5 text-[13px] font-medium text-danger">
-              A {seconds}-second video with the {qualityLabel} presenter is above the budget, so it cannot start.{" "}
-              {lengthsWithinBudget.length > 0 ? `With ${qualityLabel}, choose ${lengthsWithinBudget.join(" or ")} seconds` : `No length fits the budget with ${qualityLabel}`}
-              {engine === "avatar_iv" ? ", or switch to Standard." : "."}
-            </p>
-          )}
-        </div>
-        <Badge tone={overBudget ? "danger" : "success"}>{overBudget ? "over budget" : "within budget"}</Badge>
+          <label className={cn("flex cursor-pointer items-start gap-3 rounded-panel border p-4 text-sm text-ink transition-colors duration-150", reviewScript ? "border-ink bg-surface" : "border-border bg-surface-muted/60 hover:bg-surface")}>
+            <input type="checkbox" checked={reviewScript} onChange={(e) => setReviewScript(e.target.checked)} disabled={submitting} className="mt-0.5 size-4" />
+            <span>
+              <span className="font-medium">Review script first</span>
+              <span className="block text-[13px] leading-relaxed text-muted">The video pauses after the script. You pick one of three hooks, adjust the text, and approve before the presenter and product clip are made. Off: the video is made in one go.</span>
+            </span>
+          </label>
+
+          <Disclosure title="Brand style" summary={brandChanged ? "Custom colour, captions, font or logo" : "Accent colour, caption look, font and logo. All optional."}>
+            <p className="text-[13px] text-muted">Your colour highlights the spoken caption word; the logo sits top right. Captions are the only text on screen.</p>
+            <div>
+              <p className="mb-2 text-[13px] font-medium text-ink">Accent colour</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {BRAND_COLORS.map((c) => {
+                  const selected = !HEX_COLOR.test(customAccent) && accent === c.value;
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => {
+                        setAccent(c.value);
+                        setCustomAccent("");
+                      }}
+                      disabled={submitting}
+                      aria-pressed={selected}
+                      title={c.label}
+                      className={cn("focus-ring grid size-9 place-items-center rounded-full border-2 transition-[border-color,transform] duration-150 hover:-translate-y-px", selected ? "border-ink" : "border-transparent")}
+                    >
+                      <span className="size-6 rounded-full border border-border" style={{ backgroundColor: c.value }} aria-hidden />
+                      <span className="sr-only">{c.label}</span>
+                    </button>
+                  );
+                })}
+                <Input id="customAccent" value={customAccent} onChange={(e) => setCustomAccent(e.target.value.trim())} placeholder="#1F3A5F" maxLength={7} disabled={submitting} className="h-9 w-28 text-[13px]" aria-label="Custom accent colour (hex)" />
+              </div>
+              {lowContrast && (
+                <p role="status" className="mt-2 text-[13px] font-medium text-danger">
+                  This colour is too light: white text on it is hard to read (contrast {accentContrast.toFixed(1)}:1, we recommend at least {MIN_LARGE_TEXT_CONTRAST}:1). Pick a darker colour.
+                </p>
+              )}
+            </div>
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field id="captionStyle" label="Captions" hint={CAPTION_STYLE_META[captionStyle].blurb}>
+                <select id="captionStyle" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value as CaptionStyle)} disabled={submitting} className={cn(controlClass, controlStateClass(false), "h-11")}>
+                  {CAPTION_STYLES.map((k) => (
+                    <option key={k} value={k}>{CAPTION_STYLE_META[k].label}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field id="font" label="Font" hint={FONT_META[font].blurb}>
+                <select id="font" value={font} onChange={(e) => setFont(e.target.value as FontKey)} disabled={submitting} className={cn(controlClass, controlStateClass(false), "h-11")}>
+                  {FONT_KEYS.map((k) => (
+                    <option key={k} value={k}>{FONT_META[k].label}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <Field id="logo" label="Logo" optional hint="PNG with a transparent background works best. Shown small, top right, for the whole video.">
+              <UploadDropzone id="logo" images={logoImages} onChange={setLogoImages} max={1} disabled={submitting} title="Drop your logo here, or click to choose" hint="PNG or JPG, up to 10 MB, one file." onReject={(message) => setErrors((e) => ({ ...e, form: message }))} />
+            </Field>
+          </Disclosure>
+        </SectionCard>
       </div>
 
-      {/* Submit row: the estimate sits on the button, and once more in the confirmation before anything starts */}
-      {confirming ? (
-        <div className="rounded-[14px] border border-ink bg-surface p-5 shadow-card" role="group" aria-labelledby="confirm-title">
-          <p id="confirm-title" className="text-[15px] font-semibold text-ink">Start this video?</p>
-          <p className="mt-1 text-sm leading-relaxed text-muted">
-            {seconds} s · {qualityLabel} presenter · {AD_LANGUAGES[language].label} · 9:16 with captions. Estimated cost <span className="font-medium text-ink">{formatUsd(estimate.total)}</span>, budget {formatUsd(budget)}.
-            {config.demoMode ? " Demo mode: nothing is charged, the run is simulated." : " The real amount is shown on the project page afterwards."}
+      {/* The fixed summary: what was chosen, what it costs, the one button */}
+      <SummaryPanel
+        rows={summaryRows}
+        total={{ label: "Estimated cost", value: formatUsd(estimate.total), tone: overBudget ? "danger" : "neutral" }}
+        footnote={
+          config.demoMode
+            ? "Demo mode: this starts a simulated run. No real video is generated yet."
+            : `Budget ${formatUsd(budget)} per video. Script ${formatUsd(estimate.parts.script)} · product clip ${formatUsd(estimate.parts.clip)} (+${formatUsd(estimate.parts.expand)} if the photo needs expanding) · ${qualityLabel} presenter ${seconds} s ${formatUsd(estimate.parts.presenter)} · captions and edit ${formatUsd(estimate.parts.captions)}. The real amount is shown on the project page afterwards.`
+        }
+      >
+        {overBudget && (
+          <p role="status" className="rounded-chip bg-danger/10 p-3 text-[13px] font-medium leading-relaxed text-danger">
+            A {seconds}-second video with the {qualityLabel} presenter is above the budget of {formatUsd(budget)}, so it cannot start.{" "}
+            {lengthsWithinBudget.length > 0 ? `With ${qualityLabel}, choose ${lengthsWithinBudget.join(" or ")} seconds` : `No length fits the budget with ${qualityLabel}`}
+            {engine === "avatar_iv" ? ", or switch to Standard." : "."}
           </p>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Button type="submit" variant="accent" size="lg" disabled={submitting || overBudget}>
-              {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
-              {submitting ? "Starting…" : `Start now · ${formatUsd(estimate.total)}`}
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={submitting}>
-              Back
-            </Button>
+        )}
+        {confirming ? (
+          <div className="fold-in rounded-panel border border-ink bg-surface p-4" role="group" aria-labelledby="confirm-title">
+            <p id="confirm-title" className="text-[15px] font-semibold text-ink">Start this video?</p>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted">
+              {seconds} s · {qualityLabel} presenter · {AD_LANGUAGES[language].label} · 9:16 with captions. Estimated cost <span className="font-medium text-ink">{formatUsd(estimate.total)}</span>, budget {formatUsd(budget)}.
+              {config.demoMode ? " Demo mode: nothing is charged, the run is simulated." : " The real amount is shown on the project page afterwards."}
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <Button type="submit" variant="accent" size="lg" className="w-full" disabled={submitting || overBudget}>
+                {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
+                {submitting ? "Starting…" : `Start now · ${formatUsd(estimate.total)}`}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={submitting}>
+                Back
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[13px] text-muted">
-            {config.demoMode
-              ? "Demo mode: this starts a simulated run. No real video is generated yet."
-              : "This uploads your photos and starts the real workflow. Costs are capped by the spending limits."}
-          </p>
-          <div className="flex items-center gap-3">
-            <Button
-              href="/dashboard"
-              variant="ghost"
-              aria-disabled={submitting || undefined}
-              className={submitting ? "pointer-events-none opacity-50" : undefined}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" variant="accent" size="lg" disabled={!hydrated || submitting || overBudget}>
+        ) : (
+          <>
+            <Button type="submit" variant="accent" size="lg" className="w-full" disabled={!hydrated || submitting || overBudget}>
               {!hydrated ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
               {!hydrated ? "Loading…" : `Generate video · ${formatUsd(estimate.total)}`}
             </Button>
-          </div>
-        </div>
-      )}
-      {errors.form && (
-        <p role="alert" className="text-sm text-danger">
-          {errors.form}
-        </p>
-      )}
+            <Button
+              href="/dashboard"
+              variant="ghost"
+              className={cn("w-full", submitting && "pointer-events-none opacity-50")}
+              aria-disabled={submitting || undefined}
+            >
+              Cancel
+            </Button>
+          </>
+        )}
+        {errors.form && (
+          <p role="alert" className="text-[13px] text-danger">
+            {errors.form}
+          </p>
+        )}
+      </SummaryPanel>
     </form>
   );
 }

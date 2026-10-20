@@ -8,8 +8,9 @@ import { cn } from "@/lib/utils";
  * Inline fold inside a card, for "Advanced options". A bordered row with a chevron; the content
  * stays mounted while hidden so typed values survive folding.
  */
-export function Disclosure({ title, summary, defaultOpen = false, children, className }: { title: ReactNode; summary?: ReactNode; defaultOpen?: boolean; children: ReactNode; className?: string }) {
-  const [open, setOpen] = useState(defaultOpen);
+export function Disclosure({ title, summary, defaultOpen = false, forceOpen, children, className }: { title: ReactNode; summary?: ReactNode; defaultOpen?: boolean; /** Opens the fold from outside, e.g. when a field inside has an error. */ forceOpen?: boolean; children: ReactNode; className?: string }) {
+  const [openState, setOpen] = useState(defaultOpen);
+  const open = openState || Boolean(forceOpen);
   const id = useId();
   return (
     <div className={cn("rounded-panel border border-border", open && "bg-surface", className)}>

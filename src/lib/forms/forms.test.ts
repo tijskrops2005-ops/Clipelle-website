@@ -10,10 +10,10 @@ import { SPEEDS } from "@/lib/voiceOptions";
  * what they send: if a snapshot changes, something functional changed.
  */
 
-const png = new File([new Uint8Array([1, 2, 3])], "product.png", { type: "image/png" });
-const logo = new File([new Uint8Array([4])], "logo.png", { type: "image/png" });
-const bg = new File([new Uint8Array([5])], "bg.jpg", { type: "image/jpeg" });
-const mp4 = new File([new Uint8Array([6, 7])], "clip.mp4", { type: "video/mp4" });
+const png = new File([new Uint8Array([1, 2, 3])], "product.png", { type: "image/png", lastModified: 0 });
+const logo = new File([new Uint8Array([4])], "logo.png", { type: "image/png", lastModified: 0 });
+const bg = new File([new Uint8Array([5])], "bg.jpg", { type: "image/jpeg", lastModified: 0 });
+const mp4 = new File([new Uint8Array([6, 7])], "clip.mp4", { type: "video/mp4", lastModified: 0 });
 
 const adMinimal: AdFormState = {
   values: { projectName: " Glow launch ", productName: "Glow Serum ", productUrl: "", description: "A lightweight vitamin C serum that brightens dull skin.", script: "", offer: "", direction: "" },

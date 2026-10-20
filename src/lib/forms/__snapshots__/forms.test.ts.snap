@@ -16,7 +16,7 @@ exports[`ad form > sends the same draft for a fully filled form 1`] = `
       Symbol(kLength): 1,
       Symbol(kType): "image/png",
       Symbol(state): FileState {
-        "lastModified": 1792526990665,
+        "lastModified": 0,
         "name": "logo.png",
       },
     },
@@ -30,7 +30,7 @@ exports[`ad form > sends the same draft for a fully filled form 1`] = `
       Symbol(kLength): 3,
       Symbol(kType): "image/png",
       Symbol(state): FileState {
-        "lastModified": 1792526990665,
+        "lastModified": 0,
         "name": "product.png",
       },
     },
@@ -39,7 +39,7 @@ exports[`ad form > sends the same draft for a fully filled form 1`] = `
       Symbol(kLength): 3,
       Symbol(kType): "image/png",
       Symbol(state): FileState {
-        "lastModified": 1792526990665,
+        "lastModified": 0,
         "name": "product.png",
       },
     },
@@ -78,7 +78,7 @@ exports[`ad form > sends the same draft for a minimal form 1`] = `
       Symbol(kLength): 3,
       Symbol(kType): "image/png",
       Symbol(state): FileState {
-        "lastModified": 1792526990665,
+        "lastModified": 0,
         "name": "product.png",
       },
     },
@@ -1541,7 +1541,7 @@ exports[`translate form > sends the same draft for a fully filled form 1`] = `
     Symbol(kLength): 2,
     Symbol(kType): "video/mp4",
     Symbol(state): FileState {
-      "lastModified": 1792526990665,
+      "lastModified": 0,
       "name": "clip.mp4",
     },
   },
@@ -1568,7 +1568,7 @@ exports[`translate form > sends the same draft for a minimal form 1`] = `
     Symbol(kLength): 2,
     Symbol(kType): "video/mp4",
     Symbol(state): FileState {
-      "lastModified": 1792526990665,
+      "lastModified": 0,
       "name": "clip.mp4",
     },
   },

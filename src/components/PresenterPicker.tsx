@@ -7,6 +7,7 @@ import { listPresenters } from "@/lib/data/client";
 import type { Presenter } from "@/lib/types";
 import type { PresenterEngine } from "@/lib/pricing";
 import { Button } from "@/components/ui/Button";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { DemoBadge } from "@/components/DemoModeBadge";
 import { Poster } from "@/components/Poster";
 
@@ -99,27 +100,18 @@ export function PresenterPicker({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1 rounded-full bg-surface-muted p-1" role="radiogroup" aria-label="Filter presenters">
-          {(
-            [
-              ["all", "All"],
-              ["female", "Women"],
-              ["male", "Men"],
-            ] as [Gender, string][]
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              role="radio"
-              aria-checked={gender === key}
-              disabled={disabled}
-              onClick={() => setGender(key)}
-              className={cn("rounded-full px-3 py-1 text-[13px] font-medium transition-colors", gender === key ? "bg-ink text-white" : "text-muted hover:text-ink")}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          label="Filter presenters"
+          size="sm"
+          options={[
+            { key: "all", label: "All" },
+            { key: "female", label: "Women" },
+            { key: "male", label: "Men" },
+          ]}
+          value={gender}
+          onChange={setGender}
+          disabled={disabled}
+        />
         <DemoBadge>Demo presenters</DemoBadge>
       </div>
 
@@ -149,8 +141,8 @@ export function PresenterPicker({
                 onChange(p.id === defaultId ? undefined : p.id, p);
               }}
               className={cn(
-                "group relative overflow-hidden rounded-tile bg-surface-muted text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40",
-                selected ? "ring-2 ring-accent" : "hover:shadow-card",
+                "focus-ring group relative overflow-hidden rounded-tile bg-surface-muted text-left transition-[box-shadow,transform] duration-150",
+                selected ? "ring-2 ring-accent" : "hover:-translate-y-px hover:shadow-card",
               )}
             >
               <div className="relative aspect-[3/4]">
@@ -181,7 +173,7 @@ export function PresenterPicker({
         {hasMore && (
           <Button type="button" variant="secondary" size="sm" onClick={loadMore} disabled={loading || disabled}>
             {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            More presenters
+            Show all presenters
           </Button>
         )}
       </div>
