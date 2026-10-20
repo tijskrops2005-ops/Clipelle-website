@@ -410,14 +410,14 @@ Filterrij met twee groepen: status (All / Processing / Completed / Failed) en so
 
 ---
 
-## 7. Bouwvolgorde (voorstel, nog niet gestart)
+## 7. Bouwvolgorde (stappen 1–4 gebouwd op 20 oktober 2026)
 
 Eerst de kleine, zichtbare winst, dan de structuur, dan wat data vraagt. Alles blijft binnen de huidige scope; geen nieuwe pipeline-stappen.
 
-1. **Resultaat bovenaan** op de projectpagina, pipeline ingeklapt als het project klaar is; werkelijk bedrag op de resultaatkaart. Klein.
-2. **Aanbevolen standaard en 9:16-uitleg** in beide formulieren; schatting herhalen in de bevestiging. Klein.
-3. **Kiezer `/new`** met voorbeeldtegel, tijd en startprijs. Klein.
-4. **Projectenlijst en tegels** met soortfilter en soortlabel. Klein.
+1. **Resultaat bovenaan** op de projectpagina, pipeline ingeklapt als het project klaar is; werkelijk bedrag op de resultaatkaart. Klein. **Gebouwd** (`79d21c7`): `ResultHero` in `ProjectView.tsx`, `ResultSection` in `TranslateProjectView.tsx`, nieuw `src/components/ui/Collapsible.tsx`; feiten (lengte, formaat, taal, kwaliteit, toon, klaar in) naast de speler; in databasemodus het werkelijke bedrag uit de kostenbewaking met de schatting ernaast, in demomodus de schatting met het label dat niets is afgeschreven. Tijdens het verwerken blijft de oude opbouw. Screenshots `reelay-after-project-page-result-top.jpg`, `reelay-after-project-page-folded.jpg`, `reelay-after-translate-result-top.jpg`.
+2. **Aanbevolen standaard en 9:16-uitleg** in beide formulieren; schatting herhalen in de bevestiging. Klein. **Gebouwd** (`a641ef8`): lengte-optie "30 seconds · recommended" plus hint, badge "Recommended" op de standaardkwaliteit (uit `DEFAULT_PRESENTER_ENGINE`) en op Speed, 9:16-uitleg bij de foto-upload en bij het formaat, schatting op de knop ("Generate video · $1.40") en een inline bevestiging met lengte, kwaliteit, taal (A) of seconden, kwaliteit, talen (B) en hetzelfde bedrag; "Start now" start pas daarna. Screenshots `reelay-after-form-recommended.jpg`, `reelay-after-form-confirmation.jpg`. Aandachtspunt: met het budget van $1,50 is de aanbevolen combinatie 30 s + Premium ($1,93) boven budget, dus de badge "Recommended" staat naast "over budget" tot het budget of de standaard verandert.
+3. **Kiezer `/new`** met voorbeeldtegel, tijd en startprijs. Klein. **Gebouwd** (`f73f266`): `src/components/WorkflowChooser.tsx`; eigen voorbeeld (telefoonkader met caption, taalchips), "Typical wait" als gemiddelde van afgeronde projecten van die soort uit de projectenlijst (database of demo; eerste stap gestart → laatste stap klaar), met een vaste aanname zolang er niets gemeten is (advertentie 10 min, aanname; vertaling 5 min, gemeten op 20 oktober), en "from $…" als goedkoopste combinatie uit `src/lib/pricing.ts` (10 s Standard; 60 s Speed per taal). Screenshot `reelay-after-new-chooser.jpg`.
+4. **Projectenlijst en tegels** met soortfilter en soortlabel. Klein. **Gebouwd** (`ccde807`, `b5f9161`): tweede pillenrij All / Ads / Translations met aantallen, soortlabel onder elke tegel (Ad / Translation), echte lengte op afgeronde tegels in plaats van een vaste waarde, skeleton tot de lijst er is, lege toestanden per combinatie; filteren gebeurt in `useMemo` per wijziging. Screenshot `reelay-after-projects-filters.jpg`.
 5. **Advertentieformulier in drie blokken** met ingeklapte opties en sticky samenvatting; presentatorrij met "Show all". Middel. Dit is de grootste verandering en komt pas als 1–4 staan, zodat het formulier in één keer kan worden getest.
 6. **Dashboard "How it works" in twee rijen** met mini-elementen. Middel.
 7. **Settings → Brand** (opslaan van merkstijl en standaardstem/presentator, vooringevuld in het formulier). Middel; vraagt een kleine tabel of een JSON-kolom per gebruiker, dus na de toegangscode uit fase 8.
@@ -444,4 +444,5 @@ Alle bestanden in `docs/research/screens/`, publieke pagina's, 20 oktober 2026.
 | `reelay-script-review.jpg` | Huidige scriptreview |
 | `reelay-voice-picker.jpg` | Huidige stemkiezer |
 | `reelay-new-translate-form-top.jpg`, `reelay-new-translate-form-options.jpg` | Huidig vertaalformulier |
-| `reelay-project-page-translate.jpg`, `reelay-project-page-quality-check.jpg` | Huidige projectpagina (vertaling) |
+| `reelay-project-page-translate.jpg`, `reelay-project-page-quality-check.jpg` | Projectpagina (vertaling) vóór de bouw |
+| `reelay-after-*.jpg` | Na bouwstappen 1–4 (20 oktober 2026): resultaat bovenaan, ingeklapte pijplijn, vertaalresultaat, aanbevolen labels, bevestiging, kiezer, filters |
