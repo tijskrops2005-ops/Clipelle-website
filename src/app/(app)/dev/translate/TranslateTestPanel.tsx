@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, Download, ExternalLink, Loader2, Upload } from "lucide-react";
 import { config } from "@/lib/config";
 import type { LanguageCode, Segment, Translation, TranslationQuality } from "@/lib/types";
-import { LANGUAGES, languageOf } from "@/lib/languages";
+import { BASE_LANGUAGES as LANGUAGES, languageOf } from "@/lib/languages";
 import { estimatePerLanguageUsd, formatUsd, HEYGEN_PROOFREAD_USD_PER_SECOND, HEYGEN_TRANSLATE_USD_PER_SECOND } from "@/lib/translatePricing";
 import { cn } from "@/lib/utils";
 import { Badge, StatusBadge } from "@/components/ui/Badge";

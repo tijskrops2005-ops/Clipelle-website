@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { DemoBadge } from "@/components/DemoModeBadge";
 
@@ -21,12 +21,16 @@ type VideoPlayerProps = {
  * path may be re-issued by a later poll, but swapping the src would reload the player mid-play.
  * The src only changes when the file (path) changes or the old URL is about to expire.
  */
-export function useStableSrc(src: string, maxAgeMs = 50 * 60 * 1000) {
-  const ref = useRef<{ src: string; key: string; at: number } | null>(null);
+export function useStableSrc(src: string, maxAgeMs = 45 * 60 * 1000) {
+  // A ticking generation forces a refresh of the (otherwise frozen) src before the signed URL expires.
+  const [generation, setGeneration] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setGeneration((g) => g + 1), maxAgeMs);
+    return () => window.clearInterval(id);
+  }, [maxAgeMs]);
   const key = fileKey(src);
-  const now = Date.now();
-  if (!ref.current || ref.current.key !== key || now - ref.current.at > maxAgeMs) ref.current = { src, key, at: now };
-  return ref.current.src;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately frozen per file and generation
+  return useMemo(() => src, [key, generation]);
 }
 
 /** The part of a URL that identifies the file: everything before the query string (tokens change, files do not). */

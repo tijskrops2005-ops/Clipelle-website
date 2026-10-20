@@ -85,13 +85,9 @@ export async function listTranslationLanguages(): Promise<string[]> {
  * so we match our five languages against the live list both ways.
  */
 export function matchLanguages(live: string[]): Record<LanguageCode, string | null> {
-  const lower = live.map((l) => l.toLowerCase());
-  const out = {} as Record<LanguageCode, string | null>;
-  for (const lang of LANGUAGES) {
-    const candidates = [lang.heygenName.toLowerCase(), lang.code];
-    const hit = lower.findIndex((l) => candidates.includes(l) || l.startsWith(`${lang.heygenName.toLowerCase()} `) || l.startsWith(`${lang.heygenName.toLowerCase()} (`));
-    out[lang.code] = hit >= 0 ? live[hit] : null;
-  }
+  const lower = new Set(live.map((l) => l.toLowerCase().trim()));
+  const out: Record<LanguageCode, string | null> = {};
+  for (const lang of LANGUAGES) out[lang.code] = lower.has(lang.heygenName.toLowerCase()) ? lang.heygenName : null;
   return out;
 }
 

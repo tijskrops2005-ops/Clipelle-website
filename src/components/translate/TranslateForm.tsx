@@ -2,10 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
-import { Check, Languages, Loader2 } from "lucide-react";
+import { Languages, Loader2 } from "lucide-react";
 import { config } from "@/lib/config";
 import type { LanguageCode, TranslationQuality } from "@/lib/types";
-import { LANGUAGES } from "@/lib/languages";
+import { LANGUAGES, languageOf } from "@/lib/languages";
+import { TOP_LANGUAGES } from "@/lib/translateLanguages";
+import { SearchableSelect, type SelectOption } from "@/components/ui/SearchableSelect";
 import { formatUsd } from "@/lib/translatePricing";
 import { estimateTranslateCost } from "@/lib/pricing";
 import { Badge } from "@/components/ui/Badge";
@@ -15,7 +17,7 @@ import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Field, controlClass, controlStateClass } from "@/components/ui/Field";
+import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { VideoDropzone, type UploadedVideo } from "@/components/ui/VideoDropzone";
 import { DemoBadge } from "@/components/DemoModeBadge";
@@ -54,9 +56,23 @@ export function TranslateForm() {
   const tooLong = video?.seconds !== undefined && video.seconds > config.limits.translateVideoMaxSeconds;
 
   function toggleTarget(code: LanguageCode) {
+    if (code === source) {
+      setErrors((e) => ({ ...e, targets: `${languageOf(code).label} is the spoken language of the video; pick a different language to translate into.` }));
+      return;
+    }
     setTargets((t) => (t.includes(code) ? t.filter((c) => c !== code) : [...t, code]));
     if (errors.targets) setErrors((e) => ({ ...e, targets: undefined }));
   }
+
+  // One option per language and regional variant; most-used languages first, then the rest alphabetically.
+  const languageOptions: SelectOption[] = LANGUAGES.map((l) => ({
+    value: l.code,
+    label: l.label,
+    group: TOP_LANGUAGES.includes(l.base) ? "Most used" : "All languages",
+    disabled: l.code === source,
+    disabledReason: "This is the spoken language of the video",
+  }));
+  const sourceOptions: SelectOption[] = [{ value: "auto", label: "Detect automatically", group: "Recommended" }, ...LANGUAGES.map((l) => ({ value: l.code, label: l.label, group: TOP_LANGUAGES.includes(l.base) ? "Most used" : "All languages" }))];
 
   function validate(): Errors {
     const next: Errors = {};
@@ -154,55 +170,22 @@ export function TranslateForm() {
                 autoComplete="off"
               />
             </Field>
-            <Field id="source" label="Spoken language in the video" hint="Automatic detection works well for a single speaker.">
-              <select
+            <Field id="source" label="Spoken language" hint="Detect automatically works well for one clear speaker. Pick the language only when detection gets it wrong.">
+              <SearchableSelect
                 id="source"
                 value={source}
-                onChange={(e) => {
-                  const value = e.target.value as LanguageCode | "auto";
-                  setSource(value);
+                options={sourceOptions}
+                onChange={(value) => {
+                  setSource(value as LanguageCode | "auto");
                   if (value !== "auto") setTargets((t) => t.filter((c) => c !== value));
                 }}
                 disabled={submitting}
-                className={cn(controlClass, controlStateClass(false), "h-11")}
-              >
-                <option value="auto">Detect automatically</option>
-                {LANGUAGES.map((l) => (
-                  <option key={l.code} value={l.code}>
-                    {l.label}
-                  </option>
-                ))}
-              </select>
+              />
             </Field>
           </div>
 
-          <Field id="targets" label="Translate into" error={errors.targets}>
-            <div id="targets" role="group" aria-label="Target languages" className="flex flex-wrap gap-2">
-              {LANGUAGES.map((l) => {
-                const selected = targets.includes(l.code);
-                const isSource = source === l.code;
-                return (
-                  <button
-                    key={l.code}
-                    type="button"
-                    aria-pressed={selected}
-                    disabled={submitting || isSource}
-                    onClick={() => toggleTarget(l.code)}
-                    title={isSource ? "This is the source language" : undefined}
-                    className={cn(
-                      "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-all",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
-                      selected ? "border-ink bg-ink text-surface" : "border-border bg-surface text-ink hover:bg-surface-muted",
-                      "disabled:opacity-40",
-                    )}
-                  >
-                    {selected && <Check className="size-4" aria-hidden />}
-                    {l.label}
-                    <span className={cn("label-mono", selected ? "text-surface/70" : "text-muted")}>{l.tag}</span>
-                  </button>
-                );
-              })}
-            </div>
+          <Field id="targets" label="Translate into" hint="Search and pick one or more languages. Regional variants (e.g. Dutch (Belgium), English (UK)) change the voice's accent and spelling." error={errors.targets}>
+            <SearchableSelect id="targets" multiple values={targets} options={languageOptions} onToggle={toggleTarget} placeholder="Search a language…" disabled={submitting} invalid={Boolean(errors.targets)} />
           </Field>
 
           <fieldset className="space-y-3">

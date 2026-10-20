@@ -88,8 +88,11 @@ export interface AdProject extends ProjectBase {
   finalVideoUrl?: string;
 }
 
-/** Languages offered in the first version of the translate workflow. */
-export type LanguageCode = "sk" | "de" | "fr" | "nl" | "en";
+/**
+ * A key from the translation-language catalogue (`src/lib/translateLanguages.ts`, 190 languages
+ * and regional variants, e.g. "en", "nl", "dutch-belgium", "english-uk"). Validated at the API.
+ */
+export type LanguageCode = string;
 
 /** HeyGen translation modes: speed (standard lip-sync) or precision (redrawn mouth, slower, pricier). */
 export type TranslationQuality = "speed" | "precision";

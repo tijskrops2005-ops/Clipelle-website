@@ -18,7 +18,7 @@ const SHAPE: Array<[number, number]> = [
   [0.86, 1.0],
 ];
 
-const TEXTS: Record<LanguageCode, string[]> = {
+const TEXTS: Record<string, string[]> = {
   en: [
     "Hi, I'm Mara. I started this brand for one reason.",
     "No bottle kept my coffee hot all morning.",
@@ -62,7 +62,7 @@ const TEXTS: Record<LanguageCode, string[]> = {
 };
 
 /** Shorter, punchier variants: what the "Rewrite in ad tone" button returns in demo mode. */
-const AD_TONE: Record<LanguageCode, string[]> = {
+const AD_TONE: Record<string, string[]> = {
   en: [
     "I'm Mara. One reason I built this.",
     "Nothing kept my coffee hot.",
@@ -123,16 +123,16 @@ export function demoSegments(sourceSeconds: number, source: LanguageCode, target
     index: i + 1,
     start: round1(from * total),
     end: round1(to * total),
-    original: TEXTS[source][i],
-    translated: TEXTS[target][i],
-    text: TEXTS[target][i],
+    original: (TEXTS[source] ?? TEXTS.en)[i],
+    translated: (TEXTS[target] ?? TEXTS.en)[i],
+    text: (TEXTS[target] ?? TEXTS.en)[i],
   }));
 }
 
 /** The simulated "Rewrite in ad tone": shorter text per fragment, clipped to the per-fragment limit. */
 export function demoAdToneRewrite(segments: Segment[], target: LanguageCode): Segment[] {
   return segments.map((s, i) => {
-    const candidate = AD_TONE[target][i] ?? s.text;
+    const candidate = (AD_TONE[target] ?? AD_TONE.en)[i] ?? s.text;
     const max = maxCharsForSegment(s.start, s.end);
     return { ...s, text: candidate.length > max ? `${candidate.slice(0, max - 1).trimEnd()}…` : candidate };
   });

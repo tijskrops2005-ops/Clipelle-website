@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { inngest, reviewApproved, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
 import { db, projects, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
-import { LANGUAGES, languageOf } from "@/lib/languages";
+import { languageCodeForName, languageOf } from "@/lib/languages";
 import type { LanguageCode, Segment } from "@/lib/types";
 import { maxCharsForSegment, SHOTSTACK_USD_PER_SECOND } from "@/lib/translatePricing";
 import {
@@ -214,7 +214,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
           }
           const transcript = cuesBy.transcript ?? [];
           const detected = statuses.find((s) => s.input_language)?.input_language ?? null;
-          const detectedCode = detected ? (LANGUAGES.find((l) => l.code === detected.toLowerCase() || l.heygenName.toLowerCase() === detected.toLowerCase())?.code ?? null) : null;
+          const detectedCode = languageCodeForName(detected);
           for (const code of input.targetLanguages) {
             const cues = cuesBy[code];
             if (!cues) continue;

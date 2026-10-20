@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { z } from "zod";
-import { LANGUAGES } from "@/lib/languages";
+import { isTranslateLanguage } from "@/lib/translateLanguages";
 import type { LanguageCode } from "@/lib/types";
 import type { AdLanguageCode, SpeedKey } from "@/lib/voiceOptions";
 import { config } from "@/lib/config";
@@ -21,8 +21,6 @@ export async function GET() {
     return dataErrorResponse(error);
   }
 }
-
-const codes = LANGUAGES.map((l) => l.code) as [string, ...string[]];
 
 const AdBody = z.object({
   workflow: z.literal("ad"),
@@ -57,14 +55,14 @@ const TranslateBody = z.object({
   name: z.string().trim().min(2).max(120),
   sourceFileName: z.string().trim().min(1).max(200),
   sourceSeconds: z.number().positive().max(config.limits.translateVideoMaxSeconds),
-  sourceLanguage: z.enum(["auto", ...codes]),
-  targetLanguages: z.array(z.enum(codes)).min(1).max(codes.length),
+  sourceLanguage: z.string().refine((v) => v === "auto" || isTranslateLanguage(v), { error: "Unknown source language." }),
+  targetLanguages: z.array(z.string().refine(isTranslateLanguage, { error: "Unknown target language." })).min(1).max(20),
   quality: z.enum(["speed", "precision"]),
   reviewBeforeRender: z.boolean(),
   format: z.enum(["original", "9:16"]),
   enhance: z.boolean(),
   rightsConfirmed: z.literal(true, { error: "Confirm the rights to the video first." }),
-});
+}).refine((b) => !b.targetLanguages.includes(b.sourceLanguage), { error: "A target language cannot be the same as the spoken language." });
 
 /** Creates a draft project. Files are uploaded next (signed URLs), then /start runs the workflow. */
 export async function POST(request: Request) {
