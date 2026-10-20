@@ -24,10 +24,31 @@ import { DemoBadge } from "@/components/DemoModeBadge";
 
 type Errors = Partial<Record<"video" | "projectName" | "targets" | "rights" | "form", string>>;
 
-const QUALITY: Array<{ key: TranslationQuality; title: string; text: string }> = [
-  { key: "speed", title: "Speed", text: "Standard lip-sync. Ready sooner, about half the price." },
-  { key: "precision", title: "Precision", text: "The mouth is redrawn for the new language. Best for close-ups and final ads." },
+/**
+ * Plain-language description of the two modes. Only what the service documents (2026-10-20):
+ * Speed = standard lip-sync, "adequate" translation, best for faces with little movement and
+ * quick drafts, faster. Precision = the mouth is re-rendered with avatar models for significantly
+ * more realistic lip-sync, context- and gender-aware translation, best for faces that move,
+ * side angles, partly covered mouths and more than one speaker; slower. Prices are our rate card
+ * per minute of source video per language (speed $1.50, precision $3.00).
+ */
+const QUALITY: Array<{ key: TranslationQuality; title: string; text: string; bestFor: string; wait: string }> = [
+  {
+    key: "speed",
+    title: "Speed",
+    text: "Fast and affordable. Standard lip-sync and a straightforward translation.",
+    bestFor: "Good for one person talking straight into the camera with little movement, and for quick drafts.",
+    wait: "Usually ready within a few minutes.",
+  },
+  {
+    key: "precision",
+    title: "Precision",
+    text: "The mouth is re-rendered for the new language, so the lip-sync looks noticeably more real. The translation also follows context and the speaker's gender.",
+    bestFor: "Better for faces that move, side angles, a partly covered mouth, several speakers, and for final ads.",
+    wait: "Takes longer; count on roughly twice the time.",
+  },
 ];
+const USD_PER_MINUTE: Record<TranslationQuality, number> = { speed: 1.5, precision: 3 };
 
 /** The "Translate an existing video" form. Demo: simulated project; database: upload + real workflow. */
 export function TranslateForm() {
@@ -218,14 +239,19 @@ export function TranslateForm() {
                       </span>
                       <span className="label-mono text-muted">≈ {formatUsd(est.perLanguageTotal)} / language</span>
                     </span>
-                    <span className="text-[13px] leading-relaxed text-muted">{q.text}</span>
+                    <span className="text-[13px] leading-relaxed text-ink/90">{q.text}</span>
+                    <span className="text-[13px] leading-relaxed text-muted">{q.bestFor}</span>
+                    <span className="text-[13px] text-muted">
+                      {formatUsd(USD_PER_MINUTE[q.key])} per minute of video per language · {q.wait}
+                    </span>
                   </label>
                 );
               })}
             </div>
             <p className="text-[13px] text-muted">
-              Indication for {Math.round(seconds)} s of video, per language: translation {formatUsd(estimate.perLanguage.proofread + estimate.perLanguage.render)}, ad-tone rewrite {formatUsd(estimate.perLanguage.rewrite)}, captions {formatUsd(estimate.perLanguage.captions)}
-              {enhance ? `, enhancement ${formatUsd(estimate.perLanguage.enhance)}` : ""}.
+              Live estimate for {Math.round(seconds)} s of video, {QUALITY.find((q) => q.key === quality)?.title}, {Math.max(1, targets.length)} {targets.length === 1 || targets.length === 0 ? "language" : "languages"}: translation {formatUsd(estimate.perLanguage.proofread + estimate.perLanguage.render)}, quality check {formatUsd(estimate.perLanguage.rewrite)}, captions {formatUsd(estimate.perLanguage.captions)}
+              {enhance ? `, enhancement ${formatUsd(estimate.perLanguage.enhance)}` : ""} per language
+              {targets.length > 1 ? ` · ${formatUsd(estimate.total)} in total` : ""}.
             </p>
           </fieldset>
         </CardContent>

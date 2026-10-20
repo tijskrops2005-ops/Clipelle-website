@@ -78,7 +78,7 @@ export function SearchableSelect({
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-invalid={invalid || undefined}
+        data-invalid={invalid || undefined}
         onClick={() => setOpen((v) => !v)}
         className={cn(controlClass, controlStateClass(invalid), "flex min-h-11 items-center justify-between gap-2 py-1.5 text-left")}
       >
