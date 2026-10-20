@@ -71,7 +71,13 @@ export function SearchableSelect({
   }
 
   return (
-    <div ref={root} className="relative">
+    <div
+      ref={root}
+      className="relative"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setOpen(false);
+      }}
+    >
       <button
         type="button"
         id={inputId}

@@ -5,9 +5,9 @@ import { TranslateForm } from "@/components/translate/TranslateForm";
 export const metadata: Metadata = { title: "Translate a video" };
 
 const afterwards = [
-  { n: 1, title: "Translate", text: "AI translates the speech and matches voice and lip movements." },
-  { n: 2, title: "Review", text: "You check every line next to the original and approve." },
-  { n: 3, title: "Captions and 9:16", text: "Captions and the vertical format are added automatically." },
+  { n: 1, title: "Upload", text: "Your video is checked and stored safely." },
+  { n: 2, title: "Translate", text: "AI translates the speech and checks every line against the original." },
+  { n: 3, title: "Captions and 9:16", text: "Voice and lips are matched; captions and the vertical format are added." },
 ];
 
 export default function NewTranslatePage() {
@@ -16,7 +16,7 @@ export default function NewTranslatePage() {
       <div className="space-y-6">
         <PageHeader
           title="Translate an existing video"
-          description="Upload a video you own and pick the languages. You review the translation before anything is rendered."
+          description="Upload a video you own and pick the languages. The translation is checked automatically; nothing waits for you."
         />
         <ol className="grid gap-3 sm:grid-cols-3">
           {afterwards.map((step) => (
