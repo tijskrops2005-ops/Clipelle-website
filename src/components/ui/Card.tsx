@@ -21,6 +21,11 @@ export function CardTitle({ className, ...props }: ComponentProps<"h3">) {
   );
 }
 
+/** 15px muted line under a card title. */
+export function CardDescription({ className, ...props }: ComponentProps<"p">) {
+  return <p className={cn("mt-1 text-[15px] leading-relaxed text-muted", className)} {...props} />;
+}
+
 export function CardContent({ className, ...props }: ComponentProps<"div">) {
   return <div className={cn("px-5 pb-5 sm:px-7 sm:pb-7", className)} {...props} />;
 }

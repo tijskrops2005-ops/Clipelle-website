@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-type Variant = "primary" | "accent" | "secondary" | "ghost";
+type Variant = "primary" | "accent" | "secondary" | "ghost" | "danger" | "link";
 type Size = "sm" | "md" | "lg";
 
 const base =
@@ -20,6 +20,10 @@ const variants: Record<Variant, string> = {
   secondary:
     "rounded-control bg-surface text-ink border border-border shadow-card hover:bg-surface-muted",
   ghost: "rounded-control text-ink hover:bg-ink/5",
+  // Destructive confirmations only (delete, discard). Never the main action of a page.
+  danger: "rounded-control bg-danger text-white hover:bg-danger/90 hover:-translate-y-px active:translate-y-0",
+  // Inline text link styled as a button, for "Show all", "Back" and similar low-weight actions.
+  link: "h-auto rounded-control px-1 text-ink underline decoration-border underline-offset-4 hover:decoration-ink",
 };
 
 const sizes: Record<Size, string> = {

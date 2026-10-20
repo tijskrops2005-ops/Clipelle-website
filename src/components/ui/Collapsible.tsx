@@ -31,10 +31,10 @@ export function Collapsible({ title, summary, aside, defaultOpen = false, childr
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen((o) => !o)}
-          className="group flex min-w-0 items-center gap-3 rounded-control text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-4 focus-visible:ring-offset-bg"
+          className="focus-ring group flex min-w-0 items-center gap-3 rounded-control text-left"
         >
-          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-surface text-ink shadow-card transition-transform group-hover:-translate-y-px">
-            <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} aria-hidden />
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-surface text-ink shadow-card transition-transform duration-150 group-hover:-translate-y-px">
+            <ChevronDown className={cn("size-4 transition-transform duration-200", open && "rotate-180")} aria-hidden />
           </span>
           <span className="min-w-0">
             <span className="block text-2xl font-semibold text-ink">{title}</span>
@@ -43,7 +43,7 @@ export function Collapsible({ title, summary, aside, defaultOpen = false, childr
         </button>
         {aside}
       </div>
-      <div id={panelId} hidden={!open}>
+      <div id={panelId} hidden={!open} className={open ? "fold-in" : undefined}>
         {children}
       </div>
     </section>

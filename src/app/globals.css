@@ -27,6 +27,21 @@
   --shadow-card-hover: 0 2px 4px rgba(17, 17, 20, 0.05),
     0 20px 40px -16px rgba(17, 17, 20, 0.16);
   --shadow-accent: 0 10px 24px -10px rgba(212, 63, 27, 0.5);
+  /* Lighter lift for inner panels, chips and option cards. */
+  --shadow-soft: 0 1px 2px rgba(17, 17, 20, 0.04), 0 6px 16px -12px rgba(17, 17, 20, 0.12);
+
+  /* Soft tints of the accent and ink, for selected states and highlights (no new hues). */
+  --accent-soft: #fbe9e4;
+  --ink-soft: #f0efea;
+
+  /* Radii for the smaller elements; cards, tiles and controls are above. */
+  --radius-panel: 14px;
+  --radius-chip: 10px;
+
+  /* One timing for every hover, focus and fold; "reduce motion" switches it off below. */
+  --motion-fast: 150ms;
+  --motion-base: 220ms;
+  --ease-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 /* Expose the tokens to Tailwind as utilities (bg-surface, text-muted, rounded-card, shadow-card, ...). */
@@ -51,6 +66,12 @@
   --shadow-card: var(--shadow-card);
   --shadow-card-hover: var(--shadow-card-hover);
   --shadow-accent: var(--shadow-accent);
+  --shadow-soft: var(--shadow-soft);
+  --color-accent-soft: var(--accent-soft);
+  --color-ink-soft: var(--ink-soft);
+  --radius-panel: var(--radius-panel);
+  --radius-chip: var(--radius-chip);
+  --ease-soft: var(--ease-soft);
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -73,6 +94,50 @@
   letter-spacing: -0.03em;
 }
 
+/* Typographic scale (CLAUDE.md "Design direction"): title 24, subtitle 17, body 15, meta 13, label-mono 11. */
+@utility text-title {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+@utility text-subtitle {
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+@utility text-body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+@utility text-meta {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/* Landing-page hero title, a size up from the page title. */
+@utility text-hero {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  line-height: 1.02;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
+/* One keyboard focus ring for every interactive element. */
+@utility focus-ring {
+  outline: none;
+  &:focus-visible {
+    box-shadow:
+      0 0 0 2px var(--bg),
+      0 0 0 4px color-mix(in srgb, var(--ink) 40%, transparent);
+  }
+}
+
+/* Inner panel inside a card (muted surface, 14px radius). */
+@utility panel {
+  background: var(--surface-muted);
+  border-radius: var(--radius-panel);
+}
+
 @layer base {
   body {
     background: var(--bg);
@@ -92,14 +157,35 @@
     outline-offset: 2px;
   }
 
+  /* Native controls pick up the ink colour (checkboxes, radios, range). */
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--ink);
+  }
+
+  /* Every transition uses one soft easing; durations stay short so the UI feels quick. */
+  * {
+    transition-timing-function: var(--ease-soft);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
     *::after {
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
     }
   }
+}
+
+/* Folding sections: height animates from the grid trick, content fades. */
+@keyframes fold-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@utility fold-in {
+  animation: fold-in var(--motion-base) var(--ease-soft);
 }
 
 /* Indeterminate progress bar used while a pipeline step is processing. */
