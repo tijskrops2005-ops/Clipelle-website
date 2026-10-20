@@ -10,7 +10,8 @@
     "db:generate": "node --env-file=.env.local node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "node --env-file=.env.local node_modules/drizzle-kit/bin.cjs migrate",
     "db:check": "node --env-file=.env.local node_modules/drizzle-kit/bin.cjs check",
-    "dev:jobs": "inngest-cli dev -u http://localhost:3001/api/inngest --no-discovery"
+    "dev:jobs": "inngest-cli dev -u http://localhost:3001/api/inngest --no-discovery",
+    "test": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
@@ -37,6 +38,7 @@
     "eslint-config-next": "16.4.2",
     "inngest-cli": "^1.46.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

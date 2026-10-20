@@ -9,6 +9,7 @@ import { useHydrated } from "@/lib/useHydrated";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { PresenterPicker } from "@/components/PresenterPicker";
 import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, formatUsd, type AdLength, type PresenterEngine } from "@/lib/pricing";
+import { buildAdDraft, effectiveAccentOf, validateAdForm, type AdFormErrors, type AdFormValues } from "@/lib/forms/adDraft";
 import { cn } from "@/lib/utils";
 import type { Presenter } from "@/lib/types";
 import { VoicePicker } from "@/components/VoicePicker";
@@ -45,48 +46,8 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { UploadDropzone, type UploadedImage } from "@/components/ui/UploadDropzone";
 
-type Values = {
-  projectName: string;
-  productName: string;
-  productUrl: string;
-  description: string;
-  script: string;
-  offer: string;
-  direction: string;
-};
-
-type Errors = Partial<Record<keyof Values | "images" | "form", string>>;
-
-const MIN_DESCRIPTION = 20;
-
-function isValidHttpUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function validate(values: Values, images: UploadedImage[]): Errors {
-  const errors: Errors = {};
-  if (values.projectName.trim().length < 2) {
-    errors.projectName = "Give the project a name so you can find it later.";
-  }
-  if (!values.productName.trim()) {
-    errors.productName = "Enter the product name.";
-  }
-  if (values.productUrl.trim() && !isValidHttpUrl(values.productUrl.trim())) {
-    errors.productUrl = "Enter a full link that starts with http:// or https://.";
-  }
-  if (values.description.trim().length < MIN_DESCRIPTION) {
-    errors.description = `Describe the product in at least ${MIN_DESCRIPTION} characters.`;
-  }
-  if (images.length === 0) {
-    errors.images = "Add at least one product image.";
-  }
-  return errors;
-}
+type Values = AdFormValues;
+type Errors = AdFormErrors;
 
 /**
  * The "New ad" form. Validates on submit, disables the button while submitting
@@ -125,7 +86,7 @@ export function ProjectForm() {
   const [font, setFont] = useState<FontKey>(DEFAULT_FONT);
   const [logoImages, setLogoImages] = useState<UploadedImage[]>([]);
   const [reviewScript, setReviewScript] = useState(false);
-  const effectiveAccent = HEX_COLOR.test(customAccent) ? customAccent.toUpperCase() : accent;
+  const effectiveAccent = effectiveAccentOf(accent, customAccent);
   // White text sits on the accent (the highlighted caption word): warn below 3:1.
   const accentContrast = contrastRatio(effectiveAccent, "#FFFFFF");
   const lowContrast = accentContrast < MIN_LARGE_TEXT_CONTRAST;
@@ -154,7 +115,7 @@ export function ProjectForm() {
     event.preventDefault();
     if (submitLock.current) return; // guard against double clicks / Enter + click
 
-    const nextErrors = validate(values, images);
+    const nextErrors = validateAdForm(values, images.length);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       const first = Object.keys(nextErrors)[0];
@@ -171,37 +132,28 @@ export function ProjectForm() {
     setSubmitting(true);
 
     try {
-      const { id } = await createAdProject({
-        name: values.projectName.trim(),
-        seconds,
-        engine,
-        lookId,
-        background:
-          backgroundChoice === "image" && backgroundImages[0]
-            ? { type: "image", file: backgroundImages[0].file }
-            : backgroundChoice !== "own" && backgroundChoice !== "image"
-              ? { type: "color", value: BACKGROUND_COLORS.find((c) => c.key === backgroundChoice)?.value ?? "#FFFFFF" }
-              : undefined,
-        brand: {
-          accent: effectiveAccent !== DEFAULT_ACCENT ? effectiveAccent : undefined,
-          captionStyle: captionStyle !== DEFAULT_CAPTION_STYLE ? captionStyle : undefined,
-          font: font !== DEFAULT_FONT ? font : undefined,
+      const { id } = await createAdProject(
+        buildAdDraft({
+          values,
+          seconds,
+          engine,
+          lookId,
+          backgroundChoice,
+          backgroundImage: backgroundImages[0]?.file,
+          accent,
+          customAccent,
+          captionStyle,
+          font,
           logo: logoImages[0]?.file,
-        },
-        reviewScript,
-        language,
-        accent: voiceAccent,
-        voiceId,
-        speed,
-        offer: values.offer.trim() || undefined,
-        direction: values.direction.trim() || undefined,
-        tone,
-        productName: values.productName.trim(),
-        productUrl: values.productUrl.trim() || undefined,
-        description: values.description.trim(),
-        script: values.script.trim() || undefined,
-        images: images.map((img) => img.file),
-      });
+          reviewScript,
+          language,
+          voiceAccent,
+          voiceId,
+          speed,
+          tone,
+          images: images.map((img) => img.file),
+        }),
+      );
       images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
       router.push(`/projects/${id}`);
     } catch (error) {

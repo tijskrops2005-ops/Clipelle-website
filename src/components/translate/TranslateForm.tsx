@@ -21,8 +21,9 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { VideoDropzone, type UploadedVideo } from "@/components/ui/VideoDropzone";
 import { DemoBadge } from "@/components/DemoModeBadge";
+import { buildTranslateDraft, validateTranslateForm, type TranslateFormErrors } from "@/lib/forms/translateDraft";
 
-type Errors = Partial<Record<"video" | "projectName" | "targets" | "rights" | "form", string>>;
+type Errors = TranslateFormErrors;
 
 /**
  * Plain-language description of the two modes. Only what the service documents (2026-10-20):
@@ -78,7 +79,6 @@ export function TranslateForm() {
     estimateTranslateCost({ seconds, quality: q, enhance: enh, languages: Math.max(1, targets.length), hasSourceTranscript: source !== "auto" });
   const estimate = estimateFor(quality);
   const overBudget = estimate.perLanguageTotal > budget;
-  const tooLong = video?.seconds !== undefined && video.seconds > config.limits.translateVideoMaxSeconds;
 
   function toggleTarget(code: LanguageCode) {
     if (code === source) {
@@ -99,14 +99,10 @@ export function TranslateForm() {
   }));
   const sourceOptions: SelectOption[] = [{ value: "auto", label: "Detect automatically", group: "Recommended" }, ...LANGUAGES.map((l) => ({ value: l.code, label: l.label, group: TOP_LANGUAGES.includes(l.base) ? "Most used" : "All languages" }))];
 
+  const formState = { video: video ?? undefined, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition };
+
   function validate(): Errors {
-    const next: Errors = {};
-    if (!video) next.video = "Add the video you want to translate.";
-    else if (tooLong) next.video = `Videos up to ${config.limits.translateVideoMaxSeconds / 60} minutes for now.`;
-    if (projectName.trim().length < 2) next.projectName = "Give the project a name so you can find it later.";
-    if (targets.length === 0) next.targets = "Choose at least one target language.";
-    if (!rights) next.rights = "We can only translate videos you own, with the speaker's consent. Tick the box to continue.";
-    return next;
+    return validateTranslateForm(formState);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -128,20 +124,7 @@ export function TranslateForm() {
     submitLock.current = true;
     setSubmitting(true);
     try {
-      const { id } = await createTranslateProject({
-        name: projectName.trim(),
-        video: video.file,
-        sourceSeconds: Math.round(video.seconds ?? 30),
-        sourceLanguage: source,
-        targetLanguages: targets,
-        quality,
-        keepTerms: keepTerms.split(/[,\n]/).map((t) => t.trim()).filter(Boolean).slice(0, 20),
-        format,
-        enhance,
-        trimSilence,
-        captionPosition,
-        rightsConfirmed: rights,
-      });
+      const { id } = await createTranslateProject(buildTranslateDraft({ ...formState, video }));
       router.push(`/projects/${id}`);
     } catch (error) {
       submitLock.current = false;
