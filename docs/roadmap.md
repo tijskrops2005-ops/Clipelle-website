@@ -186,6 +186,13 @@ Aanbeveling voor deze stap: **Topaz via fal.ai** (goedkoopst, één sleutel die 
 
 Optie 2 bewaren we voor het geval HeyGen tegenvalt op één van twee punten: de proofread-stap blijkt toch Enterprise-only (dan vervalt de tekstcontrole), of de stemkwaliteit voldoet niet. Omdat lipsync en TTS achter dezelfde interface kunnen zitten als Workflow A (`src/lib/services/`), is die overstap per bouwsteen te doen.
 
+### Stand van zaken (20 oktober 2026)
+
+- **Reviewstap verwijderd** (20 okt 2026): de workflow is Upload → Translate → Captions and 9:16. Een automatische kwaliteitscontrole (Sonnet, ≈ $0,01 per taal) vergelijkt elke regel met de brontranscriptie en corrigeert ontbrekende of toegevoegde woorden, betekenisfouten, cijfers, namen en onnatuurlijke zinnen; wijzigingen en waarschuwingen staan op de projectpagina. De gecorrigeerde SRT gaat vóór de betaalde render terug naar de dienst (bestaande PUT-route). Zonder bekende brontaal (automatische detectie) controleert het model alleen de doeltekst.
+- **Taalkeuzes:** brontaal met "Detect automatically" vooraf geselecteerd en alle talen doorzoekbaar; doeltalen uit de live lijst van de dienst (190, met regiovarianten), doorzoekbaar, meest gebruikte eerst; dezelfde taal als bron en doel wordt geweigerd.
+- **Termen bewaren** via brand glossary (gratis). **Stilte knippen** (standaard aan) en **ondertitelpositie** (Low/Middle) in de montage. **Snelheid:** polls 8 s, taalversies parallel.
+- **Aannames (20 okt):** de proofread accepteert `brand_glossary_id` (staat in de referentie; nog niet betaald getest); prijzen per minuut zijn ons tarief ($1,50 speed, $3 precision per taal), de documentatie noemt geen prijs; stilte wordt uit ondertiteltijden afgeleid, niet uit het geluid.
+
 ### Stand van zaken (19 oktober 2026)
 - **Deel 1 (gebouwd, demo mode):** keuzescherm op `/new`, formulier `/new/translate` (upload met preview, 32 MB-melding vóór upload, brontaal, vijf doeltalen, speed/precision met kostenindicatie, verplicht rechtenvinkje), projectpagina met pipeline Upload → Vertalen → Correctie (wacht op de gebruiker) → Ondertitels en 9:16, correctiescherm met origineel naast vertaling, tekenlimiet per fragment (15 tekens/s), "Herschrijf in advertentietoon", één resultaat per taal.
 - **Deel 2 (gebouwd, echte koppelingen op `/dev/translate`):** `src/lib/services/translate.ts` (HeyGen assets, talen, proofread-sessie, SRT ophalen/terugzetten, genereren, status, SRT-parser), `src/lib/services/adTone.ts` (Claude herschrijft binnen de tekenlimiet, zelfde aantal fragmenten en tijden), `buildCaptionEdit` in `finalEdit.ts` (Shotstack captions uit HeyGens SRT + 9:16). Alle betaalde routes via de cost guard met bevestiging; rechtenvinkje verplicht op elke route.
@@ -297,6 +304,16 @@ Dit is in de kern Workflow B zoals al gebouwd (`src/lib/inngest/functions/transl
 Naast Workflow A: **gedeeld** zijn upload via signed URLs, opslag, de cost guard en het budget per taalversie, de reviewstap, de ondertitelstijlen en merkkleur, taal- en accentlijst, en de projectpagina met één resultaat per taal. **Apart** zijn de stem (gekloond uit de bron, geen stemkeuze), het script (geen generatie, alleen correctie/herschrijving), en de productclip en presentator (niet van toepassing).
 
 Aanbeveling: de goedkoopste, simpelste eerste versie bestaat al bijna: Workflow B in speed-modus zonder beeldverbetering, met ondertitels in de bestaande stijl, voor $1,05–$1,11 per taal van 30 s. Nog te doen: dezelfde ondertitelstijl- en merkkeuzes als Workflow A op `/new/translate` zetten, en de eerste betaalde proofread-test (wacht op HeyGen-tegoed). Het volgende logische besluit: of dit als apart, goedkoper product ("vertaal mijn video") naast de advertentie-workflow wordt aangeboden, en tegen welke prijs per taal.
+
+### c) Workflow B sneller of goedkoper, met kwaliteits- of kostenrisico (niet doorgevoerd, 20 okt 2026)
+
+| Idee | Verwachte tijdwinst | Kwaliteitsverlies of risico |
+|---|---|---|
+| Webhooks in plaats van polling (stage8-plan stap 8) | ≈ 8–20 s per wachtmoment, 3 momenten per taal | Geen; vereist een publieke URL (tunnel of deployment), dus pas bij deployment |
+| Speed-modus afdwingen in plaats van Precision | ≈ 50% kortere vertaaltijd | Minder realistische lipsync bij bewegende gezichten; keuze blijft bij de klant |
+| Lagere renderresolutie bij Shotstack (720p) | ≈ 20–30% kortere ondertitelrender | Zachter beeld op 1080×1920-schermen; niet doen |
+| Geen brontranscript aanvragen (bespaart één proofread ≈ $0,03 en ≈ 0–20 s) | klein | De controle kan dan niet met de bron vergelijken; niet doen |
+| Volume normaliseren naar social-niveau (eerste resultaat ≈ −30 dB) | – | Kan niet met de huidige API's (Shotstack volume 0–1, geen loudness-normalisatie; HeyGen geen optie). Idee: nabewerking met ffmpeg `loudnorm` (−14 LUFS) op een eigen worker, ≈ $0 maar vereist een server met ffmpeg |
 
 ## Bevestigingstest HeyGen-tarieven (nog te doen, ≈ $0,60)
 

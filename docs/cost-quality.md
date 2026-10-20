@@ -113,7 +113,7 @@ Let op de tweede grens: `MAX_COST_PER_ACTION_USD` ($1,50 per aanroep). De presen
 |---|---|---|---|---|
 | Proofread (eigen taal) | $0,125 | $0,125 | $0,125 | $0,125 |
 | Transcript brontaal, gedeeld (bij 1 taal volledig, bij 2 talen de helft) | $0,06 tot $0,125 | $0,06 tot $0,125 | $0,06 tot $0,125 | $0,06 tot $0,125 |
-| Herschrijving (Sonnet 5.5) | $0,01 | $0,01 | $0,01 | $0,01 |
+| Automatische kwaliteitscontrole (Sonnet 5.5; verving de review op 20 okt 2026) | $0,01 | $0,01 | $0,01 | $0,01 |
 | Render | $0,75 | $0,75 | $1,50 | $1,50 |
 | Beeldverbetering | – | $0,60 | – | $0,60 |
 | Ondertitels en formaat (Shotstack) | $0,10 | $0,10 | $0,10 | $0,10 |
@@ -204,3 +204,11 @@ Met een doorpratende presentator op Avatar IV passen alleen 10 en 20 seconden bi
 | Merkstijl (kleur, ondertitels, font, logo) | Geen: zelfde Shotstack-render; een logo-afbeelding is een extra asset zonder prijs | Geen |
 
 `estimateAdCost` is dus alleen afhankelijk van lengte en presentatorkwaliteit; de andere keuzes veranderen het bedrag op het formulier niet.
+
+## 15. Workflow B na 20 oktober 2026: geen review, automatische controle, snelheid
+
+- **Reviewstap weg.** De klant hoeft niets meer goed te keuren; de vertaling wordt per regel door Sonnet vergeleken met de brontranscriptie (de extra proofread die we al aanvroegen) en gecorrigeerd binnen de timing. Kosten ≈ $0,01 per taal (`checkUsd`), geregistreerd als `translate_check`. Bij "Detect automatically" is er geen transcript: dan controleert het model alleen de doeltekst op natuurlijkheid en afgebroken zinnen.
+- **Termen bewaren** (merk- en productnamen) gaat via een brand glossary van de vertaaldienst; die is gratis.
+- **Gemeten (project "Senvia", 8 s, één taal, speed, 19 okt):** upload 2 s, vertaling 1:47, review 0:43 (waarvan ≈ 34 s stilstand tussen stappen), ondertitels en 9:16 1:58 (render 1:04, ondertitels 0:50, telkens tot 20 s poll-wachttijd); totaal ≈ 5:00. **Na de wijzigingen:** geen reviewstap, polls elke 8 s in plaats van 20 s, taalversies parallel. Verwacht voor hetzelfde project ≈ 3:30; nog te meten bij de volgende echte run.
+- **Stilte aan begin en eind** wordt uit de ondertiteltijden afgeleid en in de montage weggeknipt (standaard aan); de lipsync blijft onaangeraakt. **Volume normaliseren** kan niet met de huidige diensten (Shotstack: volume 0–1 per clip, geen loudness-normalisatie; HeyGen: geen optie) en staat als idee in de roadmap.
+- **Vergelijkingstest Speed/Precision (nog niet uitgevoerd):** dezelfde video van 8 s in beide modi ≈ $0,03 + $0,20 (speed) en $0,03 + $0,40 (precision) plus 2 × $0,03 ondertitels ≈ **$0,72** in totaal.
