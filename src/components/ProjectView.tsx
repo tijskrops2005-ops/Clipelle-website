@@ -101,7 +101,7 @@ export function ProjectView({ id }: { id: string }) {
 function ResultHero({ project }: { project: AdProject }) {
   const took = projectDurationMs(project);
   const language = isAdLanguage(project.language) ? AD_LANGUAGES[project.language].label : "English";
-  const quality = project.engine === "avatar_iii" ? "Standard" : "Premium";
+  const quality = project.engine === "avatar_iv" ? "Premium" : "Standard";
   const estimate = projectEstimateUsd(project);
   return (
     <section className="space-y-5">
@@ -357,7 +357,7 @@ function DetailsCard({ project }: { project: AdProject }) {
           </div>
           <div>
             <p className="label-mono mb-1.5 text-muted">Length · presenter</p>
-            <p className="text-ink/90">{project.seconds ?? 30} s · {project.engine === "avatar_iii" ? "Standard" : "Premium"}</p>
+            <p className="text-ink/90">{project.seconds ?? 30} s · {project.engine === "avatar_iv" ? "Premium" : "Standard"}</p>
           </div>
         </div>
         {project.background && (

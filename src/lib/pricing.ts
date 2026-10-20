@@ -93,10 +93,16 @@ export type PresenterEngine = keyof typeof PRICING.presenterUsdPerSecond;
 
 /** Customer-facing names for the presenter engines (provider and engine names stay on /dev pages and Settings). */
 export const PRESENTER_QUALITIES: { key: PresenterEngine; label: string; blurb: string }[] = [
-  { key: "avatar_iii", label: "Standard", blurb: "A solid presenter at the lowest price. Movement is a little stiffer." },
-  { key: "avatar_iv", label: "Premium", blurb: "Natural head and hand movement, best lip-sync. The default." },
+  { key: "avatar_iii", label: "Standard", blurb: "A solid presenter at the lowest price; every length fits the budget. Movement is a little stiffer." },
+  { key: "avatar_iv", label: "Premium", blurb: "Natural head and hand movement, best lip-sync. Costs more per second, so longer videos may not fit the budget." },
 ];
-export const DEFAULT_PRESENTER_ENGINE: PresenterEngine = "avatar_iv";
+/**
+ * Recommended and preselected quality: Standard (Avatar III). Decided 2026-10-20: 30 s with Premium
+ * ($1.93) sits above the $1.50 budget per video, while 30 s Standard is $0.68 estimated ($0.53 measured
+ * on the first real run). Premium is reviewed again once the real HeyGen rate is measured and the budget
+ * decision (docs/cost-quality.md §13, proposal A) is taken.
+ */
+export const DEFAULT_PRESENTER_ENGINE: PresenterEngine = "avatar_iii";
 export function isPresenterEngine(value: string): value is PresenterEngine {
   return value in PRICING.presenterUsdPerSecond;
 }
@@ -161,4 +167,4 @@ export function defaultClipModel(at = new Date()): ClipModelKey {
 }
 
 /** Defaults the orchestrator uses unless .env.local overrides them (mirrored in src/lib/workflow/settings.ts). */
-export const DEFAULTS = { adSeconds: DEFAULT_AD_SECONDS, clipModel: defaultClipModel(), engine: "avatar_iv" as PresenterEngine, presenterResolution: "1080p" as const };
+export const DEFAULTS = { adSeconds: DEFAULT_AD_SECONDS, clipModel: defaultClipModel(), engine: DEFAULT_PRESENTER_ENGINE, presenterResolution: "1080p" as const };

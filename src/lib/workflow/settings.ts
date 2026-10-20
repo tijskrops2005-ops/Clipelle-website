@@ -17,7 +17,8 @@ export const workflowSettings = {
   heygenLookId: process.env.HEYGEN_DEFAULT_LOOK_ID?.trim() || "",
   /** HeyGen voice id. Empty: the look's default voice, else the first public voice. */
   heygenVoiceId: process.env.HEYGEN_DEFAULT_VOICE_ID?.trim() || "",
-  heygenEngine: (process.env.HEYGEN_DEFAULT_ENGINE?.trim() === "avatar_iii" ? "avatar_iii" : "avatar_iv") as HeygenEngine,
+  /** Presenter engine for projects without one: Standard (avatar_iii) is the recommendation since 2026-10-20 (docs/cost-quality.md §4). */
+  heygenEngine: (process.env.HEYGEN_DEFAULT_ENGINE?.trim() === "avatar_iv" ? "avatar_iv" : "avatar_iii") as HeygenEngine,
   /** Presenter resolution; no surcharge for 1080p in HeyGen's API rate card (docs/cost-quality.md §4). */
   heygenResolution: (process.env.HEYGEN_DEFAULT_RESOLUTION?.trim() === "720p" ? "720p" : "1080p") as "720p" | "1080p",
   /** fal.ai image-to-video model for the product clip (docs/cost-quality.md §2). Empty: date-based default. */

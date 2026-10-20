@@ -294,6 +294,8 @@ export function ProjectForm() {
                 const est = estimateFor(seconds, q.key);
                 const over = est.total > budget;
                 const selected = engine === q.key;
+                // What this quality adds on top of the recommended one, for the same length.
+                const extra = est.total - estimateFor(seconds, DEFAULT_PRESENTER_ENGINE).total;
                 return (
                   <button
                     key={q.key}
@@ -311,7 +313,10 @@ export function ProjectForm() {
                         {q.label}
                         {q.key === DEFAULT_PRESENTER_ENGINE && <Badge tone="success">Recommended</Badge>}
                       </span>
-                      <Badge tone={over ? "danger" : "neutral"}>{over ? `${formatUsd(est.total)} · over budget` : `about ${formatUsd(est.total)}`}</Badge>
+                      <Badge tone={over ? "danger" : "neutral"}>
+                        {over ? `${formatUsd(est.total)} · over budget` : `about ${formatUsd(est.total)}`}
+                        {extra > 0.005 ? ` · +${formatUsd(extra)}` : ""}
+                      </Badge>
                     </span>
                     <span className="mt-1 block text-[13px] text-muted">{q.blurb}</span>
                   </button>
