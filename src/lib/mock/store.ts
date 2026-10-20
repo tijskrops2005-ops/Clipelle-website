@@ -31,17 +31,22 @@ function loadFromStorage() {
   hydratedFromStorage = true;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const stored = (JSON.parse(raw) as Project[]).map(normalise);
-    // Seed projects always stay; stored ones are the user's demo creations.
-    const seedIds = new Set(mockProjects.map((p) => p.id));
-    const extra = stored.filter((p) => !seedIds.has(p.id));
-    projects = sortNewestFirst([...mockProjects, ...extra]);
-    emit();
+    if (raw) {
+      const stored = (JSON.parse(raw) as Project[]).map(normalise);
+      // Seed projects always stay; stored ones are the user's demo creations.
+      const seedIds = new Set(mockProjects.map((p) => p.id));
+      const extra = stored.filter((p) => !seedIds.has(p.id));
+      projects = sortNewestFirst([...mockProjects, ...extra]);
+    }
   } catch {
     // Corrupt or blocked storage: keep the seed data.
   }
+  // Always notify, so "ready" flips even when nothing was stored.
+  queueMicrotask(emit);
 }
+
+/** True once localStorage has been read on the client (screens show skeletons before that). */
+export const isHydrated = () => hydratedFromStorage;
 
 /** Projects stored before the translate workflow existed have no `workflow` field. */
 function normalise(project: Project): Project {

@@ -102,10 +102,11 @@ export function useProject(id: string): Project | undefined {
 export function useProjectsReady(): boolean {
   const ready = useSyncExternalStore(
     (cb) => {
+      if (config.demoMode) return mockStore.subscribeToProjects(cb);
       listeners.add(cb);
       return () => listeners.delete(cb);
     },
-    () => (config.demoMode ? true : hydrated),
+    () => (config.demoMode ? mockStore.isHydrated() : hydrated),
     () => false,
   );
   // Make sure the first fetch is triggered even when no list hook is mounted yet.
