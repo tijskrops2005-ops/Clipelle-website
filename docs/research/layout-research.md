@@ -446,3 +446,4 @@ Alle bestanden in `docs/research/screens/`, publieke pagina's, 20 oktober 2026.
 | `reelay-new-translate-form-top.jpg`, `reelay-new-translate-form-options.jpg` | Huidig vertaalformulier |
 | `reelay-project-page-translate.jpg`, `reelay-project-page-quality-check.jpg` | Projectpagina (vertaling) vóór de bouw |
 | `reelay-after-*.jpg` | Na bouwstappen 1–4 (20 oktober 2026): resultaat bovenaan, ingeklapte pijplijn, vertaalresultaat, aanbevolen labels, bevestiging, kiezer, filters |
+| `reelay-after-quality-standard-recommended.jpg`, `reelay-after-form-button-standard.jpg`, `reelay-after-dashboard-copy.jpg`, `reelay-after-project-standard-spent.jpg` | Correcties van 20 oktober: Standard aanbevolen met de meerprijs van Premium, knop met $0,68, dashboardtekst "alleen ondertitels", projectpagina met werkelijk bedrag |
