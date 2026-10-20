@@ -169,8 +169,11 @@ export function StepProgressCard({
 
     case "failed":
       panel = (
-        <div className="space-y-1.5">
-          <p className="text-sm font-semibold text-danger">This step did not finish</p>
+        <div className="space-y-1.5 rounded-chip border border-danger/30 bg-danger/5 p-3">
+          <p className="flex items-center gap-2 text-sm font-semibold text-danger">
+            <TriangleAlert className="size-4 shrink-0" aria-hidden />
+            This step did not finish
+          </p>
           <p className="text-sm leading-relaxed text-ink/80">{step.error ?? "An unknown error occurred."}</p>
         </div>
       );

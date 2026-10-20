@@ -13,9 +13,9 @@ export function ProjectTile({ project }: { project: Project }) {
   return (
     <Link
       href={`/projects/${project.id}`}
-      className="group block rounded-tile focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-4 focus-visible:ring-offset-bg"
+      className="focus-ring group block rounded-tile"
     >
-      <div className="relative aspect-[9/16] overflow-hidden rounded-tile bg-surface-muted shadow-card transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-card-hover">
+      <div className="relative aspect-[9/16] overflow-hidden rounded-tile bg-surface-muted shadow-card transition-[box-shadow,transform] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-card-hover">
         {/* Poster: the first product image, or a curated gradient.
             Real poster frames arrive with the final-edit output (Stage 8). */}
         <Poster

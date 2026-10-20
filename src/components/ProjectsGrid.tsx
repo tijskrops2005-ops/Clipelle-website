@@ -5,10 +5,10 @@ import { Plus, Video } from "lucide-react";
 import type { Project, ProjectStatus, WorkflowKind } from "@/lib/types";
 import { useProjects, useProjectsReady } from "@/lib/data/client";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProjectTile } from "@/components/ProjectTile";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 
 type Filter = "all" | Extract<ProjectStatus, "processing" | "completed" | "failed">;
 
@@ -72,8 +72,8 @@ export function ProjectsGrid() {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center gap-3">
-        <SegmentedControl label="Filter by status" options={filters} value={filter} counts={statusCounts} onChange={setFilter} />
-        <SegmentedControl label="Filter by kind" options={kindFilters} value={kind} counts={kindCounts} onChange={setKind} />
+        <SegmentedControl label="Filter by status" options={filters.map((f) => ({ ...f, count: statusCounts[f.key] }))} value={filter} onChange={setFilter} />
+        <SegmentedControl label="Filter by kind" options={kindFilters.map((f) => ({ ...f, count: kindCounts[f.key] }))} value={kind} onChange={setKind} />
       </div>
 
       {!ready ? (
@@ -119,46 +119,6 @@ export function ProjectsGrid() {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-/** A pill row with counts; one for status, one for kind. */
-function SegmentedControl<K extends string>({
-  label,
-  options,
-  value,
-  counts,
-  onChange,
-}: {
-  label: string;
-  options: { key: K; label: string }[];
-  value: K;
-  counts: Record<K, number>;
-  onChange: (key: K) => void;
-}) {
-  return (
-    <div role="tablist" aria-label={label} className="inline-flex flex-wrap gap-1 rounded-full bg-surface-muted p-1">
-      {options.map(({ key, label: text }) => {
-        const active = key === value;
-        return (
-          <button
-            key={key}
-            role="tab"
-            type="button"
-            aria-selected={active}
-            onClick={() => onChange(key)}
-            className={cn(
-              "inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition-all",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-muted",
-              active ? "bg-surface text-ink shadow-card" : "text-muted hover:text-ink",
-            )}
-          >
-            {text}
-            <span className={cn("label-mono rounded-full px-1.5 py-0.5", active ? "bg-ink/5 text-ink" : "text-muted")}>{counts[key]}</span>
-          </button>
-        );
-      })}
     </div>
   );
 }

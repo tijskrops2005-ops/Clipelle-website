@@ -30,7 +30,7 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
         eyebrow={
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink"
           >
             <ArrowLeft className="size-4" aria-hidden />
             Dashboard

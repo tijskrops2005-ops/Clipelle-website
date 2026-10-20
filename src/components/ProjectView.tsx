@@ -56,7 +56,7 @@ export function ProjectView({ id }: { id: string }) {
         eyebrow={
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink"
           >
             <ArrowLeft className="size-4" aria-hidden />
             Dashboard
@@ -124,7 +124,7 @@ function ResultHero({ project }: { project: AdProject }) {
               <Fact label="Tone" value={TONE_META[project.tone ?? DEFAULT_TONE].label} />
               <Fact label="Ready in" value={took !== undefined ? formatSeconds(took) : "—"} />
             </dl>
-            <div className="rounded-[14px] bg-surface-muted p-4">
+            <div className="panel p-4">
               {config.demoMode || project.spentUsd === undefined ? (
                 <p className="flex flex-wrap items-center justify-between gap-2 text-sm">
                   <span className="text-muted">Estimated cost</span>
