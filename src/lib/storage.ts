@@ -61,9 +61,23 @@ export async function createSignedUpload(path: string) {
 }
 
 /** Signed download URL (default 1 hour). Used by the UI and handed to providers as a public input URL. */
+/**
+ * Signed URLs are cached per process (2026-10-20): every project poll used to mint a fresh URL,
+ * so the <video src> changed every 3 s and the player reloaded mid-play. A URL is reused until
+ * 10 minutes before it expires; the file itself never changes under the same path.
+ */
+const SIGNED_URL_REFRESH_MARGIN_MS = 10 * 60 * 1000;
+const signedCache = (globalThis as unknown as { __reelaySignedUrls?: Map<string, { url: string; expiresAt: number }> }).__reelaySignedUrls ??= new Map();
+(globalThis as unknown as { __reelaySignedUrls?: typeof signedCache }).__reelaySignedUrls = signedCache;
+
 export async function signedDownloadUrl(path: string, expiresInSeconds = 3600, download?: string) {
+  const key = `${path}|${expiresInSeconds}|${download ?? ""}`;
+  const hit = signedCache.get(key);
+  if (hit && hit.expiresAt - Date.now() > SIGNED_URL_REFRESH_MARGIN_MS) return hit.url;
   const { data, error } = await supabaseAdmin().storage.from(BUCKET).createSignedUrl(path, expiresInSeconds, download ? { download } : undefined);
   if (error || !data) throw new StorageError(`Could not sign a download URL: ${error?.message ?? "unknown"}`, "sign_failed");
+  signedCache.set(key, { url: data.signedUrl, expiresAt: Date.now() + expiresInSeconds * 1000 });
+  if (signedCache.size > 2000) signedCache.delete(signedCache.keys().next().value as string);
   return data.signedUrl;
 }
 

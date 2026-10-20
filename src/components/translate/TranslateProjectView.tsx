@@ -217,9 +217,7 @@ function DetailsCard({ project, sourceLanguage }: { project: TranslateProject; s
         {project.sourceVideoUrl && (
           <div>
             <p className="label-mono mb-2 text-muted">Source video</p>
-            <div className="relative aspect-video overflow-hidden rounded-[10px] bg-ink shadow-card">
-              <video src={project.sourceVideoUrl} controls muted playsInline preload="metadata" className="size-full object-contain" aria-label="Source video" />
-            </div>
+            <VideoPlayer src={project.sourceVideoUrl} fit="contain" muted aspect="16:9" className="rounded-[10px]" />
           </div>
         )}
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
