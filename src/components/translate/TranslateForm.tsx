@@ -66,6 +66,8 @@ export function TranslateForm() {
   const [captionPosition, setCaptionPosition] = useState<"low" | "middle">("low");
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+  /** Second step of the submit: the form is valid and the customer sees the cost once more before anything starts. */
+  const [confirming, setConfirming] = useState(false);
   const submitLock = useRef(false);
   // Before React is attached a click would submit the form natively and reload the page with nothing saved.
   const hydrated = useHydrated();
@@ -114,9 +116,14 @@ export function TranslateForm() {
     setErrors(next);
     if (Object.keys(next).length > 0) {
       document.getElementById(Object.keys(next)[0])?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setConfirming(false);
       return;
     }
     if (!video) return;
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
 
     submitLock.current = true;
     setSubmitting(true);
@@ -139,6 +146,7 @@ export function TranslateForm() {
     } catch (error) {
       submitLock.current = false;
       setSubmitting(false);
+      setConfirming(false);
       setErrors({ form: error instanceof Error ? error.message : "Something went wrong while starting the translation. Please try again." });
     }
   }
@@ -240,6 +248,7 @@ export function TranslateForm() {
                           className="size-4 accent-ink"
                         />
                         {q.title}
+                        {q.key === "speed" && <Badge tone="success">Recommended</Badge>}
                       </span>
                       <span className="label-mono text-muted">≈ {formatUsd(est.perLanguageTotal)} / language</span>
                     </span>
@@ -277,7 +286,7 @@ export function TranslateForm() {
             <div className="grid gap-3 sm:grid-cols-2">
               {(
                 [
-                  { key: "9:16", title: "Vertical 9:16", text: "For TikTok, Reels and Shorts. The speaker is centred; the sides are cropped." },
+                  { key: "9:16", title: "Vertical 9:16 · recommended", text: "For TikTok, Reels and Shorts. The speaker is centred; the sides are cropped." },
                   { key: "original", title: "Keep original", text: "Same width and height as the video you upload. Captions added." },
                 ] as const
               ).map((f) => (
@@ -377,26 +386,46 @@ export function TranslateForm() {
         <Badge tone={overBudget ? "danger" : "success"}>{overBudget ? "over budget" : "within budget"}</Badge>
       </div>
 
-      {/* Submit row */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2 text-[13px] text-muted">
-          <DemoBadge>Demo mode</DemoBadge>
-          <span>
-            {config.demoMode
-              ? "This starts a simulated run. No video is uploaded or translated yet."
-              : "This uploads your video and starts the real translation. Costs are capped by the spending limits."}
-          </span>
+      {/* Submit row: the estimate sits on the button, and once more in the confirmation before anything starts */}
+      {confirming ? (
+        <div className="rounded-[14px] border border-ink bg-surface p-5 shadow-card" role="group" aria-labelledby="confirm-title">
+          <p id="confirm-title" className="text-[15px] font-semibold text-ink">Start this translation?</p>
+          <p className="mt-1 text-sm leading-relaxed text-muted">
+            {Math.round(seconds)} s of video · {QUALITY.find((q) => q.key === quality)?.title} · {targets.length} {targets.length === 1 ? "language" : "languages"} ({targets.map((t) => languageOf(t).label).join(", ")}) · {format === "9:16" ? "9:16" : "original size"} with captions.
+            {" "}Estimated cost <span className="font-medium text-ink">{formatUsd(estimate.perLanguageTotal)}</span> per language{targets.length > 1 ? <>, <span className="font-medium text-ink">{formatUsd(estimate.total)}</span> in total</> : null}; budget {formatUsd(budget)} per language.
+            {config.demoMode ? " Demo mode: nothing is charged, the run is simulated." : " The real amount per language is shown on the project page afterwards."}
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button type="submit" variant="accent" size="lg" disabled={submitting || !rights || overBudget}>
+              {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
+              {submitting ? "Starting…" : `Start now · ${formatUsd(estimate.total)}`}
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={submitting}>
+              Back
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button href="/new" variant="ghost" aria-disabled={submitting || undefined} className={submitting ? "pointer-events-none opacity-50" : undefined}>
-            Back
-          </Button>
-          <Button type="submit" variant="accent" size="lg" disabled={!hydrated || submitting || !rights || overBudget}>
-            {submitting || !hydrated ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
-            {!hydrated ? "Loading…" : submitting ? "Starting…" : "Start translation"}
-          </Button>
+      ) : (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-[13px] text-muted">
+            <DemoBadge>Demo mode</DemoBadge>
+            <span>
+              {config.demoMode
+                ? "This starts a simulated run. No video is uploaded or translated yet."
+                : "This uploads your video and starts the real translation. Costs are capped by the spending limits."}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button href="/new" variant="ghost" aria-disabled={submitting || undefined} className={submitting ? "pointer-events-none opacity-50" : undefined}>
+              Back
+            </Button>
+            <Button type="submit" variant="accent" size="lg" disabled={!hydrated || submitting || !rights || overBudget}>
+              {!hydrated ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
+              {!hydrated ? "Loading…" : `Start translation · ${formatUsd(estimate.perLanguageTotal)}${targets.length > 1 ? " per language" : ""}`}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
       {errors.form && (
         <p role="alert" className="text-sm text-danger">
           {errors.form}

@@ -132,6 +132,8 @@ export function ProjectForm() {
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+  /** Second step of the submit: the form is valid and the customer sees the cost once more before anything starts. */
+  const [confirming, setConfirming] = useState(false);
   const submitLock = useRef(false);
   // Before React is attached a click would submit the form natively and reload the page with nothing saved.
   const hydrated = useHydrated();
@@ -157,6 +159,11 @@ export function ProjectForm() {
     if (Object.keys(nextErrors).length > 0) {
       const first = Object.keys(nextErrors)[0];
       document.getElementById(first)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setConfirming(false);
+      return;
+    }
+    if (!confirming) {
+      setConfirming(true);
       return;
     }
 
@@ -200,6 +207,7 @@ export function ProjectForm() {
     } catch (error) {
       submitLock.current = false;
       setSubmitting(false);
+      setConfirming(false);
       setErrors({
         form:
           error instanceof Error
@@ -222,7 +230,7 @@ export function ProjectForm() {
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
-          <Field id="images" label="Product images" error={errors.images}>
+          <Field id="images" label="Product images" hint="Every ad is vertical 9:16, the format for TikTok, Reels and Shorts. Portrait or square photos work best." error={errors.images}>
             <UploadDropzone
               id="images"
               images={images}
@@ -299,7 +307,10 @@ export function ProjectForm() {
                     )}
                   >
                     <span className="flex items-center justify-between gap-2">
-                      <span className="text-[15px] font-semibold text-ink">{q.label}</span>
+                      <span className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+                        {q.label}
+                        {q.key === DEFAULT_PRESENTER_ENGINE && <Badge tone="success">Recommended</Badge>}
+                      </span>
                       <Badge tone={over ? "danger" : "neutral"}>{over ? `${formatUsd(est.total)} · over budget` : `about ${formatUsd(est.total)}`}</Badge>
                     </span>
                     <span className="mt-1 block text-[13px] text-muted">{q.blurb}</span>
@@ -465,7 +476,7 @@ export function ProjectForm() {
             />
           </Field>
 
-          <Field id="seconds" label="Video length" hint="The presenter talks the whole video. The estimate below follows your choice.">
+          <Field id="seconds" label="Video length" hint={`Recommended: ${DEFAULT_AD_SECONDS} s. The presenter talks the whole video; the estimate follows your choice.`}>
             <select
               id="seconds"
               value={seconds}
@@ -475,7 +486,7 @@ export function ProjectForm() {
             >
               {AD_LENGTHS.map((len) => (
                 <option key={len} value={len}>
-                  {len} seconds · about {formatUsd(estimateFor(len).total)}{estimateFor(len).total > budget ? " · over budget" : ""}
+                  {len} seconds · about {formatUsd(estimateFor(len).total)}{len === DEFAULT_AD_SECONDS ? " · recommended" : ""}{estimateFor(len).total > budget ? " · over budget" : ""}
                 </option>
               ))}
             </select>
@@ -617,32 +628,47 @@ export function ProjectForm() {
         <Badge tone={overBudget ? "danger" : "success"}>{overBudget ? "over budget" : "within budget"}</Badge>
       </div>
 
-      {/* Submit row */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-[13px] text-muted">
-          {config.demoMode
-            ? "Demo mode: this starts a simulated run. No real video is generated yet."
-            : "This uploads your photos and starts the real workflow. Costs are capped by the spending limits."}
-        </p>
-        <div className="flex items-center gap-3">
-          <Button
-            href="/dashboard"
-            variant="ghost"
-            aria-disabled={submitting || undefined}
-            className={submitting ? "pointer-events-none opacity-50" : undefined}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" variant="accent" size="lg" disabled={!hydrated || submitting || overBudget}>
-            {submitting || !hydrated ? (
-              <Loader2 className="size-5 animate-spin" aria-hidden />
-            ) : (
-              <Sparkles className="size-5" aria-hidden />
-            )}
-            {!hydrated ? "Loading…" : submitting ? "Starting…" : "Generate video"}
-          </Button>
+      {/* Submit row: the estimate sits on the button, and once more in the confirmation before anything starts */}
+      {confirming ? (
+        <div className="rounded-[14px] border border-ink bg-surface p-5 shadow-card" role="group" aria-labelledby="confirm-title">
+          <p id="confirm-title" className="text-[15px] font-semibold text-ink">Start this video?</p>
+          <p className="mt-1 text-sm leading-relaxed text-muted">
+            {seconds} s · {qualityLabel} presenter · {AD_LANGUAGES[language].label} · 9:16 with captions. Estimated cost <span className="font-medium text-ink">{formatUsd(estimate.total)}</span>, budget {formatUsd(budget)}.
+            {config.demoMode ? " Demo mode: nothing is charged, the run is simulated." : " The real amount is shown on the project page afterwards."}
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button type="submit" variant="accent" size="lg" disabled={submitting || overBudget}>
+              {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
+              {submitting ? "Starting…" : `Start now · ${formatUsd(estimate.total)}`}
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={submitting}>
+              Back
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[13px] text-muted">
+            {config.demoMode
+              ? "Demo mode: this starts a simulated run. No real video is generated yet."
+              : "This uploads your photos and starts the real workflow. Costs are capped by the spending limits."}
+          </p>
+          <div className="flex items-center gap-3">
+            <Button
+              href="/dashboard"
+              variant="ghost"
+              aria-disabled={submitting || undefined}
+              className={submitting ? "pointer-events-none opacity-50" : undefined}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="accent" size="lg" disabled={!hydrated || submitting || overBudget}>
+              {!hydrated ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
+              {!hydrated ? "Loading…" : `Generate video · ${formatUsd(estimate.total)}`}
+            </Button>
+          </div>
+        </div>
+      )}
       {errors.form && (
         <p role="alert" className="text-sm text-danger">
           {errors.form}
