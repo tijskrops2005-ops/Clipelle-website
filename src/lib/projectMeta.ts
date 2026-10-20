@@ -5,7 +5,15 @@ import { speedValue } from "@/lib/voiceOptions";
 /** Second line under a project title: the product (A) or the languages (B). */
 export function projectSubtitle(project: Project) {
   if (project.workflow === "ad") return project.productName;
-  return `Translation · ${project.targetLanguages.map((l) => languageOf(l).tag).join(", ")}`;
+  return project.targetLanguages.map((l) => languageOf(l).tag).join(", ");
+}
+
+/** Length shown on a finished tile: the chosen ad length (A) or the source length (B), as m:ss. */
+export function projectLengthLabel(project: Project) {
+  const seconds = project.workflow === "ad" ? (project.seconds ?? DEFAULTS.adSeconds) : project.sourceSeconds;
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 /** First product image (A) or nothing (B) — used as poster on tiles. */

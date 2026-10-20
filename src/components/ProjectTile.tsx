@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Languages, Play } from "lucide-react";
+import { Clapperboard, Languages, Play } from "lucide-react";
 import type { Project } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
-import { projectMonogram, projectPosterUrl, projectSubtitle, projectVideoCount } from "@/lib/projectMeta";
+import { projectLengthLabel, projectMonogram, projectPosterUrl, projectSubtitle, projectVideoCount } from "@/lib/projectMeta";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Poster } from "@/components/Poster";
 
@@ -32,7 +32,7 @@ export function ProjectTile({ project }: { project: Project }) {
         {project.workflow === "translate" && (
           <span
             className="label-mono absolute right-3 top-3 inline-flex h-7 items-center gap-1 rounded-full bg-surface px-2.5 text-ink shadow-card"
-            title="Translation project"
+            title={`Translation into ${project.targetLanguages.length} ${project.targetLanguages.length === 1 ? "language" : "languages"}`}
           >
             <Languages className="size-3" aria-hidden />
             {project.targetLanguages.length}
@@ -46,7 +46,7 @@ export function ProjectTile({ project }: { project: Project }) {
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{project.name}</p>
                 <p className="label-mono mt-1 opacity-80">
-                  {projectVideoCount(project) > 1 ? `${projectVideoCount(project)} videos · 9:16` : "0:24 · 9:16"}
+                  {projectVideoCount(project) > 1 ? `${projectVideoCount(project)} videos · 9:16` : `${projectLengthLabel(project)} · 9:16`}
                 </p>
               </div>
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-surface text-ink shadow-card transition-transform group-hover:scale-105">
@@ -66,8 +66,15 @@ export function ProjectTile({ project }: { project: Project }) {
         >
           {project.name}
         </h3>
-        <p className="truncate text-[13px] text-muted">
-          {projectSubtitle(project)} · {formatDate(project.createdAt)}
+        <p className="flex items-center gap-2 text-[13px] text-muted">
+          {/* Kind label: which workflow made this project */}
+          <span className="label-mono inline-flex shrink-0 items-center gap-1 rounded-full bg-ink/5 px-1.5 py-0.5 text-ink">
+            {project.workflow === "translate" ? <Languages className="size-3" aria-hidden /> : <Clapperboard className="size-3" aria-hidden />}
+            {project.workflow === "translate" ? "Translation" : "Ad"}
+          </span>
+          <span className="truncate">
+            {projectSubtitle(project)} · {formatDate(project.createdAt)}
+          </span>
         </p>
       </div>
     </Link>
