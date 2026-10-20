@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { ArrowLeft, Download, FolderOpen, Plus } from "lucide-react";
+import { Collapsible } from "@/components/ui/Collapsible";
+import { projectDurationMs, projectEstimateUsd } from "@/lib/projectMeta";
+import { formatSeconds } from "@/components/pipeline/PipelineStep";
 import { config } from "@/lib/config";
 import type { AdProject } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
@@ -65,18 +68,107 @@ export function ProjectView({ id }: { id: string }) {
         actions={<HeaderActions project={project} />}
       />
 
-      <div className="grid gap-8 xl:grid-cols-3">
-        <section className="space-y-5 xl:col-span-2">
-          {project.steps.script.status === "needs_input" && <ScriptReviewPanel project={project} />}
-          <SectionHeader title="Pipeline" description={pipelineSummary(project)} />
-          <Pipeline project={project} />
-        </section>
+      {project.status === "completed" && project.finalVideoUrl ? (
+        <>
+          {/* The result first: the player and the facts about the video, then the rest folded away. */}
+          <ResultHero project={project} />
+          <Collapsible title="Pipeline" summary={pipelineSummary(project)}>
+            <Pipeline project={project} />
+          </Collapsible>
+          <Collapsible title="Project details" summary="Your input: product, presenter, brand style and script.">
+            <DetailsCard project={project} />
+          </Collapsible>
+        </>
+      ) : (
+        <div className="grid gap-8 xl:grid-cols-3">
+          <section className="space-y-5 xl:col-span-2">
+            {project.steps.script.status === "needs_input" && <ScriptReviewPanel project={project} />}
+            <SectionHeader title="Pipeline" description={pipelineSummary(project)} />
+            <Pipeline project={project} />
+          </section>
 
-        <aside className="grid gap-6 md:grid-cols-2 xl:sticky xl:top-6 xl:block xl:self-start xl:space-y-6">
-          <ResultCard project={project} />
-          <DetailsCard project={project} />
-        </aside>
-      </div>
+          <aside className="grid gap-6 md:grid-cols-2 xl:sticky xl:top-6 xl:block xl:self-start xl:space-y-6">
+            <ResultCard project={project} />
+            <DetailsCard project={project} />
+          </aside>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Facts about a finished video, next to the player: length, format, language, quality and what it cost. */
+function ResultHero({ project }: { project: AdProject }) {
+  const took = projectDurationMs(project);
+  const language = isAdLanguage(project.language) ? AD_LANGUAGES[project.language].label : "English";
+  const quality = project.engine === "avatar_iii" ? "Standard" : "Premium";
+  const estimate = projectEstimateUsd(project);
+  return (
+    <section className="space-y-5">
+      <SectionHeader title="Your video" description="Ready to download. 9:16, captions included." aside={<DemoBadge>Demo placeholder</DemoBadge>} />
+      <Card>
+        <CardContent className="grid gap-8 pt-7 md:grid-cols-[auto_1fr] md:items-center">
+          {/* The player keeps its position in the tree, so polls never remount it. */}
+          <VideoPlayer
+            src={project.finalVideoUrl!}
+            poster={project.imageUrls[0]}
+            simulated={config.demoMode}
+            className="mx-auto w-full max-w-[280px] md:mx-0"
+          />
+          <div className="space-y-6">
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm sm:grid-cols-3">
+              <Fact label="Length" value={`${project.seconds ?? 30} s`} />
+              <Fact label="Format" value="9:16 · 1080p" />
+              <Fact label="Language" value={`${language}${project.accent ? ` · ${project.accent.toUpperCase()}` : ""}`} />
+              <Fact label="Presenter quality" value={quality} />
+              <Fact label="Tone" value={TONE_META[project.tone ?? DEFAULT_TONE].label} />
+              <Fact label="Ready in" value={took !== undefined ? formatSeconds(took) : "—"} />
+            </dl>
+            <div className="rounded-[14px] bg-surface-muted p-4">
+              {config.demoMode || project.spentUsd === undefined ? (
+                <p className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span className="text-muted">Estimated cost</span>
+                  <span className="font-medium text-ink">{formatUsd(estimate)} <span className="text-muted">· demo, nothing was charged</span></span>
+                </p>
+              ) : (
+                <p className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span className="text-muted">Spent on this video</span>
+                  <span className="font-medium text-ink">
+                    {formatUsd(project.spentUsd)}
+                    <span className="text-muted"> · estimate was {formatUsd(estimate)}{project.budgetUsd !== undefined ? `, budget ${formatUsd(project.budgetUsd)}` : ""}</span>
+                  </span>
+                </p>
+              )}
+              {config.demoMode && (
+                <p className="mt-2 text-[13px] leading-relaxed text-muted">This clip is a stand-in. The real ad arrives here once the services are connected.</p>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button href={project.finalVideoUrl!} variant="accent" size="lg" download>
+                <Download className="size-[18px]" aria-hidden />
+                Download video
+              </Button>
+              <Button href="/new/ad" variant="primary" size="lg">
+                <Plus className="size-4" aria-hidden />
+                Make another
+              </Button>
+              <Button href="/dashboard" variant="ghost" size="lg">
+                <ArrowLeft className="size-4" aria-hidden />
+                Back to dashboard
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="label-mono mb-1 text-muted">{label}</dt>
+      <dd className="text-ink/90">{value}</dd>
     </div>
   );
 }
@@ -87,7 +179,7 @@ function pipelineSummary(project: AdProject) {
   ).length;
   switch (project.status) {
     case "completed":
-      return "All four steps finished. Your video is ready on the right.";
+      return "All four steps finished. Your video is above.";
     case "failed": {
       const failed = (["script", "productClip", "presenter", "finalEdit"] as const).find(
         (k) => project.steps[k].status === "failed",
