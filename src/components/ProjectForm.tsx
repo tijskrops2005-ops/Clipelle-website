@@ -126,7 +126,7 @@ export function ProjectForm() {
   const [logoImages, setLogoImages] = useState<UploadedImage[]>([]);
   const [reviewScript, setReviewScript] = useState(false);
   const effectiveAccent = HEX_COLOR.test(customAccent) ? customAccent.toUpperCase() : accent;
-  // White text sits on the accent (hook sticker, CTA pill, active caption word): warn below 3:1.
+  // White text sits on the accent (the highlighted caption word): warn below 3:1.
   const accentContrast = contrastRatio(effectiveAccent, "#FFFFFF");
   const lowContrast = accentContrast < MIN_LARGE_TEXT_CONTRAST;
   const [images, setImages] = useState<UploadedImage[]>([]);
@@ -431,7 +431,7 @@ export function ProjectForm() {
             {backgroundChoice === "image" && (
               <div className="mt-3">
                 <UploadDropzone id="backgroundImage" images={backgroundImages} onChange={setBackgroundImages} max={1} disabled={submitting} title="Drop a background image here, or click to choose" hint="PNG or JPG, up to 10 MB. Portrait or square works best." onReject={(message) => setErrors((e) => ({ ...e, form: message }))} />
-                <p className="mt-1.5 text-[13px] text-muted">A calm, plain picture works best: the hook text and captions sit on top of it.</p>
+                <p className="mt-1.5 text-[13px] text-muted">A calm, plain picture works best: the captions sit on top of it.</p>
               </div>
             )}
           </div>
@@ -527,7 +527,7 @@ export function ProjectForm() {
 
           <fieldset className="rounded-[14px] bg-surface-muted p-4">
             <legend className="px-1 text-sm font-medium text-ink">Brand style</legend>
-            <p className="mb-4 mt-1 text-[13px] text-muted">All optional. Your colour goes on the hook, the call-to-action button and the spoken caption word; the logo sits top right.</p>
+            <p className="mb-4 mt-1 text-[13px] text-muted">All optional. Your colour highlights the spoken caption word; the logo sits top right. Captions are the only text on screen.</p>
             <div className="space-y-5">
               <div>
                 <p className="mb-2 text-[13px] font-medium text-ink">Accent colour</p>

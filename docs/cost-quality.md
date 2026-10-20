@@ -40,7 +40,7 @@ $0,04 per foto. Alleen nodig als het product niet in een 9:16-uitsnede past; de 
 
 ## 4. Presentator (HeyGen)
 
-Sinds 19 oktober 2026 praat de presentator de hele advertentie door (ook terwijl de productclip, de voordelen en de eindkaart in beeld zijn). De presentatorvideo is dus net zo lang als de advertentie.
+Sinds 19 oktober 2026 praat de presentator de hele advertentie door (ook terwijl de productclip in beeld is; voordelen en eindkaart als tekst zijn diezelfde dag geschrapt). De presentatorvideo is dus net zo lang als de advertentie.
 
 | Engine | Per seconde | 10 s | 20 s | 30 s | 45 s | 60 s | Kwaliteit |
 |---|---|---|---|---|---|---|---|

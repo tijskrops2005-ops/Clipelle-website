@@ -26,7 +26,7 @@ export const stepMeta: Record<StepKey, StepMeta> = {
     number: 1,
     title: "Script",
     service: config.stepLabels.script,
-    description: "A hook, the presenter's lines, three benefits and a call to action, written from your product description.",
+    description: "The presenter's lines, written from your product description: a hook, three benefits and a call to action, all spoken.",
     waitingNote: "Queued. Starts as soon as the workflow begins.",
     needsInputNote: "Your review: pick a hook, adjust the text if you like, and approve. Nothing paid starts before that.",
     doneLabel: "Script ready",
@@ -49,7 +49,7 @@ export const stepMeta: Record<StepKey, StepMeta> = {
     number: 4,
     title: "Final edit",
     service: config.stepLabels.finalEdit,
-    description: "Combines both clips into a 9:16 ad with captions, music and a call to action.",
+    description: "Combines both clips into one 9:16 ad with captions of what the presenter says. Nothing else is placed on screen.",
     waitingNote: "Waits until the product clip and the presenter are both ready.",
   },
 };

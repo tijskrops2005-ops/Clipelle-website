@@ -32,7 +32,7 @@ export const config = {
     script: "AI script",
     productClip: "AI product footage",
     presenter: "AI presenter",
-    finalEdit: "Captions, music and 9:16",
+    finalEdit: "Captions and 9:16",
     upload: "Secure upload",
     translate: "AI translation",
     captions: "Captions and 9:16",

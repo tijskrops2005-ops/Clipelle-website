@@ -36,7 +36,7 @@ export function HowItWorks() {
           number={3}
           title="Final edit"
           service={config.stepLabels.finalEdit}
-          description="Both clips are combined into a 9:16 ad with captions, music and a call to action."
+          description="Both clips are combined into one 9:16 ad with captions of what the presenter says. Nothing else is placed on screen."
           panel={<FinalVideoIllustration className={illustrationClass} />}
         />
       </div>

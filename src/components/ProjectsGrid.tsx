@@ -26,7 +26,7 @@ const emptyCopy: Record<Filter, { title: string; description: string }> = {
   },
   processing: {
     title: "Nothing is processing",
-    description: "Start a new video and follow its three steps here.",
+    description: "Start a new video and follow its steps here.",
   },
   completed: {
     title: "No finished videos yet",

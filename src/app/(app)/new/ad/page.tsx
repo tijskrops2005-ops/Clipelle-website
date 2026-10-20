@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "New ad" };
 const afterwards = [
   { n: 1, title: "Product clip", text: "AI animates your product photos into short footage." },
   { n: 2, title: "AI presenter", text: "A realistic presenter speaks the script on camera." },
-  { n: 3, title: "Final edit", text: "Both clips become one 9:16 ad with captions and music." },
+  { n: 3, title: "Final edit", text: "Both clips become one 9:16 ad with captions. Nothing else is placed on screen." },
 ];
 
 export default function NewAdPage() {
@@ -16,7 +16,7 @@ export default function NewAdPage() {
       <div className="space-y-6">
         <PageHeader
           title="New ad from a product photo"
-          description="Tell us about the product once. After you click Generate, three steps run on their own and the finished ad lands on your dashboard."
+          description="Tell us about the product once. After you click Generate, the steps run on their own and the finished ad lands on your dashboard."
         />
         <ol className="grid gap-3 sm:grid-cols-3">
           {afterwards.map((step) => (
