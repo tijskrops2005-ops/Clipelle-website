@@ -7,8 +7,10 @@ import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Brand } from "@/components/Brand";
+import { DemoModeBadge } from "@/components/DemoModeBadge";
 import { isActivePath, navItems } from "@/components/nav";
 
+/** Desktop navigation: sits on the page background, only the active item is a white card. */
 export function Sidebar() {
   const pathname = usePathname();
 
@@ -18,7 +20,7 @@ export function Sidebar() {
         <Brand />
       </div>
 
-      {/* Primary action — always the most prominent thing in the sidebar */}
+      {/* Primary action: always the most prominent thing in the sidebar */}
       <Button href="/new" variant="accent" size="lg" className="mt-8 w-full">
         <Plus className="size-[18px]" aria-hidden />
         Create new video
@@ -33,21 +35,21 @@ export function Sidebar() {
               href={href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex h-10 items-center gap-3 rounded-control px-3 text-sm font-medium transition-all",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
-                active
-                  ? "bg-surface text-ink shadow-card"
-                  : "text-muted hover:bg-ink/5 hover:text-ink",
+                "focus-ring group flex h-10 items-center gap-3 rounded-control px-3 text-sm font-medium transition-[background-color,color,box-shadow] duration-150",
+                active ? "bg-surface text-ink shadow-card" : "text-muted hover:bg-ink/5 hover:text-ink",
               )}
             >
-              <Icon className="size-[18px]" aria-hidden />
+              <Icon className={cn("size-[18px] transition-colors duration-150", active ? "text-accent" : "text-muted group-hover:text-ink")} aria-hidden />
               {label}
             </Link>
           );
         })}
       </nav>
 
-      <p className="label-mono px-1 text-muted">{config.tagline}</p>
+      <div className="space-y-3 px-1">
+        <DemoModeBadge />
+        <p className="label-mono leading-[1.5] text-muted">{config.tagline}</p>
+      </div>
     </aside>
   );
 }

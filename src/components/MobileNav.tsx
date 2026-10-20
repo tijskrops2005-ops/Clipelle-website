@@ -35,21 +35,29 @@ export function MobileNav() {
 
   return (
     <>
-      <div className="flex h-14 items-center justify-between gap-3 px-4">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            aria-label="Open menu"
-            aria-expanded={open}
-            aria-controls={panelId}
-            onClick={() => setOpen(true)}
-            className="grid size-10 place-items-center rounded-control text-ink hover:bg-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40"
-          >
-            <Menu className="size-5" aria-hidden />
-          </button>
-          <Brand />
+      {/* Floating rounded bar: menu, brand, the main action as a round accent button */}
+      <div className="sticky top-0 z-40 px-3 pt-3">
+        <div className="flex h-14 items-center justify-between gap-2 rounded-full bg-surface px-2 shadow-card">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label="Open menu"
+              aria-expanded={open}
+              aria-controls={panelId}
+              onClick={() => setOpen(true)}
+              className="focus-ring grid size-10 place-items-center rounded-full text-ink transition-colors duration-150 hover:bg-ink/5"
+            >
+              <Menu className="size-5" aria-hidden />
+            </button>
+            <Brand />
+          </div>
+          <div className="flex items-center gap-2 pr-1">
+            <DemoModeBadge />
+            <Link href="/new" aria-label="Create new video" className="focus-ring grid size-10 place-items-center rounded-full bg-accent text-white shadow-accent transition-colors duration-150 hover:bg-accent-hover">
+              <Plus className="size-5" aria-hidden />
+            </Link>
+          </div>
         </div>
-        <DemoModeBadge />
       </div>
 
       {open && (
@@ -59,7 +67,7 @@ export function MobileNav() {
             type="button"
             aria-label="Close menu"
             onClick={close}
-            className="absolute inset-0 bg-ink/40"
+            className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]"
           />
           {/* drawer */}
           <div
@@ -67,7 +75,7 @@ export function MobileNav() {
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
-            className="absolute inset-y-0 left-0 flex w-[min(20rem,85vw)] flex-col bg-surface px-6 py-5 shadow-card-hover"
+            className="absolute inset-y-0 left-0 flex w-[min(20rem,85vw)] flex-col rounded-r-card bg-surface px-6 py-5 shadow-card-hover"
           >
             <div className="flex items-center justify-between">
               <Brand onClick={close} />
@@ -75,7 +83,7 @@ export function MobileNav() {
                 type="button"
                 aria-label="Close menu"
                 onClick={close}
-                className="grid size-10 place-items-center rounded-control text-ink hover:bg-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40"
+                className="focus-ring grid size-10 place-items-center rounded-full text-ink transition-colors duration-150 hover:bg-ink/5"
               >
                 <X className="size-5" aria-hidden />
               </button>
@@ -96,12 +104,11 @@ export function MobileNav() {
                     onClick={close}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex h-11 items-center gap-3 rounded-control px-3 text-[15px] font-medium transition-colors",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40",
+                      "focus-ring flex h-11 items-center gap-3 rounded-control px-3 text-[15px] font-medium transition-colors duration-150",
                       active ? "bg-surface-muted text-ink" : "text-muted hover:bg-ink/5 hover:text-ink",
                     )}
                   >
-                    <Icon className="size-[18px]" aria-hidden />
+                    <Icon className={cn("size-[18px]", active ? "text-accent" : "text-muted")} aria-hidden />
                     {label}
                   </Link>
                 );

@@ -1,7 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
-import { DemoModeBadge } from "@/components/DemoModeBadge";
 import { DemoRunner } from "@/components/DemoRunner";
 
 /**
@@ -25,11 +24,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <MobileNav />
           </Suspense>
         </div>
-        {/* desktop top row */}
-        <div className="hidden h-14 items-center justify-end px-12 lg:flex">
-          <DemoModeBadge />
-        </div>
-        <div className="mx-auto w-full max-w-[1120px] px-4 pb-16 pt-6 sm:px-6 md:px-8 lg:px-12 lg:pb-20">
+        {/* desktop: the demo pill lives in the sidebar footer; the page starts after a quiet top margin */}
+        <div className="mx-auto w-full max-w-[1120px] px-4 pb-16 pt-5 sm:px-6 md:px-8 lg:px-12 lg:pb-20 lg:pt-14">
           {children}
         </div>
       </main>

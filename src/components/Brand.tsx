@@ -7,7 +7,7 @@ export function Brand({ onClick }: { onClick?: () => void }) {
     <Link
       href="/dashboard"
       onClick={onClick}
-      className="flex items-center gap-2.5 rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+      className="focus-ring flex items-center gap-2.5 rounded-control"
     >
       <span
         aria-hidden
