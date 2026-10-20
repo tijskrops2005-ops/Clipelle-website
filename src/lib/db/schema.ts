@@ -97,7 +97,8 @@ export type TranslateInput = {
   targetLanguages: LanguageCode[];
   quality: TranslationQuality;
   /** "Review before rendering": pause for the user's corrections. Off: Claude rewrites in ad tone automatically. */
-  reviewBeforeRender: boolean;
+  /** Terms that must stay untranslated (brand and product names); sent as a brand glossary. */
+  keepTerms?: string[];
   /** Keep the source format or make it vertical. */
   format: "original" | "9:16";
   /** Optional picture enhancement before captions. */
@@ -194,6 +195,8 @@ export const translations = pgTable(
     segments: jsonb("segments").$type<Segment[]>().default([]).notNull(),
     /** Plain-language reason when this language version stopped (e.g. its budget was reached). */
     error: text("error"),
+    /** Automatic quality check: corrections applied and warnings for the customer. */
+    qa: jsonb("qa").$type<{ changes: { index: number; before: string; after: string; reason: string }[]; warnings: string[]; summary?: string; costUsd?: number }>(),
     proofreadId: text("proofread_id"),
     translationId: text("translation_id"),
     videoAssetId: uuid("video_asset_id").references(() => assets.id, { onDelete: "set null" }),

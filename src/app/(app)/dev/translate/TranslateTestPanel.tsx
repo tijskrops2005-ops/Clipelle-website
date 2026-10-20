@@ -14,7 +14,7 @@ import { Field, controlClass, controlStateClass } from "@/components/ui/Field";
 import { VideoDropzone, formatDuration, type UploadedVideo } from "@/components/ui/VideoDropzone";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { SpendMeter } from "@/components/dev/SpendMeter";
-import { ReviewPanel } from "@/components/translate/ReviewPanel";
+import { ReviewPanel } from "./ReviewPanel";
 
 /* ---------- types mirrored from the routes ---------- */
 

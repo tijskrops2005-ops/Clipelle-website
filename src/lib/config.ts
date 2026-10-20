@@ -35,7 +35,6 @@ export const config = {
     finalEdit: "Captions, music and 9:16",
     upload: "Secure upload",
     translate: "AI translation",
-    review: "Your review",
     captions: "Captions and 9:16",
   },
   /** Hard limits shown to the user before anything is uploaded. */

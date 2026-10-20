@@ -2,8 +2,8 @@ import { config } from "@/lib/config";
 import type { TranslateStepKey } from "@/lib/types";
 import type { StepMeta } from "@/components/pipeline/PipelineStep";
 
-/** The four fixed steps of the translate workflow, in order. */
-export const TRANSLATE_STEPS: TranslateStepKey[] = ["upload", "translate", "review", "captions"];
+/** The three fixed steps of the translate workflow, in order (the manual review was removed on 2026-10-20). */
+export const TRANSLATE_STEPS: TranslateStepKey[] = ["upload", "translate", "captions"];
 
 export const translateStepMeta: Record<TranslateStepKey, StepMeta> = {
   upload: {
@@ -18,25 +18,16 @@ export const translateStepMeta: Record<TranslateStepKey, StepMeta> = {
     number: 2,
     title: "Translate",
     service: config.stepLabels.translate,
-    description: "The speech is transcribed and translated, a voice that sounds like the speaker is prepared, and the lip movements are matched.",
+    description: "The speech is transcribed and translated, every line is checked automatically against the original (missing words, numbers, names, natural phrasing) and corrected where needed.",
     waitingNote: "Starts when the upload is done.",
-    doneLabel: "Translation ready",
-  },
-  review: {
-    number: 3,
-    title: "Review",
-    service: config.stepLabels.review,
-    description: "You check every fragment next to the original, rewrite it in ad tone if you like, and approve before anything is rendered.",
-    waitingNote: "Waits until the translation is ready.",
-    needsInputNote: "Check the translation below and click Create videos.",
-    doneLabel: "Approved",
+    doneLabel: "Translation checked",
   },
   captions: {
-    number: 4,
+    number: 3,
     title: "Captions and 9:16",
     service: config.stepLabels.captions,
-    description: "The translated video gets TikTok-style captions and the vertical 9:16 format, one file per language.",
-    waitingNote: "Waits for your approval.",
+    description: "The voice is matched to the lips, then the video gets captions and the vertical 9:16 format, one file per language.",
+    waitingNote: "Starts when the translation is checked.",
     doneLabel: "Videos ready",
   },
 };

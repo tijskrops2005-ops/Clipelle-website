@@ -58,7 +58,7 @@ const TranslateBody = z.object({
   sourceLanguage: z.string().refine((v) => v === "auto" || isTranslateLanguage(v), { error: "Unknown source language." }),
   targetLanguages: z.array(z.string().refine(isTranslateLanguage, { error: "Unknown target language." })).min(1).max(20),
   quality: z.enum(["speed", "precision"]),
-  reviewBeforeRender: z.boolean(),
+  keepTerms: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
   format: z.enum(["original", "9:16"]),
   enhance: z.boolean(),
   rightsConfirmed: z.literal(true, { error: "Confirm the rights to the video first." }),

@@ -2,7 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { config } from "@/lib/config";
-import type { AdProject, LanguageCode, PresenterPage, Project, Segment, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
+import type { AdProject, LanguageCode, PresenterPage, Project, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { mockPresenterPage } from "@/lib/mock/presenters";
 import type { AdTone } from "@/lib/adOptions";
 import { mockVoiceOptions } from "@/lib/mock/voices";
@@ -10,7 +10,7 @@ import type { AdLanguageCode, SpeedKey, VoiceOptions } from "@/lib/voiceOptions"
 import type { UploadKind } from "@/lib/data/uploads";
 import * as mockStore from "@/lib/mock/store";
 import * as mockRunner from "@/lib/mock/runner";
-import { demoAdToneRewrite, emptyTranslations } from "@/lib/mock/translations";
+import { emptyTranslations } from "@/lib/mock/translations";
 import { fileToThumbnail } from "@/lib/mock/images";
 import { uploadToSignedUrl } from "@/lib/supabase/browser";
 
@@ -214,7 +214,7 @@ export type TranslateProjectDraft = {
   sourceLanguage: LanguageCode | "auto";
   targetLanguages: LanguageCode[];
   quality: TranslationQuality;
-  reviewBeforeRender: boolean;
+  keepTerms?: string[];
   format: "original" | "9:16";
   enhance: boolean;
   rightsConfirmed: boolean;
@@ -240,7 +240,6 @@ export async function createTranslateProject(draft: TranslateProjectDraft): Prom
       steps: {
         upload: { status: "processing", startedAt: now, attempt: 1 },
         translate: { status: "waiting" },
-        review: { status: "waiting" },
         captions: { status: "waiting" },
       },
       translations: emptyTranslations(draft.targetLanguages),
@@ -276,21 +275,10 @@ async function uploadAndAttach(projectId: string, kind: UploadKind, file: File, 
   await api(`/api/projects/${projectId}/assets`, { method: "POST", body: JSON.stringify({ kind, storagePath: signed.path, fileName: file.name, seconds }) });
 }
 
-export async function saveReviewedSegments(projectId: string, language: LanguageCode, segments: Segment[]) {
-  if (config.demoMode) return mockRunner.saveReviewedSegments(projectId, language, segments);
-  await api(`/api/projects/${projectId}/review`, { method: "PUT", body: JSON.stringify({ language, segments }) });
-}
-
 /** "Review script first": approve the generated script with a chosen hook and optional edits. */
 export async function approveScript(projectId: string, review: { hookIndex: number; presenterScript?: string }) {
   if (config.demoMode) return mockRunner.approveScript(projectId, review);
   await api(`/api/projects/${projectId}/script`, { method: "POST", body: JSON.stringify(review) });
-  await refresh();
-}
-
-export async function approveReview(projectId: string) {
-  if (config.demoMode) return mockRunner.approveReview(projectId);
-  await api(`/api/projects/${projectId}/approve`, { method: "POST" });
   await refresh();
 }
 
@@ -303,12 +291,3 @@ export async function retryStep(projectId: string, key: StepKey | TranslateStepK
   await refresh();
 }
 
-/** "Rewrite in ad tone" on the review screen. Demo: prepared variants; database: Claude via the server. */
-export async function rewriteInAdTone(projectId: string, language: LanguageCode, segments: Segment[]): Promise<Segment[]> {
-  if (config.demoMode) {
-    await new Promise((r) => setTimeout(r, 900));
-    return demoAdToneRewrite(segments, language);
-  }
-  const r = await api<{ segments: Segment[] }>(`/api/projects/${projectId}/rewrite`, { method: "POST", body: JSON.stringify({ language, segments }) });
-  return r.segments;
-}

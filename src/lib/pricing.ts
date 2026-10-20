@@ -57,8 +57,8 @@ export function maxSpokenWords(seconds: number) {
 export const PRICING = {
   /** Claude script: ~1.5k input + 900 output tokens on claude-opus-5-5 ($4 / $20 per MTok). */
   scriptUsd: 0.03,
-  /** Claude ad-tone rewrite of one language version (two short passes at most). */
-  rewriteUsd: 0.02,
+  /** Claude (Sonnet) quality check of one language version: compare every line with the source, fix, warn. */
+  checkUsd: 0.01,
   /** Bria Expand, only when the product does not fit a 9:16 crop. Counted as "up to". */
   expandUsd: 0.04,
   /** fal.ai image-to-video, USD per generated second. MiniMax promo ends 2026-10-31. */
@@ -142,7 +142,7 @@ export function estimateTranslateCost(input: TranslateEstimateInput) {
   const transcriptShare = input.hasSourceTranscript ? round2((s * PRICING.proofreadUsdPerSecond) / n) : 0;
   const perLanguage = {
     proofread: round2(s * PRICING.proofreadUsdPerSecond + transcriptShare),
-    rewrite: PRICING.rewriteUsd,
+    check: PRICING.checkUsd,
     render: round2(s * PRICING.translateUsdPerSecond[input.quality]),
     enhance: input.enhance ? round2(s * PRICING.enhanceUsdPerSecond) : 0,
     captions: captionsUsd(s),

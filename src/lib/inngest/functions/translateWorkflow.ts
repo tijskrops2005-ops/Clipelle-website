@@ -1,9 +1,10 @@
 import { and, eq } from "drizzle-orm";
-import { inngest, reviewApproved, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
+import { inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
 import { db, projects, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
 import { languageCodeForName, languageOf } from "@/lib/languages";
+import { checkTranslation, estimateCheckUsd } from "@/lib/services/translationCheck";
 import type { LanguageCode, Segment } from "@/lib/types";
-import { maxCharsForSegment, SHOTSTACK_USD_PER_SECOND } from "@/lib/translatePricing";
+import { SHOTSTACK_USD_PER_SECOND } from "@/lib/translatePricing";
 import {
   alignOriginalText,
   buildSrt,
@@ -21,9 +22,9 @@ import {
   parseSrt,
   uploadHeygenAsset,
   uploadProofreadSrt,
+  createBrandGlossary,
   type SrtCue,
 } from "@/lib/services/translate";
-import { rewriteSegmentsInAdTone } from "@/lib/services/adTone";
 import { estimateEnhanceUsd, getEnhanceStatus, submitEnhance } from "@/lib/services/enhance";
 import { buildCaptionEdit, getRender, ingestFromUrl, shotstackEnv, startRender } from "@/lib/services/finalEdit";
 import { reserveSpend, settleSpend } from "@/lib/services/costGuard";
@@ -36,7 +37,7 @@ import {
   loadStep,
   markCompleted,
   markProcessing,
-  markWaitingForUser,
+  plainMessage,
   providerUrl,
   StepFailure,
   storeFromUrl,
@@ -105,9 +106,6 @@ export const translateWorkflow = inngest.createFunction(
     /* ---------- 2. translate (proofread sessions) ---------- */
     const sessions = await runTranslate(projectId, input, upload, step);
 
-    /* ---------- 3. review ---------- */
-    await runReview(projectId, input, step);
-
     /* ---------- 4. render + enhance + captions, per language ---------- */
     const results = await runCaptions(projectId, input, upload, sessions, step);
     await step.run("complete", async () => {
@@ -141,6 +139,18 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       }
       if (source && matched[source]) outputs.push({ code: "transcript", heygen: matched[source]! });
 
+      // Terms that must stay untranslated: a brand glossary (free) attached to the proofread.
+      let brandGlossaryId: string | undefined;
+      let glossaryWarning: string | undefined;
+      const keepTerms = (input.keepTerms ?? []).map((x) => x.trim()).filter(Boolean);
+      if (keepTerms.length) {
+        try {
+          brandGlossaryId = await withRetries("Saving the terms to keep", () => createBrandGlossary({ name: `reelay-${projectId.slice(0, 8)}-${row.attempt}`, doNotTranslate: keepTerms }));
+        } catch (error) {
+          glossaryWarning = `The terms to keep could not be registered (${plainMessage(error)}); the check will still protect them in the subtitles.`;
+        }
+      }
+
       // One reservation per output language so the budget per language version applies; the transcript is shared.
       const perLanguage = estimateProofreadUsd(input.sourceSeconds, 1);
       const languageCount = input.targetLanguages.length;
@@ -164,7 +174,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       }
       try {
         const created = await withRetries("Starting the translation", () =>
-          createProofread({ video: { assetId: upload.heygenAssetId }, outputLanguages: outputs.map((o) => o.heygen), mode: input.quality, title: `Reelay ${projectId.slice(0, 8)}`, idempotencyKey: `${projectId}:proofread:${row.attempt}` }),
+          createProofread({ video: { assetId: upload.heygenAssetId }, outputLanguages: outputs.map((o) => o.heygen), mode: input.quality, title: `Reelay ${projectId.slice(0, 8)}`, brandGlossaryId, idempotencyKey: `${projectId}:proofread:${row.attempt}` }),
         );
         const sessions: SessionMap = {};
         outputs.forEach((o, i) => {
@@ -174,7 +184,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
         for (const code of input.targetLanguages) {
           if (sessions[code]) await db().update(translations).set({ proofreadId: sessions[code], status: "processing", updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, code)));
         }
-        return { sessions, entryIds, estimate: perLanguage * outputs.length, perLanguage, stepId: row.id };
+        return { sessions, entryIds, estimate: perLanguage * outputs.length, perLanguage, stepId: row.id, glossaryWarning: glossaryWarning ?? null };
       } catch (error) {
         for (const id of entryIds) await settleSpend(id, { status: "failed", actualUsd: 0 });
         throw error;
@@ -215,16 +225,22 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
           const transcript = cuesBy.transcript ?? [];
           const detected = statuses.find((s) => s.input_language)?.input_language ?? null;
           const detectedCode = languageCodeForName(detected);
+          const sourceLanguage = detectedCode ?? (input.sourceLanguage !== "auto" ? input.sourceLanguage : null);
+          let checkCost = 0;
           for (const code of input.targetLanguages) {
             const cues = cuesBy[code];
             if (!cues) continue;
             const originals = alignOriginalText(cues, transcript);
             const segments: Segment[] = cues.map((c, i) => ({ index: c.index, start: c.start, end: c.end, original: originals[i] ?? "", translated: c.text, text: c.text }));
-            await db().update(translations).set({ segments, status: "waiting", updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, code)));
+            const [row] = await db().update(translations).set({ segments, status: "processing", updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).returning();
+            // Automatic quality check (replaces the manual review): corrected lines go back into the segments.
+            const checked = await checkLanguage(projectId, started.stepId, row, input, transcript.length ? sourceLanguage : null, input.targetLanguages.length);
+            checkCost += checked.qa.costUsd;
+            await db().update(translations).set({ segments: checked.segments, qa: checked.qa, updatedAt: new Date() }).where(eq(translations.id, row.id));
           }
-          await db().update(projects).set({ detectedLanguage: detectedCode ?? (input.sourceLanguage !== "auto" ? input.sourceLanguage : null), updatedAt: new Date() }).where(eq(projects.id, projectId));
+          await db().update(projects).set({ detectedLanguage: sourceLanguage, updatedAt: new Date() }).where(eq(projects.id, projectId));
           for (const id of started.entryIds) await settleSpend(id, { status: "completed", actualUsd: started.perLanguage });
-          await markCompleted(projectId, key, { output: { sessions: sessionMap }, costUsd: started.estimate });
+          await markCompleted(projectId, key, { output: { sessions: sessionMap, ...(started.glossaryWarning ? { warning: started.glossaryWarning } : {}) }, costUsd: started.estimate + checkCost });
         } catch (error) {
           return failStep(projectId, key, error);
         }
@@ -236,65 +252,26 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
   return step.run("translate-timeout", () => failStep(projectId, key, new StepFailure(`The translation took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
 }
 
-/* ---------- review ---------- */
+/* ---------- quality check (replaces the manual review, 2026-10-20) ---------- */
 
-async function runReview(projectId: string, input: TranslateInput, step: StepTools) {
-  const key = "review";
-  const existing = await step.run("review-check", () => loadStep(projectId, key));
-  if (existing.status === "completed") return;
-
-  if (input.reviewBeforeRender) {
-    await step.run("review-wait-user", () => markWaitingForUser(projectId, key));
-    // approveReview() in src/lib/data/server.ts marks the step completed and sends this event.
-    const approved = await step.waitForEvent("review-approval", { event: reviewApproved, timeout: "7d", if: `async.data.projectId == "${projectId}"` });
-    if (!approved) {
-      await step.run("review-timeout", () => failStep(projectId, key, new StepFailure("The review was not completed within 7 days. Retry to continue with the current text.")));
-    }
-    return;
+/**
+ * Claude compares every line with the source transcript, fixes missing/added words, wrong numbers,
+ * names and unnatural sentences within the timing, and records changes and warnings on the
+ * translation row. Costs are tiny (Sonnet, cents) and go through the cost guard per language.
+ */
+async function checkLanguage(projectId: string, stepId: string, t: TranslationRow, input: TranslateInput, sourceLanguage: LanguageCode | null, languageCount: number) {
+  if (t.segments.length === 0) return { segments: t.segments, qa: { changes: [], warnings: ["No subtitle lines were returned, so nothing could be checked."], costUsd: 0 } };
+  const estimate = Math.max(0.005, estimateCheckUsd(t.segments));
+  const reserved = await reserveSpend({ service: "anthropic", action: "translate_check", estimatedUsd: estimate, fingerprintInput: { projectId, language: t.language, text: t.segments.map((s) => s.text) }, projectId, stepId, language: t.language, languageCount, meta: { model: cfg.rewriteModel, lines: t.segments.length } });
+  try {
+    const result = await withRetries("Checking the translation", () => checkTranslation({ segments: t.segments, sourceLanguage, targetLanguage: t.language, keepTerms: input.keepTerms }));
+    await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens", meta: { usage: result.usage, changes: result.changes.length } });
+    return { segments: result.segments, qa: { changes: result.changes, warnings: result.warnings, summary: result.summary, costUsd: result.costUsd } };
+  } catch (error) {
+    await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+    // The check is a safety net, never a blocker: keep the literal translation and tell the customer.
+    return { segments: t.segments, qa: { changes: [], warnings: [`The automatic check could not run (${plainMessage(error)}); the literal translation was used.`], costUsd: 0 } };
   }
-
-  // No review: Claude rewrites every language in ad tone, within the per-fragment limit.
-  await step.run("review-auto", () => withDeadline("Rewriting the subtitles", 10, async () => {
-    const row = await markProcessing(projectId, key);
-    try {
-      const rows = await db().select().from(translations).where(eq(translations.projectId, projectId));
-      let total = 0;
-      for (const t of rows) {
-        const rewritten = await rewriteWithinLimits(projectId, row.id, t, rows.length);
-        total += rewritten.costUsd;
-        await db().update(translations).set({ segments: rewritten.segments, updatedAt: new Date() }).where(eq(translations.id, t.id));
-      }
-      await markCompleted(projectId, key, { output: { mode: "auto" }, costUsd: total });
-    } catch (error) {
-      return failStep(projectId, key, error);
-    }
-  }));
-}
-
-/** One Claude pass; fragments still over the limit get a second, stricter pass; then the literal translation stays. */
-async function rewriteWithinLimits(projectId: string, stepId: string, t: TranslationRow, languageCount: number) {
-  const language = t.language as LanguageCode;
-  let segments = t.segments;
-  let costUsd = 0;
-  if (segments.length === 0) return { segments, costUsd };
-  for (let pass = 0; pass < 2; pass++) {
-    const targets = pass === 0 ? segments : segments.filter((s) => s.text.length > maxCharsForSegment(s.start, s.end));
-    if (targets.length === 0) break;
-    const reserved = await reserveSpend({ service: "anthropic", action: "translate_rewrite", estimatedUsd: 0.02, fingerprintInput: { projectId, language, pass, text: targets.map((s) => s.text) }, projectId, stepId, language, languageCount });
-    try {
-      const result = await withRetries("Rewriting in ad tone", () => rewriteSegmentsInAdTone({ segments: targets.map((s) => ({ index: s.index, start: s.start, end: s.end, original: s.original, text: s.text })), language }));
-      await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd });
-      costUsd += result.costUsd;
-      const byIndex = new Map(result.segments.map((s) => [s.index, s.text]));
-      segments = segments.map((s) => (byIndex.has(s.index) ? { ...s, text: byIndex.get(s.index)! } : s));
-    } catch (error) {
-      await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
-      throw error;
-    }
-  }
-  // Anything still too long keeps the literal translation (always within timing).
-  segments = segments.map((s) => (s.text.length > maxCharsForSegment(s.start, s.end) ? { ...s, text: s.translated } : s));
-  return { segments, costUsd };
 }
 
 /* ---------- render + enhance + captions, per language ---------- */
@@ -321,10 +298,13 @@ async function runCaptions(projectId: string, input: TranslateInput, upload: Upl
   const failures: Record<string, string> = {};
   const languageCount = input.targetLanguages.length;
 
-  for (const code of input.targetLanguages) {
-    const proofreadId = sessions[code];
-    if (!proofreadId) continue;
-    const outcome = await processLanguage(projectId, input, upload, code, proofreadId, languageCount, step);
+  // Every language version runs in parallel (2026-10-20); each has its own step ids and its own budget.
+  const outcomes = await Promise.all(
+    input.targetLanguages
+      .filter((code) => sessions[code])
+      .map(async (code) => ({ code, outcome: await processLanguage(projectId, input, upload, code, sessions[code], languageCount, step) })),
+  );
+  for (const { code, outcome } of outcomes) {
     if (outcome.ok) results[code] = outcome.assetId;
     else {
       failures[code] = outcome.error;

@@ -1,13 +1,12 @@
 import "server-only";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import type { AdProject, LanguageCode, Project, Segment, Step, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
+import type { AdProject, LanguageCode, Project, Step, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { assets, db, projects, steps, translations, type AdInput, type AssetRow, type ProjectRow, type StepRow, type TranslateInput, type TranslationRow } from "@/lib/db";
-import { adProjectCreated, adScriptApproved, inngest, reviewApproved, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
+import { adProjectCreated, adScriptApproved, inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
 import { applyScriptReview, countWords, normaliseHooks, type AdScript } from "@/lib/services/script";
 import { maxSpokenWords } from "@/lib/pricing";
 import { objectInfo, signedDownloadUrl } from "@/lib/storage";
-import { rewriteSegmentsInAdTone } from "@/lib/services/adTone";
-import { costGuardResponse, costLimits, creativeSpent, getProjectSpend, reserveSpend, settleSpend } from "@/lib/services/costGuard";
+import { costGuardResponse, costLimits, creativeSpent, getProjectSpend } from "@/lib/services/costGuard";
 import { estimateAdCost, estimateTranslateCost } from "@/lib/pricing";
 import { workflowSettings } from "@/lib/workflow/settings";
 import { DEFAULT_TONE, isAdTone, type AdTone } from "@/lib/adOptions";
@@ -21,7 +20,7 @@ import type { UploadKind } from "@/lib/data/uploads";
  */
 
 export const AD_STEPS: StepKey[] = ["script", "productClip", "presenter", "finalEdit"];
-export const TRANSLATE_STEPS: TranslateStepKey[] = ["upload", "translate", "review", "captions"];
+export const TRANSLATE_STEPS: TranslateStepKey[] = ["upload", "translate", "captions"];
 
 export class DataError extends Error {
   constructor(message: string, public readonly status = 400, public readonly code = "bad_request", cause?: unknown) {
@@ -142,6 +141,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
         segments: t.segments,
         videoUrl: await urlFor(assetsById.get(t.captionedAssetId ?? t.enhancedAssetId ?? t.videoAssetId ?? "")),
         error: t.error ?? undefined,
+        qa: t.qa ? { changes: t.qa.changes, warnings: t.qa.warnings, summary: t.qa.summary } : undefined,
         spentUsd: creativeSpent(spend, t.language, input.targetLanguages.length),
       })),
     ),
@@ -200,7 +200,7 @@ export type NewTranslateProject = {
   sourceLanguage: LanguageCode | "auto";
   targetLanguages: LanguageCode[];
   quality: TranslationQuality;
-  reviewBeforeRender: boolean;
+  keepTerms?: string[];
   format: "original" | "9:16";
   enhance: boolean;
   rightsConfirmed: boolean;
@@ -239,7 +239,7 @@ export async function createDraft(input: { workflow: "ad"; ad: NewAdProject } | 
         sourceLanguage: t.sourceLanguage,
         targetLanguages: t.targetLanguages,
         quality: t.quality,
-        reviewBeforeRender: t.reviewBeforeRender,
+        keepTerms: t.keepTerms,
         format: t.format,
         enhance: t.enhance,
       } satisfies TranslateInput,
@@ -329,29 +329,6 @@ export async function startProject(projectId: string) {
 
 /* ---------- review, approval, retry (workflow B and both) ---------- */
 
-export async function saveReviewedSegments(projectId: string, language: LanguageCode, segments: Segment[]) {
-  const row = await getProjectRow(projectId);
-  if (!row || row.workflow !== "translate") throw new DataError("Project not found.", 404, "not_found");
-  if (row.status !== "review") throw new DataError("This project is not waiting for review.", 409, "not_in_review");
-  await db()
-    .update(translations)
-    .set({ segments, updatedAt: new Date() })
-    .where(and(eq(translations.projectId, projectId), eq(translations.language, language)));
-}
-
-/** The user approved: review step done, project back to processing, and the waiting run is woken up. */
-export async function approveReview(projectId: string) {
-  const row = await getProjectRow(projectId);
-  if (!row || row.workflow !== "translate") throw new DataError("Project not found.", 404, "not_found");
-  if (row.status !== "review") return row; // already approved: idempotent
-  await db().transaction(async (tx) => {
-    await tx.update(projects).set({ status: "processing", updatedAt: new Date() }).where(eq(projects.id, projectId));
-    await tx.update(steps).set({ status: "completed", finishedAt: new Date(), updatedAt: new Date() }).where(and(eq(steps.projectId, projectId), eq(steps.key, "review")));
-  });
-  await inngest.send(reviewApproved.create({ projectId }));
-  return (await getProjectRow(projectId))!;
-}
-
 /**
  * "Review script first": the customer picked a hook and maybe edited the presenter text.
  * Stores the approved script on the script step, marks it completed and wakes the waiting run.
@@ -396,29 +373,6 @@ export async function retryStep(projectId: string, stepKey: string) {
   await inngest.send(stepRetry.create({ projectId, stepKey }));
 }
 
-/** Claude rewrite for the review screen (database mode). Paid (cents), through the cost guard with the project id. */
-export async function rewriteForProject(projectId: string, language: LanguageCode, segments: Segment[]) {
-  const row = await getProjectRow(projectId);
-  if (!row || row.workflow !== "translate") throw new DataError("Project not found.", 404, "not_found");
-  const estimate = 0.01;
-  const reserved = await reserveSpend({
-    service: "anthropic",
-    action: "translate_rewrite",
-    estimatedUsd: estimate,
-    fingerprintInput: { projectId, language, text: segments.map((s) => s.text) },
-    projectId,
-    language,
-    languageCount: (row.input as TranslateInput).targetLanguages.length,
-  });
-  try {
-    const result = await rewriteSegmentsInAdTone({ segments: segments.map((s) => ({ index: s.index, start: s.start, end: s.end, original: s.original, text: s.text })), language });
-    await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens", meta: { usage: result.usage } });
-    return segments.map((s, i) => ({ ...s, text: result.segments[i]?.text ?? s.text }));
-  } catch (error) {
-    await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
-    throw error;
-  }
-}
 
 /** Maps DataError / CostGuardError to a JSON response. */
 export function dataErrorResponse(error: unknown): Response {

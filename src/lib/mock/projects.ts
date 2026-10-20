@@ -136,7 +136,7 @@ export const mockProjects: Project[] = [
     id: "prj_006",
     workflow: "translate",
     name: "Founder story — DE + FR",
-    status: "review",
+    status: "processing",
     sourceFileName: "founder-story.mp4",
     sourceSeconds: 28,
     sourceVideoUrl: config.demoVideoUrl,
@@ -148,8 +148,7 @@ export const mockProjects: Project[] = [
     steps: {
       upload: { status: "completed", startedAt: "2026-10-18T15:01:00Z", finishedAt: "2026-10-18T15:01:04Z" },
       translate: { status: "completed", startedAt: "2026-10-18T15:01:04Z", finishedAt: "2026-10-18T15:04:40Z" },
-      review: { status: "needs_input", startedAt: "2026-10-18T15:04:40Z" },
-      captions: { status: "waiting" },
+      captions: { status: "processing", startedAt: "2026-10-18T15:04:41Z", attempt: 1 },
     },
     translations: [
       { language: "de", status: "waiting", segments: demoSegments(28, "en", "de") },

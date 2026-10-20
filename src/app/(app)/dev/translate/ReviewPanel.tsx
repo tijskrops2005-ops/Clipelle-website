@@ -1,4 +1,5 @@
 "use client";
+/* Dev test bench only (2026-10-20): the customer workflow no longer has a manual review; the automatic check replaced it. */
 
 import { useState } from "react";
 import { Check, RotateCcw, Sparkles, Loader2 } from "lucide-react";

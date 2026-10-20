@@ -1,0 +1,1 @@
+ALTER TABLE "translations" ADD COLUMN "qa" jsonb;

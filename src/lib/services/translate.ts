@@ -91,6 +91,23 @@ export function matchLanguages(live: string[]): Record<LanguageCode, string | nu
   return out;
 }
 
+/* ---------- brand glossary (terms that stay untranslated) ---------- */
+
+/**
+ * POST /v3/brand-glossaries (verified 2026-10-20): `name` (1–64, unique per workspace) plus
+ * `do_not_translate_terms: [{term}]`; free; the id goes into `brand_glossary_id` on the proofread.
+ * An unknown glossary id fails with 400 before rendering, so no credits are spent.
+ */
+export async function createBrandGlossary(input: { name: string; doNotTranslate: string[] }): Promise<string> {
+  const data = await heygenFetch<{ brand_glossary_id?: string; id?: string }>("/v3/brand-glossaries", {
+    method: "POST",
+    body: JSON.stringify({ name: input.name.slice(0, 64), do_not_translate_terms: input.doNotTranslate.map((term) => ({ term })) }),
+  });
+  const id = data.brand_glossary_id ?? data.id;
+  if (!id) throw new HeygenError("The glossary was created without an id.", 502, "empty_response");
+  return id;
+}
+
 /* ---------- proofread sessions ---------- */
 
 export type CreateProofreadInput = {
@@ -100,6 +117,8 @@ export type CreateProofreadInput = {
   mode: TranslationQuality;
   title: string;
   speakerNum?: number;
+  /** Brand glossary with the customer's do-not-translate terms (createBrandGlossary). */
+  brandGlossaryId?: string;
   idempotencyKey?: string;
 };
 
@@ -113,6 +132,7 @@ export async function createProofread(input: CreateProofreadInput) {
       mode: input.mode,
       title: input.title,
       ...(input.speakerNum ? { speaker_num: input.speakerNum } : {}),
+      ...(input.brandGlossaryId ? { brand_glossary_id: input.brandGlossaryId } : {}),
     }),
   });
   return data;

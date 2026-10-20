@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { ArrowLeft, Download, Plus, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Download, Plus, ShieldCheck, SpellCheck } from "lucide-react";
 import { config } from "@/lib/config";
-import type { LanguageCode, Segment, TranslateProject } from "@/lib/types";
+import type { LanguageCode, TranslateProject } from "@/lib/types";
 import { languageLabel, languageOf } from "@/lib/languages";
 import { formatDate } from "@/lib/utils";
-import { approveReview, rewriteInAdTone, saveReviewedSegments } from "@/lib/data/client";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -17,33 +15,11 @@ import { DemoBadge } from "@/components/DemoModeBadge";
 import { formatDuration } from "@/components/ui/VideoDropzone";
 import { formatUsd } from "@/lib/pricing";
 import { TranslatePipeline } from "./TranslatePipeline";
-import { ReviewPanel } from "./ReviewPanel";
 import { TRANSLATE_STEPS, translateStepMeta } from "./translateSteps";
 
-/** Project page for the translate workflow: pipeline, review step, one result per language. */
+/** Project page for the translate workflow: pipeline, automatic quality check, one result per language. */
 export function TranslateProjectView({ project }: { project: TranslateProject }) {
-  const [approving, setApproving] = useState(false);
-  const inReview = project.steps.review.status === "needs_input";
   const sourceLanguage: LanguageCode = project.detectedLanguage ?? (project.sourceLanguage === "auto" ? "en" : project.sourceLanguage);
-
-  const [approveError, setApproveError] = useState<string | null>(null);
-
-  function rewrite(language: LanguageCode, segments: Segment[]) {
-    // Demo: a prepared shorter variant. Database: Claude via the server (cents, cost guard).
-    return rewriteInAdTone(project.id, language, segments);
-  }
-
-  async function approve() {
-    if (approving) return; // rule 4: no duplicate starts
-    setApproving(true);
-    setApproveError(null);
-    try {
-      await approveReview(project.id);
-    } catch (error) {
-      setApproveError(error instanceof Error ? error.message : "Could not approve. Try again.");
-      setApproving(false);
-    }
-  }
 
   return (
     <div className="space-y-10">
@@ -82,26 +58,36 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
         </aside>
       </div>
 
-      {inReview && (
+      {project.translations.some((t) => t.qa) && (
         <section className="space-y-5">
-          <SectionHeader
-            title="Step 3 · Review"
-            description="Nothing is rendered until you approve. Edits are saved as you type."
-          />
-          {approveError && (
-            <p role="alert" className="text-sm text-danger">
-              {approveError}
-            </p>
-          )}
-          <ReviewPanel
-            translations={project.translations}
-            sourceLanguage={sourceLanguage}
-            onChange={(language, segments) => void saveReviewedSegments(project.id, language, segments).catch(() => {})}
-            onRewrite={rewrite}
-            onApprove={approve}
-            approving={approving}
-            demo={config.demoMode}
-          />
+          <SectionHeader title="Quality check" description="Every line was compared with the original and corrected where needed. Nothing waits for you." aside={<DemoBadge>Demo check</DemoBadge>} />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {project.translations.filter((t) => t.qa).map((t) => (
+              <Card key={t.language}>
+                <CardHeader className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-base">{languageOf(t.language).label}</CardTitle>
+                  <span className="flex items-center gap-1.5 text-[13px] text-muted"><SpellCheck className="size-4 text-success" aria-hidden />{t.qa!.changes.length} {t.qa!.changes.length === 1 ? "line" : "lines"} corrected</span>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  {t.qa!.summary && <p className="text-ink/90">{t.qa!.summary}</p>}
+                  {t.qa!.changes.slice(0, 6).map((c) => (
+                    <div key={c.index} className="rounded-[10px] bg-surface-muted p-3 text-[13px]">
+                      <p className="text-muted line-through">{c.before}</p>
+                      <p className="text-ink">{c.after}</p>
+                      <p className="mt-1 text-muted">{c.reason}</p>
+                    </div>
+                  ))}
+                  {t.qa!.warnings.length > 0 && (
+                    <ul className="space-y-1 rounded-[10px] bg-warning/10 p-3 text-[13px] text-ink">
+                      {t.qa!.warnings.map((w, i) => (
+                        <li key={i}>{w}</li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </section>
       )}
 
@@ -151,15 +137,15 @@ function summary(project: TranslateProject) {
   const done = TRANSLATE_STEPS.filter((k) => project.steps[k].status === "completed").length;
   switch (project.status) {
     case "completed":
-      return "All four steps finished. Your videos are below.";
+      return "All three steps finished. Your videos are below.";
     case "review":
-      return "Step 3 waits for you: check the translation below and approve it.";
+      return "Waiting.";
     case "failed": {
       const failed = TRANSLATE_STEPS.find((k) => project.steps[k].status === "failed");
       return failed ? `Step ${translateStepMeta[failed].number} stopped. Read the message in the card and retry when ready.` : "A step stopped.";
     }
     case "processing":
-      return `${done} of 4 steps done. You can leave this page; progress continues.`;
+      return `${done} of 3 steps done. You can leave this page; progress continues.`;
     default:
       return "This project has not been started yet.";
   }
@@ -179,7 +165,7 @@ function StatusCard({ project }: { project: TranslateProject }) {
                 {languageOf(t.language).label}
                 {t.spentUsd !== undefined && !config.demoMode && <span className="label-mono ml-2 text-muted">{formatUsd(t.spentUsd)}</span>}
               </span>
-              <StatusBadge status={project.status === "review" ? "needs_input" : t.status} />
+              <StatusBadge status={t.status} />
             </li>
           ))}
         </ul>

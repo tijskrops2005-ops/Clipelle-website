@@ -33,11 +33,6 @@ export const translateProjectCreated = eventType("project/translate.created", {
   schema: z.object({ projectId: z.string().uuid() }),
 });
 
-/** The user approved the translation review. Matched to the waiting run by projectId. */
-export const reviewApproved = eventType("project/review.approved", {
-  schema: z.object({ projectId: z.string().uuid() }),
-});
-
 /** Workflow A with "Review script first": the user approved (and maybe edited) the script. */
 export const adScriptApproved = eventType("project/ad-script.approved", {
   schema: z.object({ projectId: z.string().uuid() }),

@@ -59,7 +59,7 @@ export function TranslateForm() {
   const [targets, setTargets] = useState<LanguageCode[]>([]);
   const [quality, setQuality] = useState<TranslationQuality>("speed");
   const [rights, setRights] = useState(false);
-  const [reviewBeforeRender, setReviewBeforeRender] = useState(true);
+  const [keepTerms, setKeepTerms] = useState("");
   const [format, setFormat] = useState<"original" | "9:16">("9:16");
   const [enhance, setEnhance] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
@@ -126,7 +126,7 @@ export function TranslateForm() {
         sourceLanguage: source,
         targetLanguages: targets,
         quality,
-        reviewBeforeRender,
+        keepTerms: keepTerms.split(/[,\n]/).map((t) => t.trim()).filter(Boolean).slice(0, 20),
         format,
         enhance,
         rightsConfirmed: rights,
@@ -173,7 +173,7 @@ export function TranslateForm() {
         <CardHeader>
           <p className="label-mono text-muted">Step 2 of 3</p>
           <CardTitle className="mt-2 text-xl">Languages</CardTitle>
-          <p className="mt-1 text-[15px] text-muted">Pick one or more target languages. You review every translation before anything is rendered.</p>
+          <p className="mt-1 text-[15px] text-muted">Pick one or more target languages. Every translation is checked line by line against the original before it is rendered; nothing waits for you.</p>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
@@ -249,7 +249,7 @@ export function TranslateForm() {
               })}
             </div>
             <p className="text-[13px] text-muted">
-              Live estimate for {Math.round(seconds)} s of video, {QUALITY.find((q) => q.key === quality)?.title}, {Math.max(1, targets.length)} {targets.length === 1 || targets.length === 0 ? "language" : "languages"}: translation {formatUsd(estimate.perLanguage.proofread + estimate.perLanguage.render)}, quality check {formatUsd(estimate.perLanguage.rewrite)}, captions {formatUsd(estimate.perLanguage.captions)}
+              Live estimate for {Math.round(seconds)} s of video, {QUALITY.find((q) => q.key === quality)?.title}, {Math.max(1, targets.length)} {targets.length === 1 || targets.length === 0 ? "language" : "languages"}: translation {formatUsd(estimate.perLanguage.proofread + estimate.perLanguage.render)}, quality check {formatUsd(estimate.perLanguage.check)}, captions {formatUsd(estimate.perLanguage.captions)}
               {enhance ? `, enhancement ${formatUsd(estimate.perLanguage.enhance)}` : ""} per language
               {targets.length > 1 ? ` · ${formatUsd(estimate.total)} in total` : ""}.
             </p>
@@ -265,15 +265,9 @@ export function TranslateForm() {
           <p className="mt-1 text-[15px] text-muted">The pictures and the edit stay exactly as they are. Only the language changes.</p>
         </CardHeader>
         <CardContent className="space-y-5">
-          <label htmlFor="review" className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-border bg-surface-muted p-4">
-            <input id="review" type="checkbox" checked={reviewBeforeRender} onChange={(e) => setReviewBeforeRender(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 shrink-0 accent-ink" />
-            <span>
-              <span className="block text-sm font-medium text-ink">Review before rendering</span>
-              <span className="block text-[13px] leading-relaxed text-muted">
-                Pause so you can check and edit every line next to the original. Off: the translation is rewritten in ad tone automatically and rendered right away.
-              </span>
-            </span>
-          </label>
+          <Field id="keepTerms" label="Keep these words untranslated" optional hint="Brand and product names, separated by commas. The translation and the check leave them exactly as written. Max 20.">
+            <Input id="keepTerms" value={keepTerms} maxLength={600} onChange={(e) => setKeepTerms(e.target.value)} placeholder="e.g. Senvia, FlexLid" disabled={submitting} />
+          </Field>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">Format</legend>
             <div className="grid gap-3 sm:grid-cols-2">

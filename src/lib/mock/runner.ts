@@ -4,9 +4,7 @@ import { config } from "@/lib/config";
 import type {
   AdProject,
   GeneratedScript,
-  LanguageCode,
   Project,
-  Segment,
   StepKey,
   TranslateProject,
   TranslateStepKey,
@@ -20,8 +18,8 @@ import { demoDetectedLanguage, demoSegments } from "./translations";
  *
  * Workflow A (ad): product clip and presenter run in parallel, the final edit
  * starts when both are done.
- * Workflow B (translate): upload → translate → review (waits for the user) →
- * captions → done, with one result per target language.
+ * Workflow B (translate): upload → translate (checked automatically) → captions → done,
+ * with one result per target language.
  *
  * Stage 8 replaces this with the real orchestrator (server-side, webhooks/polling).
  *
@@ -39,7 +37,6 @@ const AD_DURATION_MS: Record<StepKey, number> = {
 const TRANSLATE_DURATION_MS: Record<TranslateStepKey, number> = {
   upload: 2_000,
   translate: 10_000,
-  review: 0, // waits for the user
   captions: 6_000,
 };
 
@@ -188,11 +185,11 @@ export function approveScript(projectId: string, review: { hookIndex: number; pr
 
 /* ---------------- Workflow B ---------------- */
 
-const TRANSLATE_ORDER: TranslateStepKey[] = ["upload", "translate", "review", "captions"];
+const TRANSLATE_ORDER: TranslateStepKey[] = ["upload", "translate", "captions"];
 
 function tickTranslate(project: TranslateProject, now: number, nowIso: string) {
   const key = TRANSLATE_ORDER.find((k) => project.steps[k].status === "processing");
-  if (!key || key === "review") return;
+  if (!key) return;
   const step = project.steps[key];
 
   const startedAt = step.startedAt ? Date.parse(step.startedAt) : NaN;
@@ -230,18 +227,22 @@ function tickTranslate(project: TranslateProject, now: number, nowIso: string) {
           steps: { ...p.steps, upload: done, translate: { status: "processing", startedAt: nowIso, attempt: 1 } },
         };
       case "translate": {
-        // Translation finished: fill the fragments per language and hand over to the user.
+        // Translation finished and checked automatically (demo: one simulated correction per language); captions start.
         const detected = demoDetectedLanguage(p);
         return {
           ...p,
-          status: "review",
           detectedLanguage: detected,
-          translations: p.translations.map((t) => ({
-            ...t,
-            status: "waiting",
-            segments: t.segments.length ? t.segments : demoSegments(p.sourceSeconds, detected, t.language),
-          })),
-          steps: { ...p.steps, translate: done, review: { status: "needs_input", startedAt: nowIso } },
+          translations: p.translations.map((t) => {
+            const segments = t.segments.length ? t.segments : demoSegments(p.sourceSeconds, detected, t.language);
+            const first = segments[0];
+            return {
+              ...t,
+              status: "processing" as const,
+              segments,
+              qa: first ? { changes: [{ index: first.index, before: first.text, after: first.text, reason: "Demo: a missing word was restored." }], warnings: [], summary: "Demo: the translation reads naturally and matches the original." } : { changes: [], warnings: [] },
+            };
+          }),
+          steps: { ...p.steps, translate: done, captions: { status: "processing", startedAt: nowIso, attempt: 1 } },
         };
       }
       case "captions":
@@ -313,30 +314,3 @@ export function retryTranslateStep(projectId: string, key: TranslateStepKey) {
   );
 }
 
-/** Saves edited fragments for one language while the project waits for review. */
-export function saveReviewedSegments(projectId: string, language: LanguageCode, segments: Segment[]) {
-  updateProject(projectId, (p) =>
-    p.workflow === "translate"
-      ? { ...p, translations: p.translations.map((t) => (t.language === language ? { ...t, segments } : t)) }
-      : p,
-  );
-}
-
-/** The user approved every translation: review is done, captions start (simulated). */
-export function approveReview(projectId: string) {
-  const nowIso = new Date().toISOString();
-  updateProject(projectId, (p) =>
-    p.workflow === "translate" && p.steps.review.status === "needs_input"
-      ? {
-          ...p,
-          status: "processing",
-          translations: p.translations.map((t) => ({ ...t, status: "processing" })),
-          steps: {
-            ...p.steps,
-            review: { ...p.steps.review, status: "completed", finishedAt: nowIso },
-            captions: { status: "processing", startedAt: nowIso, attempt: 1 },
-          },
-        }
-      : p,
-  );
-}

@@ -17,7 +17,7 @@ export type WorkflowKind = "ad" | "translate";
 export type StepKey = "script" | "productClip" | "presenter" | "finalEdit";
 
 /** Steps of the translate workflow. */
-export type TranslateStepKey = "upload" | "translate" | "review" | "captions";
+export type TranslateStepKey = "upload" | "translate" | "captions";
 
 export interface Step {
   status: StepStatus;
@@ -121,6 +121,8 @@ export interface Translation {
   error?: string;
   /** Paid calls so far for this language version, including its share of shared costs. */
   spentUsd?: number;
+  /** Outcome of the automatic quality check that replaced the manual review. */
+  qa?: { changes: { index: number; before: string; after: string; reason: string }[]; warnings: string[]; summary?: string };
 }
 
 /** Workflow B: an existing video → the same video in other languages. */
