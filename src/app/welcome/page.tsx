@@ -63,7 +63,7 @@ export default function WelcomePage() {
         {/* Hero */}
         <section className="mx-auto max-w-3xl pt-20 text-center sm:pt-28">
           <p className="label-mono text-muted">Video ads, made automatically</p>
-          <h1 className="text-hero mt-5">From one product photo to a finished ad</h1>
+          <h1 className="mt-5 text-[clamp(2.5rem,6vw,4rem)] font-semibold leading-[1.02] tracking-[-0.035em]">From one product photo to a finished ad</h1>
           <p className="mx-auto mt-6 max-w-xl text-subtitle text-muted">
             Add a product once. A script is written, a presenter speaks it, your product is animated and everything is cut into one 9:16 ad with captions.
           </p>
