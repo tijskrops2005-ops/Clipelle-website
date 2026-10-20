@@ -30,6 +30,10 @@ export const workflowSettings = {
   adLanguage: process.env.AD_LANGUAGE?.trim() || "en",
   /** How long we keep polling a provider before giving up (minutes). */
   maxWaitMinutes: 45,
-  /** Seconds between status checks. */
-  pollSeconds: 20,
+  /**
+   * Seconds between status checks. 20 s cost up to 20 s of dead time per provider wait (measured on
+   * project "Senvia", 2026-10-19: 3 waits ≈ 40 s); 8 s stays far under the providers' rate limits
+   * (HeyGen 10 requests/s). Webhooks (stage 8 step 8) replace polling once the app has a public URL.
+   */
+  pollSeconds: 8,
 } as const;
