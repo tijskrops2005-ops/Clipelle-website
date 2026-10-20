@@ -247,6 +247,24 @@ Bekeken in de browser eerder deze sessie (screenshots `screens/reelay-*.jpg`) en
 
 ---
 
+## 4b. Creatomate (creatomate.com), toegevoegd op 20 oktober 2026
+
+Bekeken voor de herbouw van de buitenkant: alleen de openbare homepage en prijzenpagina, geen account, geen formulier. Creatomate is een API-product voor ontwikkelaars, geen directe concurrent; het is hier gebruikt als voorbeeld van een rustige, strakke opbouw.
+
+**Gevolgde patronen (zeker, in eigen uitvoering gebouwd):**
+
+| Patroon | Bron | Waar het in Reelay zit |
+|---|---|---|
+| Afgeronde, zwevende navigatiebalk met één zwarte knop rechts | https://creatomate.com/ (kop) | Mobiele bovenbalk van de app (`MobileNav`) en de kop van `/welcome` |
+| Hero: kleine kop in mono erboven, grote titel, één zin, twee knoppen (gevuld + omlijnd) | https://creatomate.com/ (hero) | `/welcome` |
+| Genummerde "hoe werkt het"-blokken: mono nummer "01", een kort lijntje, titel, één zin | https://creatomate.com/ (blokken 01–03 onder de hero) | `StepList` boven beide formulieren en op `/welcome` |
+| Rij van vier gelijke kaarten met één zin, veel witruimte eromheen | https://creatomate.com/ (use-case-kaarten) | "What you get"-kaarten op `/welcome`, de How-it-works-rijen op het dashboard |
+| Prijskaarten met een uitgelichte kaart (gekleurde kop "Most Popular"), vinkjes en kruisjes per regel, een maand/jaar-schakelaar, FAQ in twee kolommen | https://creatomate.com/pricing | Nog geen prijzenpagina in Reelay; de FAQ in twee kolommen staat op `/welcome` |
+| Afsluitend blok met één kop, één zin en één knop; voet met mono-tekst | https://creatomate.com/ (onderaan) | `/welcome` |
+| Ruimtegebruik: secties ver uit elkaar, tekstbreedte beperkt, één accentkleur | beide pagina's | Hele app: `max-w` per sectie, 64–96 px tussen secties |
+
+Niet overgenomen: hun logo, kleuren, lettertype, schermafbeeldingen van hun editor, teksten. Screenshots: `creatomate-home-hero-steps.jpg`, `creatomate-home-automation-section.jpg`, `creatomate-home-cards-and-examples.jpg`, `creatomate-home-closing-cta-footer.jpg`, `creatomate-pricing-plans.jpg`, `creatomate-pricing-faq.jpg`.
+
 ## 5. Vergelijkingstabel
 
 Inspanning: klein (een dagdeel, alleen UI), middel (een dag of twee, UI plus data), groot (meerdere dagen of nieuwe pipeline-stap).
@@ -418,10 +436,30 @@ Eerst de kleine, zichtbare winst, dan de structuur, dan wat data vraagt. Alles b
 2. **Aanbevolen standaard en 9:16-uitleg** in beide formulieren; schatting herhalen in de bevestiging. Klein. **Gebouwd** (`a641ef8`): lengte-optie "30 seconds · recommended" plus hint, badge "Recommended" op de standaardkwaliteit (uit `DEFAULT_PRESENTER_ENGINE`) en op Speed, 9:16-uitleg bij de foto-upload en bij het formaat, schatting op de knop ("Generate video · $1.40") en een inline bevestiging met lengte, kwaliteit, taal (A) of seconden, kwaliteit, talen (B) en hetzelfde bedrag; "Start now" start pas daarna. Screenshots `reelay-after-form-recommended.jpg`, `reelay-after-form-confirmation.jpg`. Correctie 20 oktober: de aanbeveling is nu Standard (30 s = $0,68, binnen het budget); Premium toont wat hij extra kost. Reden en herbeoordeling in `docs/cost-quality.md` §4.
 3. **Kiezer `/new`** met voorbeeldtegel, tijd en startprijs. Klein. **Gebouwd** (`f73f266`): `src/components/WorkflowChooser.tsx`; eigen voorbeeld (telefoonkader met caption, taalchips), "Typical wait" als gemiddelde van afgeronde projecten van die soort uit de projectenlijst (database of demo; eerste stap gestart → laatste stap klaar), met een vaste aanname zolang er niets gemeten is (advertentie 10 min, aanname; vertaling 5 min, gemeten op 20 oktober), en "from $…" als goedkoopste combinatie uit `src/lib/pricing.ts` (10 s Standard; 60 s Speed per taal). Screenshot `reelay-after-new-chooser.jpg`.
 4. **Projectenlijst en tegels** met soortfilter en soortlabel. Klein. **Gebouwd** (`ccde807`, `b5f9161`): tweede pillenrij All / Ads / Translations met aantallen, soortlabel onder elke tegel (Ad / Translation), echte lengte op afgeronde tegels in plaats van een vaste waarde, skeleton tot de lijst er is, lege toestanden per combinatie; filteren gebeurt in `useMemo` per wijziging. Screenshot `reelay-after-projects-filters.jpg`.
-5. **Advertentieformulier in drie blokken** met ingeklapte opties en sticky samenvatting; presentatorrij met "Show all". Middel. Dit is de grootste verandering en komt pas als 1–4 staan, zodat het formulier in één keer kan worden getest.
-6. **Dashboard "How it works" in twee rijen** met mini-elementen. Middel.
-7. **Settings → Brand** (opslaan van merkstijl en standaardstem/presentator, vooringevuld in het formulier). Middel; vraagt een kleine tabel of een JSON-kolom per gebruiker, dus na de toegangscode uit fase 8.
-8. **Re-render met andere instelling** vanaf het resultaat. Middel; hergebruikt retry, maar vraagt een vooringevuld formulier en een duidelijke kostenbevestiging.
+5. **Advertentieformulier in drie blokken** met ingeklapte opties en sticky samenvatting; presentatorrij met "Show all". Middel. **Gebouwd** (20 oktober, herbouw buitenkant): `ProjectForm.tsx` in drie `SectionCard`-blokken (Your product · Presenter and voice · Script and style), minder gebruikte opties onder "Advanced" (`Disclosure`: product-URL, aanbod, regie; achtergrond; merkstijl), lengte als chips met prijs, kwaliteit en toon als `OptionCard`, en een vaste `SummaryPanel` rechts (vanaf xl sticky, daaronder als laatste kaart) met de keuzes, de schatting, de bevestiging en de knop. Wat het formulier opstuurt is ongewijzigd en vastgelegd in `src/lib/forms/forms.test.ts`.
+6. **Dashboard "How it works" in twee rijen** met mini-elementen. Middel. **Gebouwd** (20 oktober): één rij per workflow (advertentie 4 stappen incl. Script, vertaling 3) met eigen illustraties, "Recent projects" erboven.
+7. **Settings → Brand** (opslaan van merkstijl en standaardstem/presentator, vooringevuld in het formulier). Middel; vraagt een kleine tabel of een JSON-kolom per gebruiker, dus na de toegangscode uit fase 8. **Open** (functioneel; bewust niet in de herbouw van de buitenkant).
+8. **Re-render met andere instelling** vanaf het resultaat. Middel; hergebruikt retry, maar vraagt een vooringevuld formulier en een duidelijke kostenbevestiging. **Open** (functioneel).
+
+### Herbouw van de buitenkant (20 oktober 2026, alleen uiterlijk)
+
+Regels: alleen uiterlijk en indeling; niets aan koppelingen, workflows, datalaag, kostenbewaking, schattingen, standaardwaarden, validaties of de volgorde van stappen. Bewijs: `src/lib/forms/forms.test.ts` legt vast wat beide formulieren opsturen (`buildAdDraft`, `buildTranslateDraft`) en wat de schattingen zijn voor alle combinaties van lengte, kwaliteit en snelheid (A) en seconden, kwaliteit, talen, verbetering en transcript (B); de snapshots zijn vóór de herbouw gemaakt en na afloop ongewijzigd (`npm test`). Geen teksten, beeld of code van andere sites overgenomen.
+
+| # | Onderdeel | Wat er is gebouwd |
+|---|---|---|
+| R1 | Ontwerpbasis | Tokens in `globals.css`: zachte schaduw, tinten `accent-soft`/`ink-soft`, radii `panel`/`chip`, één easing en twee duur-tokens, `fold-in`-animatie; utilities `text-title/subtitle/body/meta`, `focus-ring`, `panel`; "reduce motion" zet alle overgangen uit. Componenten in `src/components/ui/`: `SectionCard` (genummerde kaart met uitleg), `OptionCard` + `OptionGrid` (keuzekaart en chip, `aria-pressed`), `SegmentedControl` (radiogroup met pijltjestoetsen), `Disclosure` (inline "Advanced"-vouw, inhoud blijft gemount), `SummaryPanel` (vaste samenvatting), `StepList` (01 — titel), `Collapsible` met animatie; `Button` kreeg `danger` en `link`. |
+| R2 | App-schil | Zijbalk: accentkleur op het actieve icoon, demo-pil in de voet. Telefoon: zwevende afgeronde bovenbalk met menu, merk en ronde accentknop "Create new video"; lade met afgeronde hoek en vervaagde achtergrond. |
+| R3a | Dashboard | Recente projecten eerst, daarna "How it works" per workflow. |
+| R3b | `/new` | Tegels met vaste zwarte Start-knop, panel-stijl voorbeeld. |
+| R3c | `/new/ad` | Drie blokken, Advanced-vouwen, chips, optiekaarten, vaste samenvatting met bevestiging. |
+| R3d | `/new/translate` | Drie blokken (video, talen en kwaliteit, captions en formaat), Advanced-vouwen (termen; stilte en verbetering), rechtenvinkje in de samenvatting naast de knop. |
+| R3e | Projectpagina | Mislukte stap in een rood omlijnd paneel met Retry; focusringen; resultaat bovenaan bleef. |
+| R3f | `/projects` | Gedeelde `SegmentedControl` voor beide filters. |
+| R3g | Settings | Sectiekaarten, feiten in panelen. |
+| R3h | `/welcome` | Statische landingspagina buiten de app-schil: zwevende kop, hero met twee knoppen, drie genummerde stappen, zes "wat je krijgt"-kaarten, FAQ, afsluitend blok. Geen formulier, geen data, geen leveranciers. De toegangscode bestaat nog niet, dus geen routewijziging. |
+| R4 | Controle | `/dev/phone?path=…` toont elke route in een kader van 390 × 844 (alleen development). |
+
+Screenshots vóór: `reelay-redesign-before-*.jpg`; ná: `reelay-redesign-after-*.jpg`.
 
 Niet in deze volgorde en niet gepland: varianten in batch (U3), tekst in beeld of eindkaarten, een editor, modelkeuze, analytics.
 
@@ -447,3 +485,5 @@ Alle bestanden in `docs/research/screens/`, publieke pagina's, 20 oktober 2026.
 | `reelay-project-page-translate.jpg`, `reelay-project-page-quality-check.jpg` | Projectpagina (vertaling) vóór de bouw |
 | `reelay-after-*.jpg` | Na bouwstappen 1–4 (20 oktober 2026): resultaat bovenaan, ingeklapte pijplijn, vertaalresultaat, aanbevolen labels, bevestiging, kiezer, filters |
 | `reelay-after-quality-standard-recommended.jpg`, `reelay-after-form-button-standard.jpg`, `reelay-after-dashboard-copy.jpg`, `reelay-after-project-standard-spent.jpg` | Correcties van 20 oktober: Standard aanbevolen met de meerprijs van Premium, knop met $0,68, dashboardtekst "alleen ondertitels", projectpagina met werkelijk bedrag |
+| `creatomate-*.jpg` | Creatomate homepage en prijzenpagina (hoofdstuk 4b) |
+| `reelay-redesign-before-*.jpg`, `reelay-redesign-after-*.jpg` | Vóór en ná de herbouw van de buitenkant (20 oktober 2026), laptopbreedte en 390 px (`-phone-`) |
