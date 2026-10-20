@@ -215,6 +215,8 @@ export type TranslateProjectDraft = {
   targetLanguages: LanguageCode[];
   quality: TranslationQuality;
   keepTerms?: string[];
+  trimSilence?: boolean;
+  captionPosition?: "low" | "middle";
   format: "original" | "9:16";
   enhance: boolean;
   rightsConfirmed: boolean;

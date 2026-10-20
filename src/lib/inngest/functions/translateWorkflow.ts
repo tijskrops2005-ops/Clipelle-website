@@ -40,6 +40,7 @@ import {
   plainMessage,
   providerUrl,
   StepFailure,
+  storeBytes,
   storeFromUrl,
   withDeadline,
   withRetries,
@@ -466,12 +467,35 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
       const stepRow = await loadStep(projectId, "captions");
       const video = await loadAsset(sourceForCaptions);
       const srt = srtAssetId ? await loadAsset(srtAssetId) : null;
+      const seconds = video.seconds ?? input.sourceSeconds;
+      // Silence at the start and end, read from the subtitle cue times (no audio analysis needed):
+      // more than 0.3 s before the first line or after the last line is cut, keeping a 0.3 s breath.
+      const [t] = await db().select().from(translations).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).limit(1);
+      const cues = t?.segments ?? [];
+      let trimStart = 0;
+      let trimEnd = 0;
+      let srtUrl = srt ? await providerUrl(srt) : undefined;
+      if ((input.trimSilence ?? true) && cues.length > 0) {
+        const first = Math.min(...cues.map((c) => c.start));
+        const last = Math.max(...cues.map((c) => c.end));
+        if (first > 0.6) trimStart = Math.round((first - 0.3) * 10) / 10;
+        if (seconds - last > 0.6) trimEnd = Math.round((seconds - last - 0.3) * 10) / 10;
+        if (trimStart > 0) {
+          // The captions must shift with the picture: a new SRT from the checked lines, minus the cut.
+          const shifted = buildSrt(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })));
+          const asset = await storeBytes({ projectId, stepId: stepRow.id, kind: "srt", data: new TextEncoder().encode(shifted), mime: "application/x-subrip", fileName: `captions-${code}-trimmed.srt`, language: code });
+          srtUrl = await providerUrl(asset);
+        }
+      }
       const edit = buildCaptionEdit({
         videoUrl: await providerUrl(video),
-        seconds: video.seconds ?? input.sourceSeconds,
-        srtUrl: srt ? await providerUrl(srt) : undefined,
+        seconds,
+        srtUrl,
         fit: "crop",
         size: input.format === "original" && upload.width && upload.height ? { width: upload.width, height: upload.height } : undefined,
+        trimStart,
+        trimEnd,
+        captionPosition: input.captionPosition ?? "low",
       });
       // Counted as $0.10 per 30 s even in the sandbox, so budgets match production.
       const estimate = Math.round(edit.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000;

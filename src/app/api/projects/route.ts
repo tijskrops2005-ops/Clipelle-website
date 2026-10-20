@@ -61,6 +61,8 @@ const TranslateBody = z.object({
   keepTerms: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
   format: z.enum(["original", "9:16"]),
   enhance: z.boolean(),
+  trimSilence: z.boolean().default(true),
+  captionPosition: z.enum(["low", "middle"]).default("low"),
   rightsConfirmed: z.literal(true, { error: "Confirm the rights to the video first." }),
 }).refine((b) => !b.targetLanguages.includes(b.sourceLanguage), { error: "A target language cannot be the same as the spoken language." });
 

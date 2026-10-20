@@ -99,6 +99,10 @@ export type TranslateInput = {
   /** "Review before rendering": pause for the user's corrections. Off: Claude rewrites in ad tone automatically. */
   /** Terms that must stay untranslated (brand and product names); sent as a brand glossary. */
   keepTerms?: string[];
+  /** Cut silence longer than ~0.3 s at the start and the end (default on); lip-sync is untouched. */
+  trimSilence?: boolean;
+  /** Where the captions sit: "low" (above the bottom 15%) or "middle". */
+  captionPosition?: "low" | "middle";
   /** Keep the source format or make it vertical. */
   format: "original" | "9:16";
   /** Optional picture enhancement before captions. */

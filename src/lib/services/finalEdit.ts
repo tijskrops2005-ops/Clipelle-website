@@ -262,6 +262,12 @@ export type CaptionEditInput = {
   /** Keep the source format: output exactly this size (max 1920 per side) instead of 1080×1920. */
   size?: { width: number; height: number };
   colors?: { accent?: string; ink?: string; light?: string };
+  /** Seconds cut from the start (silence before the first line); the SRT must already be shifted by the same amount. */
+  trimStart?: number;
+  /** Seconds cut from the end (silence after the last line). */
+  trimEnd?: number;
+  /** "low" = above the bottom 15% of the frame (default); "middle" = centre. */
+  captionPosition?: "low" | "middle";
 };
 
 /** One video track plus TikTok-style captions, output 1080×1920. Same caption style as the ad. */
@@ -269,7 +275,9 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const accent = input.colors?.accent ?? "#D43F1B";
   const ink = input.colors?.ink ?? "#111114";
   const light = input.colors?.light ?? "#FFFFFF";
-  const total = Math.max(1, Math.round(input.seconds * 10) / 10);
+  const trimStart = Math.max(0, Math.round((input.trimStart ?? 0) * 10) / 10);
+  const trimEnd = Math.max(0, Math.round((input.trimEnd ?? 0) * 10) / 10);
+  const total = Math.max(1, Math.round((input.seconds - trimStart - trimEnd) * 10) / 10);
 
   const captions = {
     clips: [
@@ -290,7 +298,8 @@ export function buildCaptionEdit(input: CaptionEditInput) {
         length: total,
         width: 900,
         height: 500,
-        offset: { x: 0, y: -0.18 },
+        // "low": the caption box sits roughly between 18% and 32% from the bottom, clear of the bottom 15%.
+        offset: { x: 0, y: input.captionPosition === "middle" ? 0 : -0.18 },
       },
     ],
   };
@@ -299,7 +308,8 @@ export function buildCaptionEdit(input: CaptionEditInput) {
     clips: [
       {
         alias: "source",
-        asset: { type: "video", src: input.videoUrl, volume: 1, trim: 0 },
+        // Leading silence is cut with trim; trailing silence by the shorter clip length.
+        asset: { type: "video", src: input.videoUrl, volume: 1, trim: trimStart },
         start: 0,
         length: total,
         fit: input.fit ?? "crop",
@@ -313,7 +323,7 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   return {
     timeline: { background: ink, tracks: [captions, video] },
     output,
-    meta: { totalSeconds: total },
+    meta: { totalSeconds: total, trimStart, trimEnd },
   };
 }
 

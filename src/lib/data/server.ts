@@ -201,6 +201,8 @@ export type NewTranslateProject = {
   targetLanguages: LanguageCode[];
   quality: TranslationQuality;
   keepTerms?: string[];
+  trimSilence?: boolean;
+  captionPosition?: "low" | "middle";
   format: "original" | "9:16";
   enhance: boolean;
   rightsConfirmed: boolean;
@@ -240,6 +242,8 @@ export async function createDraft(input: { workflow: "ad"; ad: NewAdProject } | 
         targetLanguages: t.targetLanguages,
         quality: t.quality,
         keepTerms: t.keepTerms,
+        trimSilence: t.trimSilence ?? true,
+        captionPosition: t.captionPosition ?? "low",
         format: t.format,
         enhance: t.enhance,
       } satisfies TranslateInput,

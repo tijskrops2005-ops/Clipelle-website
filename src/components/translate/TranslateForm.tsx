@@ -62,6 +62,8 @@ export function TranslateForm() {
   const [keepTerms, setKeepTerms] = useState("");
   const [format, setFormat] = useState<"original" | "9:16">("9:16");
   const [enhance, setEnhance] = useState(false);
+  const [trimSilence, setTrimSilence] = useState(true);
+  const [captionPosition, setCaptionPosition] = useState<"low" | "middle">("low");
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   const submitLock = useRef(false);
@@ -129,6 +131,8 @@ export function TranslateForm() {
         keepTerms: keepTerms.split(/[,\n]/).map((t) => t.trim()).filter(Boolean).slice(0, 20),
         format,
         enhance,
+        trimSilence,
+        captionPosition,
         rightsConfirmed: rights,
       });
       router.push(`/projects/${id}`);
@@ -286,6 +290,29 @@ export function TranslateForm() {
                 </label>
               ))}
             </div>
+          </fieldset>
+          <label htmlFor="trimSilence" className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-border bg-surface-muted p-4">
+            <input id="trimSilence" type="checkbox" checked={trimSilence} onChange={(e) => setTrimSilence(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 shrink-0 accent-ink" />
+            <span>
+              <span className="block text-sm font-medium text-ink">Remove silence at start and end</span>
+              <span className="block text-[13px] leading-relaxed text-muted">Cuts quiet stretches longer than about 0.3 s before the first and after the last spoken line. The speech itself and the lip-sync are untouched.</span>
+            </span>
+          </label>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium text-ink">Caption position</legend>
+            <div className="flex gap-1 rounded-full bg-surface-muted p-1 w-fit" role="radiogroup" aria-label="Caption position">
+              {(
+                [
+                  { key: "low", label: "Low" },
+                  { key: "middle", label: "Middle" },
+                ] as const
+              ).map((o) => (
+                <button key={o.key} type="button" role="radio" aria-checked={captionPosition === o.key} disabled={submitting} onClick={() => setCaptionPosition(o.key)} className={cn("rounded-full px-3 py-1 text-[13px] font-medium transition-colors", captionPosition === o.key ? "bg-ink text-white" : "text-muted hover:text-ink")}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[13px] text-muted">Low keeps the captions above the bottom 15% of the picture, so they do not cover a product shown low in frame. Middle puts them at the centre.</p>
           </fieldset>
           <label htmlFor="enhance" className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-border bg-surface-muted p-4">
             <input id="enhance" type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 shrink-0 accent-ink" />
