@@ -80,14 +80,14 @@ export const solutions: Solution[] = [
     problem: { title: "The problem", points: ["Every client ad goes through the same steps, by hand, in several tools.", "Brand consistency per client takes discipline across the team.", "Clients want to know the cost before the work, not after."] },
     helps: [
       { title: "A fixed process", text: "Script, product clip, presenter, final edit, always in that order, with the same quality checks." },
-      { title: "Brand style per video", text: "Accent colour, caption look, font and logo per ad; a client's defaults can be saved in the account used for that client." },
+      { title: "Brand style per video", text: "Accent colour, caption look, font and logo per ad; a client's defaults can be saved in the workspace used for that client." },
       { title: "Estimates on every form", text: "Credits and dollars before you click; the real amount on the project page for your own records." },
-      { title: "The API for volume", text: "Create ads and translations from your own tooling with an API key; projects stay per account." },
+      { title: "The API for volume", text: "Create ads and translations from your own tooling with an API key; projects stay per workspace." },
       { title: "Translations for international clients", text: "A client's video in several languages with the speaker's own voice, each version with captions." },
     ],
     example: { title: "Example flow (illustration, not a customer story)", steps: ["Receive a client's product sheet; paste the product page into URL to video.", "Apply the client's colour, caption look and logo in the brand style block.", "Tick Review script first; send the three hooks to the client, approve the chosen one.", "Deliver the 9:16 ad and the German and French versions from the translate workflow."] },
     faq: [
-      { q: "Can several people work in one account?", a: "Today an account belongs to one sign-in. Shared team workspaces are planned; until then one account per client or per agency is the practical setup." },
+      { q: "Can several people work in one account?", a: "Yes. A team workspace shares projects and credits; the owner manages the plan, credits and members. One team workspace per client or per agency is the practical setup." },
       { q: "Can we white-label Reelay?", a: "No. The finished videos carry no Reelay branding; the app itself is Reelay." },
       { q: "How do we bill clients?", a: "The project page shows the real amount per video; the usage page lists spending per project for your own invoicing." },
     ],
