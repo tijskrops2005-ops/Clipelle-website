@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
-/** Closing block of a marketing page: one title, one line, the main button and a quiet second one. */
+/** The closing block of most site pages: the one accent button, Book a demo, and the honest free-ad line. */
 export function CtaBand({ title = "Make your first ad", text = "The estimate is shown before you start. Nothing is charged until you confirm." }: { title?: string; text?: string }) {
   return (
     <section className="rounded-card bg-surface px-6 py-14 text-center shadow-card sm:py-16">
@@ -16,6 +16,7 @@ export function CtaBand({ title = "Make your first ad", text = "The estimate is 
           Book a demo
         </Button>
       </div>
+      <p className="mt-4 text-[13px] text-muted">No credit card required. One free 10-second ad after you verify your e-mail.</p>
     </section>
   );
 }

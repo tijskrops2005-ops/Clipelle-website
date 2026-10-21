@@ -386,3 +386,17 @@ export const apiIdempotency = pgTable(
   },
   (t) => [uniqueIndex("api_idempotency_key_idx").on(t.keyId, t.idemKey)],
 ).enableRLS();
+
+/** Waitlist wishes for integrations that are announced but not built (Slack bot, Ad Launcher). One row per e-mail and feature. */
+export const waitlist = pgTable(
+  "waitlist",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    feature: text("feature").notNull(),
+    email: text("email").notNull(),
+    userId: text("user_id"),
+    ipHash: text("ip_hash"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("waitlist_feature_email_idx").on(t.feature, t.email), index("waitlist_created_idx").on(t.createdAt)],
+).enableRLS();
