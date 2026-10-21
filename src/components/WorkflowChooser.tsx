@@ -37,6 +37,7 @@ const FROM_AD = estimateAdCost({ seconds: 10, clipModel: DEFAULTS.clipModel, eng
 const FROM_TRANSLATE = estimateTranslateCost({ seconds: 60, quality: "speed", enhance: false, languages: 1, hasSourceTranscript: true }).perLanguageTotal;
 
 const workflows: {
+  /** Which wait and price to show; "URL to video" is the ad workflow with a different start. */
   kind: WorkflowKind;
   href: string;
   title: string;
@@ -51,6 +52,14 @@ const workflows: {
     text: "Photos and a short description become a finished 9:16 ad with a presenter, product footage and captions.",
     price: `from ${formatUsd(FROM_AD)} per video`,
     Preview: AdPreview,
+  },
+  {
+    kind: "ad",
+    href: "/new/url",
+    title: "Make an ad from a product link",
+    text: "Paste a product page link. Name, description and photos are read from the page for you to check; then the same ad is made.",
+    price: `from ${formatUsd(FROM_AD)} per video`,
+    Preview: UrlPreview,
   },
   {
     kind: "translate",
@@ -75,7 +84,7 @@ export function WorkflowChooser() {
   );
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
       {workflows.map(({ kind, href, title, text, price, Preview }) => {
         const wait = waits[kind];
         const minutes = wait.minutes ?? FALLBACK_MINUTES[kind];
@@ -157,6 +166,26 @@ function AdPreview() {
         <PresenterIllustration className="absolute left-1/2 top-3 h-10 w-16 -translate-x-1/2 text-ink/50" />
         <div className="absolute right-1.5 top-1.5 size-2 rounded-full bg-accent" aria-hidden />
         <CaptionLine words={["Meet", "your", "glow"]} accentIndex={1} />
+      </PhoneFrame>
+      <span className="label-mono absolute right-3 top-3 text-muted">Preview</span>
+    </div>
+  );
+}
+
+function UrlPreview() {
+  return (
+    <div className="flex items-center justify-center gap-4">
+      <div className="flex h-[64px] w-[84px] flex-col justify-center gap-1.5 rounded-[10px] border border-border bg-surface px-2.5" aria-hidden>
+        <span className="h-1.5 w-12 rounded-full bg-accent/70" />
+        <span className="h-1.5 w-14 rounded-full bg-ink/20" />
+        <span className="h-1.5 w-10 rounded-full bg-ink/20" />
+        <span className="mt-1 h-5 w-5 rounded-[4px] bg-ink/10" />
+      </div>
+      <span className="label-mono text-muted" aria-hidden>→</span>
+      <PhoneFrame>
+        <div className="absolute inset-0 bg-gradient-to-b from-surface-muted to-border" />
+        <PresenterIllustration className="absolute left-1/2 top-3 h-10 w-16 -translate-x-1/2 text-ink/50" />
+        <CaptionLine words={["From", "one", "link"]} accentIndex={2} />
       </PhoneFrame>
       <span className="label-mono absolute right-3 top-3 text-muted">Preview</span>
     </div>

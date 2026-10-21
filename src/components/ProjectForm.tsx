@@ -61,7 +61,10 @@ type Errors = AdFormErrors;
  * (rule 4) and creates the project through the data layer. What it sends is built by
  * buildAdDraft and covered by src/lib/forms/forms.test.ts.
  */
-export function ProjectForm() {
+/** Starting values from "URL to video": the form behaves exactly as with typed values and sends the same draft. */
+export type ProjectFormInitial = { values?: Partial<Values>; images?: UploadedImage[] };
+
+export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) {
   const router = useRouter();
   const [values, setValues] = useState<Values>({
     projectName: "",
@@ -71,6 +74,7 @@ export function ProjectForm() {
     script: "",
     offer: "",
     direction: "",
+    ...initial?.values,
   });
   const [language, setLanguage] = useState<AdLanguageCode>(isAdLanguage(DEFAULT_AD_LANGUAGE) ? DEFAULT_AD_LANGUAGE : "en");
   const [voiceAccent, setVoiceAccent] = useState<string | undefined>(undefined);
@@ -122,7 +126,7 @@ export function ProjectForm() {
       alive = false;
     };
   }, []);
-  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [images, setImages] = useState<UploadedImage[]>(initial?.images ?? []);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   /** Second step of the submit: the form is valid and the customer sees the cost once more before anything starts. */

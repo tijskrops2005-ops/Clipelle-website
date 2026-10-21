@@ -10,7 +10,7 @@ import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { CtaBand } from "@/components/site/CtaBand";
 import { adCreditTable } from "@/lib/plans";
 
-export const metadata: Metadata = { title: "Create ads", description: "From one product photo to a finished 9:16 ad with a presenter and captions." };
+export const metadata: Metadata = { title: "Image to video", description: "From one product photo to a finished 9:16 ad with a presenter and captions." };
 
 export default function PlatformAdsPage() {
   const sample = firstExample("ad");
@@ -19,7 +19,7 @@ export default function PlatformAdsPage() {
     <div className="space-y-24 sm:space-y-32">
       <section className="grid items-center gap-12 pt-16 sm:pt-24 lg:grid-cols-[1.15fr_1fr]">
         <div>
-          <p className="label-mono text-muted">Create ads</p>
+          <p className="label-mono text-muted">Image to video</p>
           <h1 className="mt-5 text-[clamp(2.25rem,5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">A presenter, your product, captions. One form.</h1>
           <p className="mt-6 max-w-xl text-subtitle text-muted">Upload a product photo, describe the product in a few sentences, pick a presenter and a length. The script, the product footage, the presenter video and the edit are made for you.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
