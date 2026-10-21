@@ -336,3 +336,11 @@ Alle sleutels komen in `.env.local` (zie `.env.example`), nooit in code, commits
 | Creatomate (reserve) | Alleen als Shotstack in de praktijk tekortschiet | `CREATOMATE_API_KEY` | Proefperiode met 50 credits. |
 
 Daarnaast, niet voor de eerste koppeling maar voor fase 8: een database, bestandsopslag en een plek voor achtergrondjobs. Die keuze maken we dan.
+
+## Site, accounts, credits en abonnementen (gebouwd 21 oktober 2026)
+
+- **Marketingsite** in een eigen routegroep met eigen kop en voet: home, platformpagina's, voorbeelden (alleen eigen uitvoer), prijzen, resources (drie gidsen, FAQ, changelog), about, demo-aanvraag, contact, juridische concepten. Vertrouwensblokken alleen uit `src/content/trust.ts`; leeg = niet zichtbaar in productie.
+- **Accounts** via Supabase Auth; de geplande toegangscode uit fase 8 (stap 10) vervalt. Projecten per gebruiker met strikte toegangscontrole in de datalaag, bewezen met een databasetest. Settings: Profile, Brand, Usage, Billing, Connections.
+- **Credits** volgens `docs/pricing-model.md`: 1 credit = één seconde Standard-advertentie; reserveren vóór de start, afrekenen op de werkelijke kosten, terugboeken bij falen. Gratis eerste advertentie (10 s Standard) per geverifieerd e-mailadres met dagplafond.
+- **Stripe** in testmodus: checkout, klantportaal, webhook. Zonder sleutels een nette uitgeschakelde staat.
+- **Open**: e-mailprovider instellen, Stripe-producten aanmaken, echte reviews en logo's, juridische controle, 390 px-controle op een echt toestel, een prijzenpagina-variant voor jaarbetaling in Stripe (prijs per jaar is aangemaakt in het script).

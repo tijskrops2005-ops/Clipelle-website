@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
+import type { AdInput, TranslateInput } from "@/lib/db/schema";
 
 /**
  * Free-ad rules against the database (skipped without DATABASE_URL): the grant is idempotent,
@@ -41,11 +42,11 @@ describe.skipIf(!hasDb)("free ad rules", () => {
     const { db, projects } = await import("@/lib/db");
     const { eq } = await import("drizzle-orm");
     // Pretend an image is attached so the only remaining rule is the free-plan one.
-    await db().update(projects).set({ input: { ...(long.input as Record<string, unknown>), imageAssetIds: ["00000000-0000-0000-0000-000000000099"] } }).where(eq(projects.id, long.id));
+    await db().update(projects).set({ input: { ...(long.input as AdInput), imageAssetIds: ["00000000-0000-0000-0000-000000000099"] } }).where(eq(projects.id, long.id));
     await expect(data.startProject(userId, long.id)).rejects.toMatchObject({ code: "free_plan_limit" });
     const translate = await data.createDraft(userId, { workflow: "translate", translate: { name: "Free rule translate", sourceFileName: "a.mp4", sourceSeconds: 8, sourceLanguage: "auto", targetLanguages: ["nl"], quality: "speed", format: "9:16", enhance: false, rightsConfirmed: true } });
     created.push(translate.id);
-    await db().update(projects).set({ input: { ...(translate.input as Record<string, unknown>), sourceAssetId: "00000000-0000-0000-0000-000000000098" } }).where(eq(projects.id, translate.id));
+    await db().update(projects).set({ input: { ...(translate.input as TranslateInput), sourceAssetId: "00000000-0000-0000-0000-000000000098" } }).where(eq(projects.id, translate.id));
     await expect(data.startProject(userId, translate.id)).rejects.toMatchObject({ code: "free_plan_limit" });
   });
 });

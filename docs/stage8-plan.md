@@ -23,7 +23,7 @@ Een klant klikt "Generate video" of "Start translation", sluit de laptop, en vin
 | Kostenbewaking | Zelfde `reserveSpend`/`settleSpend`, maar tabel `cost_entries` in plaats van het JSONL-bestand | Werkt op Vercel (geen schrijfbaar bestandssysteem), per project optelbaar, zichtbaar op de projectpagina. | Gratis. | Geen |
 | Demo mode | Omgevingsvariabele `DEMO_MODE` (server) + `NEXT_PUBLIC_DEMO_MODE` (browser) | Aan: de huidige mock store en runner. Uit: database en orchestrator. Zelfde schermen, zelfde data-interface. | Gratis. | Geen |
 | Hosting | **Vercel**, regio Frankfurt | Next.js draait er zonder configuratie, previews per branch, functies tot 300 s (ruim genoeg: elke Inngest-stap duurt seconden, het wachten gebeurt buiten de functie). | Hobby gratis tijdens ontwikkelen, maar **uitsluitend niet-commercieel**. Vóór de eerste klant naar Pro: $20/mnd. | Vercel + GitHub (de repo moet online staan voor automatische deploys) |
-| Inloggen | **Nu niet.** Wel een eenvoudige toegangscode (`APP_ACCESS_PASSWORD`, cookie via middleware) zodra de app online staat | Betaalde acties mogen niet voor iedereen op internet bereikbaar zijn; een wachtwoordpoort is 40 regels code. Echte accounts (Supabase Auth, inloglink per e-mail) komen in fase 10, vóór de eerste externe gebruiker. De tabellen krijgen nu al een `owner_id`-kolom zodat dat geen verbouwing wordt. | Gratis. | Geen (later Supabase Auth, zelfde account) |
+| Inloggen | **Gebouwd op 21 oktober 2026: echte accounts (Supabase Auth) in plaats van de toegangscode.** `src/proxy.ts` beschermt de app-pagina's; de datalaag is per gebruiker. | Betaalde acties mogen niet voor iedereen op internet bereikbaar zijn. De `owner_id`-kolom uit deze fase is nu de eigenaar van elk project; de wachtwoordpoort is nooit gebouwd. | Gratis (Supabase Auth, zelfde project). | Geen |
 
 Bronnen: https://supabase.com/pricing, https://www.inngest.com/pricing, https://www.inngest.com/docs/usage-limits/inngest, https://vercel.com/docs/plans/hobby, https://developers.cloudflare.com/r2/pricing/, https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/
 
@@ -98,7 +98,7 @@ Uitgangspunt: de rechtenbevestiging geldt voor elke variant (stem en gezicht van
 | 7 | **Workflow B-orchestrator**: upload → vertalen → review (optioneel, met wachten) of automatische advertentietoon → genereren → enhance (optioneel) → captions met formaatkeuze. Formulier krijgt de vinkjes "Review before rendering", "Enhance picture quality" en de keuze "Keep original format / 9:16". | Eén klik op "Start translation" levert een vertaalde video per taal. |
 | 8 | **Webhooks** voor HeyGen, fal.ai en Shotstack met handtekeningcontrole, dedupe-tabel en Inngest-events; polling blijft als vangnet; `npm run dev:tunnel` met cloudflared; HeyGen-endpoint automatisch registreren. | Stappen gaan verder zodra de leverancier klaar is, zonder te wachten op de volgende poll. |
 | 9 | **Retry per stap en foutteksten.** Retry-knop stuurt het retry-event; elke leveranciersfout krijgt een melding in gewone taal; time-outs. | Een gefaalde stap kan vanaf de projectpagina worden hervat. |
-| 10 | **Toegangscode en beveiligingskoppen.** Middleware met `APP_ACCESS_PASSWORD`, cookie, uitzondering voor webhook-routes en `/api/inngest`. | Zonder code zie je alleen een inlogveld. |
+| 10 | **Vervallen: toegangscode.** Vervangen door accounts (Supabase Auth, 21 oktober 2026). Beveiligingskoppen blijven voor de deploy. | Zonder sessie ga je naar /login. |
 | 11 | **Deployment-voorbereiding.** GitHub-repo, Vercel-project (Frankfurt), omgevingsvariabelen, Inngest Cloud gekoppeld, Supabase-productieproject, checklist in `docs/deploy.md`. **Vóór de eerste en elke volgende push:** een pre-push-controle (`npm run check:secrets`, ook als git-hook) die faalt als `.env*` (behalve `.env.example`), `.reelay/`, logbestanden of iets dat op een sleutel lijkt (`sb_secret_`, `sk-ant-`, lange hex-/base64-reeksen) in de te pushen commits of de werkmap zit; plus `git ls-files` tegen `.gitignore` nalopen. | De app draait op een `vercel.app`-URL met demo mode uit; de push-controle is zichtbaar geslaagd. |
 
 Elke stap: eerst de relevante bestanden lezen, dan de wijziging, dan lint/typecheck/build en een controle in de browser, dan commit. Betaalde tests alleen met jouw go per keer, met de cost guard aan.
@@ -119,3 +119,24 @@ Afgesproken op 19 oktober 2026: plan akkoord, met de opslagmeter (stap 2) en de 
 ## 9. Wat bewust buiten fase 8 blijft
 
 Echte gebruikersaccounts en betalingen, e-mailnotificaties, meerdere varianten in batch (U3), muziekbibliotheek (U6), de creatives-varianten uit §6, uploads boven 32 MB naar HeyGen, en Cloudflare R2 (pas als de opslag dat vraagt).
+
+## 10. Deploy-checklist voor accounts, e-mail en betalingen (21 oktober 2026)
+
+**Supabase Auth (dashboard → Authentication)**
+1. URL configuration: *Site URL* = het echte domein (bijv. `https://app.example.com`); *Redirect URLs*: `https://<domein>/auth/callback`, `https://<domein>/auth/callback?next=/reset-password` en voor lokaal `http://localhost:3001/auth/callback`.
+2. Providers → Email: *Confirm email* aan; *Secure email change* aan. Magic link blijft aan (standaard). Google alleen als `NEXT_PUBLIC_AUTH_GOOGLE=true`: client-id en secret in Supabase invullen.
+3. Email templates (teksten in eigen woorden, Engels, geen leveranciersnamen): *Confirm signup* ("Verify your e-mail", knop "Verify and open Reelay", link `{{ .ConfirmationURL }}`), *Magic Link* ("Your sign-in link"), *Reset Password* ("Choose a new password", link naar `/auth/callback?next=/reset-password` via `{{ .ConfirmationURL }}`), *Change Email*. Zet onder SMTP een eigen afzender (de ingebouwde mailer heeft een laag uurplafond).
+4. Rate limits (Authentication → Rate limits): laat de standaard staan; onze eigen limiet is 10 per adres per 10 minuten per actie.
+5. `.env` op de server: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_DEMO_MODE=false`, de Supabase-sleutels, `MAX_COST_PER_USER_*`, `FREE_ADS_PER_DAY`.
+
+**Stripe (testmodus tot de lancering)**
+6. `STRIPE_SECRET_KEY=sk_test_…` zetten en `npm run stripe:setup` draaien (maakt producten en prijzen met lookup keys, zie `docs/pricing-model.md` §6).
+7. Developers → Webhooks: endpoint `https://<domein>/api/billing/webhook`, events `checkout.session.completed`, `invoice.paid`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`; signing secret als `STRIPE_WEBHOOK_SECRET`. Lokaal: `stripe listen --forward-to localhost:3001/api/billing/webhook`.
+8. Settings → Billing → Customer portal aanzetten (plan wijzigen, opzeggen, facturen).
+
+**E-mail voor demo- en contactaanvragen**
+9. `RESEND_API_KEY`, `EMAIL_FROM` (geverifieerd domein) en `NOTIFY_EMAIL` zetten; zonder deze worden aanvragen alleen opgeslagen (zichtbaar op `/dev/demo-requests` in development).
+
+**Domein en bestanden**
+10. Domein koppelen; `public/examples/` bevat de voorbeeldvideo's (nu twee eigen testvideo's, 17 MB); overweeg ze later in storage/CDN te zetten.
+11. Vóór elke push: `npm run check:secrets`.

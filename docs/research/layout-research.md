@@ -505,6 +505,10 @@ Regels: alleen uiterlijk en indeling; niets aan koppelingen, workflows, datalaag
 
 Screenshots vóór: `reelay-redesign-before-*.jpg`; ná: `reelay-redesign-after-*.jpg`.
 
+### Site, accounts, credits (21 oktober 2026)
+
+Gebouwd volgens hoofdstuk 4c: marketingsite met zwevende kop en kaartmenu's, home met hero (telefoonkader met eigen voorbeeldvideo), tabbladen "What you can make", genummerde stappen, voorbeeldgalerij, "What you get", platformkaarten, vertrouwensblokken (alleen uit `trust.ts`), prijsvoorproefje, FAQ-accordeon, afsluitend blok en voet in vier kolommen; prijzenpagina met maand/jaar-schakelaar, plankaarten, pakketten, credittabel, vergelijkingstabel en FAQ; accounts met Supabase Auth; settings met zijmenu; credits en Stripe (testmodus). Screenshots `reelay-site-*.jpg`. Niet gecontroleerd: 390 px in de verborgen Chrome-tab (het telefoonkader wordt daar niet uitgetekend); de opmaak gebruikt dezelfde responsive klassen als de app.
+
 Niet in deze volgorde en niet gepland: varianten in batch (U3), tekst in beeld of eindkaarten, een editor, modelkeuze, analytics.
 
 ---
