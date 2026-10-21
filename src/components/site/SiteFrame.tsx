@@ -12,14 +12,18 @@ export function SiteFrame({ locale, children }: { locale: Locale; children: Reac
   return (
     <div className="min-h-screen bg-bg text-ink">
       <HtmlLang lang={locale} />
-      <SiteHeader
-        locale={locale}
-        account={
-          <Suspense fallback={<SignedOutButtons locale={locale} />}>
-            <HeaderAccount locale={locale} />
-          </Suspense>
-        }
-      />
+      {/* The header reads the pathname (active menu, language switch); behind Suspense it still prerenders on
+          static pages and streams in on request-rendered ones (story pages without a static list). */}
+      <Suspense fallback={<div className="h-20" aria-hidden />}>
+        <SiteHeader
+          locale={locale}
+          account={
+            <Suspense fallback={<SignedOutButtons locale={locale} />}>
+              <HeaderAccount locale={locale} />
+            </Suspense>
+          }
+        />
+      </Suspense>
       <main className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">{children}</main>
       <SiteFooter locale={locale} />
       <CookieBanner locale={locale} />

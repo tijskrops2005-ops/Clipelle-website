@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_rethrow } from "next/navigation";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
@@ -52,6 +53,7 @@ export async function authenticateApi(request: Request): Promise<ApiCaller> {
 
 /** Every error becomes { error: { code, message, details? } } with a stable code. Never a provider name. */
 export function apiErrorResponse(error: unknown): Response {
+  unstable_rethrow(error); // Next's own signals (a prerender bail-out on request.headers, redirects) must pass through the catch
   if (error instanceof ApiError) return json({ error: { code: error.code, message: error.message, details: error.details } }, error.status, error.code === "rate_limited" && error.details ? { "Retry-After": String((error.details as { retryAfterSeconds: number }).retryAfterSeconds) } : undefined);
   if (error instanceof z.ZodError) return json({ error: { code: "validation_error", message: error.issues[0]?.message ?? "Invalid input.", details: error.issues.map((i) => ({ path: i.path.join("."), message: i.message })) } }, 400);
   if (error instanceof AuthError) return json({ error: { code: "unauthorized", message: error.message } }, 401);

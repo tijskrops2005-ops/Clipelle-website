@@ -11,6 +11,13 @@ const PROTECTED = ["/dashboard", "/projects", "/settings", "/new/ad", "/new/url"
 const AUTH_PAGES = ["/login", "/signup"];
 
 export async function proxy(request: NextRequest) {
+  // Developer tools exist only in development. Outside it they answer a bare 404 here, before any
+  // rendering: the pages' own notFound() would still stream a 200 with the not-found UI (and the
+  // page title) once the static shell has been sent.
+  const path = request.nextUrl.pathname;
+  if (process.env.NODE_ENV !== "development" && (path === "/dev" || path.startsWith("/dev/") || path.startsWith("/api/dev/"))) {
+    return new NextResponse("Not found", { status: 404 });
+  }
   // Language preference (cookie set only after a cookie choice): the root goes to /nl when the visitor chose Dutch.
   if (request.nextUrl.pathname === "/" && request.cookies.get("reelay_lang")?.value === "nl") {
     const nl = request.nextUrl.clone();
@@ -35,7 +42,6 @@ export async function proxy(request: NextRequest) {
   });
   const { data } = await supabase.auth.getUser();
   const user = data.user;
-  const path = request.nextUrl.pathname;
 
   if (!user && PROTECTED.some((p) => path === p || path.startsWith(`${p}/`))) {
     const login = request.nextUrl.clone();

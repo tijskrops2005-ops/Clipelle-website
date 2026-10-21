@@ -37,7 +37,8 @@ export const AdBody = z.object({
   script: z.string().trim().max(5000).optional().or(z.literal("")),
 });
 
-export const TranslateBody = z.object({
+/** The translate fields without the cross-field check, so callers can omit/extend before adding it. */
+export const TranslateFields = z.object({
   workflow: z.literal("translate"),
   name: z.string().trim().min(2).max(120),
   sourceFileName: z.string().trim().min(1).max(200),
@@ -51,7 +52,9 @@ export const TranslateBody = z.object({
   trimSilence: z.boolean().default(true),
   captionPosition: z.enum(["low", "middle"]).default("low"),
   rightsConfirmed: z.literal(true, { error: "Confirm the rights to the video first." }),
-}).refine((b) => !b.targetLanguages.includes(b.sourceLanguage), { error: "A target language cannot be the same as the spoken language." });
+});
+
+export const TranslateBody = TranslateFields.refine((b) => !b.targetLanguages.includes(b.sourceLanguage), { error: "A target language cannot be the same as the spoken language." });
 
 
 export type AdBodyInput = z.infer<typeof AdBody>;

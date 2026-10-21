@@ -1,4 +1,5 @@
 import { ArrowRight, Clock3, Sparkles } from "lucide-react";
+import { Suspense } from "react";
 import { config } from "@/lib/config";
 import { firstExample } from "@/lib/examples";
 import { faq } from "@/content/faq";
@@ -79,7 +80,7 @@ export function HomePage({ locale }: { locale: Locale }) {
 
       <Reveal as="section">
         <SectionIntro eyebrow={h.compareEyebrow} title={h.compareTitle} text={h.compareText} />
-        <div className="mt-10"><SavingsCalculator compact locale={locale} /></div>
+        <div className="mt-10"><Suspense fallback={<div className="min-h-64" aria-hidden />}><SavingsCalculator compact locale={locale} /></Suspense></div>
       </Reveal>
 
       <TrustBlocks />

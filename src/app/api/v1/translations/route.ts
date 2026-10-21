@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { config } from "@/lib/config";
-import { TranslateBody } from "@/lib/data/schemas";
+import { TranslateFields } from "@/lib/data/schemas";
 import { createDraft, getProject, startProject } from "@/lib/data/server";
 import { ApiError, apiErrorResponse, authenticateApi, json, toApiProject, withIdempotency } from "@/lib/api/v1";
 import { readJson } from "@/app/api/projects/_guard";
@@ -8,7 +8,7 @@ import { attachFromUrl } from "../_shared";
 import type { LanguageCode } from "@/lib/types";
 
 /** The app's schema, minus the file name (taken from the URL), plus the video URL and its length. */
-const Body = TranslateBody.omit({ workflow: true, sourceFileName: true }).extend({
+const Body = TranslateFields.omit({ workflow: true, sourceFileName: true }).extend({
   video: z.object({ url: z.string().url(), durationSeconds: z.number().positive().max(config.limits.translateVideoMaxSeconds) }),
 }).refine((b) => !b.targetLanguages.includes(b.sourceLanguage), { error: "A target language cannot be the same as the spoken language." });
 

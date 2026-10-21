@@ -85,7 +85,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en" }: { on
         <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
           <div className="flex flex-col rounded-card bg-surface p-6 shadow-card ring-1 ring-ink">
             <p className="text-[17px] font-semibold text-ink">{business.name}</p>
-            <p className="mt-1 text-[13px] text-muted">{business.tagline}: {t.business.tagline}</p>
+            <p className="mt-1 text-[13px] text-muted">{planWords(business, t).tagline}: {t.business.tagline}</p>
             <div className="mt-5">
               <p className="mb-2 text-sm font-medium text-ink">{t.business.level}</p>
               <SegmentedControl label={t.business.level} options={BUSINESS_TIERS.map((t) => ({ key: t.key, label: `${t.creditsPerMonth.toLocaleString("en-US")}` }))} value={tier} onChange={setTier} />
@@ -151,6 +151,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en" }: { on
 type T = ReturnType<typeof dict>["pricing"];
 
 function PriceLine({ plan, interval, className, t }: { plan: Plan; interval: Interval; className?: string; t: T }) {
+  const creditsNote = planWords(plan, t).creditsNote;
   const price = interval === "annual" ? plan.annualMonthlyUsd : plan.monthlyUsd;
   const list = activeListPrice(plan);
   const struck = interval === "annual" && plan.monthlyUsd > 0 ? plan.monthlyUsd : list && list > plan.monthlyUsd ? list : null;
@@ -163,7 +164,7 @@ function PriceLine({ plan, interval, className, t }: { plan: Plan; interval: Int
         {price > 0 && <span className="text-base font-medium text-muted">{t.perMonth}</span>}
       </p>
       <p className="mt-1 text-[13px] text-muted">
-        {price === 0 ? plan.creditsNote : interval === "annual" ? `${t.aYear.replace("{year}", formatPrice(totals.yearUsd)).replace("{saving}", formatPrice(totals.savingUsd))} · ${plan.creditsNote}` : plan.creditsNote}
+        {price === 0 ? creditsNote : interval === "annual" ? `${t.aYear.replace("{year}", formatPrice(totals.yearUsd)).replace("{saving}", formatPrice(totals.savingUsd))} · ${creditsNote}` : creditsNote}
         {list && interval === "monthly" && list > plan.monthlyUsd ? ` · ${t.launchUntil} ${new Date(plan.listPrice!.endDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : ""}
       </p>
     </div>
@@ -176,18 +177,26 @@ function Examples({ plan, t }: { plan: Plan; t: T }) {
   return <p className="mt-3 text-[13px] text-muted">{t.examples.replace("{ads30}", String(e.ads30)).replace("{ads10}", String(e.ads10)).replace("{premium30}", String(e.premium30)).replace("{minutes}", String(e.translateMinutes))}</p>;
 }
 
+/** Plan words in the page language: plans.ts holds the English, the dictionary the translation (Business tiers share one entry). */
+function planWords(plan: Plan, t: T) {
+  const key = (plan.key.startsWith("business") ? "business" : plan.key) as keyof T["plans"];
+  const w = t.plans[key];
+  return { tagline: w?.tagline ?? plan.tagline, bullets: w?.bullets ?? plan.bullets, creditsNote: plan.creditsPerMonth > 0 ? t.creditsPerMonth.replace("{n}", plan.creditsPerMonth.toLocaleString("en-US")) : (w && "creditsNote" in w ? w.creditsNote : plan.creditsNote) };
+}
+
 function PlanCard({ plan, previous, interval, cta, t }: { plan: Plan; previous?: Plan; interval: Interval; cta: React.ReactNode; t: T }) {
+  const words = planWords(plan, t);
   return (
     <div className={cn("flex flex-col rounded-card bg-surface p-6 shadow-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card-hover", plan.recommended && "ring-1 ring-ink")}>
       {plan.recommended && <span className="label-mono mb-3 w-fit rounded-full bg-ink px-2.5 py-1 text-surface">{t.recommendation}</span>}
       <p className="text-[17px] font-semibold text-ink">{plan.name}</p>
-      <p className="mt-1 text-[13px] text-muted">{plan.tagline}</p>
+      <p className="mt-1 text-[13px] text-muted">{words.tagline}</p>
       <PriceLine plan={plan} interval={interval} className="mt-5" t={t} />
       <Examples plan={plan} t={t} />
       <p className="mt-3 text-[13px] font-medium text-ink">{plan.key === "free" ? t.freeExpires.replace("{n}", String(CREDIT_EXPIRY.freeAdDays)) : t.neverExpire}</p>
       {previous && previous.key !== "free" && <p className="mt-4 label-mono text-muted">{t.everythingIn.replace("{name}", previous.name)}</p>}
       <ul className="mt-2 flex-1 space-y-2 text-[14px] text-ink/85">
-        {plan.bullets.map((b) => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />{b}</li>)}
+        {words.bullets.map((b) => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />{b}</li>)}
       </ul>
       <div className="mt-6">{cta}</div>
     </div>

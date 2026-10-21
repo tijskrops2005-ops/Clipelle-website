@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { caseStudyBySlug, publishedCaseStudies } from "@/content/case-studies";
+import { caseStudyBySlug } from "@/content/case-studies";
 import { CtaBand } from "@/components/site/CtaBand";
 
-export function generateStaticParams() {
-  return publishedCaseStudies().map((c) => ({ slug: c.slug }));
-}
+/**
+ * Story pages are rendered on request (no generateStaticParams): the list of published stories can be
+ * empty, and the production build refuses an empty static-params list under Cache Components.
+ * `instant = false` lets the page block on the slug, so an unknown story answers a real 404.
+ */
+export const instant = false;
+
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

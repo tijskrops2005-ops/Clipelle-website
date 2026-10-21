@@ -20,7 +20,7 @@ export function ApiKeysSettings() {
   const [loaded, setLoaded] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
-  const [fresh, setFresh] = useState<{ key: string; name: string } | null>(null);
+  const [fresh, setFresh] = useState<{ id: string; key: string; name: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [msg, setMsg] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
@@ -43,7 +43,7 @@ export function ApiKeysSettings() {
     setFresh(null);
     try {
       const made = await createApiKey(name.trim() || "API key");
-      setFresh({ key: made.key, name: made.name });
+      setFresh({ id: made.id, key: made.key, name: made.name });
       setName("");
       await refresh();
     } catch (err) {
@@ -58,6 +58,7 @@ export function ApiKeysSettings() {
     setMsg(null);
     try {
       await revokeApiKey(id);
+      setFresh((f) => (f && f.id === id ? null : f)); // the one-time box belongs to a key that is now dead
       await refresh();
       setMsg({ tone: "ok", text: "Key revoked. Requests with it are refused from now on." });
     } catch (err) {
@@ -119,7 +120,7 @@ export function ApiKeysSettings() {
       </SectionCard>
 
       {!config.demoMode && loaded && (
-        <SectionCard title="Your keys" description={active.length ? `${active.length} active. Revoke a key you no longer use.` : "No keys yet."}>
+        <SectionCard title="Your keys" description={active.length ? `${active.length} active. Revoke a key you no longer use.` : keys.length ? "No active keys." : "No keys yet."}>
           {keys.length > 0 && (
             <ul className="divide-y divide-divider">
               {keys.map((k) => (

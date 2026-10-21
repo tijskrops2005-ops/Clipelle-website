@@ -3,7 +3,7 @@ import { firstExample } from "@/lib/examples";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
 import { realAd } from "@/content/realOutput";
-import { adCreditTable } from "@/lib/plans";
+import { cachedAdCreditTable } from "@/lib/pricingCached";
 import { Button } from "@/components/ui/Button";
 import { StepList } from "@/components/ui/StepList";
 import { Reveal } from "@/components/site/Reveal";
@@ -14,12 +14,12 @@ import { CtaBand } from "@/components/site/CtaBand";
 import { RealOutput } from "@/components/site/RealOutput";
 import { MidCta } from "@/components/site/HomeSections";
 
-export function PlatformAdsPage({ locale }: { locale: Locale }) {
+export async function PlatformAdsPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
   const p = t.platformAds;
   const L = (x: string) => localizePath(x, locale);
   const sample = firstExample("ad");
-  const table = adCreditTable();
+  const table = await cachedAdCreditTable();
   return (
     <div className="space-y-24 sm:space-y-32">
       <section className="grid items-center gap-12 pt-16 sm:pt-24 lg:grid-cols-[1.15fr_1fr]">
