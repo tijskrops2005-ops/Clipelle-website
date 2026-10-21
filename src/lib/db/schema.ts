@@ -400,3 +400,19 @@ export const waitlist = pgTable(
   },
   (t) => [uniqueIndex("waitlist_feature_email_idx").on(t.feature, t.email), index("waitlist_created_idx").on(t.createdAt)],
 ).enableRLS();
+
+/** Open applications from /careers while there are no open roles. Raw addresses are never stored. */
+export const careerInterests = pgTable(
+  "career_interests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    area: text("area"),
+    link: text("link"),
+    message: text("message"),
+    ipHash: text("ip_hash"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("career_interests_created_idx").on(t.createdAt)],
+).enableRLS();

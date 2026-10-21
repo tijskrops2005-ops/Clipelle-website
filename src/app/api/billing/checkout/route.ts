@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { subscriptionSessionParams, topupSessionParams } from "@/lib/billingCheckout";
 import { requireUser } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
 import { getOrCreateProfile } from "@/lib/data/profile";
@@ -33,16 +34,7 @@ export async function POST(request: Request) {
       if (!plan?.stripeLookup) return Response.json({ error: "Unknown plan." }, { status: 400 });
       const price = await priceByLookupKey(b.interval === "annual" ? plan.stripeLookup.annual : plan.stripeLookup.monthly);
       if (!price) return Response.json({ error: "The price is not set up in Stripe yet. Run the setup script." }, { status: 503 });
-      const session = await s.checkout.sessions.create({
-        mode: "subscription",
-        customer: customerId,
-        line_items: [{ price: price.id, quantity: 1 }],
-        success_url: `${origin}/settings/billing?checkout=success`,
-        cancel_url: `${origin}/settings/billing?checkout=cancelled`,
-        subscription_data: { metadata: { userId: user.id, planKey: plan.key } },
-        metadata: { userId: user.id, planKey: plan.key, kind: "plan" },
-        allow_promotion_codes: true,
-      });
+      const session = await s.checkout.sessions.create(subscriptionSessionParams(plan, { customerId, userId: user.id, priceId: price.id, origin }));
       return Response.json({ url: session.url });
     }
     const pack = TOPUPS.find((t) => t.key === b.topupKey);
@@ -51,14 +43,7 @@ export async function POST(request: Request) {
     if (profile.planKey === "free") return Response.json({ error: "Credit packs come on top of a paid plan. Choose a plan first." }, { status: 400 });
     const price = await priceByLookupKey(pack.stripeLookup);
     if (!price) return Response.json({ error: "The price is not set up in Stripe yet. Run the setup script." }, { status: 503 });
-    const session = await s.checkout.sessions.create({
-      mode: "payment",
-      customer: customerId,
-      line_items: [{ price: price.id, quantity: 1 }],
-      success_url: `${origin}/settings/billing?checkout=success`,
-      cancel_url: `${origin}/settings/billing?checkout=cancelled`,
-      metadata: { userId: user.id, topupKey: pack.key, kind: "topup" },
-    });
+    const session = await s.checkout.sessions.create(topupSessionParams(pack, { customerId, userId: user.id, priceId: price.id, origin }));
     return Response.json({ url: session.url });
   } catch (error) {
     return dataErrorResponse(error);

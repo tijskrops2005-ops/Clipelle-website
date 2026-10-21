@@ -1,5 +1,7 @@
 "use client";
 
+import { PartnerSignupConversion } from "@/components/site/PartnerSignupConversion";
+
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -84,6 +86,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
     return (
       <div className="mx-auto max-w-md rounded-card bg-surface p-8 text-center shadow-card">
         <span className="mx-auto grid size-12 place-items-center rounded-full bg-accent-soft text-accent"><Mail className="size-6" aria-hidden /></span>
+        <PartnerSignupConversion email={email} />
         <h2 className="mt-5 text-title">Check your inbox</h2>
         <p className="mt-2 text-[15px] text-muted">{sent === "magic" ? `We sent a sign-in link to ${email}. Open it on this device to continue.` : `We sent a verification link to ${email}. Open it to activate your account; your free ad is unlocked once the address is verified.`}</p>
         <p className="mt-6 text-[13px] text-muted">Nothing arrived? Check spam, or <button type="button" className="underline" onClick={() => setSent(null)}>try again</button>.</p>

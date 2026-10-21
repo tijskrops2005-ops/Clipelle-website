@@ -19,7 +19,7 @@ cd reelay/mcp
 npm install
 npm run build   # writes dist/index.js`;
 
-const claudeConfig = `{
+const mcpConfig = `{
   "mcpServers": {
     "reelay": {
       "command": "node",
@@ -62,7 +62,7 @@ export default function McpDocsPage() {
       <section id="configure" className="space-y-4">
         <h2>Configure</h2>
         <p>Make a key on <Link href="/settings/api" className="underline">Settings → API keys</Link>, then add the server to your assistant&apos;s MCP configuration. The shape below is what most desktop assistants use; the key stays in the environment, never in a prompt.</p>
-        <CodeBlock code={claudeConfig} lang="json" title="MCP configuration" />
+        <CodeBlock code={mcpConfig} lang="json" title="MCP configuration" />
         <p><code className="font-mono">REELAY_API_URL</code> defaults to the public site when left out. For a local build of the app, point it at your dev server.</p>
       </section>
 
