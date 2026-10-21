@@ -7,7 +7,10 @@ import { ChevronDown, Menu, X } from "lucide-react";
 import { config } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import { menus, type MenuItem, type MenuKey } from "./siteNav";
+import { menus, menusFor, type MenuItem, type MenuKey } from "./siteNav";
+import { dict } from "@/content/i18n";
+import { localizePath, type Locale } from "@/lib/i18n";
+import { LanguageSwitch } from "./LanguageSwitch";
 
 /**
  * Floating rounded top bar of the public site: Platform, Solutions, Resources and Company open
@@ -23,8 +26,11 @@ const MENU_KEYS: MenuKey[] = menus.map((m) => m.key);
 const HOVER_OPEN_MS = 140;
 const HOVER_CLOSE_MS = 180;
 
-export function SiteHeader({ account }: { account: ReactNode }) {
+export function SiteHeader({ account, locale = "en" }: { account: ReactNode; locale?: Locale }) {
   const pathname = usePathname();
+  const t = dict(locale);
+  const localized = menusFor(locale);
+  const L = (p: string) => localizePath(p, locale);
   const [open, setOpen] = useState<MenuKey | null>(null);
   const [drawer, setDrawer] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
@@ -36,7 +42,7 @@ export function SiteHeader({ account }: { account: ReactNode }) {
   const focusFirstOnOpen = useRef(false);
   const [hoverCapable, setHoverCapable] = useState(false);
   const panelId = useId();
-  const current = open ? menus.find((m) => m.key === open) ?? null : null;
+  const current = open ? localized.find((m) => m.key === open) ?? null : null;
 
   const closeAll = () => {
     clearTimers();
@@ -172,18 +178,18 @@ export function SiteHeader({ account }: { account: ReactNode }) {
       <div ref={barRef} className="relative mx-auto max-w-6xl">
         <div className="flex h-14 items-center justify-between rounded-full bg-surface px-2 shadow-card sm:px-3">
           <div className="flex items-center gap-1">
-            <button type="button" aria-label="Open menu" aria-expanded={drawer} onClick={() => setDrawer(true)} className="focus-ring grid size-10 place-items-center rounded-full text-ink transition-colors duration-150 hover:bg-ink/5 lg:hidden">
+            <button type="button" aria-label={t.header.menuOpen} aria-expanded={drawer} onClick={() => setDrawer(true)} className="focus-ring grid size-10 place-items-center rounded-full text-ink transition-colors duration-150 hover:bg-ink/5 lg:hidden">
               <Menu className="size-5" aria-hidden />
             </button>
-            <Link href="/" className="focus-ring ml-1 flex items-center gap-2.5 rounded-control">
+            <Link href={L("/")} className="focus-ring ml-1 flex items-center gap-2.5 rounded-control">
               <span aria-hidden className="grid size-8 place-items-center rounded-[10px] bg-ink text-sm font-bold text-surface">{config.productName.charAt(0)}</span>
               <span className="text-[17px] font-semibold tracking-tight text-ink">{config.productName}</span>
             </Link>
           </div>
 
-          <nav aria-label="Site" className="hidden items-center gap-1 lg:flex">
+          <nav aria-label={t.header.site} className="hidden items-center gap-1 lg:flex">
             <div ref={navRef} className="flex items-center gap-1" onBlur={onNavBlur}>
-              {menus.map((m) => (
+              {localized.map((m) => (
                 <MenuButton
                   key={m.key}
                   ref={(el) => {
@@ -202,10 +208,13 @@ export function SiteHeader({ account }: { account: ReactNode }) {
                 />
               ))}
             </div>
-            <NavLink href="/pricing" active={pathname === "/pricing"}>Pricing</NavLink>
+            <NavLink href={L("/pricing")} active={pathname === L("/pricing")}>{t.header.pricing}</NavLink>
           </nav>
 
-          <div className="flex items-center gap-2 pr-1">{account}</div>
+          <div className="flex items-center gap-2 pr-1">
+            <LanguageSwitch locale={locale} className="hidden md:inline-flex" />
+            {account}
+          </div>
         </div>
 
         {/* Card menus */}
@@ -231,7 +240,7 @@ export function SiteHeader({ account }: { account: ReactNode }) {
                   <ul className={cn("grid gap-1", !twoColumns && "sm:grid-cols-2")}>
                     {col.items.map((c) => (
                       <li key={c.href}>
-                        <MenuCardLink card={c} onNavigate={closeAll} compact />
+                        <MenuCardLink card={c} onNavigate={closeAll} compact soonLabel={t.common.soon} />
                       </li>
                     ))}
                   </ul>
@@ -245,24 +254,25 @@ export function SiteHeader({ account }: { account: ReactNode }) {
       {/* Mobile drawer */}
       {drawer && (
         <div className="fixed inset-0 z-50 lg:hidden" role="presentation">
-          <button type="button" aria-label="Close menu" onClick={() => setDrawer(false)} className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" />
+          <button type="button" aria-label={t.header.menuClose} onClick={() => setDrawer(false)} className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" />
           <div role="dialog" aria-modal="true" aria-label="Menu" className="absolute inset-y-0 left-0 flex w-[min(22rem,88vw)] flex-col overflow-y-auto rounded-r-card bg-surface px-5 py-5 shadow-card-hover">
             <div className="flex items-center justify-between">
               <span className="text-[17px] font-semibold tracking-tight text-ink">{config.productName}</span>
-              <button type="button" aria-label="Close menu" onClick={() => setDrawer(false)} className="focus-ring grid size-10 place-items-center rounded-full text-ink hover:bg-ink/5">
+              <button type="button" aria-label={t.header.menuClose} onClick={() => setDrawer(false)} className="focus-ring grid size-10 place-items-center rounded-full text-ink hover:bg-ink/5">
                 <X className="size-5" aria-hidden />
               </button>
             </div>
-            {menus.map((m) => (
-              <DrawerGroup key={m.key} title={m.label} cards={m.columns.flatMap((c) => c.items)} onNavigate={closeAll} defaultOpen={m.key === "platform"} />
+            {localized.map((m) => (
+              <DrawerGroup key={m.key} title={m.label} cards={m.columns.flatMap((c) => c.items)} onNavigate={closeAll} defaultOpen={m.key === "platform"} soonLabel={t.common.soon} />
             ))}
-            <nav aria-label="Pages" className="mt-4 flex flex-col gap-1 border-t border-divider pt-4">
-              <Link href="/pricing" onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">Pricing</Link>
-              <Link href="/demo" onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">Book a demo</Link>
-              <Link href="/login" onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">Log in</Link>
+            <nav aria-label={t.header.pages} className="mt-4 flex flex-col gap-1 border-t border-divider pt-4">
+              <Link href={L("/pricing")} onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">{t.header.pricing}</Link>
+              <Link href={L("/demo")} onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">{t.common.bookDemo}</Link>
+              <Link href="/login" onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">{t.common.logIn}</Link>
+              <div className="px-3 py-2"><LanguageSwitch locale={locale} /></div>
             </nav>
             <Button href="/signup" variant="accent" size="lg" className="mt-auto w-full" onClick={closeAll}>
-              Create your first ad free
+              {t.common.createFirstAd}
             </Button>
           </div>
         </div>
@@ -309,11 +319,11 @@ function NavLink({ href, active, children }: { href: string; active: boolean; ch
   );
 }
 
-export function SoonBadge() {
-  return <span className="label-mono rounded-full bg-warning/15 px-2 py-0.5 text-warning">Soon</span>;
+export function SoonBadge({ label = "Soon" }: { label?: string }) {
+  return <span className="label-mono rounded-full bg-warning/15 px-2 py-0.5 text-warning">{label}</span>;
 }
 
-export function MenuCardLink({ card, onNavigate, compact }: { card: MenuItem; onNavigate?: () => void; compact?: boolean }) {
+export function MenuCardLink({ card, onNavigate, compact, soonLabel }: { card: MenuItem; onNavigate?: () => void; compact?: boolean; soonLabel?: string }) {
   const Icon = card.icon;
   return (
     <Link href={card.href} onClick={onNavigate} className={cn("focus-ring group flex h-full gap-3 rounded-panel transition-colors duration-150 hover:bg-surface-muted", compact ? "items-start p-3" : "flex-col p-4")}>
@@ -323,7 +333,7 @@ export function MenuCardLink({ card, onNavigate, compact }: { card: MenuItem; on
       <span className="min-w-0">
         <span className="flex items-center gap-2 text-[15px] font-semibold text-ink">
           {card.title}
-          {card.soon && <SoonBadge />}
+          {card.soon && <SoonBadge label={soonLabel} />}
         </span>
         <span className="mt-0.5 block text-[13px] leading-relaxed text-muted">{card.text}</span>
       </span>
@@ -331,7 +341,7 @@ export function MenuCardLink({ card, onNavigate, compact }: { card: MenuItem; on
   );
 }
 
-function DrawerGroup({ title, cards, onNavigate, defaultOpen }: { title: string; cards: MenuItem[]; onNavigate: () => void; defaultOpen?: boolean }) {
+function DrawerGroup({ title, cards, onNavigate, defaultOpen, soonLabel }: { title: string; cards: MenuItem[]; onNavigate: () => void; defaultOpen?: boolean; soonLabel?: string }) {
   const [open, setOpen] = useState(Boolean(defaultOpen));
   const id = useId();
   return (
@@ -346,7 +356,7 @@ function DrawerGroup({ title, cards, onNavigate, defaultOpen }: { title: string;
             <Link href={c.href} onClick={onNavigate} className="focus-ring block rounded-control px-3 py-2.5 hover:bg-ink/5">
               <span className="flex items-center gap-2 text-[15px] font-medium text-ink">
                 {c.title}
-                {c.soon && <SoonBadge />}
+                {c.soon && <SoonBadge label={soonLabel} />}
               </span>
               <span className="block text-[13px] text-muted">{c.text}</span>
             </Link>

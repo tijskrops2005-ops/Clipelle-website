@@ -11,6 +11,12 @@ const PROTECTED = ["/dashboard", "/projects", "/settings", "/new/ad", "/new/url"
 const AUTH_PAGES = ["/login", "/signup"];
 
 export async function proxy(request: NextRequest) {
+  // Language preference (cookie set only after a cookie choice): the root goes to /nl when the visitor chose Dutch.
+  if (request.nextUrl.pathname === "/" && request.cookies.get("reelay_lang")?.value === "nl") {
+    const nl = request.nextUrl.clone();
+    nl.pathname = "/nl";
+    return NextResponse.redirect(nl);
+  }
   const demo = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

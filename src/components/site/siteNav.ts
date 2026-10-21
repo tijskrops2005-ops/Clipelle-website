@@ -119,6 +119,43 @@ export const menus: Menu[] = [
 ];
 
 export const menuByKey = (key: MenuKey) => menus.find((m) => m.key === key)!;
+
+import { dict } from "@/content/i18n";
+import { localizePath, type Locale } from "@/lib/i18n";
+
+/** The same menus with the labels and texts of a language and localized links (app links stay as they are). */
+export function menusFor(locale: Locale): Menu[] {
+  const t = dict(locale);
+  const labels: Record<MenuKey, string> = { platform: t.nav.platform.label, solutions: t.nav.solutions.label, resources: t.nav.resources.label, company: t.nav.company.label };
+  const columnTitle = (key: MenuKey, title?: string) => {
+    if (!title) return undefined;
+    if (key === "platform") return title === "Creation" ? t.nav.platform.creation : t.nav.platform.integrations;
+    if (key === "resources") return title === "Learn" ? t.nav.resources.learn : t.nav.resources.more;
+    return title;
+  };
+  return menus.map((m) => ({
+    key: m.key,
+    label: labels[m.key],
+    columns: m.columns.map((c) => ({
+      title: columnTitle(m.key, c.title),
+      items: c.items.map((i) => ({ ...i, href: localizePath(i.href, locale), title: t.nav.items[i.href]?.title ?? i.title, text: t.nav.items[i.href]?.text ?? i.text })),
+    })),
+  }));
+}
+
+export function footerColumnsFor(locale: Locale) {
+  const t = dict(locale);
+  const m = menusFor(locale);
+  const items = (key: MenuKey) => m.find((x) => x.key === key)!.columns.flatMap((c) => c.items);
+  const L = (p: string) => localizePath(p, locale);
+  return [
+    { title: t.footer.columns.platform, links: items("platform").map((i) => ({ href: i.href, label: i.soon ? `${i.title} (${t.common.soon.toLowerCase()})` : i.title })).concat([{ href: L("/pricing"), label: t.footer.links.pricing }, { href: L("/examples"), label: t.footer.links.examples }]) },
+    { title: t.footer.columns.solutions, links: items("solutions").map((i) => ({ href: i.href, label: i.title })) },
+    { title: t.footer.columns.resources, links: items("resources").map((i) => ({ href: i.href, label: i.title })) },
+    { title: t.footer.columns.company, links: [...items("company").map((i) => ({ href: i.href, label: i.title })), { href: L("/demo"), label: t.footer.links.demo }] },
+    { title: t.footer.columns.legal, links: [{ href: L("/legal/terms"), label: t.footer.links.terms }, { href: L("/legal/privacy"), label: t.footer.links.privacy }, { href: L("/legal/cookies"), label: t.footer.links.cookies }, { href: L("/legal/data"), label: t.footer.links.data }, { href: L("/legal/affiliate-terms"), label: t.footer.links.partnerTerms }] },
+  ];
+}
 /** Flat lists kept for pages that show a menu's entries as cards. */
 export const platformMenu: MenuItem[] = menuByKey("platform").columns[0].items;
 export const integrationsMenu: MenuItem[] = menuByKey("platform").columns[1].items;

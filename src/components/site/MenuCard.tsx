@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import type { MenuItem } from "./siteNav";
 
 /** Server-rendered card for a menu item (homepage rows): the icon is rendered here, never passed to a client component. */
-export function MenuCard({ card, compact }: { card: MenuItem; compact?: boolean }) {
+export function MenuCard({ card, compact, soonLabel = "Soon" }: { card: MenuItem; compact?: boolean; soonLabel?: string }) {
   const Icon = card.icon;
   return (
     <Link href={card.href} className={cn("focus-ring group flex h-full gap-3 rounded-card transition-colors duration-150 hover:bg-surface-muted", compact ? "items-start p-4" : "flex-col p-6")}>
@@ -13,7 +13,7 @@ export function MenuCard({ card, compact }: { card: MenuItem; compact?: boolean 
       <span className="min-w-0">
         <span className="flex items-center gap-2 text-[17px] font-semibold text-ink">
           {card.title}
-          {card.soon && <span className="label-mono rounded-full bg-warning/15 px-2 py-0.5 text-warning">Soon</span>}
+          {card.soon && <span className="label-mono rounded-full bg-warning/15 px-2 py-0.5 text-warning">{soonLabel}</span>}
         </span>
         <span className="mt-1 block text-[15px] leading-relaxed text-muted">{card.text}</span>
       </span>
