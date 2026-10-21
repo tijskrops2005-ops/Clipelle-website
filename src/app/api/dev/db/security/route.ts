@@ -1,14 +1,16 @@
 import { connection } from "next/server";
-import { sql } from "drizzle-orm";
-import { db } from "@/lib/db";
+import { getTableName, is, sql } from "drizzle-orm";
+import { PgTable } from "drizzle-orm/pg-core";
+import { db, schema } from "@/lib/db";
 import { publishableKey, supabaseUrl } from "@/lib/supabase/server";
 import { devOnly, errorResponse } from "../../_guard";
 
-const TABLES = ["projects", "steps", "assets", "translations", "cost_entries", "webhook_events"] as const;
+/** Every table the app declares, so a new one is checked automatically. */
+const TABLES = (Object.values(schema) as unknown[]).filter((v): v is PgTable => is(v, PgTable)).map((t) => getTableName(t)).sort();
 
 /**
  * Security check for the database, run live every time the page loads:
- * 1. row-level security is enabled on all six tables (pg_tables.rowsecurity);
+ * 1. row-level security is enabled on every table (pg_tables.rowsecurity);
  * 2. the Data API roles (anon, authenticated) hold no grants on them;
  * 3. a real request with the publishable key against the Data API is refused
  *    (GET on every table, one INSERT attempt, one storage listing).
@@ -32,7 +34,7 @@ export async function GET() {
     const headers = { apikey: key, Authorization: `Bearer ${key}` };
     const probes: { name: string; status: number; refused: boolean; detail: string }[] = [];
     for (const t of TABLES) {
-      const r = await fetch(`${base}/rest/v1/${t}?select=id&limit=1`, { headers, cache: "no-store" });
+      const r = await fetch(`${base}/rest/v1/${t}?select=*&limit=1`, { headers, cache: "no-store" });
       const body = await r.text();
       probes.push({ name: `GET ${t}`, status: r.status, refused: r.status === 401 || r.status === 403, detail: body.slice(0, 120) });
     }
