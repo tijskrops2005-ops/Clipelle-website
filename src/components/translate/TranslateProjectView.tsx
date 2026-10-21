@@ -20,6 +20,7 @@ import { Collapsible } from "@/components/ui/Collapsible";
 import { projectDurationMs, projectEstimateUsd } from "@/lib/projectMeta";
 import { useProjects } from "@/lib/data/client";
 import { sourceAdOf } from "@/lib/versions";
+import { ProjectActions } from "@/components/ProjectActions";
 import { formatSeconds } from "@/components/pipeline/PipelineStep";
 
 /** Project page for the translate workflow: pipeline, automatic quality check, one result per language. */
@@ -49,7 +50,7 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
         }
         title={project.name}
         badge={<StatusBadge status={project.status} className="translate-y-1" />}
-        description={`Translation into ${project.targetLanguages.map((l) => languageOf(l).label).join(", ")} · created ${formatDate(project.createdAt)}`}
+        description={`Translation into ${project.targetLanguages.map((l) => languageOf(l).label).join(", ")} · created ${formatDate(project.createdAt)}${project.archivedAt ? " · archived" : ""}${project.tags?.length ? ` · ${project.tags.join(", ")}` : ""}`}
         actions={
           project.status === "completed" ? (
             <Button href="/new/translate" variant="secondary">
@@ -59,6 +60,8 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
           ) : undefined
         }
       />
+
+      <ProjectActions project={project} />
 
       {project.status === "completed" ? (
         <>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clapperboard, Languages, Play } from "lucide-react";
+import { Check, Clapperboard, Languages, Play } from "lucide-react";
 import type { Project } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
 import { projectLengthLabel, projectMonogram, projectPosterUrl, projectSubtitle, projectVideoCount } from "@/lib/projectMeta";
@@ -7,15 +7,22 @@ import { StatusBadge } from "@/components/ui/Badge";
 import { Poster } from "@/components/Poster";
 
 /** Vertical 9:16 video tile — the eye-catcher of the dashboard and the projects grid. */
-export function ProjectTile({ project }: { project: Project }) {
+export function ProjectTile({ project, selectable, selected, onToggle }: { project: Project; selectable?: boolean; selected?: boolean; onToggle?: () => void }) {
   const isCompleted = project.status === "completed";
 
   return (
     <Link
       href={`/projects/${project.id}`}
-      className="focus-ring group block rounded-tile"
+      className="focus-ring group relative block rounded-tile"
+      onClick={selectable ? (e) => { e.preventDefault(); onToggle?.(); } : undefined}
+      aria-pressed={selectable ? Boolean(selected) : undefined}
     >
-      <div className="relative aspect-[9/16] overflow-hidden rounded-tile bg-surface-muted shadow-card transition-[box-shadow,transform] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-card-hover">
+      {selectable && (
+        <span className={cn("absolute right-3 top-3 z-10 grid size-7 place-items-center rounded-full border-2 shadow-card", selected ? "border-accent bg-accent text-white" : "border-surface bg-surface/90 text-transparent")} aria-hidden>
+          <Check className="size-4" />
+        </span>
+      )}
+      <div className={cn("relative aspect-[9/16] overflow-hidden rounded-tile bg-surface-muted shadow-card transition-[box-shadow,transform] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-card-hover", selected && "ring-2 ring-accent ring-offset-2 ring-offset-bg")}>
         {/* Poster: the first product image, or a curated gradient.
             Real poster frames arrive with the final-edit output (Stage 8). */}
         <Poster
@@ -29,7 +36,7 @@ export function ProjectTile({ project }: { project: Project }) {
           variant="floating"
           className="absolute left-3 top-3"
         />
-        {project.workflow === "translate" && (
+        {project.workflow === "translate" && !selectable && (
           <span
             className="label-mono absolute right-3 top-3 inline-flex h-7 items-center gap-1 rounded-full bg-surface px-2.5 text-ink shadow-card"
             title={`Translation into ${project.targetLanguages.length} ${project.targetLanguages.length === 1 ? "language" : "languages"}`}
@@ -73,7 +80,7 @@ export function ProjectTile({ project }: { project: Project }) {
             {project.workflow === "translate" ? "Translation" : "Ad"}
           </span>
           <span className="truncate">
-            {projectSubtitle(project)} · {formatDate(project.createdAt)}
+            {project.archivedAt ? "Archived · " : ""}{projectSubtitle(project)} · {formatDate(project.createdAt)}
           </span>
         </p>
       </div>

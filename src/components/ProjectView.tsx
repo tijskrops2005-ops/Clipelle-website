@@ -28,6 +28,7 @@ import { Pipeline } from "@/components/pipeline/Pipeline";
 import { stepMeta } from "@/components/pipeline/PipelineStep";
 import { TranslateProjectView } from "@/components/translate/TranslateProjectView";
 import { ScriptReviewPanel } from "@/components/ScriptReviewPanel";
+import { ProjectActions } from "@/components/ProjectActions";
 
 export function ProjectView({ id }: { id: string }) {
   const project = useProject(id);
@@ -77,9 +78,10 @@ export function ProjectView({ id }: { id: string }) {
         }
         title={project.name}
         badge={<StatusBadge status={project.status} className="translate-y-1" />}
-        description={`${project.productName} · created ${formatDate(project.createdAt)}`}
+        description={`${project.productName} · created ${formatDate(project.createdAt)}${project.archivedAt ? " · archived" : ""}${project.tags?.length ? ` · ${project.tags.join(", ")}` : ""}`}
         actions={<HeaderActions project={project} />}
       />
+      <ProjectActions project={project} />
 
       {project.status === "completed" && project.finalVideoUrl ? (
         <>

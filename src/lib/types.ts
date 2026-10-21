@@ -55,6 +55,9 @@ interface ProjectBase {
   version?: number;
   /** "Make variations": the batch this project belongs to. */
   batchId?: string;
+  /** Organisation: free tags for search; archived projects stay but leave the default lists. */
+  tags?: string[];
+  archivedAt?: string;
 }
 
 /** A set of 2–5 variations of one product, each its own project and run. */

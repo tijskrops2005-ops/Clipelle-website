@@ -379,6 +379,69 @@ export async function approveScript(projectId: string, review: { hookIndex: numb
   await refresh();
 }
 
+/* ---------- organisation: rename, tags, archive, zip, share, onboarding ---------- */
+
+export async function updateProjectMeta(projectId: string, patch: { name?: string; tags?: string[]; archived?: boolean }) {
+  if (config.demoMode) {
+    mockStore.updateProject(projectId, (p) => ({
+      ...p,
+      ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
+      ...(patch.tags !== undefined ? { tags: [...new Set(patch.tags.map((t) => t.trim().toLowerCase()).filter(Boolean))].slice(0, 10) } : {}),
+      ...(patch.archived !== undefined ? { archivedAt: patch.archived ? new Date().toISOString() : undefined } : {}),
+    }));
+    return;
+  }
+  await api(`/api/projects/${projectId}`, { method: "PATCH", body: JSON.stringify(patch) });
+  await refresh();
+}
+
+/** Downloads the finished videos of the selected projects as one ZIP (database mode; demo has no real files). */
+export async function downloadZip(ids: string[]) {
+  if (config.demoMode) throw new Error("Demo mode has no real video files to zip. In database mode this downloads the finished videos in one file.");
+  const r = await fetch("/api/projects/zip", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids }) });
+  if (!r.ok) {
+    const body = await r.json().catch(() => ({}));
+    throw new Error((body as { error?: string }).error ?? `Could not build the ZIP (${r.status}).`);
+  }
+  const blob = await r.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = r.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ?? "reelay-videos.zip";
+  document.body.append(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+export type ShareLinkInfo = { id: string; language: string | null; expiresAt: string; allowDownload: boolean; revokedAt: string | null; views: number; createdAt: string; active: boolean };
+export async function listShareLinks(projectId: string): Promise<ShareLinkInfo[]> {
+  if (config.demoMode) return [];
+  return (await api<{ links: ShareLinkInfo[] }>(`/api/projects/${projectId}/share`)).links;
+}
+export async function createShareLink(projectId: string, input: { expiresInDays: number; allowDownload: boolean; language?: string }): Promise<{ id: string; url: string; expiresAt: string }> {
+  if (config.demoMode) throw new Error("Viewing links need the database: a demo project has no real video to show.");
+  return api(`/api/projects/${projectId}/share`, { method: "POST", body: JSON.stringify(input) });
+}
+export async function revokeShareLink(projectId: string, linkId: string) {
+  await api(`/api/projects/${projectId}/share/${linkId}`, { method: "DELETE" });
+}
+
+export type OnboardingState = { firstAd: boolean; brand: boolean; translation: boolean; team: boolean; apiKey: boolean };
+export async function getOnboarding(): Promise<OnboardingState> {
+  if (config.demoMode) {
+    const all = mockStore.getProjectsSnapshot();
+    let brand = false;
+    try {
+      brand = Boolean(window.localStorage.getItem("reelay.demo.brand"));
+    } catch {
+      /* ignore */
+    }
+    return { firstAd: all.some((p) => p.workflow === "ad" && !p.id.startsWith("prj_0")), brand, translation: all.some((p) => p.workflow === "translate" && !p.id.startsWith("prj_0")), team: false, apiKey: false };
+  }
+  return api("/api/onboarding");
+}
+
 export async function retryStep(projectId: string, key: StepKey | TranslateStepKey) {
   if (config.demoMode) {
     const adKeys: string[] = ["script", "productClip", "presenter", "finalEdit"];

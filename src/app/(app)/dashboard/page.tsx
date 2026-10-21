@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { HowItWorks } from "@/components/dashboard/HowItWorks";
 import { FormatsRow } from "@/components/dashboard/FormatsRow";
+import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { RecentProjects } from "@/components/dashboard/RecentProjects";
 import { UsageCard } from "@/components/dashboard/UsageCard";
 
@@ -25,6 +26,8 @@ export default async function DashboardPage() {
           </Button>
         }
       />
+
+      <OnboardingChecklist />
 
       <RecentProjects />
 

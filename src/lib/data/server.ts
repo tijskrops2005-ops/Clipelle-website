@@ -131,6 +131,8 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       parentId: row.parentId ?? undefined,
       version: row.version,
       batchId: row.batchId ?? undefined,
+      tags: row.tags ?? undefined,
+      archivedAt: row.archivedAt?.toISOString(),
     };
     return project;
   }
@@ -168,6 +170,8 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     budgetUsd,
     estimateUsd,
     parentId: row.parentId ?? undefined,
+    tags: row.tags ?? undefined,
+    archivedAt: row.archivedAt?.toISOString(),
   };
   return project;
 }
@@ -473,6 +477,27 @@ export async function approveScript(scope: DataScope, projectId: string, review:
   });
   await inngest.send(adScriptApproved.create({ projectId }));
   return (await getProjectRow(projectId, scope))!;
+}
+
+/** Rename, tag, archive or unarchive a project (scoped). Nothing else about the project changes. */
+export async function updateProjectMeta(scope: DataScope, projectId: string, patch: { name?: string; tags?: string[]; archived?: boolean }) {
+  const row = await getProjectRow(projectId, scope);
+  if (!row) throw new DataError("Project not found.", 404, "not_found");
+  const set: Partial<typeof projects.$inferInsert> = { updatedAt: new Date() };
+  if (patch.name !== undefined) {
+    const name = patch.name.trim();
+    if (name.length < 2 || name.length > 120) throw new DataError("Give the project a name of 2 to 120 characters.", 400, "bad_name");
+    set.name = name;
+  }
+  if (patch.tags !== undefined) set.tags = normaliseTags(patch.tags);
+  if (patch.archived !== undefined) set.archivedAt = patch.archived ? new Date() : null;
+  const [updated] = await db().update(projects).set(set).where(eq(projects.id, projectId)).returning();
+  return updated;
+}
+
+/** Lower-case, trimmed, unique, at most 10 tags of 30 characters. */
+export function normaliseTags(tags: string[]) {
+  return [...new Set(tags.map((t) => t.trim().toLowerCase().replace(/\s+/g, " ").slice(0, 30)).filter(Boolean))].slice(0, 10);
 }
 
 export async function retryStep(scope: DataScope, projectId: string, stepKey: string) {

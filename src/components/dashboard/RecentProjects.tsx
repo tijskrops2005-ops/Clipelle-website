@@ -14,7 +14,7 @@ const LIMIT = 4;
 export function RecentProjects() {
   const all = useProjects();
   const ready = useProjectsReady();
-  const projects = all.slice(0, LIMIT);
+  const projects = all.filter((p) => !p.archivedAt).slice(0, LIMIT);
 
   return (
     <section className="space-y-6">

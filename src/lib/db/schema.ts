@@ -152,6 +152,9 @@ export const projects = pgTable(
     batchId: uuid("batch_id"),
     /** When the "ready" or "failed" e-mail went out (or was skipped by choice); one per project. */
     notifiedAt: timestamp("notified_at", { withTimezone: true }),
+    /** Organisation (2026-10-21): archived projects leave the lists but keep everything; tags for search. */
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    tags: jsonb("tags").$type<string[]>(),
     ...timestamps,
   },
   (t) => [index("projects_owner_created_idx").on(t.ownerId, t.createdAt), index("projects_status_idx").on(t.status), index("projects_parent_idx").on(t.parentId), index("projects_batch_idx").on(t.batchId)],
@@ -289,6 +292,30 @@ export const webhookEvents = pgTable(
     payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
   },
   (t) => [uniqueIndex("webhook_events_dedupe_idx").on(t.provider, t.externalId, t.eventType)],
+).enableRLS();
+
+/**
+ * Public, read-only viewing links for a finished video (2026-10-21): an unguessable token, an
+ * expiry, optional download, revocable. The share page shows the video and its name, nothing else.
+ */
+export const shareLinks = pgTable(
+  "share_links",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    workspaceId: uuid("workspace_id").notNull(),
+    userId: text("user_id").notNull(),
+    /** 32 random bytes, base64url; only its hash is compared on lookup. */
+    tokenHash: text("token_hash").notNull(),
+    /** Workflow B: which language version; null = the ad's final video. */
+    language: text("language"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    allowDownload: boolean("allow_download").default(false).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    views: integer("views").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("share_links_token_idx").on(t.tokenHash), index("share_links_project_idx").on(t.projectId)],
 ).enableRLS();
 
 /**
