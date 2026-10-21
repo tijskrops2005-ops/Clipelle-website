@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ArrowRight, Captions, Clock3, Languages, Palette, ShieldCheck, Smartphone, Sparkles, UserRound } from "lucide-react";
+import { ArrowRight, Clock3, Sparkles } from "lucide-react";
 import { config } from "@/lib/config";
 import { firstExample } from "@/lib/examples";
 import { faq } from "@/content/faq";
@@ -9,28 +9,23 @@ import { Reveal } from "@/components/site/Reveal";
 import { PhoneFrame } from "@/components/site/PhoneFrame";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { Tabs } from "@/components/site/Tabs";
-import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { TrustBlocks } from "@/components/site/TrustBlocks";
 import { Accordion } from "@/components/site/Accordion";
 import { CtaBand } from "@/components/site/CtaBand";
 import { PricingPreview } from "@/components/site/PricingPreview";
-import { platformMenu } from "@/components/site/siteNav";
+import { RealOutput } from "@/components/site/RealOutput";
+import { SavingsCalculator } from "@/components/site/SavingsCalculator";
+import { ExampleMarquee, IntegrationsRow, LatestPosts, MidCta, Outcomes, UseCaseCards } from "@/components/site/HomeSections";
+import { realAd } from "@/content/realOutput";
+import { absoluteUrl } from "@/lib/site";
+import { JsonLd } from "@/components/site/JsonLd";
 
-export const metadata: Metadata = { title: `${config.productName} · Video ads from one product photo`, description: config.tagline };
+export const metadata: Metadata = { title: `${config.productName} · Video ads from one product photo`, description: config.tagline, alternates: { canonical: absoluteUrl("/") } };
 
 const steps = [
-  { title: "Add your product", text: "A few photos and a short description. Or upload a video you own to translate it." },
+  { title: "Add your product", text: "A photo and a short description, or a product link that fills the form for you. Or upload a video you own to translate it." },
   { title: "One click", text: "Script, product clip, presenter and edit run on their own. You follow the steps on one page." },
   { title: "Download", text: "A finished 9:16 ad with captions, ready for TikTok, Reels and Shorts." },
-];
-
-const youGet = [
-  { icon: Smartphone, title: "9:16, ready to post", text: "Vertical, 1080p, the format TikTok, Reels and Shorts expect." },
-  { icon: Captions, title: "Captions of what is said", text: "The only text on screen, in a caption style you choose. No clutter." },
-  { icon: Languages, title: "190 languages", text: "Translate a video you own into other languages and regional variants, several at once." },
-  { icon: UserRound, title: "Voice and lips kept", text: "Translations keep the speaker's own voice and match the lips to the new language." },
-  { icon: Palette, title: "Your brand style", text: "Accent colour, caption look, font and logo. Saved as defaults for every next video." },
-  { icon: ShieldCheck, title: "Costs before you start", text: "Credits and an estimate on the form; the real amount on the project page afterwards." },
 ];
 
 export default function HomePage() {
@@ -38,6 +33,8 @@ export default function HomePage() {
   const translateSample = firstExample("translate");
   return (
     <div className="space-y-24 sm:space-y-32">
+      <JsonLd data={{ "@context": "https://schema.org", "@type": "Organization", name: config.productName, url: absoluteUrl("/"), logo: absoluteUrl("/opengraph-image") }} />
+      <JsonLd data={{ "@context": "https://schema.org", "@type": "WebSite", name: config.productName, url: absoluteUrl("/") }} />
       {/* Hero */}
       <section className="grid items-center gap-12 pt-16 sm:pt-24 lg:grid-cols-[1.15fr_1fr]">
         <div>
@@ -54,14 +51,14 @@ export default function HomePage() {
               <ArrowRight className="size-5" aria-hidden />
             </Button>
           </div>
-          <p className="mt-4 text-[13px] text-muted">One free 10-second ad after you verify your e-mail. No card needed.</p>
+          <p className="mt-4 text-[13px] text-muted">No credit card required. One free 10-second ad after you verify your e-mail.</p>
         </div>
         <PhoneFrame src={heroSample?.src} poster={heroSample?.posterSrc} />
       </section>
 
       {/* What you can make */}
       <Reveal as="section">
-        <SectionIntro eyebrow="What you can make" title="Two things, done well" text="An ad from a product photo, or an existing video in new languages. No editor, no timeline: one form and one button." />
+        <SectionIntro eyebrow="What you can make" title="Make an ad from a photo, from a link, or translate a video" text="No editor, no timeline: one form and one button." />
         <Tabs
           className="mt-10"
           tabs={[
@@ -81,6 +78,31 @@ export default function HomePage() {
                     <Button href="/platform/ads" variant="link" className="mt-5">How ads are made <ArrowRight className="size-4" aria-hidden /></Button>
                   </div>
                   <PhoneFrame src={heroSample?.src} float={false} className="w-[200px]" />
+                </div>
+              ),
+            },
+            {
+              key: "url",
+              label: "Ads from a link",
+              content: (
+                <div className="grid items-center gap-10 rounded-card bg-surface p-6 shadow-card sm:p-10 lg:grid-cols-[1fr_auto]">
+                  <div>
+                    <h3 className="text-title">Paste a product link, check the facts, get the ad</h3>
+                    <p className="mt-3 text-[15px] leading-relaxed text-muted">The name, description, photos and price are read from your product page. You correct what you want and tick the photos you own; then the same ad form opens prefilled. Nothing is sent to an AI and nothing is copied before you confirm.</p>
+                    <ul className="mt-5 space-y-2 text-[15px] text-ink/85">
+                      {["Works with public product pages that carry product data", "Only use products and photos you own or have the rights to use", "The same lengths, presenters and brand style as from a photo"].map((t) => (
+                        <li key={t} className="flex items-center gap-2"><span className="size-1.5 rounded-full bg-accent" aria-hidden />{t}</li>
+                      ))}
+                    </ul>
+                    <Button href="/platform/url-to-video" variant="link" className="mt-5">How URL to video works <ArrowRight className="size-4" aria-hidden /></Button>
+                  </div>
+                  <div className="w-[220px] rounded-card bg-bg p-4 shadow-card" aria-hidden>
+                    <div className="rounded-control border border-border bg-surface px-3 py-2 text-[11px] text-muted">https://yourshop.com/…</div>
+                    <div className="mt-3 h-2.5 w-3/4 rounded-full bg-ink/80" />
+                    <div className="mt-2 h-2 w-full rounded-full bg-ink/15" />
+                    <div className="mt-1.5 h-2 w-5/6 rounded-full bg-ink/15" />
+                    <div className="mt-3 grid grid-cols-3 gap-1.5">{[0, 1, 2].map((i) => <div key={i} className={`aspect-square rounded-[6px] bg-surface-muted ${i < 2 ? "ring-2 ring-accent" : ""}`} />)}</div>
+                  </div>
                 </div>
               ),
             },
@@ -113,46 +135,29 @@ export default function HomePage() {
         <StepList items={steps} columns={3} className="mt-10 [&>li]:bg-surface [&>li]:px-6 [&>li]:py-6 [&>li]:shadow-card" />
       </Reveal>
 
-      {/* Examples */}
+      {/* Examples marquee */}
       <Reveal as="section">
         <SectionIntro eyebrow="Examples" title="Made with Reelay" text="Our own finished videos. Nothing here comes from anywhere else." />
-        <ExampleGallery className="mt-10" />
+        <ExampleMarquee />
         <div className="mt-8 text-center">
           <Button href="/examples" variant="secondary">All examples <ArrowRight className="size-4" aria-hidden /></Button>
         </div>
       </Reveal>
 
-      {/* What you get */}
-      <Reveal as="section">
-        <SectionIntro eyebrow="What you get" title="Everything a short ad needs" text="And nothing that clutters it." />
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {youGet.map(({ icon: Icon, title, text }) => (
-            <div key={title} className="rounded-card bg-surface p-6 shadow-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
-              <span className="grid size-10 place-items-center rounded-full bg-accent-soft text-accent">
-                <Icon className="size-5" aria-hidden />
-              </span>
-              <h3 className="mt-4 text-[17px] font-semibold">{title}</h3>
-              <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{text}</p>
-            </div>
-          ))}
-        </div>
-      </Reveal>
+      <RealOutput data={realAd} kind="ad" />
 
-      {/* Platform cards */}
+      <MidCta />
+
+      <Outcomes />
+
+      <UseCaseCards />
+
+      <IntegrationsRow />
+
+      {/* Reelay vs doing it yourself */}
       <Reveal as="section">
-        <SectionIntro eyebrow="Platform" title="Pick a starting point" />
-        <ul className="mt-10 grid gap-5 md:grid-cols-3">
-          {platformMenu.map((c) => (
-            <li key={c.href}>
-              <a href={c.href} className="focus-ring group flex h-full flex-col rounded-card bg-surface p-6 shadow-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
-                <span className="grid size-10 place-items-center rounded-full bg-accent-soft text-accent"><c.icon className="size-5" aria-hidden /></span>
-                <span className="mt-4 text-[17px] font-semibold text-ink">{c.title}</span>
-                <span className="mt-1.5 flex-1 text-[15px] leading-relaxed text-muted">{c.text}</span>
-                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-ink">Open <ArrowRight className="size-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden /></span>
-              </a>
-            </li>
-          ))}
-        </ul>
+        <SectionIntro eyebrow="Compare" title="Reelay vs doing it yourself" text="Type what a video costs you now and how many you make. The right column uses our plan prices and our measured times, nothing else." />
+        <div className="mt-10"><SavingsCalculator compact /></div>
       </Reveal>
 
       <TrustBlocks />
@@ -169,6 +174,8 @@ export default function HomePage() {
         <Accordion items={faq.slice(0, 6)} className="mx-auto mt-10 max-w-3xl" />
         <p className="mt-6 text-center text-[15px] text-muted"><a href="/resources/faq" className="focus-ring rounded-control underline decoration-border underline-offset-4 hover:decoration-ink">All questions</a></p>
       </Reveal>
+
+      <LatestPosts />
 
       <Reveal as="section">
         <CtaBand />

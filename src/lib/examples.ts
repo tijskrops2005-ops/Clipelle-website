@@ -25,6 +25,11 @@ function resolveFile(file: string): string | null {
   return existsSync(path.join(process.cwd(), "public", "examples", file)) ? `/examples/${file}` : null;
 }
 
+/** One file by name (video or photo), or null when it exists nowhere. */
+export function resolveExampleFile(file: string): string | null {
+  return resolveFile(file);
+}
+
 /** Every example that has a reachable file, in the order of the content list. */
 export function resolvedExamples(kind?: Example["kind"]): ResolvedExample[] {
   const list = kind ? examples.filter((e) => e.kind === kind) : examples;

@@ -9,6 +9,9 @@ import { PhoneFrame } from "@/components/site/PhoneFrame";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { CtaBand } from "@/components/site/CtaBand";
+import { RealOutput } from "@/components/site/RealOutput";
+import { MidCta } from "@/components/site/HomeSections";
+import { realTranslation } from "@/content/realOutput";
 import { translateCredits } from "@/lib/plans";
 
 export const metadata: Metadata = { title: "Translate videos", description: "A video you own, in other languages, with the speaker's own voice and matching lips." };
@@ -72,6 +75,10 @@ export default function PlatformTranslatePage() {
         <SectionIntro eyebrow="Examples" title="Translations made with Reelay" />
         <ExampleGallery kind="translate" limit={6} className="mt-10" />
       </Reveal>
+
+      <RealOutput data={realTranslation} kind="translation" />
+
+      <MidCta />
 
       <Reveal as="section"><CtaBand title="Translate your first video" text="Upload, confirm the rights, pick the languages. The estimate is shown before you start." /></Reveal>
     </div>

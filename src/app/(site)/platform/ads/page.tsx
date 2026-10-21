@@ -8,6 +8,9 @@ import { PhoneFrame } from "@/components/site/PhoneFrame";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { CtaBand } from "@/components/site/CtaBand";
+import { RealOutput } from "@/components/site/RealOutput";
+import { MidCta } from "@/components/site/HomeSections";
+import { realAd } from "@/content/realOutput";
 import { adCreditTable } from "@/lib/plans";
 
 export const metadata: Metadata = { title: "Image to video", description: "From one product photo to a finished 9:16 ad with a presenter and captions." };
@@ -87,6 +90,10 @@ export default function PlatformAdsPage() {
         <SectionIntro eyebrow="Examples" title="Ads made with Reelay" />
         <ExampleGallery kind="ad" limit={6} className="mt-10" />
       </Reveal>
+
+      <RealOutput data={realAd} kind="ad" />
+
+      <MidCta />
 
       <Reveal as="section"><CtaBand /></Reveal>
     </div>
