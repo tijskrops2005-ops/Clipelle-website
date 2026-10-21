@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { approveScript, dataErrorResponse } from "@/lib/data/server";
+import { requireUser } from "@/lib/auth";
 import { databaseModeOnly, readJson } from "../../_guard";
 
 const Body = z.object({
@@ -17,7 +18,8 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   const parsed = Body.safeParse(body ?? {});
   if (!parsed.success) return Response.json({ error: "Invalid review." }, { status: 400 });
   try {
-    const row = await approveScript(id, parsed.data);
+    const user = await requireUser();
+    const row = await approveScript(user.id, id, parsed.data);
     return Response.json({ id: row.id, status: row.status });
   } catch (error) {
     return dataErrorResponse(error);

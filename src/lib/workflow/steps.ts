@@ -142,11 +142,13 @@ export async function storeFromUrl(input: {
 }): Promise<AssetRow> {
   const path = objectPath({ projectId: input.projectId, kind: input.kind, fileName: input.fileName, language: input.language });
   const stored = await withRetries("Copying the result to storage", () => copyFromUrl(input.url, path, input.fallbackMime));
+  const userId = await ownerOf(input.projectId);
   const [row] = await db()
     .insert(assets)
     .values({
       projectId: input.projectId,
       stepId: input.stepId,
+      userId,
       kind: input.kind,
       language: input.language,
       storagePath: stored.path,
@@ -173,11 +175,18 @@ export async function storeBytes(input: {
 }): Promise<AssetRow> {
   const path = objectPath({ projectId: input.projectId, kind: input.kind, fileName: input.fileName, language: input.language });
   const stored = await putObject(path, input.data, input.mime);
+  const userId = await ownerOf(input.projectId);
   const [row] = await db()
     .insert(assets)
-    .values({ projectId: input.projectId, stepId: input.stepId, kind: input.kind, language: input.language, storagePath: stored.path, mime: stored.mime, bytes: stored.bytes, seconds: input.seconds })
+    .values({ projectId: input.projectId, stepId: input.stepId, userId, kind: input.kind, language: input.language, storagePath: stored.path, mime: stored.mime, bytes: stored.bytes, seconds: input.seconds })
     .returning();
   return row;
+}
+
+/** The account that owns a project, copied onto every asset row so rows can be checked on their own. */
+async function ownerOf(projectId: string) {
+  const [p] = await db().select({ ownerId: projects.ownerId }).from(projects).where(eq(projects.id, projectId)).limit(1);
+  return p?.ownerId ?? null;
 }
 
 export async function loadAsset(id: string): Promise<AssetRow> {

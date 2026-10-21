@@ -6,12 +6,13 @@ import { adProjectCreated, adScriptApproved, inngest, stepRetry, translateProjec
 import { applyScriptReview, countWords, normaliseHooks, type AdScript } from "@/lib/services/script";
 import { maxSpokenWords } from "@/lib/pricing";
 import { objectInfo, signedDownloadUrl } from "@/lib/storage";
-import { costGuardResponse, costLimits, creativeSpent, getProjectSpend } from "@/lib/services/costGuard";
+import { checkUserLimits, costGuardResponse, costLimits, creativeSpent, getProjectSpend } from "@/lib/services/costGuard";
 import { estimateAdCost, estimateTranslateCost } from "@/lib/pricing";
 import { workflowSettings } from "@/lib/workflow/settings";
 import { DEFAULT_TONE, isAdTone, type AdTone } from "@/lib/adOptions";
 import { DEFAULT_SPEED, isSpeedKey, speedValue, type AdLanguageCode, type SpeedKey } from "@/lib/voiceOptions";
 import type { UploadKind } from "@/lib/data/uploads";
+import { authErrorResponse } from "@/lib/auth";
 
 /**
  * Data access for real projects (database mode). The UI calls this through the routes in
@@ -163,8 +164,9 @@ async function loadRelated(projectIds: string[]) {
   return { stepRows, translationRows, assetRows };
 }
 
-export async function listProjects(limit = 100): Promise<Project[]> {
-  const rows = await db().select().from(projects).orderBy(desc(projects.createdAt)).limit(limit);
+/** Every read and write below is scoped to the signed-in user: a project of someone else is "not found". */
+export async function listProjects(userId: string, limit = 100): Promise<Project[]> {
+  const rows = await db().select().from(projects).where(eq(projects.ownerId, userId)).orderBy(desc(projects.createdAt)).limit(limit);
   const { stepRows, translationRows, assetRows } = await loadRelated(rows.map((r) => r.id));
   return Promise.all(
     rows.map((r) =>
@@ -178,14 +180,20 @@ export async function listProjects(limit = 100): Promise<Project[]> {
   );
 }
 
-export async function getProject(id: string): Promise<Project | null> {
-  const [row] = await db().select().from(projects).where(eq(projects.id, id)).limit(1);
+export async function getProject(id: string, userId: string): Promise<Project | null> {
+  const [row] = await db().select().from(projects).where(and(eq(projects.id, id), eq(projects.ownerId, userId))).limit(1);
   if (!row) return null;
   const { stepRows, translationRows, assetRows } = await loadRelated([row.id]);
   return toProject(row, stepRows, translationRows, assetRows);
 }
 
-export async function getProjectRow(id: string) {
+export async function getProjectRow(id: string, userId: string) {
+  const [row] = await db().select().from(projects).where(and(eq(projects.id, id), eq(projects.ownerId, userId))).limit(1);
+  return row ?? null;
+}
+
+/** For the orchestrator and webhooks only (no user in the request): unscoped read by id. */
+export async function getProjectRowUnscoped(id: string) {
   const [row] = await db().select().from(projects).where(eq(projects.id, id)).limit(1);
   return row ?? null;
 }
@@ -209,20 +217,21 @@ export type NewTranslateProject = {
 };
 
 /** Creates the project and its step rows in status draft. Files are attached next, then `startProject`. */
-export async function createDraft(input: { workflow: "ad"; ad: NewAdProject } | { workflow: "translate"; translate: NewTranslateProject }) {
+export async function createDraft(userId: string, input: { workflow: "ad"; ad: NewAdProject } | { workflow: "translate"; translate: NewTranslateProject }) {
   const d = db();
   if (input.workflow === "ad") {
     const a = input.ad;
     const [row] = await d
       .insert(projects)
       .values({
+        ownerId: userId,
         workflow: "ad",
         name: a.name,
         status: "draft",
         input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, accent: a.accent, voiceId: a.voiceId, speed: a.speed, offer: a.offer, direction: a.direction, tone: a.tone, background: a.backgroundColor ? { type: "color", value: a.backgroundColor } : undefined, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
       })
       .returning();
-    await d.insert(steps).values(AD_STEPS.map((key) => ({ projectId: row.id, key, status: "waiting" as const })));
+    await d.insert(steps).values(AD_STEPS.map((key) => ({ projectId: row.id, userId, key, status: "waiting" as const })));
     return row;
   }
   const t = input.translate;
@@ -230,6 +239,7 @@ export async function createDraft(input: { workflow: "ad"; ad: NewAdProject } | 
   const [row] = await d
     .insert(projects)
     .values({
+      ownerId: userId,
       workflow: "translate",
       name: t.name,
       status: "draft",
@@ -249,14 +259,14 @@ export async function createDraft(input: { workflow: "ad"; ad: NewAdProject } | 
       } satisfies TranslateInput,
     })
     .returning();
-  await d.insert(steps).values(TRANSLATE_STEPS.map((key) => ({ projectId: row.id, key, status: "waiting" as const })));
-  await d.insert(translations).values(t.targetLanguages.map((language) => ({ projectId: row.id, language, status: "waiting" as const, segments: [] })));
+  await d.insert(steps).values(TRANSLATE_STEPS.map((key) => ({ projectId: row.id, userId, key, status: "waiting" as const })));
+  await d.insert(translations).values(t.targetLanguages.map((language) => ({ projectId: row.id, userId, language, status: "waiting" as const, segments: [] })));
   return row;
 }
 
 /** Registers an object the browser uploaded with a signed URL. Verifies it really exists. */
-export async function attachUploadedAsset(projectId: string, file: { kind: UploadKind; storagePath: string; fileName: string; seconds?: number }) {
-  const row = await getProjectRow(projectId);
+export async function attachUploadedAsset(userId: string, projectId: string, file: { kind: UploadKind; storagePath: string; fileName: string; seconds?: number }) {
+  const row = await getProjectRow(projectId, userId);
   if (!row) throw new DataError("Project not found.", 404, "not_found");
   if (row.status !== "draft") throw new DataError("Files can only be added before the project starts.", 409, "not_draft");
   if (!file.storagePath.startsWith(`projects/${projectId}/`)) throw new DataError("File path does not belong to this project.", 400, "bad_path");
@@ -264,7 +274,7 @@ export async function attachUploadedAsset(projectId: string, file: { kind: Uploa
   if (!info) throw new DataError("The uploaded file was not found in storage. Upload it again.", 400, "missing_object");
   const [asset] = await db()
     .insert(assets)
-    .values({ projectId, kind: file.kind, storagePath: file.storagePath, mime: info.mime, bytes: info.bytes, seconds: file.seconds })
+    .values({ projectId, userId, kind: file.kind, storagePath: file.storagePath, mime: info.mime, bytes: info.bytes, seconds: file.seconds })
     .returning();
   if (row.workflow === "ad" && file.kind === "image") {
     const input = row.input as AdInput;
@@ -286,8 +296,8 @@ export async function attachUploadedAsset(projectId: string, file: { kind: Uploa
 }
 
 /** Draft → processing and the workflow event. Idempotent: a second call returns the project unchanged (rule 4). */
-export async function startProject(projectId: string) {
-  const row = await getProjectRow(projectId);
+export async function startProject(userId: string, projectId: string) {
+  const row = await getProjectRow(projectId, userId);
   if (!row) throw new DataError("Project not found.", 404, "not_found");
   if (row.status !== "draft") return row;
   if (row.workflow === "ad" && (row.input as AdInput).imageAssetIds.length === 0) throw new DataError("Add at least one product image.", 400, "no_images");
@@ -304,6 +314,10 @@ export async function startProject(projectId: string) {
       "creative_budget",
     );
   }
+
+  // Per-user limits (day and month) on top of the budget per creative.
+  const perUser = await checkUserLimits(userId, estimate * (row.workflow === "translate" ? (row.input as TranslateInput).targetLanguages.length : 1));
+  if (!perUser.ok) throw new DataError(perUser.message, 429, "user_limit");
 
   const firstStep = row.workflow === "ad" ? "script" : "upload";
   await db().transaction(async (tx) => {
@@ -328,7 +342,7 @@ export async function startProject(projectId: string) {
       error,
     );
   }
-  return (await getProjectRow(projectId))!;
+  return (await getProjectRow(projectId, userId))!;
 }
 
 /* ---------- review, approval, retry (workflow B and both) ---------- */
@@ -337,8 +351,8 @@ export async function startProject(projectId: string) {
  * "Review script first": the customer picked a hook and maybe edited the presenter text.
  * Stores the approved script on the script step, marks it completed and wakes the waiting run.
  */
-export async function approveScript(projectId: string, review: { hookIndex: number; presenterScript?: string }) {
-  const row = await getProjectRow(projectId);
+export async function approveScript(userId: string, projectId: string, review: { hookIndex: number; presenterScript?: string }) {
+  const row = await getProjectRow(projectId, userId);
   if (!row || row.workflow !== "ad") throw new DataError("Project not found.", 404, "not_found");
   const [step] = await db().select().from(steps).where(and(eq(steps.projectId, projectId), eq(steps.key, "script"))).limit(1);
   const script = step?.output?.script as AdScript | undefined;
@@ -358,11 +372,11 @@ export async function approveScript(projectId: string, review: { hookIndex: numb
     await tx.update(projects).set({ status: "processing", updatedAt: new Date() }).where(eq(projects.id, projectId));
   });
   await inngest.send(adScriptApproved.create({ projectId }));
-  return (await getProjectRow(projectId))!;
+  return (await getProjectRow(projectId, userId))!;
 }
 
-export async function retryStep(projectId: string, stepKey: string) {
-  const row = await getProjectRow(projectId);
+export async function retryStep(userId: string, projectId: string, stepKey: string) {
+  const row = await getProjectRow(projectId, userId);
   if (!row) throw new DataError("Project not found.", 404, "not_found");
   const [step] = await db().select().from(steps).where(and(eq(steps.projectId, projectId), eq(steps.key, stepKey))).limit(1);
   if (!step) throw new DataError("Unknown step.", 404, "not_found");
@@ -382,6 +396,8 @@ export async function retryStep(projectId: string, stepKey: string) {
 export function dataErrorResponse(error: unknown): Response {
   const guard = costGuardResponse(error);
   if (guard) return guard;
+  const auth = authErrorResponse(error);
+  if (auth) return auth;
   if (error instanceof DataError) return Response.json({ error: error.message, code: error.code }, { status: error.status });
   const e = error as { message?: string; status?: number };
   return Response.json({ error: e?.message ?? "Unexpected error." }, { status: typeof e?.status === "number" && e.status >= 400 && e.status < 600 ? e.status : 500 });

@@ -1,4 +1,6 @@
 import { Suspense, type ReactNode } from "react";
+import { getUser } from "@/lib/auth";
+import { getCreditBalance } from "@/lib/credits";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { DemoRunner } from "@/components/DemoRunner";
@@ -8,20 +10,23 @@ import { DemoRunner } from "@/components/DemoRunner";
  * only cards are white. Below lg the sidebar is replaced by a top bar with a drawer.
  * Navigation components read the pathname (runtime data) so they sit behind Suspense.
  */
-export function AppShell({ children }: { children: ReactNode }) {
+export async function AppShell({ children }: { children: ReactNode }) {
+  const user = await getUser();
+  const credits = user ? await getCreditBalance(user.id).catch(() => null) : null;
+  const who = user ? { email: user.email, name: user.name, credits } : null;
   return (
     <div className="flex min-h-screen">
       <DemoRunner />
       <div className="hidden lg:block">
         <Suspense fallback={<div className="w-66" aria-hidden />}>
-          <Sidebar />
+          <Sidebar user={who} />
         </Suspense>
       </div>
       <main className="flex min-w-0 flex-1 flex-col">
         {/* mobile / tablet top bar */}
         <div className="lg:hidden">
           <Suspense fallback={<div className="h-14" aria-hidden />}>
-            <MobileNav />
+            <MobileNav user={who} />
           </Suspense>
         </div>
         {/* desktop: the demo pill lives in the sidebar footer; the page starts after a quiet top margin */}

@@ -3,6 +3,7 @@ import { dataErrorResponse, DataError, getProjectRow } from "@/lib/data/server";
 import { createSignedUpload, MAX_OBJECT_BYTES, objectPath } from "@/lib/storage";
 import { isUploadKind } from "@/lib/data/uploads";
 import { databaseModeOnly, readJson } from "../../projects/_guard";
+import { requireUser } from "@/lib/auth";
 
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
@@ -19,7 +20,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "projectId, kind (image|source|background|logo) and fileName are required." }, { status: 400 });
   }
   try {
-    const row = await getProjectRow(body.projectId);
+    const user = await requireUser();
+    const row = await getProjectRow(body.projectId, user.id);
     if (!row) throw new DataError("Project not found.", 404, "not_found");
     if (row.status !== "draft") throw new DataError("Files can only be added before the project starts.", 409, "not_draft");
     const bytes = Number(body.bytes ?? 0);

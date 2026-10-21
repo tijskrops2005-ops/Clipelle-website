@@ -122,7 +122,7 @@ export const projects = pgTable(
   "projects",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    /** Null until user accounts exist (Stage 10). */
+    /** The account that owns the project (Supabase Auth user id). Backfilled rows carry the dev user. */
     ownerId: text("owner_id"),
     workflow: workflowKind("workflow").notNull(),
     name: text("name").notNull(),
@@ -146,6 +146,8 @@ export const steps = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
+    /** Copy of projects.owner_id so every row can be checked on its own. */
+    userId: text("user_id"),
     /** Generic step key: script | productClip | presenter | finalEdit, or upload | translate | review | enhance | captions. */
     key: text("key").notNull(),
     status: stepStatus("status").default("waiting").notNull(),
@@ -172,6 +174,7 @@ export const assets = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     stepId: uuid("step_id").references(() => steps.id, { onDelete: "set null" }),
+    userId: text("user_id"),
     kind: assetKind("kind").notNull(),
     language: text("language"),
     /** Path inside our storage bucket. Provider URLs are never stored: they expire. */
@@ -194,6 +197,7 @@ export const translations = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     language: text("language").$type<LanguageCode>().notNull(),
+    userId: text("user_id"),
     status: stepStatus("status").default("waiting").notNull(),
     /** Subtitle fragments with original, machine translation and the user's text. */
     segments: jsonb("segments").$type<Segment[]>().default([]).notNull(),
@@ -226,6 +230,8 @@ export const costEntries = pgTable(
     fingerprint: text("fingerprint").notNull(),
     projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
     stepId: uuid("step_id").references(() => steps.id, { onDelete: "set null" }),
+    /** Owner of the project at the time of the call; lets the per-user limits sum quickly. */
+    userId: text("user_id"),
     /** Language version this cost belongs to (Workflow B); null = shared by the whole project. */
     language: text("language"),
     startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
@@ -248,6 +254,58 @@ export const webhookEvents = pgTable(
     payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
   },
   (t) => [uniqueIndex("webhook_events_dedupe_idx").on(t.provider, t.externalId, t.eventType)],
+).enableRLS();
+
+/** One row per account: profile fields and the brand defaults that prefill the ad form. */
+export const profiles = pgTable(
+  "profiles",
+  {
+    userId: text("user_id").primaryKey(),
+    email: text("email").notNull(),
+    name: text("name"),
+    /** Defaults for the ad form's brand style; the form still sends exactly what the customer picked. */
+    brand: jsonb("brand").$type<{ accent?: string; captionStyle?: string; font?: string; logoPath?: string }>(),
+    /** Plan state mirrored from the payment provider (Part 3). */
+    planKey: text("plan_key").default("free").notNull(),
+    stripeCustomerId: text("stripe_customer_id"),
+    stripeSubscriptionId: text("stripe_subscription_id"),
+    subscriptionStatus: text("subscription_status"),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    /** When the one free ad was granted; null = not yet. */
+    freeAdGrantedAt: timestamp("free_ad_granted_at", { withTimezone: true }),
+    ...timestamps,
+  },
+).enableRLS();
+
+/** Credit ledger per account (src/lib/credits.ts): grants, reservations, settlements, refunds. */
+export const creditLedger = pgTable(
+  "credit_ledger",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").notNull(),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+    /** Positive = added, negative = taken. */
+    credits: integer("credits").notNull(),
+    kind: text("kind").notNull(), // grant_free | grant_subscription | grant_topup | grant_manual | reserve | settle | refund | expire
+    note: text("note"),
+    /** Idempotency key for grants from webhooks (e.g. a Stripe event or invoice id). */
+    reference: text("reference"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("credit_ledger_user_idx").on(t.userId, t.createdAt), index("credit_ledger_project_idx").on(t.projectId), uniqueIndex("credit_ledger_user_reference_idx").on(t.userId, t.reference)],
+).enableRLS();
+
+/** "Notify me" wishes for connections that do not exist yet (Settings → Connections). */
+export const notifyWishes = pgTable(
+  "notify_wishes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").notNull(),
+    feature: text("feature").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("notify_wishes_user_feature_idx").on(t.userId, t.feature)],
 ).enableRLS();
 
 /** Book-a-demo and contact requests from the public site. Raw addresses are never stored (ip is hashed). */
@@ -279,3 +337,5 @@ export type TranslationRow = typeof translations.$inferSelect;
 export type CostEntryRow = typeof costEntries.$inferSelect;
 export type WebhookEventRow = typeof webhookEvents.$inferSelect;
 export type DemoRequestRow = typeof demoRequests.$inferSelect;
+export type ProfileRow = typeof profiles.$inferSelect;
+export type CreditLedgerRow = typeof creditLedger.$inferSelect;

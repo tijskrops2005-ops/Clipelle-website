@@ -50,6 +50,20 @@
       "when": 1792565533650,
       "tag": "0006_big_mandrill",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792565761283,
+      "tag": "0007_amazing_trish_tilby",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792565971769,
+      "tag": "0008_demonic_songbird",
+      "breakpoints": true
     }
   ]
 }

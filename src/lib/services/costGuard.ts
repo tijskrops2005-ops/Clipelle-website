@@ -15,7 +15,7 @@
  */
 import { createHash } from "node:crypto";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
-import { costEntries, db, type CostEntryRow } from "@/lib/db";
+import { costEntries, db, projects, type CostEntryRow } from "@/lib/db";
 
 export type CostService = "heygen" | "anthropic" | "fal" | "shotstack";
 export type EntryStatus = "started" | "completed" | "failed";
@@ -38,7 +38,7 @@ export type CostEntry = {
 
 export const DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
 
-export type CostGuardCode = "per_action_limit" | "creative_budget" | "duplicate";
+export type CostGuardCode = "per_action_limit" | "creative_budget" | "duplicate" | "user_limit";
 
 export class CostGuardError extends Error {
   readonly code: CostGuardCode;
@@ -63,7 +63,34 @@ export function costLimits() {
   return {
     maxPerActionUsd: envNumber("MAX_COST_PER_ACTION_USD", 1.5),
     maxPerCreativeUsd: envNumber("MAX_COST_PER_CREATIVE_USD", 1.5),
+    /** Per account: what one user may spend in a calendar day / month (added 2026-10-21; safe defaults). */
+    maxPerUserPerDayUsd: envNumber("MAX_COST_PER_USER_PER_DAY_USD", 10),
+    maxPerUserPerMonthUsd: envNumber("MAX_COST_PER_USER_PER_MONTH_USD", 100),
   };
+}
+
+/** Spend of one user since a moment (completed actual or started/failed estimates, like chargeOf). */
+export async function getUserSpendSince(userId: string, since: Date) {
+  const rows = await db().select().from(costEntries).where(and(eq(costEntries.userId, userId), gte(costEntries.startedAt, since)));
+  return round4(rows.map(toEntry).reduce((sum, e) => sum + chargeOf(e), 0));
+}
+
+function startOfMonth() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+/** Day and month limits per user, checked before a project starts and before every paid call. */
+export async function checkUserLimits(userId: string, estimatedUsd: number): Promise<{ ok: true } | { ok: false; message: string }> {
+  const limits = costLimits();
+  const [day, month] = await Promise.all([getUserSpendSince(userId, startOfToday()), getUserSpendSince(userId, startOfMonth())]);
+  if (day + estimatedUsd > limits.maxPerUserPerDayUsd) {
+    return { ok: false, message: `This would bring today's spend to $${(day + estimatedUsd).toFixed(2)}, above the daily limit of $${limits.maxPerUserPerDayUsd.toFixed(2)} for your account. Try again tomorrow.` };
+  }
+  if (month + estimatedUsd > limits.maxPerUserPerMonthUsd) {
+    return { ok: false, message: `This would bring this month's spend to $${(month + estimatedUsd).toFixed(2)}, above the monthly limit of $${limits.maxPerUserPerMonthUsd.toFixed(2)} for your account.` };
+  }
+  return { ok: true };
 }
 
 /* ---------- storage (table cost_entries) ---------- */
@@ -226,6 +253,17 @@ export async function reserveSpend(input: ReserveInput): Promise<{ entryId: stri
     }
   }
 
+  // Owner of the project (for the per-user limits and the user_id column). Added 2026-10-21.
+  let userId: string | null = null;
+  if (input.projectId) {
+    const [p] = await db().select({ ownerId: projects.ownerId }).from(projects).where(eq(projects.id, input.projectId)).limit(1);
+    userId = p?.ownerId ?? null;
+    if (userId) {
+      const perUser = await checkUserLimits(userId, estimated);
+      if (!perUser.ok) throw new CostGuardError(perUser.message, "user_limit", { estimatedUsd: estimated });
+    }
+  }
+
   const fingerprint = fingerprintOf(input.service, input.action, input.fingerprintInput);
   const cutoff = new Date(Date.now() - DUPLICATE_WINDOW_MS);
   const [twin] = await db()
@@ -254,6 +292,7 @@ export async function reserveSpend(input: ReserveInput): Promise<{ entryId: stri
       fingerprint,
       projectId: input.projectId ?? null,
       stepId: input.stepId ?? null,
+      userId,
       language: input.language ?? null,
       meta: input.meta ?? null,
     })

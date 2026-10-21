@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { config } from "@/lib/config";
 import { createAdProject } from "@/lib/data/client";
+import { getBrandDefaults } from "@/lib/data/settingsClient";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { PresenterPicker } from "@/components/PresenterPicker";
 import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, formatUsd, type AdLength, type PresenterEngine } from "@/lib/pricing";
@@ -95,6 +96,24 @@ export function ProjectForm() {
   // White text sits on the accent (the highlighted caption word): warn below 3:1.
   const accentContrast = contrastRatio(effectiveAccent, "#FFFFFF");
   const lowContrast = accentContrast < MIN_LARGE_TEXT_CONTRAST;
+  // Brand defaults from Settings → Brand prefill the brand style once; the draft that is sent is built the same way.
+  useEffect(() => {
+    let alive = true;
+    getBrandDefaults()
+      .then((b) => {
+        if (!alive) return;
+        if (b.accent && HEX_COLOR.test(b.accent)) {
+          if (BRAND_COLORS.some((c) => c.value === b.accent)) setAccent(b.accent);
+          else setCustomAccent(b.accent);
+        }
+        if (b.captionStyle && (CAPTION_STYLES as readonly string[]).includes(b.captionStyle)) setCaptionStyle(b.captionStyle as CaptionStyle);
+        if (b.font && (FONT_KEYS as readonly string[]).includes(b.font)) setFont(b.font as FontKey);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);

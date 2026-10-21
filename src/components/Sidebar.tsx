@@ -7,11 +7,13 @@ import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Brand } from "@/components/Brand";
-import { DemoModeBadge } from "@/components/DemoModeBadge";
+import { UserMenu } from "@/components/UserMenu";
 import { isActivePath, navItems } from "@/components/nav";
 
 /** Desktop navigation: sits on the page background, only the active item is a white card. */
-export function Sidebar() {
+export type ShellUser = { email: string; name?: string; credits: number | null } | null;
+
+export function Sidebar({ user }: { user: ShellUser }) {
   const pathname = usePathname();
 
   return (
@@ -46,9 +48,9 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="space-y-3 px-1">
-        <DemoModeBadge />
-        <p className="text-[13px] leading-relaxed text-muted">{config.tagline}</p>
+      <div className="space-y-3">
+        {user && <UserMenu email={user.email} name={user.name} credits={user.credits} />}
+        <p className="px-1 text-[13px] leading-relaxed text-muted">{config.tagline}</p>
       </div>
     </aside>
   );

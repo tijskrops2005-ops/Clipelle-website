@@ -8,11 +8,12 @@ import { Menu, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Brand } from "@/components/Brand";
-import { DemoModeBadge } from "@/components/DemoModeBadge";
+import { UserMenu } from "@/components/UserMenu";
+import type { ShellUser } from "@/components/Sidebar";
 import { isActivePath, navItems } from "@/components/nav";
 
 /** Top bar with a hamburger that opens a left drawer holding the same links as the sidebar. */
-export function MobileNav() {
+export function MobileNav({ user }: { user: ShellUser }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -52,7 +53,7 @@ export function MobileNav() {
             <Brand />
           </div>
           <div className="flex items-center gap-2 pr-1">
-            <DemoModeBadge />
+            {user && <UserMenu email={user.email} name={user.name} credits={user.credits} compact />}
             <Link href="/new" aria-label="Create new video" className="focus-ring grid size-10 place-items-center rounded-full bg-accent text-white shadow-accent transition-colors duration-150 hover:bg-accent-hover">
               <Plus className="size-5" aria-hidden />
             </Link>

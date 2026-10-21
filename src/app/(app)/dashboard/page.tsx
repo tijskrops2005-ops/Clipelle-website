@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getUser } from "@/lib/auth";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -9,11 +10,13 @@ import { UsageCard } from "@/components/dashboard/UsageCard";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const user = await getUser();
+  const first = user?.name?.split(" ")[0];
   return (
     <div className="space-y-12 lg:space-y-16">
       <PageHeader
-        title="Welcome back"
+        title={first ? `Welcome back, ${first}` : "Welcome back"}
         description="Add a product once and get a finished 9:16 ad, or translate a video you own into other languages. Every finished video lands here."
         actions={
           <Button href="/new" variant="accent" size="lg">
