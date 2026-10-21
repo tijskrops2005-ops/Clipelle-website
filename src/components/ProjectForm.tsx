@@ -5,7 +5,6 @@ import { useRef, useState, type FormEvent } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { config } from "@/lib/config";
 import { createAdProject } from "@/lib/data/client";
-import { useHydrated } from "@/lib/useHydrated";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { PresenterPicker } from "@/components/PresenterPicker";
 import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, formatUsd, type AdLength, type PresenterEngine } from "@/lib/pricing";
@@ -102,8 +101,10 @@ export function ProjectForm() {
   /** Second step of the submit: the form is valid and the customer sees the cost once more before anything starts. */
   const [confirming, setConfirming] = useState(false);
   const submitLock = useRef(false);
-  // Before React is attached a click would submit the form natively and reload the page with nothing saved.
-  const hydrated = useHydrated();
+  // Before React is attached a click must not submit the form natively (that would reload the page with
+  // nothing saved): the visible buttons are type="button" and call requestSubmit(), and a hidden disabled
+  // submit button first in the form blocks implicit submission on Enter. So the button can stay readable.
+  const formRef = useRef<HTMLFormElement>(null);
   const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 1.5;
   // Estimate per combination of length and presenter quality; the budget applies to the combination.
   const estimateFor = (len: AdLength, eng: PresenterEngine = engine) => estimateAdCost({ seconds: len, clipModel: DEFAULTS.clipModel, engine: eng, speed: SPEEDS.find((s) => s.key === speed)?.value ?? 1 });
@@ -187,7 +188,8 @@ export function ProjectForm() {
   ];
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+    <form ref={formRef} onSubmit={onSubmit} noValidate className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+      <button type="submit" disabled tabIndex={-1} aria-hidden className="hidden" />
       <div className="min-w-0 space-y-6">
         <ServiceStatusBanner />
 
@@ -535,7 +537,7 @@ export function ProjectForm() {
               {config.demoMode ? " Demo mode: nothing is charged, the run is simulated." : " The real amount is shown on the project page afterwards."}
             </p>
             <div className="mt-4 flex flex-col gap-2">
-              <Button type="submit" variant="accent" size="lg" className="w-full" disabled={submitting || overBudget}>
+              <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || overBudget}>
                 {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
                 {submitting ? "Starting…" : `Start now · ${formatUsd(estimate.total)}`}
               </Button>
@@ -546,9 +548,9 @@ export function ProjectForm() {
           </div>
         ) : (
           <>
-            <Button type="submit" variant="accent" size="lg" className="w-full" disabled={!hydrated || submitting || overBudget}>
-              {!hydrated ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
-              {!hydrated ? "Loading…" : `Generate video · ${formatUsd(estimate.total)}`}
+            <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || overBudget}>
+              <Sparkles className="size-5" aria-hidden />
+              {`Generate video · ${formatUsd(estimate.total)}`}
             </Button>
             <Button
               href="/dashboard"
