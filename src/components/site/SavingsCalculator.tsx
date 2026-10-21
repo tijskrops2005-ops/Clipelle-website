@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { measured } from "@/content/measured";
 import { AD_LENGTHS, type AdLength, type PresenterEngine } from "@/lib/pricing";
-import { PLANS, TOPUPS, adCredits, formatPrice, translateCredits, type Plan } from "@/lib/plans";
+import { adCredits, formatPrice, translateCredits } from "@/lib/plans";
+import { planFit } from "@/lib/pricingHelpers";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 
 /**
@@ -12,19 +13,6 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
  * src/lib/plans.ts, the measured time per video from src/content/measured.ts, and the difference.
  * No market prices, no competitor names, nothing invented: the left column is the visitor's own input.
  */
-export type PlanFit = { credits: number; plan: Plan | null; packs: number; monthlyUsd: number; perVideoUsd: number; overScale: boolean };
-
-export function planFit(creditsPerMonth: number, videos: number): PlanFit {
-  const paid = PLANS.filter((p) => p.monthlyUsd > 0 && p.creditsPerMonth > 0);
-  const fits = paid.find((p) => p.creditsPerMonth >= creditsPerMonth);
-  if (fits) return { credits: creditsPerMonth, plan: fits, packs: 0, monthlyUsd: fits.monthlyUsd, perVideoUsd: videos ? fits.monthlyUsd / videos : 0, overScale: false };
-  const top = paid[paid.length - 1];
-  const biggest = TOPUPS[TOPUPS.length - 1];
-  const packs = Math.ceil((creditsPerMonth - top.creditsPerMonth) / biggest.credits);
-  const monthlyUsd = top.monthlyUsd + packs * biggest.usd;
-  return { credits: creditsPerMonth, plan: top, packs, monthlyUsd, perVideoUsd: videos ? monthlyUsd / videos : 0, overScale: true };
-}
-
 export function SavingsCalculator({ compact }: { compact?: boolean }) {
   const [currentCost, setCurrentCost] = useState(150);
   const [videos, setVideos] = useState(8);
