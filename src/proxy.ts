@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { isAdmin } from "@/lib/adminAccess";
 
 /**
  * Next.js proxy (middleware): refreshes the Supabase session cookie on every request and sends
@@ -42,6 +43,12 @@ export async function proxy(request: NextRequest) {
   });
   const { data } = await supabase.auth.getUser();
   const user = data.user;
+
+  // The admin area exists only for the addresses in ADMIN_EMAILS: everyone else, signed in or not,
+  // gets a bare 404 here, before any rendering (a notFound() inside the page would answer 200).
+  if ((path === "/admin" || path.startsWith("/admin/") || path.startsWith("/api/admin/")) && !isAdmin(user?.email)) {
+    return new NextResponse(null, { status: 404 });
+  }
 
   if (!user && PROTECTED.some((p) => path === p || path.startsWith(`${p}/`))) {
     const login = request.nextUrl.clone();

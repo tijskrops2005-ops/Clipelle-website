@@ -8,7 +8,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { DemoRunner } from "@/components/DemoRunner";
 import { StatusWatcher } from "@/components/StatusWatcher";
-import { isAdmin } from "@/lib/admin";
+import { isAdmin } from "@/lib/adminAccess";
 
 /**
  * Persistent frame for every app page. The sidebar sits on the page background;

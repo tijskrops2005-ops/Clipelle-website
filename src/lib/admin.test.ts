@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { isAdmin, periodStart } from "./admin";
+import { isAdmin } from "./adminAccess";
+import { periodStart } from "./admin";
 
 describe("admin access", () => {
   it("matches ADMIN_EMAILS case-insensitively and trimmed, nobody when empty", () => {

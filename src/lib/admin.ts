@@ -13,12 +13,8 @@ import { config } from "@/lib/config";
  * and Cancel for stuck projects. Anyone else gets a plain 404. Only aggregates and project
  * metadata are shown; never a customer's photos, scripts or videos.
  */
-export function adminEmails(): string[] {
-  return (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
-}
-export function isAdmin(email: string | null | undefined, list = adminEmails()) {
-  return Boolean(email) && list.includes(email!.trim().toLowerCase());
-}
+export { adminEmails, isAdmin } from "@/lib/adminAccess";
+import { isAdmin } from "@/lib/adminAccess";
 /** The signed-in admin, or a 404 for everyone else (the page does not exist for them). */
 export async function requireAdmin(): Promise<AppUser> {
   if (config.demoMode) notFound();
