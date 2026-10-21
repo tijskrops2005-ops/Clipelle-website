@@ -14,25 +14,142 @@ import { platformMenu, resourcesMenu, type MenuCard } from "./siteNav";
  * Pricing and About are plain links; right: Log in, Book a demo and the main button.
  * Below lg a hamburger opens a drawer with the same links as accordions.
  */
+type MenuKey = "platform" | "resources";
+const MENU_KEYS: MenuKey[] = ["platform", "resources"];
+/** Hover intent: a short pause before opening and before closing, so moving from the item to the panel never flickers. */
+const HOVER_OPEN_MS = 140;
+const HOVER_CLOSE_MS = 180;
+
 export function SiteHeader() {
   const pathname = usePathname();
-  const [open, setOpen] = useState<"platform" | "resources" | null>(null);
+  const [open, setOpen] = useState<MenuKey | null>(null);
   const [drawer, setDrawer] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef<Record<MenuKey, HTMLButtonElement | null>>({ platform: null, resources: null });
+  const openTimer = useRef<number | null>(null);
+  /** Set by the keyboard: once the panel is in the DOM, move focus to its first card. */
+  const focusFirstOnOpen = useRef(false);
+  const closeTimer = useRef<number | null>(null);
+  /** Hover opens the menus only where a real pointer exists (mouse or trackpad); touch and the drawer use taps. */
+  const [hoverCapable, setHoverCapable] = useState(false);
+  const panelId = useId();
 
   const closeAll = () => {
+    clearTimers();
     setOpen(null);
     setDrawer(false);
   };
 
-  // Close menus on outside click and on Escape; links close them on click.
+  function clearTimers() {
+    if (openTimer.current !== null) window.clearTimeout(openTimer.current);
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+    openTimer.current = null;
+    closeTimer.current = null;
+  }
+
+  /** Pointer arrives on an item: cancel a pending close; switch at once when another menu is open, else open after a short pause. */
+  function hoverOpen(key: MenuKey) {
+    if (!hoverCapable) return;
+    clearTimers();
+    if (open && open !== key) {
+      setOpen(key);
+      return;
+    }
+    if (open === key) return;
+    openTimer.current = window.setTimeout(() => setOpen(key), HOVER_OPEN_MS);
+  }
+
+  /** Pointer leaves the item or the panel: close after a short pause unless it arrives on the other part in time. */
+  function hoverClose() {
+    if (!hoverCapable) return;
+    clearTimers();
+    closeTimer.current = window.setTimeout(() => setOpen(null), HOVER_CLOSE_MS);
+  }
+
+  function hoverStay() {
+    if (!hoverCapable) return;
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+    closeTimer.current = null;
+  }
+
+  /** Focus leaves the whole menu area (Tab out): close. */
+  function onNavBlur(e: React.FocusEvent) {
+    const next = e.relatedTarget as Node | null;
+    if (next && (navRef.current?.contains(next) || panelRef.current?.contains(next))) return;
+    setOpen(null);
+  }
+
+  const panelLinks = () => Array.from(panelRef.current?.querySelectorAll<HTMLAnchorElement>("a[href]") ?? []);
+  /** The first focusable after the two menu buttons (the Pricing link), for Tab out of the panel. */
+  const afterMenus = () => navRef.current?.nextElementSibling as HTMLElement | null;
+
+  /** Arrow keys walk the cards; Home/End jump; Tab past the last card (or Shift+Tab before the first) leaves and closes. */
+  function onPanelKey(e: React.KeyboardEvent) {
+    const links = panelLinks();
+    const i = links.indexOf(document.activeElement as HTMLAnchorElement);
+    const go = (n: number) => {
+      e.preventDefault();
+      links[(n + links.length) % links.length]?.focus();
+    };
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") go(i + 1);
+    else if (e.key === "ArrowUp" || e.key === "ArrowLeft") go(i - 1);
+    else if (e.key === "Home") go(0);
+    else if (e.key === "End") go(links.length - 1);
+    else if (e.key === "Tab" && !e.shiftKey && i === links.length - 1) {
+      e.preventDefault();
+      const cur = open;
+      setOpen(null);
+      (afterMenus() ?? (cur && buttonRefs.current[cur]))?.focus();
+    } else if (e.key === "Tab" && e.shiftKey && i === 0) {
+      e.preventDefault();
+      const cur = open;
+      setOpen(null);
+      if (cur) buttonRefs.current[cur]?.focus();
+    }
+  }
+
+  /** On the button: ArrowDown opens and moves into the panel; Tab on an open menu enters it; Enter and Space toggle natively (click). */
+  function onButtonKey(key: MenuKey, e: React.KeyboardEvent) {
+    if (e.key === "ArrowDown" || (e.key === "Tab" && !e.shiftKey && open === key)) {
+      e.preventDefault();
+      clearTimers();
+      focusFirstOnOpen.current = true;
+      if (open === key) panelLinks()[0]?.focus();
+      else setOpen(key);
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      e.preventDefault();
+      const next = MENU_KEYS[(MENU_KEYS.indexOf(key) + (e.key === "ArrowRight" ? 1 : -1) + MENU_KEYS.length) % MENU_KEYS.length];
+      buttonRefs.current[next]?.focus();
+      if (open) setOpen(next);
+    }
+  }
+
+  useEffect(() => {
+    if (open && focusFirstOnOpen.current) panelRef.current?.querySelector<HTMLAnchorElement>("a[href]")?.focus();
+    focusFirstOnOpen.current = false;
+  }, [open]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const apply = () => setHoverCapable(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  // Close menus on outside click and on Escape (focus back on the button); links close them on click.
   useEffect(() => {
     function onDoc(e: MouseEvent) {
       if (barRef.current && !barRef.current.contains(e.target as Node)) setOpen(null);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        setOpen(null);
+        setOpen((cur) => {
+          if (cur) buttonRefs.current[cur]?.focus();
+          return null;
+        });
         setDrawer(false);
       }
     }
@@ -41,6 +158,7 @@ export function SiteHeader() {
     return () => {
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
+      clearTimers();
     };
   }, []);
   useEffect(() => {
@@ -67,8 +185,26 @@ export function SiteHeader() {
           </div>
 
           <nav aria-label="Site" className="hidden items-center gap-1 lg:flex">
-            <MenuButton label="Platform" open={open === "platform"} onToggle={() => setOpen(open === "platform" ? null : "platform")} />
-            <MenuButton label="Resources" open={open === "resources"} onToggle={() => setOpen(open === "resources" ? null : "resources")} />
+            <div ref={navRef} className="flex items-center gap-1" onBlur={onNavBlur}>
+              {MENU_KEYS.map((key) => (
+                <MenuButton
+                  key={key}
+                  ref={(el) => {
+                    buttonRefs.current[key] = el;
+                  }}
+                  label={key === "platform" ? "Platform" : "Resources"}
+                  open={open === key}
+                  controls={panelId}
+                  onToggle={() => {
+                    clearTimers();
+                    setOpen(open === key ? null : key);
+                  }}
+                  onKeyDown={(e) => onButtonKey(key, e)}
+                  onPointerEnter={(e) => e.pointerType === "mouse" && hoverOpen(key)}
+                  onPointerLeave={(e) => e.pointerType === "mouse" && hoverClose()}
+                />
+              ))}
+            </div>
             <NavLink href="/pricing" active={pathname === "/pricing"}>Pricing</NavLink>
             <NavLink href="/about" active={pathname === "/about"}>About</NavLink>
           </nav>
@@ -86,7 +222,18 @@ export function SiteHeader() {
 
         {/* Card menus */}
         {open && (
-          <div className="fold-in absolute left-1/2 top-[calc(100%+10px)] z-50 w-[min(760px,calc(100vw-2rem))] -translate-x-1/2 rounded-card bg-surface p-3 shadow-card-hover" role="region" aria-label={open === "platform" ? "Platform" : "Resources"}>
+          <div
+            ref={panelRef}
+            id={panelId}
+            // The pseudo-element bridges the 10 px gap under the bar, so the pointer never leaves the menu on its way down.
+            className="fold-in absolute left-1/2 top-[calc(100%+10px)] z-50 w-[min(760px,calc(100vw-2rem))] -translate-x-1/2 rounded-card bg-surface p-3 shadow-card-hover before:absolute before:inset-x-0 before:-top-3 before:h-3 before:content-['']"
+            role="region"
+            aria-label={open === "platform" ? "Platform" : "Resources"}
+            onPointerEnter={(e) => e.pointerType === "mouse" && hoverStay()}
+            onPointerLeave={(e) => e.pointerType === "mouse" && hoverClose()}
+            onKeyDown={onPanelKey}
+            onBlur={onNavBlur}
+          >
             <ul className="grid gap-2 sm:grid-cols-3">
               {(open === "platform" ? platformMenu : resourcesMenu).map((c) => (
                 <li key={c.href}>
@@ -127,9 +274,31 @@ export function SiteHeader() {
   );
 }
 
-function MenuButton({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
+type MenuButtonProps = {
+  label: string;
+  open: boolean;
+  controls: string;
+  onToggle: () => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
+  onPointerEnter: (e: React.PointerEvent<HTMLButtonElement>) => void;
+  onPointerLeave: (e: React.PointerEvent<HTMLButtonElement>) => void;
+};
+
+/** Click, Enter and Space toggle; hover opens on pointer devices (handled by the parent); aria-expanded tells the state. */
+function MenuButton({ ref, label, open, controls, onToggle, onKeyDown, onPointerEnter, onPointerLeave }: MenuButtonProps & { ref: React.Ref<HTMLButtonElement> }) {
   return (
-    <button type="button" aria-expanded={open} aria-haspopup="true" onClick={onToggle} className={cn("focus-ring inline-flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-150", open ? "bg-ink/5 text-ink" : "text-muted hover:text-ink")}>
+    <button
+      ref={ref}
+      type="button"
+      aria-expanded={open}
+      aria-haspopup="true"
+      aria-controls={open ? controls : undefined}
+      onClick={onToggle}
+      onKeyDown={onKeyDown}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+      className={cn("focus-ring inline-flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-150", open ? "bg-ink/5 text-ink" : "text-muted hover:text-ink")}
+    >
       {label}
       <ChevronDown className={cn("size-4 transition-transform duration-200", open && "rotate-180")} aria-hidden />
     </button>
