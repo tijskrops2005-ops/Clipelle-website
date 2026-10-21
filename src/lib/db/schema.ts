@@ -250,6 +250,26 @@ export const webhookEvents = pgTable(
   (t) => [uniqueIndex("webhook_events_dedupe_idx").on(t.provider, t.externalId, t.eventType)],
 ).enableRLS();
 
+/** Book-a-demo and contact requests from the public site. Raw addresses are never stored (ip is hashed). */
+export const demoRequests = pgTable(
+  "demo_requests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    kind: text("kind").notNull(), // demo | contact
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    company: text("company"),
+    goal: text("goal"),
+    message: text("message"),
+    ipHash: text("ip_hash"),
+    userAgent: text("user_agent"),
+    status: text("status").default("new").notNull(), // new | answered | spam
+    emailed: text("emailed"), // "sent" | "not_configured" | provider error
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("demo_requests_created_idx").on(t.createdAt), index("demo_requests_email_idx").on(t.email)],
+).enableRLS();
+
 /* ---------- inferred row types ---------- */
 
 export type ProjectRow = typeof projects.$inferSelect;
@@ -258,3 +278,4 @@ export type AssetRow = typeof assets.$inferSelect;
 export type TranslationRow = typeof translations.$inferSelect;
 export type CostEntryRow = typeof costEntries.$inferSelect;
 export type WebhookEventRow = typeof webhookEvents.$inferSelect;
+export type DemoRequestRow = typeof demoRequests.$inferSelect;

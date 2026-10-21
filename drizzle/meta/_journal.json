@@ -43,6 +43,13 @@
       "when": 1792505719454,
       "tag": "0005_petite_deadpool",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792565533650,
+      "tag": "0006_big_mandrill",
+      "breakpoints": true
     }
   ]
 }

@@ -185,3 +185,56 @@
   0% { transform: translateX(-100%); }
   100% { transform: translateX(300%); }
 }
+
+/* ---------- marketing site motion: reveals, marquee, floating phone; all off under "reduce motion" ---------- */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes caption-pop {
+  0% { opacity: 0; transform: translateY(4px) scale(0.98); }
+  12% { opacity: 1; transform: translateY(0) scale(1); }
+  88% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 600ms var(--ease-soft), transform 600ms var(--ease-soft);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 40s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+.float-soft {
+  animation: float-soft 6s ease-in-out infinite;
+}
+.caption-pop {
+  animation: caption-pop 2.4s var(--ease-soft) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .marquee-track,
+  .float-soft,
+  .caption-pop {
+    animation: none;
+  }
+}
