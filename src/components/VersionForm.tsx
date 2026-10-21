@@ -21,7 +21,7 @@ import { ProjectForm, type ProjectFormInitial } from "@/components/ProjectForm";
  * the customer changes only what they want. The result is a new project through the same
  * createAdProject route; the earlier ad is never touched.
  */
-export function VersionForm({ fromId }: { fromId: string }) {
+export function VersionForm({ fromId, variations }: { fromId: string; variations?: boolean }) {
   const project = useProject(fromId);
   const all = useProjects();
   const ready = useProjectsReady();
@@ -74,6 +74,7 @@ export function VersionForm({ fromId }: { fromId: string }) {
           logoImages: logo ? [{ id: "version-logo", file: logo, previewUrl: URL.createObjectURL(logo) }] : [],
           reviewScript: project.reviewScript,
           format: project.format && isFormatKey(project.format) ? project.format : undefined,
+          variations,
         },
       });
     })();
@@ -82,7 +83,7 @@ export function VersionForm({ fromId }: { fromId: string }) {
     };
     // The earlier ad is read once; later polls must not reset what the customer is editing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project?.id, initial]);
+  }, [project?.id, initial, variations]);
 
   if (!project || project.workflow !== "ad") {
     if (!ready) return <FormSkeleton />;

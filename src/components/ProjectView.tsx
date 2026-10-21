@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Copy, Download, FolderOpen, Languages, Plus } from "lucide-react";
+import { ArrowLeft, Copy, Download, FolderOpen, Languages, LayoutGrid, Plus } from "lucide-react";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { projectDurationMs, projectEstimateUsd } from "@/lib/projectMeta";
 import { formatSeconds } from "@/components/pipeline/PipelineStep";
@@ -57,13 +57,21 @@ export function ProjectView({ id }: { id: string }) {
     <div className="space-y-10">
       <PageHeader
         eyebrow={
-          <Link
-            href="/dashboard"
-            className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink"
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-            Dashboard
-          </Link>
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <Link
+              href="/dashboard"
+              className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink"
+            >
+              <ArrowLeft className="size-4" aria-hidden />
+              Dashboard
+            </Link>
+            {project.batchId && (
+              <Link href={`/batches/${project.batchId}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
+                <LayoutGrid className="size-4" aria-hidden />
+                Part of a batch of variations
+              </Link>
+            )}
+          </span>
         }
         title={project.name}
         badge={<StatusBadge status={project.status} className="translate-y-1" />}
@@ -160,6 +168,10 @@ function ResultHero({ project }: { project: AdProject }) {
               <Button href={`/new/translate?from=${project.id}`} variant="secondary" size="lg">
                 <Languages className="size-4" aria-hidden />
                 Localize this ad
+              </Button>
+              <Button href={`/new/ad?from=${project.id}&variations=1`} variant="secondary" size="lg">
+                <LayoutGrid className="size-4" aria-hidden />
+                Make variations
               </Button>
               <Button href="/dashboard" variant="ghost" size="lg">
                 <ArrowLeft className="size-4" aria-hidden />

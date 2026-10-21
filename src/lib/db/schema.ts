@@ -84,6 +84,8 @@ export type AdInput = {
   reviewScript?: boolean;
   /** Format key from the library; informational (the format only filled direction and tone). */
   format?: string;
+  /** Hook style of a batch variation; informational (it only filled the direction). */
+  hook?: string;
   productName: string;
   productUrl?: string;
   description: string;
@@ -145,9 +147,26 @@ export const projects = pgTable(
     parentId: uuid("parent_id"),
     /** 1 for the first ad of a group, counting up per "Make another version". */
     version: integer("version").default(1).notNull(),
+    /** "Make variations": the batch this project is part of. */
+    batchId: uuid("batch_id"),
     ...timestamps,
   },
-  (t) => [index("projects_owner_created_idx").on(t.ownerId, t.createdAt), index("projects_status_idx").on(t.status), index("projects_parent_idx").on(t.parentId)],
+  (t) => [index("projects_owner_created_idx").on(t.ownerId, t.createdAt), index("projects_status_idx").on(t.status), index("projects_parent_idx").on(t.parentId), index("projects_batch_idx").on(t.batchId)],
+).enableRLS();
+
+/** "Make variations" (2026-10-21): 2–5 variants of one product, each its own project and run. */
+export const projectBatches = pgTable(
+  "project_batches",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    ownerId: text("owner_id").notNull(),
+    workspaceId: uuid("workspace_id").notNull(),
+    name: text("name").notNull(),
+    /** processing | completed | partial (some failed) | failed; refreshed when a variant finishes. */
+    status: text("status").default("processing").notNull(),
+    ...timestamps,
+  },
+  (t) => [index("project_batches_workspace_idx").on(t.workspaceId, t.createdAt)],
 ).enableRLS();
 
 export const steps = pgTable(

@@ -81,6 +81,7 @@ export async function failStep(projectId: string, key: string, error: unknown): 
     .where(and(eq(steps.projectId, projectId), eq(steps.key, key)));
   await db().update(projects).set({ status: "failed", updatedAt: new Date() }).where(eq(projects.id, projectId));
   await refundCredits(projectId);
+  await afterProjectEnd(projectId);
   throw new NonRetriableError(`${key}: ${message}`, { cause: error instanceof Error ? error : undefined });
 }
 
@@ -213,6 +214,23 @@ export async function downloadAsset(asset: AssetRow): Promise<Uint8Array> {
 export async function setProjectFinal(projectId: string, assetId: string) {
   await db().update(projects).set({ status: "completed", finalAssetId: assetId, updatedAt: new Date() }).where(eq(projects.id, projectId));
   await settleProjectCredits(projectId);
+  await afterProjectEnd(projectId);
+}
+
+/**
+ * After a project reaches completed or failed (2026-10-21): keep its batch's status current.
+ * Never throws: a bookkeeping problem must not undo a finished video.
+ */
+export async function afterProjectEnd(projectId: string) {
+  try {
+    const [p] = await db().select({ batchId: projects.batchId }).from(projects).where(eq(projects.id, projectId)).limit(1);
+    if (p?.batchId) {
+      const { refreshBatchStatus } = await import("@/lib/batches");
+      await refreshBatchStatus(p.batchId);
+    }
+  } catch (error) {
+    console.error("[batch] status refresh failed", error);
+  }
 }
 
 /* ---------- credits (added 2026-10-21): settle what was really used, refund a failed project ---------- */

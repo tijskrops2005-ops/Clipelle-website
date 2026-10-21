@@ -120,6 +120,46 @@ export const FORMATS: AdFormat[] = [
 
 export const FORMAT_KEYS = FORMATS.map((f) => f.key) as [FormatKey, ...FormatKey[]];
 
+/**
+ * Hook styles for "Make variations": the same product with a different first line. Like a
+ * format, a hook style only fills the Direction field (as data for the script step).
+ */
+export type HookKey = "question" | "curiosity" | "result" | "contrast" | "list" | "announcement";
+export type HookStyle = { key: HookKey; name: string; blurb: string; direction: string; nl: { name: string; blurb: string } };
+export const HOOK_STYLES: HookStyle[] = [
+  { key: "question", name: "Question", blurb: "Opens with the viewer's own frustration as a question.", direction: "Open with a question the viewer would ask about this problem, then answer it with the product.", nl: { name: "Vraag", blurb: "Opent met de ergernis van de kijker als vraag." } },
+  { key: "curiosity", name: "Curiosity", blurb: "Opens with something unexpected that makes you wait for the explanation.", direction: "Open with one surprising, true detail about the product and explain it in the next line.", nl: { name: "Nieuwsgierigheid", blurb: "Opent met iets onverwachts waardoor je op de uitleg wacht." } },
+  { key: "result", name: "Result first", blurb: "Opens with what changed, then how.", direction: "Open with the result the product gives, stated plainly, then how it gets there.", nl: { name: "Resultaat eerst", blurb: "Opent met wat er veranderde, daarna hoe." } },
+  { key: "contrast", name: "Contrast", blurb: "Opens with the before, then flips to the after.", direction: "Open with the situation before the product in one line, then flip to the situation with it.", nl: { name: "Contrast", blurb: "Opent met het 'voor', en kantelt dan naar het 'na'." } },
+  { key: "list", name: "Numbered list", blurb: "Opens by promising a short list, then delivers it.", direction: "Open by promising three short points, then give them in one sentence each.", nl: { name: "Genummerde lijst", blurb: "Opent met de belofte van een korte lijst en levert die." } },
+  { key: "announcement", name: "Announcement", blurb: "Opens like news: what is new and why it matters now.", direction: "Open like an announcement: what is new about this product and why it matters today.", nl: { name: "Aankondiging", blurb: "Opent als nieuws: wat is er nieuw en waarom nu." } },
+];
+export const HOOK_KEYS = HOOK_STYLES.map((h) => h.key) as [HookKey, ...HookKey[]];
+export function hookByKey(key: string | undefined | null): HookStyle | undefined {
+  return key ? HOOK_STYLES.find((h) => h.key === key) : undefined;
+}
+export function isHookKey(value: string): value is HookKey {
+  return HOOK_STYLES.some((h) => h.key === value);
+}
+
+/** One variant of a batch: a format or a hook style (never both). */
+export type Variant = { format: FormatKey } | { hook: HookKey };
+export const MIN_BATCH_VARIANTS = 2;
+export const MAX_BATCH_VARIANTS = 5;
+export function variantLabel(v: Variant) {
+  return "format" in v ? (formatByKey(v.format)?.name ?? v.format) : `${hookByKey(v.hook)?.name ?? v.hook} hook`;
+}
+/** The Direction and tone a variant gives the script, on top of the seller's own direction. */
+export function variantFields(v: Variant, ownDirection: string, ownTone: AdTone, maxChars: number): { direction: string; tone: AdTone; format?: FormatKey; hook?: HookKey } {
+  const own = ownDirection.trim();
+  if ("format" in v) {
+    const f = formatByKey(v.format)!;
+    return { direction: (own ? `${own} ${f.direction}` : f.direction).slice(0, maxChars), tone: f.tone, format: v.format };
+  }
+  const h = hookByKey(v.hook)!;
+  return { direction: (own ? `${own} ${h.direction}` : h.direction).slice(0, maxChars), tone: ownTone, hook: v.hook };
+}
+
 export function formatByKey(key: string | undefined | null): AdFormat | undefined {
   return key ? FORMATS.find((f) => f.key === key) : undefined;
 }

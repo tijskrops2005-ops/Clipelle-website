@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import type { Project } from "@/lib/types";
+import type { Batch, Project } from "@/lib/types";
 import { mockProjects } from "./projects";
 
 /**
@@ -100,3 +100,43 @@ export function updateProject(id: string, patch: (p: Project) => Project) {
   saveToStorage();
   emit();
 }
+
+/* ---------- batches ("Make variations"), demo only: the grouping lives next to the projects ---------- */
+
+const BATCH_KEY = "reelay.demo.batches.v1";
+let batches: Batch[] = [];
+let batchesLoaded = false;
+
+function loadBatches() {
+  if (batchesLoaded || typeof window === "undefined") return;
+  batchesLoaded = true;
+  try {
+    const raw = window.localStorage.getItem(BATCH_KEY);
+    if (raw) batches = JSON.parse(raw) as Batch[];
+  } catch {
+    /* keep empty */
+  }
+}
+
+export function addBatch(batch: Batch) {
+  loadBatches();
+  batches = [batch, ...batches];
+  try {
+    window.localStorage.setItem(BATCH_KEY, JSON.stringify(batches));
+  } catch {
+    /* in memory only */
+  }
+  emit();
+  return batch;
+}
+
+export function getBatchesSnapshot() {
+  loadBatches();
+  return batches;
+}
+
+/** Reactive list of demo batches (status is derived from the projects by the caller). */
+export function useBatches(): Batch[] {
+  return useSyncExternalStore(subscribe, () => (loadBatches(), batches), () => emptyBatches);
+}
+const emptyBatches: Batch[] = [];

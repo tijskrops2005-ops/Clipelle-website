@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { config } from "@/lib/config";
-import type { AdProject, LanguageCode, PresenterPage, Project, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
+import type { AdProject, Batch, LanguageCode, PresenterPage, Project, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
+import { variantFields, variantLabel, type Variant } from "@/content/formats";
+import { DIRECTION_MAX_CHARS } from "@/lib/adOptions";
+import { batchStatusOf } from "@/lib/batchStatus";
 import { mockPresenterPage } from "@/lib/mock/presenters";
 import type { AdTone } from "@/lib/adOptions";
 import { mockVoiceOptions } from "@/lib/mock/voices";
@@ -141,6 +144,12 @@ export type AdProjectDraft = {
   parentId?: string;
   /** Format from the library; the form already wrote its direction and tone into the fields. */
   format?: string;
+  /** Hook style of a batch variation (set by createAdBatch, never by the form). */
+  hook?: string;
+  /** The batch a variation belongs to (set by createAdBatch). */
+  batchId?: string;
+  /** Demo only: staggers the ids of variations created in the same millisecond. */
+  demoOffsetMs?: number;
   name: string;
   seconds: number;
   engine: "avatar_iii" | "avatar_iv";
@@ -164,11 +173,13 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
     const now = new Date().toISOString();
     const lineage = demoVersionLineage(draft.parentId);
     const project: AdProject = {
-      id: `prj_${Date.now().toString(36)}`,
+      id: `prj_${(Date.now() + (draft.demoOffsetMs ?? 0)).toString(36)}`,
       workflow: "ad",
       name: draft.name,
       parentId: lineage.rootId,
       version: lineage.version,
+      batchId: draft.batchId,
+      hook: draft.hook,
       seconds: draft.seconds,
       engine: draft.engine,
       lookId: draft.lookId,
@@ -203,7 +214,7 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
   const { background, brand, images, ...rest } = draft;
   const body = {
     workflow: "ad",
-    ...rest,
+    ...withoutKeys(rest, ["batchId", "demoOffsetMs"]),
     backgroundColor: background?.type === "color" ? background.value : undefined,
     brand: brand ? { accent: brand.accent, captionStyle: brand.captionStyle, font: brand.font } : undefined,
   };
@@ -214,6 +225,59 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
   await startWithClearMessage(id);
   await refresh();
   return { id };
+}
+
+/* ---------- "Make variations": 2–5 variants of one product, each its own project ---------- */
+
+/** Demo: one mock project per variant plus a batch in the store. Database: /api/batches, uploads per project, one start. */
+export async function createAdBatch(draft: AdProjectDraft, variants: Variant[]): Promise<{ id: string }> {
+  if (config.demoMode) {
+    const batchId = `bat_${Date.now().toString(36)}`;
+    const ids: string[] = [];
+    for (const [i, variant] of variants.entries()) {
+      const fields = variantFields(variant, draft.direction ?? "", draft.tone, DIRECTION_MAX_CHARS);
+      const { id } = await createAdProject({ ...draft, name: `${draft.name} · ${variantLabel(variant)}`, direction: fields.direction, tone: fields.tone, format: fields.format, hook: fields.hook, batchId, demoOffsetMs: i });
+      ids.push(id);
+    }
+    mockStore.addBatch({ id: batchId, name: draft.name, status: "processing", createdAt: new Date().toISOString(), projectIds: ids });
+    return { id: batchId };
+  }
+  const { background, brand, images, ...rest } = draft;
+  const body = { workflow: "ad", ...withoutKeys(rest, ["format", "hook", "batchId", "demoOffsetMs"]), backgroundColor: background?.type === "color" ? background.value : undefined, brand: brand ? { accent: brand.accent, captionStyle: brand.captionStyle, font: brand.font } : undefined, variants };
+  const { id, projectIds } = await api<{ id: string; projectIds: string[] }>("/api/batches", { method: "POST", body: JSON.stringify(body) });
+  for (const projectId of projectIds) {
+    for (const file of images) await uploadAndAttach(projectId, "image", file);
+    if (background?.type === "image") await uploadAndAttach(projectId, "background", background.file);
+    if (brand?.logo) await uploadAndAttach(projectId, "logo", brand.logo);
+  }
+  try {
+    await api(`/api/batches/${id}/start`, { method: "POST" });
+  } catch (error) {
+    if (error instanceof TypeError) throw new Error("The app server could not be reached. Is `npm run dev` still running? Then try again.");
+    throw error;
+  }
+  await refresh();
+  return { id };
+}
+
+/** A batch with its live status, derived from the projects list (demo and database alike). */
+export function useBatch(id: string): { batch: Batch | undefined; projects: AdProject[]; ready: boolean } {
+  const all = useProjects();
+  const ready = useProjectsReady();
+  const demoBatches = mockStore.useBatches();
+  const [remote, setRemote] = useState<Batch | null | undefined>(undefined);
+  useEffect(() => {
+    if (config.demoMode) return;
+    let alive = true;
+    api<{ batch: Batch }>(`/api/batches/${id}`).then((r) => alive && setRemote(r.batch)).catch(() => alive && setRemote(null));
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+  const members = all.filter((p): p is AdProject => p.workflow === "ad" && p.batchId === id);
+  const meta = config.demoMode ? demoBatches.find((b) => b.id === id) : remote ?? undefined;
+  if (!meta) return { batch: undefined, projects: members, ready: config.demoMode ? ready : remote !== undefined };
+  return { batch: { ...meta, status: batchStatusOf(members.map((p) => p.status)), projectIds: members.length ? members.map((p) => p.id) : meta.projectIds }, projects: members, ready: true };
 }
 
 export type TranslateProjectDraft = {
@@ -270,6 +334,11 @@ export async function createTranslateProject(draft: TranslateProjectDraft): Prom
   await startWithClearMessage(id);
   await refresh();
   return { id };
+}
+
+/** Client-only keys never travel to the API. */
+function withoutKeys<T extends object>(obj: T, keys: (keyof T)[]): Partial<T> {
+  return Object.fromEntries(Object.entries(obj).filter(([k]) => !keys.includes(k as keyof T))) as Partial<T>;
 }
 
 /** Demo twin of the server's version numbering: point at the root and take the next number. */

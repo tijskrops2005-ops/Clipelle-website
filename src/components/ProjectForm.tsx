@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { config } from "@/lib/config";
-import { createAdProject } from "@/lib/data/client";
-import { fetchBrandLogoFile, getBrandDefaults } from "@/lib/data/settingsClient";
+import { createAdBatch, createAdProject } from "@/lib/data/client";
+import { fetchBrandLogoFile, getBrandDefaults, getProfile } from "@/lib/data/settingsClient";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { PresenterPicker } from "@/components/PresenterPicker";
 import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, formatUsd, type AdLength, type PresenterEngine } from "@/lib/pricing";
@@ -41,6 +41,8 @@ import {
 import { controlClass, controlStateClass } from "@/components/ui/Field";
 import { FormatPicker } from "@/components/FormatPicker";
 import { formatByKey, type FormatKey } from "@/content/formats";
+import { VariationsPicker } from "@/components/VariationsPicker";
+import { MAX_BATCH_VARIANTS, MIN_BATCH_VARIANTS, variantLabel, type Variant } from "@/content/formats";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
@@ -91,6 +93,8 @@ export type ProjectFormInitial = {
     logoImages: UploadedImage[];
     reviewScript: boolean;
     format: FormatKey;
+    /** Open with "Make variations" switched on. */
+    variations: boolean;
   }>;
 };
 
@@ -130,6 +134,20 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
   const [reviewScript, setReviewScript] = useState(preset.reviewScript ?? false);
   const [format, setFormat] = useState<FormatKey | undefined>(preset.format);
   const parentId = initial?.parentId;
+  /** "Make variations": 2–5 variants of this product, each its own project. Not on the free plan. */
+  const [variations, setVariations] = useState<boolean>(preset.variations ?? false);
+  const [variants, setVariants] = useState<Variant[]>([]);
+  const [planKey, setPlanKey] = useState<string | null>(config.demoMode ? "demo" : null);
+  useEffect(() => {
+    if (config.demoMode) return;
+    let alive = true;
+    getProfile().then((p) => alive && setPlanKey(p.planKey)).catch(() => alive && setPlanKey("free"));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const variationsAllowed = planKey !== "free";
+  const batchOn = variations && variationsAllowed;
 
   /** A format writes its direction into the Direction field and picks the tone; both stay visible and editable. */
   function chooseFormat(next: FormatKey | undefined) {
@@ -213,6 +231,11 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
       setConfirming(false);
       return;
     }
+    if (batchOn && (variants.length < MIN_BATCH_VARIANTS || variants.length > MAX_BATCH_VARIANTS)) {
+      setErrors({ form: `Pick ${MIN_BATCH_VARIANTS} to ${MAX_BATCH_VARIANTS} variations, or switch variations off.` });
+      setConfirming(false);
+      return;
+    }
     if (!confirming) {
       setConfirming(true);
       return;
@@ -222,8 +245,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
     setSubmitting(true);
 
     try {
-      const { id } = await createAdProject(
-        buildAdDraft({
+      const draft = buildAdDraft({
           values,
           seconds,
           engine,
@@ -244,8 +266,14 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
           images: images.map((img) => img.file),
           parentId,
           format,
-        }),
-      );
+        });
+      if (batchOn) {
+        const { id } = await createAdBatch(draft, variants);
+        images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+        router.push(`/batches/${id}`);
+        return;
+      }
+      const { id } = await createAdProject(draft);
       images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
       router.push(`/projects/${id}`);
     } catch (error) {
@@ -262,6 +290,9 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
   }
 
   const credits = adCredits({ seconds, engine, speed: SPEEDS.find((s) => s.key === speed)?.value ?? 1 });
+  const variantCount = batchOn ? Math.max(variants.length, 1) : 1;
+  const totalCredits = credits * variantCount;
+  const totalUsd = estimate.total * variantCount;
   const summaryRows = [
     { label: "Length", value: `${seconds} s · 9:16` },
     { label: "Credits", value: `${credits} credits` },
@@ -269,7 +300,8 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
     { label: "Language", value: `${AD_LANGUAGES[language].label}${voiceAccent ? ` · ${voiceOptions?.accents.find((a) => a.key === voiceAccent)?.label ?? voiceAccent}` : ""}` },
     { label: "Voice speed", value: SPEEDS.find((s) => s.key === speed)?.label ?? "Normal" },
     { label: "Tone", value: TONE_META[tone].label },
-    ...(format ? [{ label: "Format", value: formatByKey(format)?.name ?? format }] : []),
+    ...(format && !batchOn ? [{ label: "Format", value: formatByKey(format)?.name ?? format }] : []),
+    ...(batchOn ? [{ label: "Variations", value: variants.length ? `${variants.length}: ${variants.map(variantLabel).join(", ")}` : "Pick 2 to 5 below", muted: variants.length === 0 }] : []),
     { label: "Script", value: values.script.trim() ? "Your own" : reviewScript ? "Written, you review first" : "Written for you", muted: true },
     ...(parentId ? [{ label: "Version", value: "New version; the earlier ad stays as it is", muted: true }] : []),
   ];
@@ -510,10 +542,27 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
             />
           </Field>
 
-          <fieldset>
-            <legend className="mb-1.5 text-sm font-medium text-ink">Format</legend>
-            <FormatPicker value={format} onChange={chooseFormat} disabled={submitting} />
-          </fieldset>
+          {!batchOn && (
+            <fieldset>
+              <legend className="mb-1.5 text-sm font-medium text-ink">Format</legend>
+              <FormatPicker value={format} onChange={chooseFormat} disabled={submitting} />
+            </fieldset>
+          )}
+
+          <VariationsPicker
+            on={variations}
+            allowed={variationsAllowed}
+            planLoaded={planKey !== null}
+            variants={variants}
+            onToggle={(next) => {
+              setVariations(next);
+              if (next && format) chooseFormat(undefined);
+            }}
+            onChange={setVariants}
+            disabled={submitting}
+            creditsEach={credits}
+            usdEach={estimate.total}
+          />
 
           <fieldset>
             <legend className="mb-1.5 text-sm font-medium text-ink">Tone</legend>
@@ -607,7 +656,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
       {/* The fixed summary: what was chosen, what it costs, the one button */}
       <SummaryPanel
         rows={summaryRows}
-        total={{ label: `Estimated cost · ${credits} credits`, value: formatUsd(estimate.total), tone: overBudget ? "danger" : "neutral" }}
+        total={{ label: batchOn ? `${variantCount} variations · ${totalCredits} credits` : `Estimated cost · ${credits} credits`, value: formatUsd(totalUsd), tone: overBudget ? "danger" : "neutral" }}
         footnote={
           config.demoMode
             ? "Demo mode: this starts a simulated run. No real video is generated yet."
@@ -623,15 +672,17 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
         )}
         {confirming ? (
           <div className="fold-in rounded-panel border border-ink bg-surface p-4" role="group" aria-labelledby="confirm-title">
-            <p id="confirm-title" className="text-[15px] font-semibold text-ink">Start this video?</p>
+            <p id="confirm-title" className="text-[15px] font-semibold text-ink">{batchOn ? `Start ${variants.length} variations?` : "Start this video?"}</p>
             <p className="mt-1 text-[13px] leading-relaxed text-muted">
-              {seconds} s · {qualityLabel} presenter · {AD_LANGUAGES[language].label} · 9:16 with captions. Estimated cost <span className="font-medium text-ink">{formatUsd(estimate.total)}</span>, budget {formatUsd(budget)}.
+              {seconds} s · {qualityLabel} presenter · {AD_LANGUAGES[language].label} · 9:16 with captions.
+              {batchOn ? ` Variations: ${variants.map(variantLabel).join(", ")}. Each is its own video with its own run; ${totalCredits} credits are reserved before the first one starts, and a variation that fails refunds only its own.` : ""}
+              {" "}Estimated cost <span className="font-medium text-ink">{formatUsd(totalUsd)}</span>{batchOn ? ` for ${variants.length} videos (${formatUsd(estimate.total)} each)` : ""}, budget {formatUsd(budget)}{batchOn ? " per video" : ""}.
               {config.demoMode ? " Demo mode: nothing is charged, the run is simulated." : " The real amount is shown on the project page afterwards."}
             </p>
             <div className="mt-4 flex flex-col gap-2">
               <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || overBudget}>
                 {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
-                {submitting ? "Starting…" : `Start now · ${formatUsd(estimate.total)}`}
+                {submitting ? "Starting…" : `Start now · ${formatUsd(totalUsd)}`}
               </Button>
               <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={submitting}>
                 Back
@@ -642,7 +693,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
           <>
             <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || overBudget}>
               <Sparkles className="size-5" aria-hidden />
-              {`Generate video · ${formatUsd(estimate.total)}`}
+              {batchOn ? `Generate ${Math.max(variants.length, MIN_BATCH_VARIANTS)} variations · ${formatUsd(totalUsd)}` : `Generate video · ${formatUsd(estimate.total)}`}
             </Button>
             <Button
               href="/dashboard"

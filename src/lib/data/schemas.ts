@@ -4,7 +4,7 @@ import { config } from "@/lib/config";
 import { DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, isAdLength, isPresenterEngine } from "@/lib/pricing";
 import { AD_TONES, DEFAULT_AD_LANGUAGE, DEFAULT_TONE, DIRECTION_MAX_CHARS, HEX_COLOR, OFFER_MAX_CHARS, CAPTION_STYLES, FONT_KEYS } from "@/lib/adOptions";
 import { AD_LANGUAGE_CODES, DEFAULT_SPEED, SPEEDS } from "@/lib/voiceOptions";
-import { FORMAT_KEYS } from "@/content/formats";
+import { FORMAT_KEYS, HOOK_KEYS, MAX_BATCH_VARIANTS, MIN_BATCH_VARIANTS } from "@/content/formats";
 
 /**
  * The one validation of what a new project may contain, shared by the app's own route
@@ -40,7 +40,18 @@ export const AdBody = z.object({
   parentId: z.string().uuid().optional(),
   /** Format from the library; the form already wrote its direction and tone into the fields above. */
   format: z.enum(FORMAT_KEYS).optional(),
+  /** Hook style of a batch variation (informational; the direction already carries it). */
+  hook: z.enum(HOOK_KEYS).optional(),
 });
+
+/** One variant of "Make variations": a format or a hook style. */
+export const VariantBody = z.union([z.object({ format: z.enum(FORMAT_KEYS) }), z.object({ hook: z.enum(HOOK_KEYS) })]);
+
+/** "Make variations": the ad fields once, plus 2–5 variants; every variant becomes its own project. */
+export const BatchBody = AdBody.omit({ format: true, hook: true }).extend({
+  variants: z.array(VariantBody).min(MIN_BATCH_VARIANTS, { error: `Choose at least ${MIN_BATCH_VARIANTS} variations.` }).max(MAX_BATCH_VARIANTS, { error: `At most ${MAX_BATCH_VARIANTS} variations per batch.` }),
+});
+export type BatchBodyInput = z.infer<typeof BatchBody>;
 
 /** The translate fields without the cross-field check, so callers can omit/extend before adding it. */
 export const TranslateFields = z.object({

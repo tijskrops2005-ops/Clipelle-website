@@ -116,6 +116,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       brand: input.brand ? { accent: input.brand.accent, captionStyle: input.brand.captionStyle, font: input.brand.font, logoUrl: input.brand.logoAssetId ? await urlFor(assetsById.get(input.brand.logoAssetId)) : undefined } : undefined,
       reviewScript: input.reviewScript ?? false,
       format: input.format,
+      hook: input.hook,
       generatedScript: generatedScriptOf(stepsByKey.get("script"), input.seconds ?? workflowSettings.adSeconds),
       productName: input.productName,
       productUrl: input.productUrl,
@@ -129,6 +130,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       estimateUsd,
       parentId: row.parentId ?? undefined,
       version: row.version,
+      batchId: row.batchId ?? undefined,
     };
     return project;
   }
@@ -181,6 +183,13 @@ async function loadRelated(projectIds: string[]) {
   return { stepRows, translationRows, assetRows };
 }
 
+/** The projects of one batch, as the screens render them (scoped to the workspace). */
+export async function listProjectsOfBatch(scope: DataScope, batchId: string): Promise<Project[]> {
+  const rows = await db().select().from(projects).where(and(eq(projects.workspaceId, scope.workspaceId), eq(projects.batchId, batchId))).orderBy(projects.createdAt);
+  const { stepRows, translationRows, assetRows } = await loadRelated(rows.map((r) => r.id));
+  return Promise.all(rows.map((r) => toProject(r, stepRows.filter((s) => s.projectId === r.id), translationRows.filter((t) => t.projectId === r.id), assetRows.filter((a) => a.projectId === r.id))));
+}
+
 /** Every read and write below is scoped to the workspace: a project of another workspace is "not found". */
 export async function listProjects(scope: DataScope, limit = 100): Promise<Project[]> {
   const rows = await db().select().from(projects).where(eq(projects.workspaceId, scope.workspaceId)).orderBy(desc(projects.createdAt)).limit(limit);
@@ -217,7 +226,7 @@ export async function getProjectRowUnscoped(id: string) {
 
 /* ---------- creation: draft → upload assets → start ---------- */
 
-export type NewAdProject = { parentId?: string; format?: string; name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: AdLanguageCode; accent?: string; voiceId?: string; speed: SpeedKey; offer?: string; direction?: string; tone: AdTone; backgroundColor?: string; brand?: { accent?: string; captionStyle?: string; font?: string }; reviewScript: boolean; productName: string; productUrl?: string; description: string; script?: string };
+export type NewAdProject = { parentId?: string; format?: string; hook?: string; batchId?: string; name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: AdLanguageCode; accent?: string; voiceId?: string; speed: SpeedKey; offer?: string; direction?: string; tone: AdTone; backgroundColor?: string; brand?: { accent?: string; captionStyle?: string; font?: string }; reviewScript: boolean; productName: string; productUrl?: string; description: string; script?: string };
 export type NewTranslateProject = {
   /** "Localize this ad": the completed ad whose finished video is the source. */
   sourceProjectId?: string;
@@ -252,7 +261,8 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
         status: "draft",
         parentId: lineage.rootId,
         version: lineage.version,
-        input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, accent: a.accent, voiceId: a.voiceId, speed: a.speed, offer: a.offer, direction: a.direction, tone: a.tone, background: a.backgroundColor ? { type: "color", value: a.backgroundColor } : undefined, brand: a.brand, reviewScript: a.reviewScript, format: a.format, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
+        batchId: a.batchId ?? null,
+        input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, accent: a.accent, voiceId: a.voiceId, speed: a.speed, offer: a.offer, direction: a.direction, tone: a.tone, background: a.backgroundColor ? { type: "color", value: a.backgroundColor } : undefined, brand: a.brand, reviewScript: a.reviewScript, format: a.format, hook: a.hook, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
       })
       .returning();
     await d.insert(steps).values(AD_STEPS.map((key) => ({ projectId: row.id, userId, key, status: "waiting" as const })));

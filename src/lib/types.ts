@@ -53,6 +53,18 @@ interface ProjectBase {
   parentId?: string;
   /** 1 for the first ad of a group, 2 for the next version, and so on. Missing = 1. */
   version?: number;
+  /** "Make variations": the batch this project belongs to. */
+  batchId?: string;
+}
+
+/** A set of 2–5 variations of one product, each its own project and run. */
+export type BatchStatus = "processing" | "completed" | "partial" | "failed";
+export interface Batch {
+  id: string;
+  name: string;
+  status: BatchStatus;
+  createdAt: string;
+  projectIds: string[];
 }
 
 /** Workflow A: one product → one finished 9:16 ad. */
@@ -86,6 +98,8 @@ export interface AdProject extends ProjectBase {
   reviewScript?: boolean;
   /** Chosen format from the library (src/content/formats.ts); it only filled direction and tone. */
   format?: string;
+  /** Hook style from a batch variation; it only filled the direction. */
+  hook?: string;
   /** The generated script, shown for review while the script step waits for the customer. */
   generatedScript?: GeneratedScript;
   productName: string;
