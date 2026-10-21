@@ -13,6 +13,9 @@ import { DEFAULT_TONE, isAdTone, type AdTone } from "@/lib/adOptions";
 import { DEFAULT_SPEED, isSpeedKey, speedValue, type AdLanguageCode, type SpeedKey } from "@/lib/voiceOptions";
 import type { UploadKind } from "@/lib/data/uploads";
 import { authErrorResponse } from "@/lib/auth";
+import { CreditError, reserveCredits } from "@/lib/credits";
+import { adCredits, FREE_AD, translateCredits } from "@/lib/plans";
+import { profiles } from "@/lib/db";
 
 /**
  * Data access for real projects (database mode). The UI calls this through the routes in
@@ -61,6 +64,16 @@ async function urlFor(asset: AssetRow | undefined) {
   } catch {
     return undefined;
   }
+}
+
+/** Credits one project costs, from the same estimates (A: whole ad; B: per language × languages). */
+export function creditsForProject(row: ProjectRow) {
+  if (row.workflow === "ad") {
+    const input = row.input as AdInput;
+    return adCredits({ seconds: input.seconds ?? workflowSettings.adSeconds, engine: input.engine ?? workflowSettings.heygenEngine, speed: speedValue(input.speed) });
+  }
+  const input = row.input as TranslateInput;
+  return translateCredits({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }) * input.targetLanguages.length;
 }
 
 /** Estimate for one click, with the same numbers the forms show. */
@@ -318,6 +331,25 @@ export async function startProject(userId: string, projectId: string) {
   // Per-user limits (day and month) on top of the budget per creative.
   const perUser = await checkUserLimits(userId, estimate * (row.workflow === "translate" ? (row.input as TranslateInput).targetLanguages.length : 1));
   if (!perUser.ok) throw new DataError(perUser.message, 429, "user_limit");
+
+  // Credits: the free plan may only start the free combination; every project reserves its credits first.
+  const credits = creditsForProject(row);
+  const [profile] = await db().select({ planKey: profiles.planKey }).from(profiles).where(eq(profiles.userId, userId)).limit(1);
+  if ((profile?.planKey ?? "free") === "free" && row.workflow === "ad") {
+    const input = row.input as AdInput;
+    if ((input.seconds ?? workflowSettings.adSeconds) !== FREE_AD.seconds || (input.engine ?? workflowSettings.heygenEngine) !== FREE_AD.engine) {
+      throw new DataError(`The free ad is ${FREE_AD.seconds} seconds in Standard quality. Pick a plan in Billing for other lengths and Premium.`, 402, "free_plan_limit");
+    }
+  }
+  if ((profile?.planKey ?? "free") === "free" && row.workflow === "translate") {
+    throw new DataError("Translations need a plan or a credit pack. Pick one in Billing.", 402, "free_plan_limit");
+  }
+  try {
+    await reserveCredits(userId, projectId, credits, `${row.workflow === "ad" ? "Ad" : "Translation"}: ${row.name}`);
+  } catch (error) {
+    if (error instanceof CreditError) throw new DataError(error.message, error.status, error.code);
+    throw error;
+  }
 
   const firstStep = row.workflow === "ad" ? "script" : "upload";
   await db().transaction(async (tx) => {

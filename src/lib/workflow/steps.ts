@@ -3,7 +3,9 @@ import { and, eq } from "drizzle-orm";
 import { NonRetriableError } from "inngest";
 import { assets, db, projects, steps, type AssetRow, type ProjectRow, type StepRow } from "@/lib/db";
 import { copyFromUrl, objectPath, putObject, signedDownloadUrl } from "@/lib/storage";
-import { CostGuardError } from "@/lib/services/costGuard";
+import { CostGuardError, getProjectSpend } from "@/lib/services/costGuard";
+import { settleCredits } from "@/lib/credits";
+import { creditsForUsd } from "@/lib/plans";
 import { TimeoutError, withTimeout } from "@/lib/timeout";
 
 /**
@@ -78,6 +80,7 @@ export async function failStep(projectId: string, key: string, error: unknown): 
     .set({ status: "failed", finishedAt: new Date(), error: message, updatedAt: new Date() })
     .where(and(eq(steps.projectId, projectId), eq(steps.key, key)));
   await db().update(projects).set({ status: "failed", updatedAt: new Date() }).where(eq(projects.id, projectId));
+  await refundCredits(projectId);
   throw new NonRetriableError(`${key}: ${message}`, { cause: error instanceof Error ? error : undefined });
 }
 
@@ -209,4 +212,31 @@ export async function downloadAsset(asset: AssetRow): Promise<Uint8Array> {
 
 export async function setProjectFinal(projectId: string, assetId: string) {
   await db().update(projects).set({ status: "completed", finalAssetId: assetId, updatedAt: new Date() }).where(eq(projects.id, projectId));
+  await settleProjectCredits(projectId);
+}
+
+/* ---------- credits (added 2026-10-21): settle what was really used, refund a failed project ---------- */
+
+/** On completion: the reservation is settled against the real spend converted to credits; the rest comes back. */
+export async function settleProjectCredits(projectId: string) {
+  try {
+    const owner = await ownerOf(projectId);
+    if (!owner) return;
+    const spend = await getProjectSpend(projectId);
+    const used = spend.totalUsd > 0 ? creditsForUsd(spend.totalUsd) : 0;
+    await settleCredits(owner, projectId, used, "Settled against the real cost");
+  } catch (error) {
+    console.error("[credits] settle failed", error);
+  }
+}
+
+/** On failure: the whole reservation is refunded (retries re-reserve nothing: the reserve row is reused). */
+export async function refundCredits(projectId: string) {
+  try {
+    const owner = await ownerOf(projectId);
+    if (!owner) return;
+    await settleCredits(owner, projectId, 0, "Project failed");
+  } catch (error) {
+    console.error("[credits] refund failed", error);
+  }
 }

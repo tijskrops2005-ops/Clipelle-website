@@ -1,6 +1,9 @@
 import { Suspense, type ReactNode } from "react";
 import { getUser } from "@/lib/auth";
 import { getCreditBalance } from "@/lib/credits";
+import { config } from "@/lib/config";
+import { getOrCreateProfile } from "@/lib/data/profile";
+import { ensureFreeAd } from "@/lib/billing";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { DemoRunner } from "@/components/DemoRunner";
@@ -12,7 +15,11 @@ import { DemoRunner } from "@/components/DemoRunner";
  */
 export async function AppShell({ children }: { children: ReactNode }) {
   const user = await getUser();
-  const credits = user ? await getCreditBalance(user.id).catch(() => null) : null;
+  if (user && !config.demoMode) {
+    // First visit: the profile row, and the free ad once the e-mail is verified (idempotent, cheap).
+    await getOrCreateProfile(user).then(() => ensureFreeAd(user)).catch(() => {});
+  }
+  const credits = user && !config.demoMode ? await getCreditBalance(user.id).catch(() => null) : null;
   const who = user ? { email: user.email, name: user.name, credits } : null;
   return (
     <div className="flex min-h-screen">

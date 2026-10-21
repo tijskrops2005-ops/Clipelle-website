@@ -24,6 +24,7 @@ import { OptionCard, OptionGrid } from "@/components/ui/OptionCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Disclosure } from "@/components/ui/Disclosure";
 import { SummaryPanel } from "@/components/ui/SummaryPanel";
+import { translateCredits } from "@/lib/plans";
 
 type Errors = TranslateFormErrors;
 
@@ -144,7 +145,9 @@ export function TranslateForm() {
   }
 
   const qualityTitle = QUALITY.find((q) => q.key === quality)?.title ?? "Speed";
+  const creditsPerLanguage = translateCredits({ seconds, quality, enhance, languages: Math.max(1, targets.length), hasSourceTranscript: source !== "auto" });
   const summaryRows = [
+    { label: "Credits", value: `${creditsPerLanguage} per language${targets.length > 1 ? ` · ${creditsPerLanguage * targets.length} in total` : ""}` },
     { label: "Video", value: video ? formatDuration(Math.round(video.seconds ?? 30)) : "Not added yet", muted: !video },
     { label: "From", value: source === "auto" ? "Detected automatically" : languageOf(source).label },
     { label: "Into", value: targets.length === 0 ? "Pick a language" : targets.map((t) => languageOf(t).tag).join(", "), muted: targets.length === 0 },

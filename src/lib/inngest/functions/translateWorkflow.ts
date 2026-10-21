@@ -32,6 +32,7 @@ import { workflowSettings as cfg } from "@/lib/workflow/settings";
 import {
   downloadAsset,
   failStep,
+  settleProjectCredits,
   loadAsset,
   loadProject,
   loadStep,
@@ -111,6 +112,7 @@ export const translateWorkflow = inngest.createFunction(
     const results = await runCaptions(projectId, input, upload, sessions, step);
     await step.run("complete", async () => {
       await db().update(projects).set({ status: "completed", updatedAt: new Date() }).where(eq(projects.id, projectId));
+      await settleProjectCredits(projectId);
     });
     return { projectId, results };
   },

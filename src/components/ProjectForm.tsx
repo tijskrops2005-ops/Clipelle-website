@@ -10,6 +10,7 @@ import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { PresenterPicker } from "@/components/PresenterPicker";
 import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, formatUsd, type AdLength, type PresenterEngine } from "@/lib/pricing";
 import { buildAdDraft, effectiveAccentOf, validateAdForm, type AdFormErrors, type AdFormValues } from "@/lib/forms/adDraft";
+import { adCredits } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import type { Presenter } from "@/lib/types";
 import { VoicePicker } from "@/components/VoicePicker";
@@ -197,8 +198,10 @@ export function ProjectForm() {
     }
   }
 
+  const credits = adCredits({ seconds, engine, speed: SPEEDS.find((s) => s.key === speed)?.value ?? 1 });
   const summaryRows = [
     { label: "Length", value: `${seconds} s · 9:16` },
+    { label: "Credits", value: `${credits} credits` },
     { label: "Presenter", value: presenter ? `${presenter.name} · ${qualityLabel}` : qualityLabel },
     { label: "Language", value: `${AD_LANGUAGES[language].label}${voiceAccent ? ` · ${voiceOptions?.accents.find((a) => a.key === voiceAccent)?.label ?? voiceAccent}` : ""}` },
     { label: "Voice speed", value: SPEEDS.find((s) => s.key === speed)?.label ?? "Normal" },
@@ -534,7 +537,7 @@ export function ProjectForm() {
       {/* The fixed summary: what was chosen, what it costs, the one button */}
       <SummaryPanel
         rows={summaryRows}
-        total={{ label: "Estimated cost", value: formatUsd(estimate.total), tone: overBudget ? "danger" : "neutral" }}
+        total={{ label: `Estimated cost · ${credits} credits`, value: formatUsd(estimate.total), tone: overBudget ? "danger" : "neutral" }}
         footnote={
           config.demoMode
             ? "Demo mode: this starts a simulated run. No real video is generated yet."

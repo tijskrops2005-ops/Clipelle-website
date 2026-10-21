@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { config } from "@/lib/config";
 import { footerColumns } from "./siteNav";
+import { Year } from "./Year";
 
 export function SiteFooter() {
   return (
@@ -26,7 +27,7 @@ export function SiteFooter() {
           </nav>
         ))}
       </div>
-      <p className="mx-auto mt-12 max-w-6xl border-t border-divider pt-6 text-[13px] text-muted">© {new Date().getFullYear()} {config.productName}. All videos shown as examples were made with {config.productName}.</p>
+      <p className="mx-auto mt-12 max-w-6xl border-t border-divider pt-6 text-[13px] text-muted">© <Year /> {config.productName}. All videos shown as examples were made with {config.productName}.</p>
     </footer>
   );
 }
