@@ -2,39 +2,41 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
-import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { config } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import { platformMenu, resourcesMenu, type MenuCard } from "./siteNav";
+import { menus, type MenuItem, type MenuKey } from "./siteNav";
 
 /**
- * Floating rounded top bar of the public site: Platform and Resources open card menus,
- * Pricing and About are plain links; right: Log in, Book a demo and the main button.
+ * Floating rounded top bar of the public site: Platform, Solutions, Resources and Company open
+ * card menus (one or two columns), Pricing is a plain link; right: the account slot (server
+ * rendered: Log in / Book a demo / main button, or Studio + account when signed in).
  * Below lg a hamburger opens a drawer with the same links as accordions.
+ *
+ * Menus open on hover with a short intent delay on devices with a real pointer, switch at once
+ * between each other, and always open on click, Enter and Space. Escape closes and returns focus;
+ * ArrowDown enters the panel, arrows walk the cards, Tab enters and leaves. Touch uses taps.
  */
-type MenuKey = "platform" | "resources";
-const MENU_KEYS: MenuKey[] = ["platform", "resources"];
-/** Hover intent: a short pause before opening and before closing, so moving from the item to the panel never flickers. */
+const MENU_KEYS: MenuKey[] = menus.map((m) => m.key);
 const HOVER_OPEN_MS = 140;
 const HOVER_CLOSE_MS = 180;
 
-export function SiteHeader() {
+export function SiteHeader({ account }: { account: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState<MenuKey | null>(null);
   const [drawer, setDrawer] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const buttonRefs = useRef<Record<MenuKey, HTMLButtonElement | null>>({ platform: null, resources: null });
+  const buttonRefs = useRef<Partial<Record<MenuKey, HTMLButtonElement | null>>>({});
   const openTimer = useRef<number | null>(null);
-  /** Set by the keyboard: once the panel is in the DOM, move focus to its first card. */
-  const focusFirstOnOpen = useRef(false);
   const closeTimer = useRef<number | null>(null);
-  /** Hover opens the menus only where a real pointer exists (mouse or trackpad); touch and the drawer use taps. */
+  const focusFirstOnOpen = useRef(false);
   const [hoverCapable, setHoverCapable] = useState(false);
   const panelId = useId();
+  const current = open ? menus.find((m) => m.key === open) ?? null : null;
 
   const closeAll = () => {
     clearTimers();
@@ -49,7 +51,6 @@ export function SiteHeader() {
     closeTimer.current = null;
   }
 
-  /** Pointer arrives on an item: cancel a pending close; switch at once when another menu is open, else open after a short pause. */
   function hoverOpen(key: MenuKey) {
     if (!hoverCapable) return;
     clearTimers();
@@ -61,7 +62,6 @@ export function SiteHeader() {
     openTimer.current = window.setTimeout(() => setOpen(key), HOVER_OPEN_MS);
   }
 
-  /** Pointer leaves the item or the panel: close after a short pause unless it arrives on the other part in time. */
   function hoverClose() {
     if (!hoverCapable) return;
     clearTimers();
@@ -74,7 +74,6 @@ export function SiteHeader() {
     closeTimer.current = null;
   }
 
-  /** Focus leaves the whole menu area (Tab out): close. */
   function onNavBlur(e: React.FocusEvent) {
     const next = e.relatedTarget as Node | null;
     if (next && (navRef.current?.contains(next) || panelRef.current?.contains(next))) return;
@@ -82,10 +81,8 @@ export function SiteHeader() {
   }
 
   const panelLinks = () => Array.from(panelRef.current?.querySelectorAll<HTMLAnchorElement>("a[href]") ?? []);
-  /** The first focusable after the two menu buttons (the Pricing link), for Tab out of the panel. */
   const afterMenus = () => navRef.current?.nextElementSibling as HTMLElement | null;
 
-  /** Arrow keys walk the cards; Home/End jump; Tab past the last card (or Shift+Tab before the first) leaves and closes. */
   function onPanelKey(e: React.KeyboardEvent) {
     const links = panelLinks();
     const i = links.indexOf(document.activeElement as HTMLAnchorElement);
@@ -110,7 +107,6 @@ export function SiteHeader() {
     }
   }
 
-  /** On the button: ArrowDown opens and moves into the panel; Tab on an open menu enters it; Enter and Space toggle natively (click). */
   function onButtonKey(key: MenuKey, e: React.KeyboardEvent) {
     if (e.key === "ArrowDown" || (e.key === "Tab" && !e.shiftKey && open === key)) {
       e.preventDefault();
@@ -139,7 +135,6 @@ export function SiteHeader() {
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  // Close menus on outside click and on Escape (focus back on the button); links close them on click.
   useEffect(() => {
     function onDoc(e: MouseEvent) {
       if (barRef.current && !barRef.current.contains(e.target as Node)) setOpen(null);
@@ -170,6 +165,8 @@ export function SiteHeader() {
     };
   }, [drawer]);
 
+  const twoColumns = (current?.columns.length ?? 0) > 1;
+
   return (
     <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 sm:pt-4">
       <div ref={barRef} className="relative mx-auto max-w-6xl">
@@ -186,61 +183,61 @@ export function SiteHeader() {
 
           <nav aria-label="Site" className="hidden items-center gap-1 lg:flex">
             <div ref={navRef} className="flex items-center gap-1" onBlur={onNavBlur}>
-              {MENU_KEYS.map((key) => (
+              {menus.map((m) => (
                 <MenuButton
-                  key={key}
+                  key={m.key}
                   ref={(el) => {
-                    buttonRefs.current[key] = el;
+                    buttonRefs.current[m.key] = el;
                   }}
-                  label={key === "platform" ? "Platform" : "Resources"}
-                  open={open === key}
+                  label={m.label}
+                  open={open === m.key}
                   controls={panelId}
                   onToggle={() => {
                     clearTimers();
-                    setOpen(open === key ? null : key);
+                    setOpen(open === m.key ? null : m.key);
                   }}
-                  onKeyDown={(e) => onButtonKey(key, e)}
-                  onPointerEnter={(e) => e.pointerType === "mouse" && hoverOpen(key)}
+                  onKeyDown={(e) => onButtonKey(m.key, e)}
+                  onPointerEnter={(e) => e.pointerType === "mouse" && hoverOpen(m.key)}
                   onPointerLeave={(e) => e.pointerType === "mouse" && hoverClose()}
                 />
               ))}
             </div>
             <NavLink href="/pricing" active={pathname === "/pricing"}>Pricing</NavLink>
-            <NavLink href="/about" active={pathname === "/about"}>About</NavLink>
           </nav>
 
-          <div className="flex items-center gap-2 pr-1">
-            <Link href="/login" className="focus-ring hidden rounded-full px-3.5 py-2 text-sm font-medium text-ink transition-colors duration-150 hover:bg-ink/5 sm:inline-flex">Log in</Link>
-            <Button href="/demo" variant="secondary" size="md" className="hidden rounded-full lg:inline-flex">Book a demo</Button>
-            <Button href="/signup" variant="accent" size="md">
-              <span className="hidden sm:inline">Create your first ad free</span>
-              <span className="sm:hidden">Start free</span>
-              <ArrowRight className="size-4" aria-hidden />
-            </Button>
-          </div>
+          <div className="flex items-center gap-2 pr-1">{account}</div>
         </div>
 
         {/* Card menus */}
-        {open && (
+        {current && (
           <div
             ref={panelRef}
             id={panelId}
-            // The pseudo-element bridges the 10 px gap under the bar, so the pointer never leaves the menu on its way down.
-            className="fold-in absolute left-1/2 top-[calc(100%+10px)] z-50 w-[min(760px,calc(100vw-2rem))] -translate-x-1/2 rounded-card bg-surface p-3 shadow-card-hover before:absolute before:inset-x-0 before:-top-3 before:h-3 before:content-['']"
+            className={cn(
+              "fold-in absolute left-1/2 top-[calc(100%+10px)] z-50 -translate-x-1/2 rounded-card bg-surface p-3 shadow-card-hover before:absolute before:inset-x-0 before:-top-3 before:h-3 before:content-['']",
+              twoColumns ? "w-[min(880px,calc(100vw-2rem))]" : "w-[min(720px,calc(100vw-2rem))]",
+            )}
             role="region"
-            aria-label={open === "platform" ? "Platform" : "Resources"}
+            aria-label={current.label}
             onPointerEnter={(e) => e.pointerType === "mouse" && hoverStay()}
             onPointerLeave={(e) => e.pointerType === "mouse" && hoverClose()}
             onKeyDown={onPanelKey}
             onBlur={onNavBlur}
           >
-            <ul className="grid gap-2 sm:grid-cols-3">
-              {(open === "platform" ? platformMenu : resourcesMenu).map((c) => (
-                <li key={c.href}>
-                  <MenuCardLink card={c} onNavigate={closeAll} />
-                </li>
+            <div className={cn("grid gap-2", twoColumns ? "md:grid-cols-2" : "")}>
+              {current.columns.map((col, i) => (
+                <div key={col.title ?? i} className={cn(twoColumns && i > 0 && "md:border-l md:border-divider md:pl-2")}>
+                  {col.title && <p className="label-mono px-4 pb-1 pt-2 text-muted">{col.title}</p>}
+                  <ul className={cn("grid gap-1", !twoColumns && "sm:grid-cols-2")}>
+                    {col.items.map((c) => (
+                      <li key={c.href}>
+                        <MenuCardLink card={c} onNavigate={closeAll} compact />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
       </div>
@@ -256,11 +253,11 @@ export function SiteHeader() {
                 <X className="size-5" aria-hidden />
               </button>
             </div>
-            <DrawerGroup title="Platform" cards={platformMenu} onNavigate={closeAll} />
-            <DrawerGroup title="Resources" cards={resourcesMenu} onNavigate={closeAll} />
-            <nav aria-label="Pages" className="mt-4 flex flex-col gap-1">
+            {menus.map((m) => (
+              <DrawerGroup key={m.key} title={m.label} cards={m.columns.flatMap((c) => c.items)} onNavigate={closeAll} defaultOpen={m.key === "platform"} />
+            ))}
+            <nav aria-label="Pages" className="mt-4 flex flex-col gap-1 border-t border-divider pt-4">
               <Link href="/pricing" onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">Pricing</Link>
-              <Link href="/about" onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">About</Link>
               <Link href="/demo" onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">Book a demo</Link>
               <Link href="/login" onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">Log in</Link>
             </nav>
@@ -284,7 +281,6 @@ type MenuButtonProps = {
   onPointerLeave: (e: React.PointerEvent<HTMLButtonElement>) => void;
 };
 
-/** Click, Enter and Space toggle; hover opens on pointer devices (handled by the parent); aria-expanded tells the state. */
 function MenuButton({ ref, label, open, controls, onToggle, onKeyDown, onPointerEnter, onPointerLeave }: MenuButtonProps & { ref: React.Ref<HTMLButtonElement> }) {
   return (
     <button
@@ -313,23 +309,30 @@ function NavLink({ href, active, children }: { href: string; active: boolean; ch
   );
 }
 
-function MenuCardLink({ card, onNavigate }: { card: MenuCard; onNavigate: () => void }) {
+export function SoonBadge() {
+  return <span className="label-mono rounded-full bg-warning/15 px-2 py-0.5 text-warning">Soon</span>;
+}
+
+export function MenuCardLink({ card, onNavigate, compact }: { card: MenuItem; onNavigate?: () => void; compact?: boolean }) {
   const Icon = card.icon;
   return (
-    <Link href={card.href} onClick={onNavigate} className="focus-ring group flex h-full flex-col gap-3 rounded-panel p-4 transition-colors duration-150 hover:bg-surface-muted">
-      <span className="grid size-9 place-items-center rounded-full bg-accent-soft text-accent">
+    <Link href={card.href} onClick={onNavigate} className={cn("focus-ring group flex h-full gap-3 rounded-panel transition-colors duration-150 hover:bg-surface-muted", compact ? "items-start p-3" : "flex-col p-4")}>
+      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
         <Icon className="size-4" aria-hidden />
       </span>
-      <span>
-        <span className="block text-[15px] font-semibold text-ink">{card.title}</span>
-        <span className="mt-1 block text-[13px] leading-relaxed text-muted">{card.text}</span>
+      <span className="min-w-0">
+        <span className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+          {card.title}
+          {card.soon && <SoonBadge />}
+        </span>
+        <span className="mt-0.5 block text-[13px] leading-relaxed text-muted">{card.text}</span>
       </span>
     </Link>
   );
 }
 
-function DrawerGroup({ title, cards, onNavigate }: { title: string; cards: MenuCard[]; onNavigate: () => void }) {
-  const [open, setOpen] = useState(true);
+function DrawerGroup({ title, cards, onNavigate, defaultOpen }: { title: string; cards: MenuItem[]; onNavigate: () => void; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(Boolean(defaultOpen));
   const id = useId();
   return (
     <div className="mt-4 border-t border-divider pt-4">
@@ -341,7 +344,10 @@ function DrawerGroup({ title, cards, onNavigate }: { title: string; cards: MenuC
         {cards.map((c) => (
           <li key={c.href}>
             <Link href={c.href} onClick={onNavigate} className="focus-ring block rounded-control px-3 py-2.5 hover:bg-ink/5">
-              <span className="block text-[15px] font-medium text-ink">{c.title}</span>
+              <span className="flex items-center gap-2 text-[15px] font-medium text-ink">
+                {c.title}
+                {c.soon && <SoonBadge />}
+              </span>
               <span className="block text-[13px] text-muted">{c.text}</span>
             </Link>
           </li>

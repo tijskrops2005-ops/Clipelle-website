@@ -1,23 +1,135 @@
-import { Captions, Clapperboard, FileText, HelpCircle, Languages, ListChecks, type LucideIcon } from "lucide-react";
+import {
+  BookOpen,
+  Briefcase,
+  Building2,
+  Captions,
+  Clapperboard,
+  Code2,
+  FileText,
+  Handshake,
+  HelpCircle,
+  Languages,
+  LayoutDashboard,
+  Link2,
+  ListChecks,
+  Mail,
+  MessageSquare,
+  Newspaper,
+  Plug,
+  Rocket,
+  ShieldCheck,
+  ShoppingBag,
+  Smartphone,
+  Store,
+  Users,
+  Workflow,
+  type LucideIcon,
+} from "lucide-react";
 
-export type MenuCard = { href: string; title: string; text: string; icon: LucideIcon };
+/** One entry in a card menu. `soon` marks what is announced but not built: the page says so too. */
+export type MenuItem = { href: string; title: string; text: string; icon: LucideIcon; soon?: boolean };
+export type MenuColumn = { title?: string; items: MenuItem[] };
+export type MenuKey = "platform" | "solutions" | "resources" | "company";
+export type Menu = { key: MenuKey; label: string; columns: MenuColumn[] };
 
-/** The public site's menus; one source for the header, the mobile drawer and the footer. */
-export const platformMenu: MenuCard[] = [
-  { href: "/platform/ads", title: "Create ads", text: "From one product photo to a finished 9:16 ad with a presenter and captions.", icon: Clapperboard },
-  { href: "/platform/translate", title: "Translate videos", text: "A video you own, in other languages, with the speaker's own voice and matching lips.", icon: Languages },
-  { href: "/examples", title: "Examples", text: "Finished videos made with Reelay, nothing else.", icon: Captions },
+/** The public site's menus; one source for the header, the mobile drawer, the footer and the homepage. */
+export const menus: Menu[] = [
+  {
+    key: "platform",
+    label: "Platform",
+    columns: [
+      {
+        title: "Creation",
+        items: [
+          { href: "/platform/ads", title: "Image to video", text: "One product photo becomes a finished 9:16 ad with a presenter and captions.", icon: Clapperboard },
+          { href: "/platform/url-to-video", title: "URL to video", text: "Paste a product link; name, description and photos are filled in for you.", icon: Link2 },
+          { href: "/platform/translate", title: "Translate & lipsync", text: "A video you own, in other languages, with the speaker's own voice and matching lips.", icon: Languages },
+          { href: "/new", title: "Studio", text: "The app where your videos are made and kept.", icon: LayoutDashboard },
+        ],
+      },
+      {
+        title: "Integrations",
+        items: [
+          { href: "/integrations/api", title: "API", text: "Create ads and translations from your own code with an API key.", icon: Code2 },
+          { href: "/integrations/mcp", title: "MCP", text: "Let an AI assistant make videos through the Model Context Protocol.", icon: Workflow },
+          { href: "/integrations/slack", title: "Slack bot", text: "Start a video from a Slack message. Not built yet.", icon: MessageSquare, soon: true },
+          { href: "/integrations/ad-launcher", title: "Ad Launcher", text: "Send a finished ad to an ad account. Not built yet.", icon: Rocket, soon: true },
+        ],
+      },
+    ],
+  },
+  {
+    key: "solutions",
+    label: "Solutions",
+    columns: [
+      {
+        items: [
+          { href: "/solutions/ecommerce-brands", title: "E-commerce brands", text: "A steady flow of product ads without a studio day.", icon: ShoppingBag },
+          { href: "/solutions/shopify-stores", title: "Shopify stores", text: "Turn product pages into ads, one link at a time.", icon: Store },
+          { href: "/solutions/dropshipping", title: "Dropshipping", text: "Test products with a video before you commit stock.", icon: Captions },
+        ],
+      },
+      {
+        items: [
+          { href: "/solutions/agencies", title: "Agencies", text: "Many brands, one process, costs known before each video.", icon: Building2 },
+          { href: "/solutions/apps-and-saas", title: "Apps and SaaS", text: "Explain a feature in a vertical video with a presenter.", icon: Smartphone },
+          { href: "/solutions/creators-and-localization", title: "Creators and localization", text: "One video, many languages, your own voice.", icon: Users },
+        ],
+      },
+    ],
+  },
+  {
+    key: "resources",
+    label: "Resources",
+    columns: [
+      {
+        title: "Learn",
+        items: [
+          { href: "/blog", title: "Blog", text: "Practical articles on product video, scripts, captions and translation.", icon: Newspaper },
+          { href: "/resources/guides", title: "Guides", text: "Step-by-step handbooks for the things people ask about most.", icon: FileText },
+          { href: "/customers", title: "Case studies", text: "Stories from brands that use Reelay, as they share them.", icon: BookOpen },
+          { href: "/resources/faq", title: "FAQ", text: "Costs, credits, rights, what is placed on screen.", icon: HelpCircle },
+        ],
+      },
+      {
+        title: "More",
+        items: [
+          { href: "/resources/changelog", title: "Changelog", text: "What changed, in plain words.", icon: ListChecks },
+          { href: "/partners", title: "Partner program", text: "Recommend Reelay and earn a share of subscriptions.", icon: Handshake },
+          { href: "/docs/api", title: "API docs", text: "Endpoints, examples, error codes and limits.", icon: Code2 },
+          { href: "/docs/mcp", title: "MCP docs", text: "Install the MCP server and connect an assistant.", icon: Plug },
+        ],
+      },
+    ],
+  },
+  {
+    key: "company",
+    label: "Company",
+    columns: [
+      {
+        items: [
+          { href: "/about", title: "About", text: "Why Reelay exists and how it is built.", icon: Building2 },
+          { href: "/careers", title: "Careers", text: "How we work and how to get in touch.", icon: Briefcase },
+          { href: "/contact", title: "Contact", text: "Questions, feedback, press.", icon: Mail },
+          { href: "/trust", title: "Trust", text: "Rights, data, files, costs: what we do and do not do.", icon: ShieldCheck },
+        ],
+      },
+    ],
+  },
 ];
 
-export const resourcesMenu: MenuCard[] = [
-  { href: "/resources/guides", title: "Guides", text: "Short reads on descriptions, presenter quality and translating.", icon: FileText },
-  { href: "/resources/faq", title: "FAQ", text: "Costs, credits, rights, what is placed on screen.", icon: HelpCircle },
-  { href: "/resources/changelog", title: "Changelog", text: "What changed, in plain words.", icon: ListChecks },
-];
+export const menuByKey = (key: MenuKey) => menus.find((m) => m.key === key)!;
+/** Flat lists kept for pages that show a menu's entries as cards. */
+export const platformMenu: MenuItem[] = menuByKey("platform").columns[0].items;
+export const integrationsMenu: MenuItem[] = menuByKey("platform").columns[1].items;
+export const solutionsMenu: MenuItem[] = menuByKey("solutions").columns.flatMap((c) => c.items);
+export const resourcesMenu: MenuItem[] = menuByKey("resources").columns.flatMap((c) => c.items);
+export const companyMenu: MenuItem[] = menuByKey("company").columns.flatMap((c) => c.items);
 
 export const footerColumns: { title: string; links: { href: string; label: string }[] }[] = [
-  { title: "Platform", links: [{ href: "/platform/ads", label: "Create ads" }, { href: "/platform/translate", label: "Translate videos" }, { href: "/examples", label: "Examples" }, { href: "/pricing", label: "Pricing" }] },
-  { title: "Resources", links: [{ href: "/resources/guides", label: "Guides" }, { href: "/resources/faq", label: "FAQ" }, { href: "/resources/changelog", label: "Changelog" }] },
-  { title: "Company", links: [{ href: "/about", label: "About" }, { href: "/demo", label: "Book a demo" }, { href: "/contact", label: "Contact" }] },
-  { title: "Legal", links: [{ href: "/legal/terms", label: "Terms of service" }, { href: "/legal/privacy", label: "Privacy" }] },
+  { title: "Platform", links: [...platformMenu, ...integrationsMenu].map((i) => ({ href: i.href, label: i.soon ? `${i.title} (soon)` : i.title })).concat([{ href: "/pricing", label: "Pricing" }, { href: "/examples", label: "Examples" }]) },
+  { title: "Solutions", links: solutionsMenu.map((i) => ({ href: i.href, label: i.title })) },
+  { title: "Resources", links: resourcesMenu.map((i) => ({ href: i.href, label: i.title })) },
+  { title: "Company", links: [...companyMenu.map((i) => ({ href: i.href, label: i.title })), { href: "/demo", label: "Book a demo" }] },
+  { title: "Legal", links: [{ href: "/legal/terms", label: "Terms of service" }, { href: "/legal/privacy", label: "Privacy" }, { href: "/legal/cookies", label: "Cookies" }] },
 ];
