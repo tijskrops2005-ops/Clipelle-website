@@ -220,12 +220,8 @@ export function TranslateForm() {
                     selected={quality === q.key}
                     onSelect={() => setQuality(q.key)}
                     disabled={submitting}
-                    title={
-                      <span className="flex items-center gap-2">
-                        {q.title}
-                        {q.key === "speed" && <Badge tone="success">Recommended</Badge>}
-                      </span>
-                    }
+                    title={q.title}
+                    badge={q.key === "speed" ? <Badge tone="success">Recommended</Badge> : undefined}
                     meta={<span className="label-mono text-muted">≈ {formatUsd(est.perLanguageTotal)} / language</span>}
                     description={
                       <>
@@ -268,12 +264,8 @@ export function TranslateForm() {
                   selected={format === f.key}
                   onSelect={() => setFormat(f.key)}
                   disabled={submitting}
-                  title={
-                    <span className="flex items-center gap-2">
-                      {f.title}
-                      {f.recommended && <Badge tone="success">Recommended</Badge>}
-                    </span>
-                  }
+                  title={f.title}
+                  badge={f.recommended ? <Badge tone="success">Recommended</Badge> : undefined}
                   description={f.text}
                 />
               ))}

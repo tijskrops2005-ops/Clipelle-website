@@ -295,12 +295,8 @@ export function ProjectForm() {
                     selected={engine === q.key}
                     onSelect={() => setEngine(q.key)}
                     disabled={submitting}
-                    title={
-                      <span className="flex items-center gap-2">
-                        {q.label}
-                        {q.key === DEFAULT_PRESENTER_ENGINE && <Badge tone="success">Recommended</Badge>}
-                      </span>
-                    }
+                    title={q.label}
+                    badge={q.key === DEFAULT_PRESENTER_ENGINE ? <Badge tone="success">Recommended</Badge> : undefined}
                     meta={
                       <Badge tone={over ? "danger" : "neutral"}>
                         {over ? `${formatUsd(est.total)} · over budget` : `about ${formatUsd(est.total)}`}

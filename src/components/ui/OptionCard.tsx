@@ -16,6 +16,8 @@ type OptionCardProps = {
   footnote?: ReactNode;
   /** Small element left of the title (colour swatch, icon). */
   leading?: ReactNode;
+  /** A badge such as "Recommended", on its own line above the title so it never collides with the price. */
+  badge?: ReactNode;
   disabled?: boolean;
   /** "card" (default) is a bordered panel; "chip" is a compact pill for short labels. */
   size?: "card" | "chip";
@@ -26,7 +28,7 @@ type OptionCardProps = {
  * One choice in a group of options (quality, tone, format, length). Behaves like a radio:
  * aria-pressed, keyboard focusable, selected state with an ink border and a check mark.
  */
-export function OptionCard({ selected, onSelect, title, description, meta, footnote, leading, disabled, size = "card", className }: OptionCardProps) {
+export function OptionCard({ selected, onSelect, title, description, meta, footnote, leading, badge, disabled, size = "card", className }: OptionCardProps) {
   if (size === "chip") {
     return (
       <button
@@ -60,6 +62,7 @@ export function OptionCard({ selected, onSelect, title, description, meta, footn
         className,
       )}
     >
+      {badge && <span className="mb-0.5 block">{badge}</span>}
       <span className="flex items-start justify-between gap-3">
         <span className="flex min-w-0 items-center gap-2.5">
           {leading}
