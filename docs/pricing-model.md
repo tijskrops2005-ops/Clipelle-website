@@ -57,3 +57,7 @@ Bij jaarbetaling blijft de marge 3× ten opzichte van de maandprijs minus twee m
 ## 6. Wat Tijs in Stripe aanmaakt
 
 Testmodus, met `STRIPE_SECRET_KEY=sk_test_…` in `.env.local`: `npx tsx --env-file=.env.local scripts/stripe-setup.ts` maakt de producten en prijzen met lookup keys `reelay_starter_monthly`, `reelay_starter_annual`, `reelay_pro_monthly`, `reelay_pro_annual`, `reelay_scale_monthly`, `reelay_scale_annual`, `reelay_topup_10`, `reelay_topup_25`, `reelay_topup_50`. Daarna in het Stripe-dashboard een webhook naar `<site>/api/billing/webhook` met de events `checkout.session.completed`, `invoice.paid`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, en de signing secret als `STRIPE_WEBHOOK_SECRET`. Klantportaal aanzetten onder Settings → Billing → Customer portal.
+
+## Labels op de prijzenpagina (21 oktober 2026)
+
+Geen aanbevelingslabel op een plan: "Recommended" op Pro is verwijderd, alle plankaarten zijn gelijkwaardig. Elk label op de pagina moet terug te voeren zijn op code of een regel: "Annual · 2 months free" (tien maanden gerekend, `ANNUAL_MONTHS_CHARGED`), "190 languages" (de taallijst van de vertaaldienst), "Credits valid this month and the next" (`CREDIT_VALIDITY`), "Premium presenter" niet op Free (de free-plan-regel in `startProject`), "Credit packs on top of a paid plan" (checkout weigert een pakket op het gratis plan), "Support: contact form, answered by e-mail" (het contactformulier; er is geen apart supportsysteem, dus geen "priority"). Nieuwe labels alleen met zo'n grondslag.

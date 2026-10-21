@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ArrowRight, Check, Minus } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { ANNUAL_MONTHS_CHARGED, CREDIT_VALIDITY, PLANS, TOPUPS, adCreditTable, formatPrice, translateCredits, type Plan } from "@/lib/plans";
@@ -34,11 +33,11 @@ export function PricingTable({ onChoose, busyKey, compact }: { onChoose?: (plan:
             interval={interval}
             cta={
               onChoose ? (
-                <Button type="button" variant={p.highlight ? "accent" : "primary"} className="w-full" onClick={() => onChoose(p, interval)} disabled={Boolean(busyKey)}>
+                <Button type="button" variant="primary" className="w-full" onClick={() => onChoose(p, interval)} disabled={Boolean(busyKey)}>
                   {busyKey === p.key ? "Opening checkout…" : `Choose ${p.name}`}
                 </Button>
               ) : (
-                <Button href={`/signup?next=${encodeURIComponent(`/settings/billing?plan=${p.key}&interval=${interval}`)}`} variant={p.highlight ? "accent" : "primary"} className="w-full">
+                <Button href={`/signup?next=${encodeURIComponent(`/settings/billing?plan=${p.key}&interval=${interval}`)}`} variant="primary" className="w-full">
                   Choose {p.name}
                 </Button>
               )
@@ -55,7 +54,7 @@ export function PricingTable({ onChoose, busyKey, compact }: { onChoose?: (plan:
         </div>
         <div className="rounded-card bg-surface p-6 shadow-card">
           <p className="text-[17px] font-semibold text-ink">Credit packs</p>
-          <p className="mt-1 text-[15px] text-muted">One-off, on top of any plan. Valid for {CREDIT_VALIDITY.topup} months.</p>
+          <p className="mt-1 text-[15px] text-muted">One-off, on top of a paid plan. Valid for {CREDIT_VALIDITY.topup} months.</p>
           <ul className="mt-4 space-y-2">
             {TOPUPS.map((t) => (
               <li key={t.key} className="flex items-center justify-between rounded-chip bg-surface-muted px-4 py-2.5 text-sm">
@@ -112,7 +111,7 @@ export function PricingTable({ onChoose, busyKey, compact }: { onChoose?: (plan:
                     ["Brand defaults saved", () => true],
                     ["Credits valid", (p: Plan) => (p.key === "free" ? "This month and next" : "This month and next")],
                     ["Credit packs on top", (p: Plan) => p.key !== "free"],
-                    ["Support", (p: Plan) => (p.key === "scale" ? "Priority" : "E-mail")],
+                    ["Support", () => "Contact form, answered by e-mail"],
                   ].map(([label, fn]) => (
                     <tr key={label as string}>
                       <td className="px-5 py-3 text-ink">{label as string}</td>
@@ -135,8 +134,7 @@ export function PricingTable({ onChoose, busyKey, compact }: { onChoose?: (plan:
 function PlanCard({ plan, interval, cta }: { plan: Plan; interval: Interval; cta: React.ReactNode }) {
   const price = interval === "annual" ? plan.annualMonthlyUsd : plan.monthlyUsd;
   return (
-    <div className={cn("flex flex-col rounded-card bg-surface p-6 shadow-card", plan.highlight && "ring-1 ring-ink")}>
-      {plan.highlight && <span className="label-mono mb-3 w-fit rounded-full bg-ink px-2.5 py-1 text-surface">Recommended</span>}
+    <div className="flex flex-col rounded-card bg-surface p-6 shadow-card">
       <p className="text-[17px] font-semibold text-ink">{plan.name}</p>
       <p className="mt-1 text-[13px] text-muted">{plan.tagline}</p>
       <p className="mt-5 text-display">{price === 0 ? "Free" : formatPrice(price)}<span className="text-base font-medium text-muted">{price === 0 ? "" : " /mo"}</span></p>

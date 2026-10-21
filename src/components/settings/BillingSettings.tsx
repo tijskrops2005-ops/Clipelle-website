@@ -113,10 +113,10 @@ export function BillingSettings() {
         </SectionCard>
       )}
 
-      <SectionCard title="Credit packs" description="One-off credits on top of any plan.">
+      <SectionCard title="Credit packs" description={status?.planKey === "free" ? "One-off credits on top of a paid plan. Choose a plan first: the free plan only runs the free ad." : "One-off credits on top of your plan."}>
         <div className="grid gap-3 sm:grid-cols-3">
           {TOPUPS.map((t) => (
-            <Button key={t.key} type="button" variant="secondary" onClick={() => topup(t.key)} disabled={!enabled || busy !== null} className="justify-between">
+            <Button key={t.key} type="button" variant="secondary" onClick={() => topup(t.key)} disabled={!enabled || busy !== null || status?.planKey === "free"} className="justify-between">
               <span>{t.credits.toLocaleString("en-US")} credits</span>
               <span className="text-muted">{formatPrice(t.usd)}</span>
             </Button>

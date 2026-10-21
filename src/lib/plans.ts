@@ -51,7 +51,6 @@ export type Plan = {
   creditsPerMonth: number;
   creditsNote: string;
   bullets: string[];
-  highlight?: boolean;
   /** Stripe lookup keys for the two prices; created by scripts/stripe-setup.ts. */
   stripeLookup?: { monthly: string; annual: string };
 };
@@ -73,10 +72,10 @@ function plan(key: PlanKey, name: string, tagline: string, monthlyUsd: number, b
 }
 
 export const PLANS: Plan[] = [
-  plan("free", "Free", "Try it once", 0, ["One 10-second ad, Standard presenter", "After e-mail verification, no card", "All features of the form"], { creditsNote: "One free 10-second ad" }),
+  plan("free", "Free", "Try it once", 0, ["One 10-second ad, Standard presenter", "After e-mail verification, no card", "Presenter, voice, brand style and captions as on every plan"], { creditsNote: "One free 10-second ad" }),
   plan("starter", "Starter", "For a shop testing its first ads", 19, ["About nine 30-second Standard ads a month", "Translations, all languages", "Credits valid this month and the next"]),
-  plan("pro", "Pro", "For a brand posting every week", 59, ["About twenty-eight 30-second Standard ads a month", "Premium presenter when you want it", "Credits valid this month and the next"], { highlight: true }),
-  plan("scale", "Scale", "For agencies and several brands", 159, ["About seventy-seven 30-second Standard ads a month", "Priority support", "Credits valid this month and the next"]),
+  plan("pro", "Pro", "For a brand posting every week", 59, ["About twenty-eight 30-second Standard ads a month", "Premium presenter when you want it", "Credits valid this month and the next"]),
+  plan("scale", "Scale", "For agencies and several brands", 159, ["About seventy-seven 30-second Standard ads a month", "Premium presenter and translations included", "Credits valid this month and the next"]),
   plan("enterprise", "Enterprise", "Custom volume and terms", 0, ["Custom credits and billing", "Onboarding and a direct line", "Book a demo to talk"], { creditsNote: "Custom", stripeLookup: undefined }),
 ];
 

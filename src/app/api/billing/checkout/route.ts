@@ -47,6 +47,8 @@ export async function POST(request: Request) {
     }
     const pack = TOPUPS.find((t) => t.key === b.topupKey);
     if (!pack) return Response.json({ error: "Unknown pack." }, { status: 400 });
+    // The free plan can only run the free combination, so a pack would be money for nothing.
+    if (profile.planKey === "free") return Response.json({ error: "Credit packs come on top of a paid plan. Choose a plan first." }, { status: 400 });
     const price = await priceByLookupKey(pack.stripeLookup);
     if (!price) return Response.json({ error: "The price is not set up in Stripe yet. Run the setup script." }, { status: 503 });
     const session = await s.checkout.sessions.create({
