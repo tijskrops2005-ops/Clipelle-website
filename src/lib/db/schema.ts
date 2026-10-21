@@ -125,6 +125,8 @@ export const projects = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     /** The account that owns the project (Supabase Auth user id). Backfilled rows carry the dev user. */
     ownerId: text("owner_id"),
+    /** Isolation key since 2026-10-21: every project belongs to one workspace (personal or team). */
+    workspaceId: uuid("workspace_id"),
     workflow: workflowKind("workflow").notNull(),
     name: text("name").notNull(),
     status: projectStatus("status").default("draft").notNull(),
@@ -283,7 +285,9 @@ export const creditLedger = pgTable(
   "credit_ledger",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    /** The acting user (who spent or received); the balance is per workspace. */
     userId: text("user_id").notNull(),
+    workspaceId: uuid("workspace_id"),
     projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
     /** Positive = added, negative = taken. */
     credits: integer("credits").notNull(),
@@ -294,7 +298,7 @@ export const creditLedger = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index("credit_ledger_user_idx").on(t.userId, t.createdAt), index("credit_ledger_project_idx").on(t.projectId), uniqueIndex("credit_ledger_user_reference_idx").on(t.userId, t.reference)],
+  (t) => [index("credit_ledger_user_idx").on(t.userId, t.createdAt), index("credit_ledger_workspace_idx").on(t.workspaceId, t.createdAt), index("credit_ledger_project_idx").on(t.projectId), uniqueIndex("credit_ledger_user_reference_idx").on(t.userId, t.reference)],
 ).enableRLS();
 
 /** "Notify me" wishes for connections that do not exist yet (Settings → Connections). */
@@ -361,7 +365,9 @@ export const apiKeys = pgTable(
   "api_keys",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    /** Who created the key; the key acts within its workspace. */
     userId: text("user_id").notNull(),
+    workspaceId: uuid("workspace_id"),
     name: text("name").notNull(),
     /** First characters of the key, for recognising it in the list (never enough to use it). */
     prefix: text("prefix").notNull(),
@@ -416,3 +422,56 @@ export const careerInterests = pgTable(
   },
   (t) => [index("career_interests_created_idx").on(t.createdAt)],
 ).enableRLS();
+
+/**
+ * Workspaces (21 October 2026): every user has a personal workspace; a team workspace is shared.
+ * Projects, credits, API keys and billing belong to a workspace. profiles keeps its old billing
+ * columns only as a historical copy; the workspace row is the source of truth.
+ */
+export const workspaces = pgTable(
+  "workspaces",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    kind: text("kind").notNull(), // personal | team
+    ownerUserId: text("owner_user_id").notNull(),
+    planKey: text("plan_key").default("free").notNull(),
+    stripeCustomerId: text("stripe_customer_id"),
+    stripeSubscriptionId: text("stripe_subscription_id"),
+    subscriptionStatus: text("subscription_status"),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [index("workspaces_owner_idx").on(t.ownerUserId), index("workspaces_customer_idx").on(t.stripeCustomerId)],
+).enableRLS();
+
+export const workspaceMembers = pgTable(
+  "workspace_members",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull(),
+    role: text("role").notNull(), // owner | member
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("workspace_members_unique_idx").on(t.workspaceId, t.userId), index("workspace_members_user_idx").on(t.userId)],
+).enableRLS();
+
+/** Invitations by e-mail; only the token hash is stored, the link is shown once (or mailed). */
+export const workspaceInvites = pgTable(
+  "workspace_invites",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    role: text("role").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    invitedBy: text("invited_by").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("workspace_invites_token_idx").on(t.tokenHash), index("workspace_invites_workspace_idx").on(t.workspaceId)],
+).enableRLS();
+
+export type WorkspaceRow = typeof workspaces.$inferSelect;

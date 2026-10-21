@@ -27,15 +27,15 @@ export async function POST(request: Request) {
           return "video.mp4";
         }
       })();
-      const row = await createDraft(caller.userId, {
+      const row = await createDraft({ userId: caller.userId, workspaceId: caller.workspaceId }, {
         workflow: "translate",
         translate: { name: t.name, sourceFileName: fileName, sourceSeconds: t.video.durationSeconds, sourceLanguage: t.sourceLanguage as LanguageCode | "auto", targetLanguages: t.targetLanguages as LanguageCode[], quality: t.quality, keepTerms: t.keepTerms, trimSilence: t.trimSilence, captionPosition: t.captionPosition, format: t.format, enhance: t.enhance, rightsConfirmed: t.rightsConfirmed },
       });
-      await attachFromUrl(caller.userId, row.id, "source", t.video.url, { accept: "video", maxBytes: config.limits.translateVideoMaxMb * 1024 * 1024, seconds: t.video.durationSeconds });
-      await startProject(caller.userId, row.id);
+      await attachFromUrl({ userId: caller.userId, workspaceId: caller.workspaceId }, row.id, "source", t.video.url, { accept: "video", maxBytes: config.limits.translateVideoMaxMb * 1024 * 1024, seconds: t.video.durationSeconds });
+      await startProject({ userId: caller.userId, workspaceId: caller.workspaceId }, row.id);
       return row.id;
     });
-    const project = await getProject(projectId, caller.userId);
+    const project = await getProject(projectId, { userId: caller.userId, workspaceId: caller.workspaceId });
     if (!project) throw new ApiError("not_found", "Project not found.", 404);
     return json({ project: toApiProject(project) }, replayed ? 200 : 201);
   } catch (error) {

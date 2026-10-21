@@ -1,5 +1,5 @@
 import { Suspense, type ReactNode } from "react";
-import { getUser } from "@/lib/auth";
+import { getScope } from "@/lib/auth";
 import { getCreditBalance } from "@/lib/credits";
 import { config } from "@/lib/config";
 import { getOrCreateProfile } from "@/lib/data/profile";
@@ -14,13 +14,17 @@ import { DemoRunner } from "@/components/DemoRunner";
  * Navigation components read the pathname (runtime data) so they sit behind Suspense.
  */
 export async function AppShell({ children }: { children: ReactNode }) {
-  const user = await getUser();
-  if (user && !config.demoMode) {
-    // First visit: the profile row, and the free ad once the e-mail is verified (idempotent, cheap).
-    await getOrCreateProfile(user).then(() => ensureFreeAd(user)).catch(() => {});
+  const scope = await getScope();
+  const user = scope?.user ?? null;
+  let workspaces: { id: string; name: string; kind: string; role: string }[] = [];
+  if (user && scope && !config.demoMode) {
+    // First visit: the profile row, the personal workspace, and the free ad once the e-mail is verified (idempotent, cheap).
+    const { ensurePersonalWorkspace, listWorkspacesFor } = await import("@/lib/workspaces");
+    await getOrCreateProfile(user).then(() => ensurePersonalWorkspace(user)).then((personal) => ensureFreeAd(user, personal.id)).catch(() => {});
+    workspaces = await listWorkspacesFor(user.id).catch(() => []);
   }
-  const credits = user && !config.demoMode ? await getCreditBalance(user.id).catch(() => null) : null;
-  const who = user ? { email: user.email, name: user.name, credits } : null;
+  const credits = user && scope && !config.demoMode ? await getCreditBalance(scope.workspaceId).catch(() => null) : null;
+  const who = user && scope ? { email: user.email, name: user.name, credits, workspace: { id: scope.workspaceId, name: scope.workspaceName, kind: scope.workspaceKind, role: scope.role }, workspaces } : null;
   return (
     <div className="flex min-h-screen">
       <DemoRunner />

@@ -19,28 +19,38 @@ describe.skipIf(!hasDb)("public API v1", () => {
   let keyAId = "";
   const made: string[] = [];
 
+  let wsA = "";
+  let wsB = "";
+  const scopeA = () => ({ userId: userA, workspaceId: wsA });
+  const scopeB = () => ({ userId: userB, workspaceId: wsB });
+
   beforeAll(async () => {
-    const { db, profiles } = await import("@/lib/db");
-    await db().insert(profiles).values([{ userId: userA, email: "api-a@reelay.local", planKey: "starter" }, { userId: userB, email: "api-b@reelay.local", planKey: "free" }]).onConflictDoNothing();
-    await db().update(profiles).set({ planKey: "starter" }).where((await import("drizzle-orm")).eq(profiles.userId, userA));
+    const { db, profiles, workspaces } = await import("@/lib/db");
+    const { eq } = await import("drizzle-orm");
+    await db().insert(profiles).values([{ userId: userA, email: "api-a@reelay.local" }, { userId: userB, email: "api-b@reelay.local" }]).onConflictDoNothing();
+    const { ensurePersonalWorkspace } = await import("@/lib/workspaces");
+    wsA = (await ensurePersonalWorkspace({ id: userA, email: "api-a@reelay.local" })).id;
+    wsB = (await ensurePersonalWorkspace({ id: userB, email: "api-b@reelay.local" })).id;
+    await db().update(workspaces).set({ planKey: "starter" }).where(eq(workspaces.id, wsA));
     const { createApiKey } = await import("@/lib/apiKeys");
-    const k = await createApiKey(userA, "test");
+    const k = await createApiKey(scopeA(), "test");
     keyA = k.key;
     keyAId = k.id;
   });
 
   afterAll(async () => {
-    const { db, profiles, apiKeys, projects } = await import("@/lib/db");
-    const { eq, inArray } = await import("drizzle-orm");
+    const { db, profiles, apiKeys, projects, workspaces } = await import("@/lib/db");
+    const { inArray } = await import("drizzle-orm");
     if (made.length) await db().delete(projects).where(inArray(projects.id, made));
-    await db().delete(apiKeys).where(eq(apiKeys.userId, userA));
+    await db().delete(apiKeys).where(inArray(apiKeys.userId, [userA, userB]));
+    await db().delete(workspaces).where(inArray(workspaces.ownerUserId, [userA, userB]));
     await db().delete(profiles).where(inArray(profiles.userId, [userA, userB]));
     delete process.env.API_RATE_LIMIT_PER_MINUTE;
   });
 
   it("refuses the free plan, a missing key and a wrong key", async () => {
     const { createApiKey } = await import("@/lib/apiKeys");
-    await expect(createApiKey(userB, "nope")).rejects.toMatchObject({ code: "plan_required" });
+    await expect(createApiKey(scopeB(), "nope")).rejects.toMatchObject({ code: "plan_required" });
     const { authenticateApi } = await import("./v1");
     await expect(authenticateApi(req())).rejects.toMatchObject({ code: "unauthorized", status: 401 });
     await expect(authenticateApi(req("rl_" + "x".repeat(43)))).rejects.toMatchObject({ code: "unauthorized" });
@@ -51,15 +61,16 @@ describe.skipIf(!hasDb)("public API v1", () => {
     const { authenticateApi } = await import("./v1");
     const caller = await authenticateApi(req(keyA));
     expect(caller.userId).toBe(userA);
+    expect(caller.workspaceId).toBe(wsA);
     expect(caller.keyId).toBe(keyAId);
     const { listApiKeys, revokeApiKey, createApiKey } = await import("@/lib/apiKeys");
-    const listed = await listApiKeys(userA);
+    const listed = await listApiKeys(wsA);
     expect(listed.find((k) => k.id === keyAId)?.lastUsedAt).toBeTruthy();
     expect(listed.find((k) => k.id === keyAId)?.prefix.startsWith("rl_")).toBe(true);
-    await revokeApiKey(userA, keyAId);
+    await revokeApiKey(wsA, keyAId);
     await expect(authenticateApi(req(keyA))).rejects.toMatchObject({ code: "unauthorized" });
-    await expect(revokeApiKey(userB, keyAId)).rejects.toMatchObject({ code: "not_found" });
-    const k2 = await createApiKey(userA, "second");
+    await expect(revokeApiKey(wsB, keyAId)).rejects.toMatchObject({ code: "not_found" });
+    const k2 = await createApiKey(scopeA(), "second");
     keyA = k2.key;
     keyAId = k2.id;
   });
@@ -68,7 +79,7 @@ describe.skipIf(!hasDb)("public API v1", () => {
     process.env.API_RATE_LIMIT_PER_MINUTE = "3";
     const { authenticateApi } = await import("./v1");
     const { createApiKey } = await import("@/lib/apiKeys");
-    const k = await createApiKey(userA, "limited");
+    const k = await createApiKey(scopeA(), "limited");
     for (let i = 0; i < 3; i++) await authenticateApi(req(k.key));
     await expect(authenticateApi(req(k.key))).rejects.toMatchObject({ code: "rate_limited", status: 429 });
     delete process.env.API_RATE_LIMIT_PER_MINUTE;
@@ -76,12 +87,12 @@ describe.skipIf(!hasDb)("public API v1", () => {
 
   it("keeps accounts apart: another account's project is a 404", async () => {
     const { createDraft } = await import("@/lib/data/server");
-    const { db, profiles } = await import("@/lib/db");
+    const { db, workspaces } = await import("@/lib/db");
     const { eq } = await import("drizzle-orm");
-    await db().update(profiles).set({ planKey: "starter" }).where(eq(profiles.userId, userB));
+    await db().update(workspaces).set({ planKey: "starter" }).where(eq(workspaces.id, wsB));
     const { createApiKey } = await import("@/lib/apiKeys");
-    const kB = await createApiKey(userB, "b");
-    const rowA = await createDraft(userA, { workflow: "ad", ad: { name: "Isolation A", seconds: 10, engine: "avatar_iii", language: "en", speed: "normal", tone: "direct", reviewScript: false, productName: "X", description: "Twenty characters of description here." } });
+    const kB = await createApiKey(scopeB(), "b");
+    const rowA = await createDraft(scopeA(), { workflow: "ad", ad: { name: "Isolation A", seconds: 10, engine: "avatar_iii", language: "en", speed: "normal", tone: "direct", reviewScript: false, productName: "X", description: "Twenty characters of description here." } });
     made.push(rowA.id);
     const { GET } = await import("@/app/api/v1/projects/[id]/route");
     const mine = await GET(req(keyA, `https://reelay.test/api/v1/projects/${rowA.id}`), { params: Promise.resolve({ id: rowA.id }) });
@@ -96,7 +107,7 @@ describe.skipIf(!hasDb)("public API v1", () => {
     const listB = (await (await LIST(req(kB.key))).json()) as { projects: { id: string }[] };
     expect(listB.projects.some((p) => p.id === rowA.id)).toBe(false);
     await db().delete((await import("@/lib/db")).apiKeys).where(eq((await import("@/lib/db")).apiKeys.userId, userB));
-    await db().update(profiles).set({ planKey: "free" }).where(eq(profiles.userId, userB));
+    await db().update(workspaces).set({ planKey: "free" }).where(eq(workspaces.id, wsB));
   });
 
   it("replays the same request under an Idempotency-Key and refuses a different body", async () => {
@@ -106,7 +117,7 @@ describe.skipIf(!hasDb)("public API v1", () => {
     const { createDraft } = await import("@/lib/data/server");
     const make = async () => {
       calls += 1;
-      const row = await createDraft(userA, { workflow: "ad", ad: { name: `Idem ${calls}`, seconds: 10, engine: "avatar_iii", language: "en", speed: "normal", tone: "direct", reviewScript: false, productName: "X", description: "Twenty characters of description here." } });
+      const row = await createDraft(scopeA(), { workflow: "ad", ad: { name: `Idem ${calls}`, seconds: 10, engine: "avatar_iii", language: "en", speed: "normal", tone: "direct", reviewScript: false, productName: "X", description: "Twenty characters of description here." } });
       made.push(row.id);
       return row.id;
     };

@@ -15,7 +15,11 @@ import type { UploadKind } from "@/lib/data/uploads";
 import { authErrorResponse } from "@/lib/auth";
 import { CreditError, reserveCredits } from "@/lib/credits";
 import { adCredits, FREE_AD, translateCredits } from "@/lib/plans";
-import { profiles } from "@/lib/db";
+import { DataError } from "@/lib/data/errors";
+import { workspaces } from "@/lib/db";
+
+/** Who acts and in which workspace. Every project read or write is scoped to the workspace; the user is recorded on rows. */
+export type DataScope = { userId: string; workspaceId: string };
 
 /**
  * Data access for real projects (database mode). The UI calls this through the routes in
@@ -26,12 +30,7 @@ import { profiles } from "@/lib/db";
 export const AD_STEPS: StepKey[] = ["script", "productClip", "presenter", "finalEdit"];
 export const TRANSLATE_STEPS: TranslateStepKey[] = ["upload", "translate", "captions"];
 
-export class DataError extends Error {
-  constructor(message: string, public readonly status = 400, public readonly code = "bad_request", cause?: unknown) {
-    super(message, cause instanceof Error ? { cause } : undefined);
-    this.name = "DataError";
-  }
-}
+export { DataError };
 
 /* ---------- row → Project (what the screens render) ---------- */
 
@@ -177,9 +176,9 @@ async function loadRelated(projectIds: string[]) {
   return { stepRows, translationRows, assetRows };
 }
 
-/** Every read and write below is scoped to the signed-in user: a project of someone else is "not found". */
-export async function listProjects(userId: string, limit = 100): Promise<Project[]> {
-  const rows = await db().select().from(projects).where(eq(projects.ownerId, userId)).orderBy(desc(projects.createdAt)).limit(limit);
+/** Every read and write below is scoped to the workspace: a project of another workspace is "not found". */
+export async function listProjects(scope: DataScope, limit = 100): Promise<Project[]> {
+  const rows = await db().select().from(projects).where(eq(projects.workspaceId, scope.workspaceId)).orderBy(desc(projects.createdAt)).limit(limit);
   const { stepRows, translationRows, assetRows } = await loadRelated(rows.map((r) => r.id));
   return Promise.all(
     rows.map((r) =>
@@ -193,15 +192,15 @@ export async function listProjects(userId: string, limit = 100): Promise<Project
   );
 }
 
-export async function getProject(id: string, userId: string): Promise<Project | null> {
-  const [row] = await db().select().from(projects).where(and(eq(projects.id, id), eq(projects.ownerId, userId))).limit(1);
+export async function getProject(id: string, scope: DataScope): Promise<Project | null> {
+  const [row] = await db().select().from(projects).where(and(eq(projects.id, id), eq(projects.workspaceId, scope.workspaceId))).limit(1);
   if (!row) return null;
   const { stepRows, translationRows, assetRows } = await loadRelated([row.id]);
   return toProject(row, stepRows, translationRows, assetRows);
 }
 
-export async function getProjectRow(id: string, userId: string) {
-  const [row] = await db().select().from(projects).where(and(eq(projects.id, id), eq(projects.ownerId, userId))).limit(1);
+export async function getProjectRow(id: string, scope: DataScope) {
+  const [row] = await db().select().from(projects).where(and(eq(projects.id, id), eq(projects.workspaceId, scope.workspaceId))).limit(1);
   return row ?? null;
 }
 
@@ -230,14 +229,16 @@ export type NewTranslateProject = {
 };
 
 /** Creates the project and its step rows in status draft. Files are attached next, then `startProject`. */
-export async function createDraft(userId: string, input: { workflow: "ad"; ad: NewAdProject } | { workflow: "translate"; translate: NewTranslateProject }) {
+export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad: NewAdProject } | { workflow: "translate"; translate: NewTranslateProject }) {
   const d = db();
+  const { userId, workspaceId } = scope;
   if (input.workflow === "ad") {
     const a = input.ad;
     const [row] = await d
       .insert(projects)
       .values({
         ownerId: userId,
+        workspaceId,
         workflow: "ad",
         name: a.name,
         status: "draft",
@@ -253,6 +254,7 @@ export async function createDraft(userId: string, input: { workflow: "ad"; ad: N
     .insert(projects)
     .values({
       ownerId: userId,
+      workspaceId,
       workflow: "translate",
       name: t.name,
       status: "draft",
@@ -278,8 +280,9 @@ export async function createDraft(userId: string, input: { workflow: "ad"; ad: N
 }
 
 /** Registers an object the browser uploaded with a signed URL. Verifies it really exists. */
-export async function attachUploadedAsset(userId: string, projectId: string, file: { kind: UploadKind; storagePath: string; fileName: string; seconds?: number }) {
-  const row = await getProjectRow(projectId, userId);
+export async function attachUploadedAsset(scope: DataScope, projectId: string, file: { kind: UploadKind; storagePath: string; fileName: string; seconds?: number }) {
+  const { userId } = scope;
+  const row = await getProjectRow(projectId, scope);
   if (!row) throw new DataError("Project not found.", 404, "not_found");
   if (row.status !== "draft") throw new DataError("Files can only be added before the project starts.", 409, "not_draft");
   if (!file.storagePath.startsWith(`projects/${projectId}/`)) throw new DataError("File path does not belong to this project.", 400, "bad_path");
@@ -309,8 +312,9 @@ export async function attachUploadedAsset(userId: string, projectId: string, fil
 }
 
 /** Draft → processing and the workflow event. Idempotent: a second call returns the project unchanged (rule 4). */
-export async function startProject(userId: string, projectId: string) {
-  const row = await getProjectRow(projectId, userId);
+export async function startProject(scope: DataScope, projectId: string) {
+  const { userId, workspaceId } = scope;
+  const row = await getProjectRow(projectId, scope);
   if (!row) throw new DataError("Project not found.", 404, "not_found");
   if (row.status !== "draft") return row;
   if (row.workflow === "ad" && (row.input as AdInput).imageAssetIds.length === 0) throw new DataError("Add at least one product image.", 400, "no_images");
@@ -334,7 +338,7 @@ export async function startProject(userId: string, projectId: string) {
 
   // Credits: the free plan may only start the free combination; every project reserves its credits first.
   const credits = creditsForProject(row);
-  const [profile] = await db().select({ planKey: profiles.planKey }).from(profiles).where(eq(profiles.userId, userId)).limit(1);
+  const [profile] = await db().select({ planKey: workspaces.planKey }).from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1);
   if ((profile?.planKey ?? "free") === "free" && row.workflow === "ad") {
     const input = row.input as AdInput;
     if ((input.seconds ?? workflowSettings.adSeconds) !== FREE_AD.seconds || (input.engine ?? workflowSettings.heygenEngine) !== FREE_AD.engine) {
@@ -345,7 +349,7 @@ export async function startProject(userId: string, projectId: string) {
     throw new DataError("Translations need a plan or a credit pack. Pick one in Billing.", 402, "free_plan_limit");
   }
   try {
-    await reserveCredits(userId, projectId, credits, `${row.workflow === "ad" ? "Ad" : "Translation"}: ${row.name}`);
+    await reserveCredits(workspaceId, userId, projectId, credits, `${row.workflow === "ad" ? "Ad" : "Translation"}: ${row.name}`);
   } catch (error) {
     if (error instanceof CreditError) throw new DataError(error.message, error.status, error.code);
     throw error;
@@ -374,7 +378,7 @@ export async function startProject(userId: string, projectId: string) {
       error,
     );
   }
-  return (await getProjectRow(projectId, userId))!;
+  return (await getProjectRow(projectId, scope))!;
 }
 
 /* ---------- review, approval, retry (workflow B and both) ---------- */
@@ -383,8 +387,8 @@ export async function startProject(userId: string, projectId: string) {
  * "Review script first": the customer picked a hook and maybe edited the presenter text.
  * Stores the approved script on the script step, marks it completed and wakes the waiting run.
  */
-export async function approveScript(userId: string, projectId: string, review: { hookIndex: number; presenterScript?: string }) {
-  const row = await getProjectRow(projectId, userId);
+export async function approveScript(scope: DataScope, projectId: string, review: { hookIndex: number; presenterScript?: string }) {
+  const row = await getProjectRow(projectId, scope);
   if (!row || row.workflow !== "ad") throw new DataError("Project not found.", 404, "not_found");
   const [step] = await db().select().from(steps).where(and(eq(steps.projectId, projectId), eq(steps.key, "script"))).limit(1);
   const script = step?.output?.script as AdScript | undefined;
@@ -404,11 +408,11 @@ export async function approveScript(userId: string, projectId: string, review: {
     await tx.update(projects).set({ status: "processing", updatedAt: new Date() }).where(eq(projects.id, projectId));
   });
   await inngest.send(adScriptApproved.create({ projectId }));
-  return (await getProjectRow(projectId, userId))!;
+  return (await getProjectRow(projectId, scope))!;
 }
 
-export async function retryStep(userId: string, projectId: string, stepKey: string) {
-  const row = await getProjectRow(projectId, userId);
+export async function retryStep(scope: DataScope, projectId: string, stepKey: string) {
+  const row = await getProjectRow(projectId, scope);
   if (!row) throw new DataError("Project not found.", 404, "not_found");
   const [step] = await db().select().from(steps).where(and(eq(steps.projectId, projectId), eq(steps.key, stepKey))).limit(1);
   if (!step) throw new DataError("Unknown step.", 404, "not_found");

@@ -8,10 +8,11 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Brand } from "@/components/Brand";
 import { UserMenu } from "@/components/UserMenu";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { isActivePath, navItems } from "@/components/nav";
 
 /** Desktop navigation: sits on the page background, only the active item is a white card. */
-export type ShellUser = { email: string; name?: string; credits: number | null } | null;
+export type ShellUser = { email: string; name?: string; credits: number | null; workspace: { id: string; name: string; kind: string; role: string }; workspaces: { id: string; name: string; kind: string; role: string }[] } | null;
 
 export function Sidebar({ user }: { user: ShellUser }) {
   const pathname = usePathname();
@@ -49,6 +50,7 @@ export function Sidebar({ user }: { user: ShellUser }) {
       </nav>
 
       <div className="space-y-3">
+        {user && <WorkspaceSwitcher current={user.workspace} workspaces={user.workspaces} />}
         {user && <UserMenu email={user.email} name={user.name} credits={user.credits} />}
         <p className="px-1 text-[13px] leading-relaxed text-muted">{config.tagline}</p>
       </div>

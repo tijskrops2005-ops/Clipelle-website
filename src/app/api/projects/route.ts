@@ -4,7 +4,7 @@ import type { LanguageCode } from "@/lib/types";
 import type { AdLanguageCode, SpeedKey } from "@/lib/voiceOptions";
 import { AdBody, TranslateBody } from "@/lib/data/schemas";
 import { createDraft, dataErrorResponse, listProjects } from "@/lib/data/server";
-import { requireUser } from "@/lib/auth";
+import { requireScope } from "@/lib/auth";
 import { databaseModeOnly, readJson } from "./_guard";
 
 /** List all projects (newest first) with signed URLs for their videos. */
@@ -13,8 +13,8 @@ export async function GET() {
   if (blocked) return blocked;
   await connection();
   try {
-    const user = await requireUser();
-    return Response.json(await listProjects(user.id));
+    const scope = await requireScope();
+    return Response.json(await listProjects(scope));
   } catch (error) {
     return dataErrorResponse(error);
   }
@@ -27,15 +27,15 @@ export async function POST(request: Request) {
   const body = await readJson<{ workflow?: string }>(request);
   if (!body) return Response.json({ error: "Invalid JSON body." }, { status: 400 });
   try {
-    const user = await requireUser();
+    const scope = await requireScope();
     if (body.workflow === "ad") {
       const a = AdBody.parse(body);
-      const row = await createDraft(user.id, { workflow: "ad", ad: { name: a.name, seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language as AdLanguageCode, accent: a.accent || undefined, voiceId: a.voiceId || undefined, speed: a.speed as SpeedKey, offer: a.offer || undefined, direction: a.direction || undefined, tone: a.tone, backgroundColor: a.backgroundColor, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
+      const row = await createDraft(scope, { workflow: "ad", ad: { name: a.name, seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language as AdLanguageCode, accent: a.accent || undefined, voiceId: a.voiceId || undefined, speed: a.speed as SpeedKey, offer: a.offer || undefined, direction: a.direction || undefined, tone: a.tone, backgroundColor: a.backgroundColor, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
       return Response.json({ id: row.id, status: row.status }, { status: 201 });
     }
     if (body.workflow === "translate") {
       const t = TranslateBody.parse(body);
-      const row = await createDraft(user.id, {
+      const row = await createDraft(scope, {
         workflow: "translate",
         translate: { ...t, sourceLanguage: t.sourceLanguage as LanguageCode | "auto", targetLanguages: t.targetLanguages as LanguageCode[] },
       });

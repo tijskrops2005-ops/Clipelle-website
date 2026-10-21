@@ -220,11 +220,9 @@ export async function setProjectFinal(projectId: string, assetId: string) {
 /** On completion: the reservation is settled against the real spend converted to credits; the rest comes back. */
 export async function settleProjectCredits(projectId: string) {
   try {
-    const owner = await ownerOf(projectId);
-    if (!owner) return;
     const spend = await getProjectSpend(projectId);
     const used = spend.totalUsd > 0 ? creditsForUsd(spend.totalUsd) : 0;
-    await settleCredits(owner, projectId, used, "Settled against the real cost");
+    await settleCredits(projectId, used, "Settled against the real cost");
   } catch (error) {
     console.error("[credits] settle failed", error);
   }
@@ -233,9 +231,7 @@ export async function settleProjectCredits(projectId: string) {
 /** On failure: the whole reservation is refunded (retries re-reserve nothing: the reserve row is reused). */
 export async function refundCredits(projectId: string) {
   try {
-    const owner = await ownerOf(projectId);
-    if (!owner) return;
-    await settleCredits(owner, projectId, 0, "Project failed");
+    await settleCredits(projectId, 0, "Project failed");
   } catch (error) {
     console.error("[credits] refund failed", error);
   }

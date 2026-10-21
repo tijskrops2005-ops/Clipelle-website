@@ -9,7 +9,7 @@ import type { Plan, TopupPack } from "@/lib/plans";
  */
 export const TOPUP_METADATA = { commissions_disabled: "yes" } as const;
 
-export type CheckoutInput = { customerId: string; userId: string; priceId: string; origin: string };
+export type CheckoutInput = { customerId: string; userId: string; workspaceId: string; priceId: string; origin: string };
 
 export function subscriptionSessionParams(plan: Plan, input: CheckoutInput) {
   return {
@@ -18,8 +18,8 @@ export function subscriptionSessionParams(plan: Plan, input: CheckoutInput) {
     line_items: [{ price: input.priceId, quantity: 1 }],
     success_url: `${input.origin}/settings/billing?checkout=success`,
     cancel_url: `${input.origin}/settings/billing?checkout=cancelled`,
-    subscription_data: { metadata: { userId: input.userId, planKey: plan.key } },
-    metadata: { userId: input.userId, planKey: plan.key, kind: "plan" },
+    subscription_data: { metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key } },
+    metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key, kind: "plan" },
     allow_promotion_codes: true,
   };
 }
@@ -31,7 +31,7 @@ export function topupSessionParams(pack: TopupPack, input: CheckoutInput) {
     line_items: [{ price: input.priceId, quantity: 1 }],
     success_url: `${input.origin}/settings/billing?checkout=success`,
     cancel_url: `${input.origin}/settings/billing?checkout=cancelled`,
-    metadata: { userId: input.userId, topupKey: pack.key, kind: "topup" },
+    metadata: { userId: input.userId, workspaceId: input.workspaceId, topupKey: pack.key, kind: "topup" },
   };
 }
 

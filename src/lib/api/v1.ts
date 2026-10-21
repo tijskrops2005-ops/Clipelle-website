@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
-import { apiIdempotency, db, profiles } from "@/lib/db";
+import { apiIdempotency, db, workspaces } from "@/lib/db";
 import { config } from "@/lib/config";
 import { AuthError } from "@/lib/auth";
 import { DataError } from "@/lib/data/server";
@@ -25,7 +25,7 @@ export class ApiError extends Error {
   }
 }
 
-export type ApiCaller = { userId: string; keyId: string; planKey: string };
+export type ApiCaller = { userId: string; workspaceId: string; keyId: string; planKey: string };
 
 /** Requests per key per minute; API_RATE_LIMIT_PER_MINUTE in .env.local overrides. */
 export function apiRateLimitPerMinute() {
@@ -42,11 +42,12 @@ export async function authenticateApi(request: Request): Promise<ApiCaller> {
   if (!key) throw new ApiError("unauthorized", "This API key is unknown or revoked.", 401);
   const limited = await rateLimit(`api:key:${key.id}`, apiRateLimitPerMinute(), 60_000);
   if (!limited.ok) throw new ApiError("rate_limited", `Too many requests. Try again in ${limited.retryAfterSeconds} seconds.`, 429, { retryAfterSeconds: limited.retryAfterSeconds });
-  const [p] = await db().select({ planKey: profiles.planKey }).from(profiles).where(eq(profiles.userId, key.userId)).limit(1);
-  const planKey = p?.planKey ?? "free";
+  if (!key.workspaceId) throw new ApiError("unauthorized", "This API key belongs to no workspace. Create a new key.", 401);
+  const [w] = await db().select({ planKey: workspaces.planKey }).from(workspaces).where(eq(workspaces.id, key.workspaceId)).limit(1);
+  const planKey = w?.planKey ?? "free";
   if (planKey === "free") throw new ApiError("plan_required", "The API needs a plan with credits. Pick a plan in Billing.", 403);
   await touchApiKey(key.id, key.lastUsedAt);
-  return { userId: key.userId, keyId: key.id, planKey };
+  return { userId: key.userId, workspaceId: key.workspaceId, keyId: key.id, planKey };
 }
 
 /** Every error becomes { error: { code, message, details? } } with a stable code. Never a provider name. */

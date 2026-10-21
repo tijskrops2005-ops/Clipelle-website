@@ -5,7 +5,7 @@
  * (or `npx tsx` after installing tsx). Requires STRIPE_SECRET_KEY=sk_test_…
  */
 import Stripe from "stripe";
-import { PLANS, TOPUPS } from "../src/lib/plans";
+import { ALL_PLANS as PLANS, TOPUPS } from "../src/lib/plans";
 import { TOPUP_METADATA } from "../src/lib/billingCheckout";
 
 async function main() {

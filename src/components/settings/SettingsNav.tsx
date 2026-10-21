@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CreditCard, Gauge, KeyRound, Link2, Palette, UserRound, type LucideIcon } from "lucide-react";
+import { CreditCard, Gauge, KeyRound, Link2, Palette, UserRound, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/settings", label: "Profile", icon: UserRound },
   { href: "/settings/brand", label: "Brand", icon: Palette },
+  { href: "/settings/team", label: "Team", icon: Users },
   { href: "/settings/usage", label: "Usage", icon: Gauge },
   { href: "/settings/billing", label: "Billing", icon: CreditCard },
   { href: "/settings/api", label: "API keys", icon: KeyRound },

@@ -1,6 +1,6 @@
 import "server-only";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
-import { costEntries, creditLedger, db, notifyWishes, profiles, projects, type ProfileRow } from "@/lib/db";
+import { costEntries, creditLedger, db, notifyWishes, profiles, projects, workspaceMembers, workspaces, type ProfileRow } from "@/lib/db";
 import { chargeOf } from "@/lib/services/costGuard";
 import { listLedger } from "@/lib/credits";
 
@@ -43,8 +43,9 @@ export async function listNotifyWishes(userId: string) {
   return rows.map((r) => r.feature);
 }
 
-/** Usage per project for the signed-in user, from cost_entries, plus the credit ledger. */
-export async function getUsage(userId: string) {
+/** Usage per project in the workspace (every member), from cost_entries, plus the credit ledger. */
+export async function getUsage(scope: { userId: string; workspaceId: string }) {
+  const { workspaceId } = scope;
   const d = db();
   const since = new Date();
   since.setDate(since.getDate() - 90);
@@ -52,7 +53,7 @@ export async function getUsage(userId: string) {
     .select({ id: costEntries.id, projectId: costEntries.projectId, service: costEntries.service, action: costEntries.action, estimatedUsd: costEntries.estimatedUsd, actualUsd: costEntries.actualUsd, status: costEntries.status, startedAt: costEntries.startedAt, name: projects.name, workflow: projects.workflow })
     .from(costEntries)
     .leftJoin(projects, eq(costEntries.projectId, projects.id))
-    .where(and(eq(costEntries.userId, userId), gte(costEntries.startedAt, since)))
+    .where(and(eq(projects.workspaceId, workspaceId), gte(costEntries.startedAt, since)))
     .orderBy(desc(costEntries.startedAt))
     .limit(1000);
   const perProject = new Map<string, { projectId: string; name: string; workflow: string; usd: number; calls: number; last: Date }>();
@@ -68,15 +69,22 @@ export async function getUsage(userId: string) {
   const month = new Date();
   month.setDate(1);
   month.setHours(0, 0, 0, 0);
-  const [m] = await d.select({ n: sql<number>`count(*)` }).from(projects).where(and(eq(projects.ownerId, userId), gte(projects.createdAt, month)));
-  return { projects: [...perProject.values()].sort((a, b) => b.last.getTime() - a.last.getTime()), projectsThisMonth: Number(m?.n ?? 0), ledger: await listLedger(userId, 50) };
+  const [m] = await d.select({ n: sql<number>`count(*)` }).from(projects).where(and(eq(projects.workspaceId, workspaceId), gte(projects.createdAt, month)));
+  return { projects: [...perProject.values()].sort((a, b) => b.last.getTime() - a.last.getTime()), projectsThisMonth: Number(m?.n ?? 0), ledger: await listLedger(workspaceId, 50) };
 }
 
 /** Deletes everything of one account: projects (cascade), the credit ledger (credits are forfeited), wishes, profile. Auth user is deleted by the caller. */
 export async function deleteAccountData(userId: string) {
   const d = db();
+  // Personal workspace with everything in it; memberships of team workspaces end; team workspaces they own stay with their projects (ownership must be transferred first).
+  const own = await d.select({ id: workspaces.id }).from(workspaces).where(and(eq(workspaces.ownerUserId, userId), eq(workspaces.kind, "personal")));
+  for (const w of own) {
+    await d.delete(projects).where(eq(projects.workspaceId, w.id));
+    await d.delete(creditLedger).where(eq(creditLedger.workspaceId, w.id));
+    await d.delete(workspaces).where(eq(workspaces.id, w.id));
+  }
+  await d.delete(workspaceMembers).where(eq(workspaceMembers.userId, userId));
   await d.delete(projects).where(eq(projects.ownerId, userId));
-  await d.delete(creditLedger).where(eq(creditLedger.userId, userId));
   await d.delete(notifyWishes).where(eq(notifyWishes.userId, userId));
   await d.delete(profiles).where(eq(profiles.userId, userId));
 }

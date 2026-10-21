@@ -1,5 +1,5 @@
 import { connection } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireScope } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
 import { getUsage } from "@/lib/data/profile";
 import { getCreditBalance } from "@/lib/credits";
@@ -10,9 +10,9 @@ export async function GET() {
   if (blocked) return blocked;
   await connection();
   try {
-    const user = await requireUser();
-    const usage = await getUsage(user.id);
-    return Response.json({ ...usage, balance: await getCreditBalance(user.id) });
+    const scope = await requireScope();
+    const usage = await getUsage(scope);
+    return Response.json({ ...usage, balance: await getCreditBalance(scope.workspaceId) });
   } catch (error) {
     return dataErrorResponse(error);
   }

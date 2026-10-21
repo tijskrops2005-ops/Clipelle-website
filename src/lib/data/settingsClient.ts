@@ -147,6 +147,26 @@ export async function revokeApiKey(id: string) {
   await api(`/api/settings/api-keys/${id}`, { method: "DELETE" });
 }
 
+export type TeamInfo = {
+  workspace: { id: string; name: string; kind: string; planKey: string; ownerUserId: string };
+  role: "owner" | "member";
+  balance: number;
+  members: { id: string; userId: string; role: string; createdAt: string; email: string; name: string | null; usedThisMonth: number; projectsThisMonth: number }[];
+  invites: { id: string; email: string; role: string; expiresAt: string; createdAt: string }[];
+};
+
+export const listWorkspaces = () => api<{ current: string; workspaces: { id: string; name: string; kind: string; role: string }[] }>("/api/workspaces");
+export const createWorkspace = (name: string) => api<{ id: string; name: string }>("/api/workspaces", { method: "POST", body: JSON.stringify({ name }) });
+export const switchWorkspace = async (workspaceId: string) => { await api("/api/workspaces/switch", { method: "POST", body: JSON.stringify({ workspaceId }) }); };
+export const getTeam = (id: string) => api<TeamInfo>(`/api/workspaces/${id}`);
+export const renameWorkspace = async (id: string, name: string) => { await api(`/api/workspaces/${id}`, { method: "PATCH", body: JSON.stringify({ action: "rename", name }) }); };
+export const transferOwnership = async (id: string, toUserId: string) => { await api(`/api/workspaces/${id}`, { method: "PATCH", body: JSON.stringify({ action: "transfer", toUserId }) }); };
+export const leaveWorkspace = async (id: string) => { await api(`/api/workspaces/${id}`, { method: "PATCH", body: JSON.stringify({ action: "leave" }) }); };
+export const deleteWorkspace = async (id: string, confirmName: string) => { await api(`/api/workspaces/${id}`, { method: "DELETE", body: JSON.stringify({ confirmName }) }); };
+export const removeMember = async (id: string, userId: string) => { await api(`/api/workspaces/${id}/members`, { method: "DELETE", body: JSON.stringify({ userId }) }); };
+export const inviteToWorkspace = (id: string, email: string) => api<{ id: string; email: string; link: string; mailed: boolean }>(`/api/workspaces/${id}/invites`, { method: "POST", body: JSON.stringify({ email }) });
+export const revokeInvite = async (id: string, inviteId: string) => { await api(`/api/workspaces/${id}/invites`, { method: "DELETE", body: JSON.stringify({ inviteId }) }); };
+
 export type UsageInfo = { balance: number; projectsThisMonth: number; projects: { projectId: string; name: string; workflow: string; usd: number; calls: number; last: string }[]; ledger: { id: string; credits: number; kind: string; note: string | null; createdAt: string; expiresAt: string | null }[] };
 
 export async function getUsage(): Promise<UsageInfo> {

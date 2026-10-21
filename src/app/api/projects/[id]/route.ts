@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { dataErrorResponse, getProject } from "@/lib/data/server";
-import { requireUser } from "@/lib/auth";
+import { requireScope } from "@/lib/auth";
 import { databaseModeOnly } from "../_guard";
 
 export async function GET(_request: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -9,8 +9,8 @@ export async function GET(_request: Request, ctx: { params: Promise<{ id: string
   await connection();
   const { id } = await ctx.params;
   try {
-    const user = await requireUser();
-    const project = await getProject(id, user.id);
+    const scope = await requireScope();
+    const project = await getProject(id, scope);
     if (!project) return Response.json({ error: "Project not found." }, { status: 404 });
     return Response.json(project);
   } catch (error) {

@@ -26,17 +26,17 @@ export async function POST(request: Request) {
     if (!raw) throw new ApiError("validation_error", "Send a JSON body.", 400);
     const a = Body.parse(raw);
     const { projectId, replayed } = await withIdempotency(caller.keyId, request.headers.get("idempotency-key"), raw, async () => {
-      const row = await createDraft(caller.userId, {
+      const row = await createDraft({ userId: caller.userId, workspaceId: caller.workspaceId }, {
         workflow: "ad",
         ad: { name: a.name, seconds: a.seconds, engine: a.quality === "premium" ? "avatar_iv" : "avatar_iii", lookId: a.lookId, language: a.language as AdLanguageCode, accent: a.accent || undefined, voiceId: a.voiceId || undefined, speed: a.speed as SpeedKey, offer: a.offer || undefined, direction: a.direction || undefined, tone: a.tone, backgroundColor: a.backgroundColor, brand: a.brand, reviewScript: false, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined },
       });
-      for (const img of a.images) await attachFromUrl(caller.userId, row.id, "image", img.url, { accept: "image", maxBytes: 10 * 1024 * 1024 });
-      if (a.logo) await attachFromUrl(caller.userId, row.id, "logo", a.logo.url, { accept: "image", maxBytes: 2 * 1024 * 1024 });
-      if (a.background) await attachFromUrl(caller.userId, row.id, "background", a.background.url, { accept: "image", maxBytes: 10 * 1024 * 1024 });
-      await startProject(caller.userId, row.id);
+      for (const img of a.images) await attachFromUrl({ userId: caller.userId, workspaceId: caller.workspaceId }, row.id, "image", img.url, { accept: "image", maxBytes: 10 * 1024 * 1024 });
+      if (a.logo) await attachFromUrl({ userId: caller.userId, workspaceId: caller.workspaceId }, row.id, "logo", a.logo.url, { accept: "image", maxBytes: 2 * 1024 * 1024 });
+      if (a.background) await attachFromUrl({ userId: caller.userId, workspaceId: caller.workspaceId }, row.id, "background", a.background.url, { accept: "image", maxBytes: 10 * 1024 * 1024 });
+      await startProject({ userId: caller.userId, workspaceId: caller.workspaceId }, row.id);
       return row.id;
     });
-    const project = await getProject(projectId, caller.userId);
+    const project = await getProject(projectId, { userId: caller.userId, workspaceId: caller.workspaceId });
     if (!project) throw new ApiError("not_found", "Project not found.", 404);
     return json({ project: toApiProject(project) }, replayed ? 200 : 201);
   } catch (error) {

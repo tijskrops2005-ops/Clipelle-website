@@ -1,5 +1,5 @@
 import { attachUploadedAsset, dataErrorResponse } from "@/lib/data/server";
-import { requireUser } from "@/lib/auth";
+import { requireScope } from "@/lib/auth";
 import { databaseModeOnly, readJson } from "../../_guard";
 import { isUploadKind } from "@/lib/data/uploads";
 
@@ -13,8 +13,8 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     return Response.json({ error: "kind (image|source|background|logo), storagePath and fileName are required." }, { status: 400 });
   }
   try {
-    const user = await requireUser();
-    const asset = await attachUploadedAsset(user.id, id, { kind: body.kind, storagePath: body.storagePath, fileName: body.fileName, seconds: body.seconds });
+    const scope = await requireScope();
+    const asset = await attachUploadedAsset(scope, id, { kind: body.kind, storagePath: body.storagePath, fileName: body.fileName, seconds: body.seconds });
     return Response.json({ id: asset.id, kind: asset.kind, bytes: asset.bytes }, { status: 201 });
   } catch (error) {
     return dataErrorResponse(error);

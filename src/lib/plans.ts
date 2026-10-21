@@ -39,7 +39,7 @@ export function includedCreditsFor(monthlyUsd: number, margin = SUBSCRIPTION_MAR
   return Math.floor(monthlyUsd / (CREDIT_COST_USD * margin) / 10) * 10;
 }
 
-export type PlanKey = "free" | "starter" | "pro" | "scale" | "enterprise";
+export type PlanKey = "free" | "starter" | "pro" | "scale" | "enterprise" | "business_249" | "business_499" | "business_999";
 
 export type Plan = {
   key: PlanKey;
@@ -53,6 +53,16 @@ export type Plan = {
   bullets: string[];
   /** Stripe lookup keys for the two prices; created by scripts/stripe-setup.ts. */
   stripeLookup?: { monthly: string; annual: string };
+  /** Our own recommendation label on the pricing page (one plan at most). Not "most popular", no numbers. */
+  recommended?: boolean;
+  /**
+   * Launch discount: a crossed-out price shown next to the current one, only while `endDate` has not
+   * passed. The crossed-out price MUST be a real earlier (or later) price; in the EU it must be the
+   * lowest price of the previous 30 days. Default empty. Never invent one.
+   */
+  listPrice?: { monthlyUsd: number; endDate: string };
+  /** Team workspace plan: shared credits, members, no cost per seat. */
+  team?: boolean;
 };
 
 function plan(key: PlanKey, name: string, tagline: string, monthlyUsd: number, bullets: string[], extra: Partial<Plan> = {}): Plan {
@@ -74,13 +84,36 @@ function plan(key: PlanKey, name: string, tagline: string, monthlyUsd: number, b
 export const PLANS: Plan[] = [
   plan("free", "Free", "Try it once", 0, ["One 10-second ad, Standard presenter", "After e-mail verification, no card", "Use it within 30 days"], { creditsNote: "One free 10-second ad" }),
   plan("starter", "Starter", "For a shop testing its first ads", 19, ["About nine 30-second Standard ads a month", "Translations, all languages", "Credits never expire"]),
-  plan("pro", "Pro", "For a brand posting every week", 59, ["About twenty-eight 30-second Standard ads a month", "Premium presenter when you want it", "Credits never expire"]),
+  plan("pro", "Pro", "For a brand posting every week", 59, ["About twenty-eight 30-second Standard ads a month", "Premium presenter when you want it", "Credits never expire"], { recommended: true }),
   plan("scale", "Scale", "For agencies and several brands", 159, ["About seventy-seven 30-second Standard ads a month", "Premium presenter and translations included", "Credits never expire"]),
   plan("enterprise", "Enterprise", "Custom volume and terms", 0, ["Custom credits and billing", "Onboarding and a direct line", "Book a demo to talk"], { creditsNote: "Custom", stripeLookup: undefined }),
 ];
 
+/**
+ * Business: one plan with three credit levels for a team workspace (shared credits, members, no cost
+ * per seat). Prices follow the same rule as every subscription: credits = includedCreditsFor(price) at 3×.
+ */
+export const BUSINESS_TIERS: Plan[] = [249, 499, 999].map((usd) =>
+  plan(`business_${usd}` as PlanKey, "Business", "For teams sharing one credit pool", usd, ["Shared credits for the whole team", "Members with their own sign-in, no cost per seat", "Per-member usage for the owner", "API keys for the workspace", "Credits never expire"], { team: true }),
+);
+export const ALL_PLANS: Plan[] = [...PLANS, ...BUSINESS_TIERS];
+
+export const isTeamPlan = (key: string | null | undefined) => BUSINESS_TIERS.some((t) => t.key === key);
+export const isPaidPlan = (key: string | null | undefined) => ALL_PLANS.some((p) => p.key === key && p.monthlyUsd > 0);
+
+/** The crossed-out launch price, only while its end date has not passed. */
+export function activeListPrice(p: Plan, now = new Date()) {
+  if (!p.listPrice) return null;
+  return new Date(p.listPrice.endDate).getTime() > now.getTime() ? p.listPrice.monthlyUsd : null;
+}
+
+/** The real yearly saving of a plan: twelve monthly prices minus the annual total. */
+export function annualSaving(p: Plan) {
+  return Math.round((p.monthlyUsd * 12 - p.annualMonthlyUsd * 12) * 100) / 100;
+}
+
 export function planByKey(key: string | null | undefined): Plan | undefined {
-  return PLANS.find((p) => p.key === key);
+  return ALL_PLANS.find((p) => p.key === key);
 }
 
 export type TopupPack = { key: string; usd: number; credits: number; stripeLookup: string };

@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     const caller = await authenticateApi(request);
     const limitRaw = Number(new URL(request.url).searchParams.get("limit") ?? "50");
     const limit = Number.isFinite(limitRaw) ? Math.min(100, Math.max(1, Math.floor(limitRaw))) : 50;
-    const projects = await listProjects(caller.userId, limit);
+    const projects = await listProjects({ userId: caller.userId, workspaceId: caller.workspaceId }, limit);
     return json({ projects: projects.map(toApiProject) });
   } catch (error) {
     return apiErrorResponse(error);

@@ -5,7 +5,7 @@ import { ApiError } from "@/lib/api/v1";
 import type { UploadKind } from "@/lib/data/uploads";
 
 /** Downloads a public file the API caller named and attaches it to a draft project as if the browser had uploaded it. */
-export async function attachFromUrl(userId: string, projectId: string, kind: UploadKind, url: string, options: { accept: "image" | "video"; maxBytes: number; seconds?: number }) {
+export async function attachFromUrl(scope: { userId: string; workspaceId: string }, projectId: string, kind: UploadKind, url: string, options: { accept: "image" | "video"; maxBytes: number; seconds?: number }) {
   const file = await fetchPublicResource(url, { accept: options.accept, maxBytes: options.maxBytes, timeoutMs: 20_000, maxRedirects: 3 });
   const b = file.bytes;
   if (options.accept === "image") {
@@ -24,5 +24,5 @@ export async function attachFromUrl(userId: string, projectId: string, kind: Upl
   const path = objectPath({ projectId, kind, fileName: name });
   await putObject(path, b, file.contentType === "application/octet-stream" ? "video/mp4" : file.contentType);
   if (!(await objectInfo(path))) throw new ApiError("server_error", "The file could not be stored.", 500);
-  return attachUploadedAsset(userId, projectId, { kind, storagePath: path, fileName: name, seconds: options.seconds });
+  return attachUploadedAsset(scope, projectId, { kind, storagePath: path, fileName: name, seconds: options.seconds });
 }
