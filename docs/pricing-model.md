@@ -59,6 +59,10 @@ De drie niveaus staan in `BUSINESS_TIERS` (`src/lib/plans.ts`, `isTeamPlan`); ui
 | Medium | $25 | 270 | $6,13 | $18,87 |
 | Large | $50 | 550 | $12,49 | $37,51 |
 
+### 4b. Batch-variaties (21 oktober 2026)
+
+Een batch van 2–5 varianten kost precies N × de schatting van één advertentie bij dezelfde lengte en kwaliteit; er is geen korting en geen opslag. Elke variant reserveert zijn eigen credits (bestaande grootboekregels), de balans wordt vooraf op het totaal gecontroleerd, het budget per creatie (`MAX_COST_PER_CREATIVE_USD`) geldt per variant, en de limieten per gebruiker per dag en maand gelden voor het totaal. Een mislukte variant betaalt alleen zichzelf terug. Niet beschikbaar op het gratis plan.
+
 ## 5. Regels
 
 - **Geldigheid** (`CREDIT_EXPIRY`, besluit 21 oktober 2026): betaalde credits (abonnementen en pakketten) **vervallen nooit** zolang het account bestaat, ook niet na opzeggen van het abonnement; bij verwijderen van het account vervallen ze. De gratis eerste advertentie vervalt 30 dagen na toekenning. De marge per plan gaat uit van volledig gebruik van alle credits (`planMargin` rekent de kosten van álle inbegrepen credits), dus ongebruikte credits zijn nooit als omzet geteld; de marges in §3 en §4 veranderen hierdoor niet: Starter 68%, Pro 67%, Scale 67% (alle ≥ 3×), pakketten 4× (110 × $0,0227 × 4 = $9,99 ≤ $10; 270 → $24,52 ≤ $25; 550 → $49,94 ≤ $50). Geen plan zakt onder de marge; geen prijs hoeft te veranderen. Kanttekening: credits die jaren later worden gebruikt kosten dan de leverancierstarieven van dat moment; de marge is berekend op de tarieven van vandaag.

@@ -362,3 +362,26 @@ Gebouwd na de opschoonronde (`820c883` … `ffd4139`) en vóór de tag `pre-plat
 - **Productiebuild in databasemodus** slaagt sinds 21 oktober (zie hoofdstuk 8.3 van de layout-research): app-routes mogen blokkeren (`instant = false`), sitekop en calculators achter `Suspense`, credittabel voor de statische platformpagina uurlijks gecacht (`src/lib/pricingCached.ts`).
 
 **Open na deze ronde**: webhooks voor de API en voor de providers (fase 8 stap 8), echte case studies en reviews met toestemming (`content-inbox/`), Reditus-account en script-URL, Stripe-producten incl. Business-prijzen (`npm run stripe:setup`), e-mailprovider, analytics-provider, juridische controle van de concepten, Supabase "exposed schemas" in het dashboard, 390 px op een echt toestel, `notFound()` in dynamische routes geeft onder Cache Components status 200 met de niet-gevonden-pagina (dev-pagina's en onbekende verhalen; zie de notitie in `docs/stage8-plan.md` §10).
+
+
+## Groeifuncties (gebouwd 21 oktober 2026, master-opdracht 3)
+
+Tag `pre-growth-features` markeert de staat ervoor. Per onderdeel één commit; details in `CLAUDE.md` onder "Growth features".
+
+1. **Andere versie** van een advertentie met alles vooringevuld; projecten gegroepeerd als versies ("Version 2 of …"), lijst "Other versions" op de projectpagina.
+2. **Deze advertentie vertalen**: de afgeronde video is de bron, geen upload; rechten vastgelegd als "gegenereerd in Reelay"; gegroepeerd onder de advertentie.
+3. **Formatbibliotheek**: acht echte formats die alleen richting en toon invullen; chips in het formulier, rij op het dashboard, sectie op /examples (EN en NL).
+4. **Batch-variaties**: 2–5 varianten per format of hookstijl, elk een eigen project en run, alle credits vooraf gereserveerd, per variant het budget per creatie, gedeeltelijk falen betaalt alleen die variant terug; batchpagina met Compare en Download all; niet op het gratis plan.
+5. **Notificaties**: één e-mail per project of per batch (uit te zetten in Profile), badge, toast en paginatitel in de app.
+6. **Webhooks**: inkomend van HeyGen, fal.ai en Shotstack (geverifieerd, idempotent, polling als terugval); uitgaand per werkruimte met HMAC-handtekening, retries en herhaalknop, gedocumenteerd op /docs/api.
+7. **Beheerdashboard** /admin voor `ADMIN_EMAILS`, harde 404 voor anderen, alleen aggregaten, Retry en Cancel voor vastgelopen projecten.
+8. **Onboarding en organisatie**: checklist, zoeken, tags, archiveren, dupliceren, zip van meerdere video's, publieke kijklink met verloopdatum.
+
+### Niet gebouwd in deze ronde (bewuste afweging)
+
+- **Ad Launcher** (advertenties direct naar Meta/TikTok zetten): vraagt app-review bij de platformen, tokens per klant en een campagnemodel; buiten de kern (het proces maakt video's, lanceert ze niet). Pas overwegen als klanten erom vragen en het beheer van hun ad-accounts geregeld is.
+- **Prestatie-analyse (ROAS, CTR)**: vereist dezelfde platformkoppelingen plus attributie; een analytics-product op zich (regel 5). Een lichte variant is denkbaar: klanten plakken hun cijfers bij een versie om te vergelijken.
+- **Concurrentietracker**: scrapen van advertentiebibliotheken van derden is juridisch en technisch wankel en buiten de belofte "jouw product → jouw video".
+- **"Ad Clone"** (bestaande advertentie nabouwen): kopieert andermans creatief werk; rechten onduidelijk. Hoogstens als "maak een versie van mijn eigen advertentie", wat de versies al bieden.
+- **Statische beeldadvertenties**: een ander product (beeld in plaats van video); kan later via een beeldmodel, maar de montage, ondertitels en presentator vervallen dan. Lage prioriteit.
+- **Creative Agent-chat**: een gesprekslaag over het formulier heen; de formats en de scriptreview dekken het meeste. Pas na echte vraag.

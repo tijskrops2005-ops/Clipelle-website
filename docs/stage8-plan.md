@@ -151,3 +151,9 @@ Echte gebruikersaccounts en betalingen, e-mailnotificaties, meerdere varianten i
 17. **API v1**: `API_RATE_LIMIT_PER_MINUTE` (standaard 60) op de server zetten; sleutels zijn per werkruimte en alleen op betaalde plannen. Webhooks voor de API zijn nog niet gebouwd (klanten pollen `GET /api/v1/projects/{id}`).
 18. **Inhoud die Tijs aanlevert**: case studies en reviews met toestemming in `content-inbox/` (zie de README daar), volumes en doorlooptijd van de managed service in `src/content/services.ts`, social-links in `src/content/social.ts`, de echte advertentie (foto, script, kosten) in `src/content/realOutput.ts`, gemeten productietijden in `src/content/measured.ts`.
 19. **Statuscodes onder Cache Components**: een `notFound()` in een dynamisch gerenderde route (app-pagina's, `/dev/*` in productie, onbekend klantverhaal) stuurt status 200 met de niet-gevonden-pagina, omdat de statische schil al verzonden is. Functioneel verborgen, maar voor zoekmachines een "soft 404"; bij de deploy een regel in `src/proxy.ts` overwegen die `/dev` en `/api/dev` buiten development hard met 404 beantwoordt.
+
+**Toegevoegd 21 oktober 2026 (groeifuncties)**
+20. **Webhooks (stap 8) staan**: zet `APP_BASE_URL` op het publieke https-domein, registreer het HeyGen-endpoint via `/dev/webhooks` (development, gratis) en zet het getoonde geheim in `HEYGEN_WEBHOOK_SECRET`. fal.ai en Shotstack krijgen hun callback-URL per job zodra `APP_BASE_URL` https is; zonder die variabele blijft alles pollen (werkt ook).
+21. **`ADMIN_EMAILS`**: komma-gescheiden adressen die `/admin` mogen openen; leeg = niemand.
+22. **Uitgaande webhooks**: geen instelling nodig; klanten maken endpoints in Settings → API keys → Webhooks. Inngest moet in productie draaien (`INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY`) omdat de bezorging en de retries daar lopen.
+23. **E-mailnotificaties** gebruiken dezelfde `RESEND_API_KEY`/`EMAIL_FROM` als de aanvraagmails; zonder die worden ze alleen gelogd.
