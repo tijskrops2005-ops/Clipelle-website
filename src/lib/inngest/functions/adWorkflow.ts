@@ -1,5 +1,3 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import sharp from "sharp";
 import { adProjectCreated, adScriptApproved, inngest, stepRetry } from "@/lib/inngest/client";
 import { and, eq } from "drizzle-orm";
@@ -25,7 +23,6 @@ import { createAvatarVideo, estimateCostUsd, estimateSeconds, getLook, getVideo,
 import { isPortraitLook, lookOrientation } from "@/lib/lookOrientation";
 import { buildAdEdit, getRender, shotstackEnv, startRender } from "@/lib/services/finalEdit";
 import { annotateSpend, reserveSpend, settleSpend } from "@/lib/services/costGuard";
-import { putObject, signedDownloadUrl } from "@/lib/storage";
 import { SHOTSTACK_USD_PER_SECOND } from "@/lib/translatePricing";
 import { workflowSettings as cfg } from "@/lib/workflow/settings";
 import {
@@ -373,8 +370,6 @@ async function pickVoice(look: AvatarLook, input: AdInput): Promise<string> {
 
 /* ---------- final edit ---------- */
 
-const MUSIC_PATH = "shared/music/sample-music.mp3";
-
 async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: string, presenterAssetId: string, step: StepTools): Promise<string> {
   const key = "finalEdit";
   const existing = await step.run("final-check", () => loadStep(projectId, key));
@@ -384,7 +379,6 @@ async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: st
     const row = await markProcessing(projectId, key);
     try {
       const [clip, presenter] = await Promise.all([loadAsset(clipAssetId), loadAsset(presenterAssetId)]);
-      const musicUrl = await ensureSharedMusic();
       const adInput = (await loadProject(projectId)).input as AdInput;
       const logoAsset = adInput.brand?.logoAssetId ? await loadAsset(adInput.brand.logoAssetId) : null;
       // The 9:16 photo the clip step prepared (stored as "prepared-9x16.jpg"); used for the still overlays.
@@ -396,7 +390,6 @@ async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: st
         presenterSeconds: presenter.seconds ?? adInput.seconds ?? cfg.adSeconds,
         productClipUrl: await providerUrl(clip),
         productClipSeconds: clip.seconds ?? CLIP_SECONDS,
-        musicUrl,
         productPhotoUrl: preparedPhoto ? await providerUrl(preparedPhoto) : undefined,
         colors: adInput.brand?.accent ? { accent: adInput.brand.accent } : undefined,
         brand: { font: adInput.brand?.font, captionStyle: adInput.brand?.captionStyle, logoUrl: logoAsset ? await providerUrl(logoAsset) : undefined },
@@ -443,13 +436,3 @@ async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: st
   return step.run("final-timeout", () => failStep(projectId, key, new StepFailure(`The final edit took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
 }
 
-/** The demo music track lives once in storage; a signed URL is handed to Shotstack. */
-async function ensureSharedMusic() {
-  try {
-    return await signedDownloadUrl(MUSIC_PATH, 6 * 3600);
-  } catch {
-    const data = await readFile(path.join(process.cwd(), "public", "demo", "sample-music.mp3"));
-    await putObject(MUSIC_PATH, new Uint8Array(data), "audio/mpeg");
-    return signedDownloadUrl(MUSIC_PATH, 6 * 3600);
-  }
-}

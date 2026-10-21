@@ -25,7 +25,7 @@ type Run = {
   error?: string;
   status?: string;
   edit?: unknown;
-  assets?: { presenter: string; product: string; music: string; presenterSeconds: number };
+  assets?: { presenter: string; product: string; presenterSeconds: number };
   meta?: { totalSeconds: number; filled?: boolean; layout?: { scenes: { kind: string; start: number; length: number }[]; overlays: unknown[] } };
   entryId?: string;
 };
@@ -35,7 +35,6 @@ const STORAGE_KEY = "reelay.dev.final-edit.runs";
 export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; env: "stage" | "v1" }) {
   const [presenterUrl, setPresenterUrl] = useState("");
   const [productClipUrl, setProductClipUrl] = useState("");
-  const [musicUrl, setMusicUrl] = useState("");
   const [seconds, setSeconds] = useState<AdLength>(DEFAULT_AD_SECONDS);
 
   const [phase, setPhase] = useState<Phase>("idle");
@@ -102,7 +101,7 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
       const res = await fetch("/api/dev/final-edit/render", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ presenterUrl, productClipUrl, musicUrl, seconds, confirmed: true }),
+        body: JSON.stringify({ presenterUrl, productClipUrl, seconds, confirmed: true }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
@@ -139,13 +138,12 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
         <Card>
           <CardHeader>
             <p className="label-mono text-muted">Sources</p>
-            <CardTitle className="mt-2">Clips and music</CardTitle>
-            <p className="mt-1 text-[15px] text-muted">Leave empty to use the demo files: a presenter clip with real speech (for the captions), the gradient product clip and a synthetic music track. Public URLs only; Shotstack fetches them itself.</p>
+            <CardTitle className="mt-2">Clips</CardTitle>
+            <p className="mt-1 text-[15px] text-muted">Leave empty to use the demo files: a presenter clip with real speech (for the captions) and the gradient product clip. Public URLs only; Shotstack fetches them itself.</p>
           </CardHeader>
           <CardContent className="space-y-5">
             <Field id="presenterUrl" label="Presenter clip URL" optional hint="e.g. the video_url from the HeyGen test (temporary link)."><Input id="presenterUrl" value={presenterUrl} onChange={(e) => setPresenterUrl(e.target.value)} disabled={busy} placeholder="demo: sample-presenter.mp4" /></Field>
             <Field id="productClipUrl" label="Product clip URL" optional hint="e.g. the clip from the product clip test."><Input id="productClipUrl" value={productClipUrl} onChange={(e) => setProductClipUrl(e.target.value)} disabled={busy} placeholder="demo: sample-video.mp4" /></Field>
-            <Field id="musicUrl" label="Music URL" optional hint="MP3 or WAV. Later: a track from the HeyGen music catalogue."><Input id="musicUrl" value={musicUrl} onChange={(e) => setMusicUrl(e.target.value)} disabled={busy} placeholder="demo: sample-music.mp3" /></Field>
 
             <Field id="seconds" label="Ad length" hint="The presenter runs the whole ad. A shorter presenter clip (the 9-second demo) is repeated to reach this length, so the layout can be checked for free.">
               <select id="seconds" value={seconds} onChange={(e) => setSeconds(Number(e.target.value) as AdLength)} disabled={busy} className={cn(controlClass, controlStateClass(false), "h-11")}>
@@ -156,7 +154,7 @@ export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; e
             </Field>
             <div className="rounded-[14px] bg-surface-muted p-4 text-sm">
               <p className="font-semibold text-ink">{env === "stage" ? "Sandbox render: free, with a Shotstack watermark." : `Production render: about ${usd(captionsUsd(seconds))} for ${seconds} s (pay-as-you-go).`}</p>
-              <p className="mt-1 text-[13px] text-muted">Output 1080×1920, 25 fps. Presenter as the base for the full length, captions transcribed from its audio, music softly underneath. On screen:</p>
+              <p className="mt-1 text-[13px] text-muted">Output 1080×1920, 25 fps. Presenter as the base for the full length, captions transcribed from its audio, no music. On screen:</p>
               <ul className="mt-2 space-y-0.5 text-[13px] text-muted">
                 {describeLayout(layout).map((line) => (
                   <li key={line} className="flex gap-2"><span className="label-mono shrink-0 text-ink">{line.split(":")[0]}</span><span>{line.split(": ")[1]}</span></li>

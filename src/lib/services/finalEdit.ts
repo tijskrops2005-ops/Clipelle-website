@@ -4,7 +4,7 @@ import { DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, type CaptionStyle } fro
 
 /**
  * Step 5 — final edit via Shotstack (server-only).
- * Presenter clip + product clip + hook text + TikTok-style captions + music + CTA end card → one 9:16 MP4.
+ * Presenter clip + product clip + TikTok-style captions (the only text on screen) → one 9:16 MP4. No music (removed 2026-10-21).
  * Verified against shotstack.io/docs on 2026-10-19 (see docs/vendors/shotstack/capabilities.md).
  *
  * Environments: "stage" = sandbox (free, watermarked), "v1" = production (credits).
@@ -119,7 +119,6 @@ export type AdEditInput = {
   productClipUrl: string;
   /** Seconds available in the one product clip (reused for every overlay). */
   productClipSeconds: number;
-  musicUrl?: string;
   /** The prepared 9:16 product photo; odd overlays show it with a slow pan for variety. Optional. */
   productPhotoUrl?: string;
   /** Brand colours (hex). Defaults match the app tokens. */
@@ -139,7 +138,7 @@ export type AdEditInput = {
  * Builds the Shotstack Edit JSON for a vertical ad. Pure function: easy to test and version.
  * The presenter video runs the whole ad (picture and voice); product footage is laid over it at
  * the moments from adLayout() with varied camera moves; captions over everything (the only text on
- * screen), optional logo top right; music softly underneath.
+ * screen), optional logo top right. No music: the presenter audio is the whole soundtrack.
  */
 export function buildAdEdit(input: AdEditInput) {
   const accent = input.colors?.accent ?? "#D43F1B";
@@ -233,14 +232,11 @@ export function buildAdEdit(input: AdEditInput) {
     ? { clips: [{ asset: { type: "image", src: input.brand.logoUrl }, start: 0, length: total, fit: "contain", scale: 0.14, position: "topRight", offset: { x: -0.04, y: -0.03 }, opacity: 0.95 }] }
     : null;
   const presenter = { clips: presenterClips };
-  const music = input.musicUrl
-    ? { clips: [{ asset: { type: "audio", src: input.musicUrl, volume: 0.18, effect: "fadeInFadeOut" }, start: 0, length: total }] }
-    : null;
 
   return {
     timeline: {
       background: ink,
-      tracks: [...(logo ? [logo] : []), captions, productOverlays, presenter, ...(music ? [music] : [])],
+      tracks: [...(logo ? [logo] : []), captions, productOverlays, presenter],
     },
     output: { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 },
     meta: { totalSeconds: total, layout, filled: Boolean(fill) },

@@ -17,7 +17,7 @@ export default function FinalEditTestPage() {
       <PageHeader
         title="Final edit test"
         badge={env === "stage" ? <Badge tone="warning">Sandbox · free · watermark</Badge> : <Badge tone="danger">Production · real costs</Badge>}
-        description="Standalone check of the final edit: a presenter clip, a product clip, a hook, three benefits, music and a CTA end card become one 9:16 MP4 with TikTok-style captions. Defaults use the demo files in public/demo; paste URLs from the other test pages to use real output."
+        description="Standalone check of the final edit: a presenter clip and a product clip become one 9:16 MP4 with captions as the only text on screen and no music. Defaults use the demo files in public/demo; paste URLs from the other test pages to use real output."
       />
       <FinalEditTestPanel keyPresent={keyPresent} env={env} />
     </div>

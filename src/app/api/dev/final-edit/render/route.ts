@@ -11,7 +11,6 @@ const SHOTSTACK_USD_PER_MINUTE = 0.2;
 type Body = {
   presenterUrl?: string;
   productClipUrl?: string;
-  musicUrl?: string;
   presenterSeconds?: number;
   /** Chosen ad length; a shorter presenter clip is repeated to reach it (sandbox check of the layout). */
   seconds?: number;
@@ -51,7 +50,6 @@ export async function POST(request: Request) {
     const product = body.productClipUrl?.trim()
       ? { url: body.productClipUrl.trim(), duration: 8 }
       : await demoAsset("sample-video.mp4", "video/mp4");
-    const music = body.musicUrl?.trim() ? { url: body.musicUrl.trim() } : await demoAsset("sample-music.mp3", "audio/mpeg");
 
     const presenterSeconds = Math.max(1, Math.round((presenter.duration ?? body.presenterSeconds ?? 8) * 10) / 10);
     const edit = buildAdEdit({
@@ -59,7 +57,6 @@ export async function POST(request: Request) {
       presenterSeconds,
       productClipUrl: product.url,
       productClipSeconds: product.duration ?? 8,
-      musicUrl: music.url,
       fillToSeconds: seconds,
     });
     if (body.dryRun) return Response.json({ dryRun: true, edit: { timeline: edit.timeline, output: edit.output }, meta: edit.meta });
@@ -72,7 +69,7 @@ export async function POST(request: Request) {
           service: "shotstack",
           action: "render",
           estimatedUsd: estimateUsd,
-          fingerprintInput: { seconds, presenter: presenter.url, product: product.url, music: music.url },
+          fingerprintInput: { seconds, presenter: presenter.url, product: product.url },
           meta: { totalSeconds: edit.meta.totalSeconds, seconds },
         });
         entryId = reserved.entryId;
@@ -94,7 +91,7 @@ export async function POST(request: Request) {
       ...render,
       edit: { timeline: edit.timeline, output: edit.output },
       meta: edit.meta,
-      assets: { presenter: presenter.url, product: product.url, music: music.url, presenterSeconds },
+      assets: { presenter: presenter.url, product: product.url, presenterSeconds },
       estimateUsd,
       entryId,
       uploadMs: Date.now() - started,

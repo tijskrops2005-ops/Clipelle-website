@@ -5,10 +5,10 @@ import { WORDS_PER_SECOND, maxSpokenWords } from "@/lib/pricing";
  * the script prompt uses it to tell Claude the scene plan, the Shotstack edit uses it
  * to place the product-clip overlays, and the dev pages show it.
  *
- * Structure: presenter video as the base for the full length; hook text over it in the
- * first 2 s; the one product clip laid over it at fixed moments (the same clip, different
- * pieces, alternating zoom) with the benefits as text on the first overlay; end card with
- * the CTA button in the last 2 s. Music softly underneath.
+ * Structure: presenter video as the base for the full length; the one product clip laid over
+ * it at fixed moments (the same clip, different pieces, varied camera moves); captions are the
+ * only text on screen (fixed rule of 2026-10-19). The HOOK/END_CARD constants only keep the
+ * first and last seconds free of overlays. No music (removed 2026-10-21).
  */
 
 export const HOOK_SECONDS = 2;

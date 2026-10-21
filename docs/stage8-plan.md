@@ -7,7 +7,7 @@ Feiten over prijzen en limieten komen van de officiële pagina's op de peildatum
 
 Een klant klikt "Generate video" of "Start translation", sluit de laptop, en vindt later een afgeronde video in de app. Daarvoor moet alles wat nu op de `/dev`-testpagina's handmatig gebeurt (starten, wachten, pollen, URL's overnemen, kosten bijhouden) op de server gebeuren, onafhankelijk van de browser, met opslag die niet verloopt en met herstel bij fouten.
 
-**Workflow A (advertentie vanaf productfoto):** script (Claude) → productclip (fal.ai) en presentator (HeyGen) tegelijk → montage met hook, ondertitels, muziek en CTA (Shotstack) → opslag → klaar.
+**Workflow A (advertentie vanaf productfoto):** script (Claude) → productclip (fal.ai) en presentator (HeyGen) tegelijk → montage met ondertitels als enige tekst, zonder muziek (Shotstack) → opslag → klaar.
 
 **Workflow B (bestaande video vertalen):** upload → vertalen met behoud van stem en lipsync (HeyGen proofread-sessie) → *optioneel* wachten op correctie ("Review before rendering"; zonder vinkje zet Claude de vertaling automatisch in advertentietoon) → video genereren (HeyGen) → *optioneel* beeldverbetering (fal.ai Topaz) → ondertitels in TikTok-stijl, formaat origineel of 9:16 (Shotstack) → opslag → klaar. De beelden en de montage blijven exact hetzelfde; alleen de taal verandert.
 
