@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/Button";
 import { Brand } from "@/components/Brand";
 import { UserMenu } from "@/components/UserMenu";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
-import { isActivePath, navItems } from "@/components/nav";
+import { isActivePath, navItems, adminNavItem } from "@/components/nav";
 import { UnseenBadge } from "@/components/StatusWatcher";
 
 /** Desktop navigation: sits on the page background, only the active item is a white card. */
-export type ShellUser = { email: string; name?: string; credits: number | null; workspace: { id: string; name: string; kind: string; role: string }; workspaces: { id: string; name: string; kind: string; role: string }[] } | null;
+export type ShellUser = { email: string; name?: string; credits: number | null; workspace: { id: string; name: string; kind: string; role: string }; workspaces: { id: string; name: string; kind: string; role: string }[]; isAdmin?: boolean } | null;
 
 export function Sidebar({ user }: { user: ShellUser }) {
   const pathname = usePathname();
@@ -31,7 +31,7 @@ export function Sidebar({ user }: { user: ShellUser }) {
       </Button>
 
       <nav aria-label="Main" className="mt-8 flex flex-1 flex-col gap-1">
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {[...navItems, ...(user?.isAdmin ? [adminNavItem] : [])].map(({ href, label, icon: Icon }) => {
           const active = isActivePath(pathname, href);
           return (
             <Link

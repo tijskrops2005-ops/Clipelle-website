@@ -8,6 +8,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { DemoRunner } from "@/components/DemoRunner";
 import { StatusWatcher } from "@/components/StatusWatcher";
+import { isAdmin } from "@/lib/admin";
 
 /**
  * Persistent frame for every app page. The sidebar sits on the page background;
@@ -25,7 +26,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
     workspaces = await listWorkspacesFor(user.id).catch(() => []);
   }
   const credits = user && scope && !config.demoMode ? await getCreditBalance(scope.workspaceId).catch(() => null) : null;
-  const who = user && scope ? { email: user.email, name: user.name, credits, workspace: { id: scope.workspaceId, name: scope.workspaceName, kind: scope.workspaceKind, role: scope.role }, workspaces } : null;
+  const who = user && scope ? { email: user.email, name: user.name, credits, workspace: { id: scope.workspaceId, name: scope.workspaceName, kind: scope.workspaceKind, role: scope.role }, workspaces, isAdmin: !config.demoMode && isAdmin(user.email) } : null;
   return (
     <div className="flex min-h-screen">
       <DemoRunner />

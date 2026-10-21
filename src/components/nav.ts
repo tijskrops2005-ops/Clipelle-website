@@ -1,5 +1,6 @@
 import {
   FolderOpen,
+  ShieldCheck,
   LayoutDashboard,
   Plus,
   Settings,
@@ -19,3 +20,6 @@ export const navItems: NavItem[] = [
 export function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
+
+/** Shown only to administrators (ADMIN_EMAILS); the page is a 404 for anyone else. */
+export const adminNavItem: NavItem = { href: "/admin", label: "Admin", icon: ShieldCheck };

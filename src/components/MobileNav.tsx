@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Brand } from "@/components/Brand";
 import { UserMenu } from "@/components/UserMenu";
 import type { ShellUser } from "@/components/Sidebar";
-import { isActivePath, navItems } from "@/components/nav";
+import { isActivePath, navItems, adminNavItem } from "@/components/nav";
 import { UnseenBadge } from "@/components/StatusWatcher";
 
 /** Top bar with a hamburger that opens a left drawer holding the same links as the sidebar. */
@@ -97,7 +97,7 @@ export function MobileNav({ user }: { user: ShellUser }) {
             </Button>
 
             <nav aria-label="Main" className="mt-6 flex flex-col gap-1">
-              {navItems.map(({ href, label, icon: Icon }) => {
+              {[...navItems, ...(user?.isAdmin ? [adminNavItem] : [])].map(({ href, label, icon: Icon }) => {
                 const active = isActivePath(pathname, href);
                 return (
                   <Link
