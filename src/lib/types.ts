@@ -46,6 +46,13 @@ interface ProjectBase {
   budgetUsd?: number;
   /** Estimate shown before the start, kept for the project page. */
   estimateUsd?: number;
+  /**
+   * Grouping (2026-10-21): an ad made as "another version" points at the first ad of its group
+   * (the root); a translation made from an ad points at that ad. Missing = a project on its own.
+   */
+  parentId?: string;
+  /** 1 for the first ad of a group, 2 for the next version, and so on. Missing = 1. */
+  version?: number;
 }
 
 /** Workflow A: one product → one finished 9:16 ad. */

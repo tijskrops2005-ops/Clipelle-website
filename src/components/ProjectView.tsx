@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Download, FolderOpen, Plus } from "lucide-react";
+import { ArrowLeft, Copy, Download, FolderOpen, Languages, Plus } from "lucide-react";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { projectDurationMs, projectEstimateUsd } from "@/lib/projectMeta";
 import { formatSeconds } from "@/components/pipeline/PipelineStep";
 import { config } from "@/lib/config";
 import type { AdProject } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
-import { useProject, useProjectsReady } from "@/lib/data/client";
+import { cn, formatDate } from "@/lib/utils";
+import { useProject, useProjects, useProjectsReady } from "@/lib/data/client";
+import { otherVersionsOf, translationsOf } from "@/lib/versions";
+import { languageOf } from "@/lib/languages";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -72,6 +74,7 @@ export function ProjectView({ id }: { id: string }) {
         <>
           {/* The result first: the player and the facts about the video, then the rest folded away. */}
           <ResultHero project={project} />
+          <RelatedProjects project={project} />
           <Collapsible title="Pipeline" summary={pipelineSummary(project)}>
             <Pipeline project={project} />
           </Collapsible>
@@ -90,6 +93,7 @@ export function ProjectView({ id }: { id: string }) {
           <aside className="grid gap-6 md:grid-cols-2 xl:sticky xl:top-6 xl:block xl:self-start xl:space-y-6">
             <ResultCard project={project} />
             <DetailsCard project={project} />
+            <RelatedProjects project={project} compact />
           </aside>
         </div>
       )}
@@ -148,9 +152,13 @@ function ResultHero({ project }: { project: AdProject }) {
                 <Download className="size-[18px]" aria-hidden />
                 Download video
               </Button>
-              <Button href="/new/ad" variant="primary" size="lg">
-                <Plus className="size-4" aria-hidden />
-                Make another
+              <Button href={`/new/ad?from=${project.id}`} variant="primary" size="lg">
+                <Copy className="size-4" aria-hidden />
+                Make another version
+              </Button>
+              <Button href={`/new/translate?from=${project.id}`} variant="secondary" size="lg">
+                <Languages className="size-4" aria-hidden />
+                Localize this ad
               </Button>
               <Button href="/dashboard" variant="ghost" size="lg">
                 <ArrowLeft className="size-4" aria-hidden />
@@ -199,15 +207,76 @@ function HeaderActions({ project }: { project: AdProject }) {
   if (project.status !== "completed" || !project.finalVideoUrl) return null;
   return (
     <div className="flex items-center gap-3">
-      <Button href="/new/ad" variant="secondary">
-        <Plus className="size-4" aria-hidden />
-        Make another
+      <Button href={`/new/ad?from=${project.id}`} variant="secondary">
+        <Copy className="size-4" aria-hidden />
+        Make another version
       </Button>
       <Button href={project.finalVideoUrl} variant="accent" download>
         <Download className="size-4" aria-hidden />
         Download
       </Button>
     </div>
+  );
+}
+
+/**
+ * The group this ad belongs to: its other versions ("Make another version") and the translations
+ * made from it ("Localize this ad"). Hidden when there is nothing to show.
+ */
+function RelatedProjects({ project, compact }: { project: AdProject; compact?: boolean }) {
+  const all = useProjects();
+  const versions = otherVersionsOf(all, project);
+  const translations = translationsOf(all, project.id);
+  if (versions.length === 0 && translations.length === 0) return null;
+  const body = (
+    <CardContent className={cn("grid gap-6", !compact && "md:grid-cols-2")}>
+      {versions.length > 0 && (
+        <div>
+          <p className="label-mono mb-2 text-muted">Other versions</p>
+          <ul className="space-y-1.5">
+            {versions.map((v) => (
+              <li key={v.id}>
+                <Link href={`/projects/${v.id}`} className="focus-ring flex items-center justify-between gap-3 rounded-control px-2 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-surface-muted">
+                  <span className="truncate">{v.name}</span>
+                  <StatusBadge status={v.status} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {translations.length > 0 && (
+        <div>
+          <p className="label-mono mb-2 text-muted">Translations of this ad</p>
+          <ul className="space-y-1.5">
+            {translations.map((t) => (
+              <li key={t.id}>
+                <Link href={`/projects/${t.id}`} className="focus-ring flex items-center justify-between gap-3 rounded-control px-2 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-surface-muted">
+                  <span className="truncate">{t.targetLanguages.map((l) => languageOf(l).tag).join(", ")} · {t.name}</span>
+                  <StatusBadge status={t.status} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </CardContent>
+  );
+  if (compact) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Related</CardTitle>
+        </CardHeader>
+        {body}
+      </Card>
+    );
+  }
+  return (
+    <section className="space-y-5">
+      <SectionHeader title="Versions and translations" description={`This ad is version ${project.version ?? 1}. Other versions and translations made from it are listed here.`} />
+      <Card>{body}</Card>
+    </section>
   );
 }
 

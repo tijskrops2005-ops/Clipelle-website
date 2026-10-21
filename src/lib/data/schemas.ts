@@ -35,6 +35,8 @@ export const AdBody = z.object({
   productUrl: z.string().trim().url().optional().or(z.literal("")),
   description: z.string().trim().min(20).max(4000),
   script: z.string().trim().max(5000).optional().or(z.literal("")),
+  /** "Make another version": the ad this one is a version of (same workspace). */
+  parentId: z.string().uuid().optional(),
 });
 
 /** The translate fields without the cross-field check, so callers can omit/extend before adding it. */

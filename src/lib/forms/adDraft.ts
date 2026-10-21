@@ -77,12 +77,16 @@ export type AdFormState = {
   speed: SpeedKey;
   tone: AdTone;
   images: File[];
+  /** "Make another version": the ad this one is a version of. Absent = a new ad (the draft is unchanged). */
+  parentId?: string;
 };
 
 /** Exactly what the form sends to createAdProject for a given state. */
 export function buildAdDraft(s: AdFormState): AdProjectDraft {
   const effectiveAccent = effectiveAccentOf(s.accent, s.customAccent);
   return {
+    // Only present for a version: an ordinary draft keeps exactly the keys it always had.
+    ...(s.parentId ? { parentId: s.parentId } : {}),
     name: s.values.projectName.trim(),
     seconds: s.seconds,
     engine: s.engine,

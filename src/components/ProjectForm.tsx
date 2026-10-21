@@ -61,11 +61,39 @@ type Errors = AdFormErrors;
  * (rule 4) and creates the project through the data layer. What it sends is built by
  * buildAdDraft and covered by src/lib/forms/forms.test.ts.
  */
-/** Starting values from "URL to video": the form behaves exactly as with typed values and sends the same draft. */
-export type ProjectFormInitial = { values?: Partial<Values>; images?: UploadedImage[] };
+/**
+ * Starting values from "URL to video" (values and photos) or from "Make another version" (every
+ * setting of the earlier ad, plus `parentId`): the form behaves exactly as with typed values and
+ * sends the same draft; only a version carries `parentId`.
+ */
+export type ProjectFormInitial = {
+  values?: Partial<Values>;
+  images?: UploadedImage[];
+  /** The ad this one is a version of. The form then keeps the earlier ad's brand style instead of the saved defaults. */
+  parentId?: string;
+  settings?: Partial<{
+    seconds: AdLength;
+    engine: PresenterEngine;
+    lookId: string;
+    language: AdLanguageCode;
+    voiceAccent: string;
+    voiceId: string;
+    speed: SpeedKey;
+    tone: AdTone;
+    backgroundChoice: string;
+    backgroundImages: UploadedImage[];
+    accent: string;
+    customAccent: string;
+    captionStyle: CaptionStyle;
+    font: FontKey;
+    logoImages: UploadedImage[];
+    reviewScript: boolean;
+  }>;
+};
 
 export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) {
   const router = useRouter();
+  const preset = initial?.settings ?? {};
   const [values, setValues] = useState<Values>({
     projectName: "",
     productName: "",
@@ -76,33 +104,36 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
     direction: "",
     ...initial?.values,
   });
-  const [language, setLanguage] = useState<AdLanguageCode>(isAdLanguage(DEFAULT_AD_LANGUAGE) ? DEFAULT_AD_LANGUAGE : "en");
-  const [voiceAccent, setVoiceAccent] = useState<string | undefined>(undefined);
-  const [voiceId, setVoiceId] = useState<string | undefined>(undefined);
-  const [speed, setSpeed] = useState<SpeedKey>(DEFAULT_SPEED);
+  const [language, setLanguage] = useState<AdLanguageCode>(preset.language ?? (isAdLanguage(DEFAULT_AD_LANGUAGE) ? DEFAULT_AD_LANGUAGE : "en"));
+  const [voiceAccent, setVoiceAccent] = useState<string | undefined>(preset.voiceAccent);
+  const [voiceId, setVoiceId] = useState<string | undefined>(preset.voiceId);
+  const [speed, setSpeed] = useState<SpeedKey>(preset.speed ?? DEFAULT_SPEED);
   const [voiceOptions, setVoiceOptions] = useState<VoiceOptions | null>(null);
   /** The presenter in effect (picked or default): its gender filters the voices, its own voice is the default. */
   const [presenter, setPresenter] = useState<Presenter | undefined>(undefined);
-  const [tone, setTone] = useState<AdTone>(DEFAULT_TONE);
-  const [seconds, setSeconds] = useState<AdLength>(DEFAULT_AD_SECONDS);
-  const [engine, setEngine] = useState<PresenterEngine>(DEFAULT_PRESENTER_ENGINE);
-  const [lookId, setLookId] = useState<string | undefined>(undefined);
+  const [tone, setTone] = useState<AdTone>(preset.tone ?? DEFAULT_TONE);
+  const [seconds, setSeconds] = useState<AdLength>(preset.seconds ?? DEFAULT_AD_SECONDS);
+  const [engine, setEngine] = useState<PresenterEngine>(preset.engine ?? DEFAULT_PRESENTER_ENGINE);
+  const [lookId, setLookId] = useState<string | undefined>(preset.lookId);
   /** Presenter background: undefined = the presenter's own; a colour key; or "image" with one uploaded file. */
-  const [backgroundChoice, setBackgroundChoice] = useState<"own" | "image" | string>("own");
-  const [backgroundImages, setBackgroundImages] = useState<UploadedImage[]>([]);
+  const [backgroundChoice, setBackgroundChoice] = useState<"own" | "image" | string>(preset.backgroundChoice ?? "own");
+  const [backgroundImages, setBackgroundImages] = useState<UploadedImage[]>(preset.backgroundImages ?? []);
   /** Brand style for the final edit; everything optional with app defaults. */
-  const [accent, setAccent] = useState(DEFAULT_ACCENT);
-  const [customAccent, setCustomAccent] = useState("");
-  const [captionStyle, setCaptionStyle] = useState<CaptionStyle>(DEFAULT_CAPTION_STYLE);
-  const [font, setFont] = useState<FontKey>(DEFAULT_FONT);
-  const [logoImages, setLogoImages] = useState<UploadedImage[]>([]);
-  const [reviewScript, setReviewScript] = useState(false);
+  const [accent, setAccent] = useState(preset.accent ?? DEFAULT_ACCENT);
+  const [customAccent, setCustomAccent] = useState(preset.customAccent ?? "");
+  const [captionStyle, setCaptionStyle] = useState<CaptionStyle>(preset.captionStyle ?? DEFAULT_CAPTION_STYLE);
+  const [font, setFont] = useState<FontKey>(preset.font ?? DEFAULT_FONT);
+  const [logoImages, setLogoImages] = useState<UploadedImage[]>(preset.logoImages ?? []);
+  const [reviewScript, setReviewScript] = useState(preset.reviewScript ?? false);
+  const parentId = initial?.parentId;
   const effectiveAccent = effectiveAccentOf(accent, customAccent);
   // White text sits on the accent (the highlighted caption word): warn below 3:1.
   const accentContrast = contrastRatio(effectiveAccent, "#FFFFFF");
   const lowContrast = accentContrast < MIN_LARGE_TEXT_CONTRAST;
   // Brand defaults from Settings → Brand prefill the brand style once; the draft that is sent is built the same way.
+  // A version keeps the earlier ad's style, so the defaults stay out of it.
   useEffect(() => {
+    if (parentId) return;
     let alive = true;
     getBrandDefaults()
       .then((b) => {
@@ -125,7 +156,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
     return () => {
       alive = false;
     };
-  }, []);
+  }, [parentId]);
   const [images, setImages] = useState<UploadedImage[]>(initial?.images ?? []);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -192,6 +223,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
           speed,
           tone,
           images: images.map((img) => img.file),
+          parentId,
         }),
       );
       images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
@@ -218,6 +250,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
     { label: "Voice speed", value: SPEEDS.find((s) => s.key === speed)?.label ?? "Normal" },
     { label: "Tone", value: TONE_META[tone].label },
     { label: "Script", value: values.script.trim() ? "Your own" : reviewScript ? "Written, you review first" : "Written for you", muted: true },
+    ...(parentId ? [{ label: "Version", value: "New version; the earlier ad stays as it is", muted: true }] : []),
   ];
 
   return (

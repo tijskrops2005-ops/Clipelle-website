@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { AdProject, LanguageCode, Project, Step, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { assets, db, projects, steps, translations, type AdInput, type AssetRow, type ProjectRow, type StepRow, type TranslateInput, type TranslationRow } from "@/lib/db";
 import { adProjectCreated, adScriptApproved, inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
@@ -126,6 +126,8 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       spentUsd: spend.totalUsd,
       budgetUsd,
       estimateUsd,
+      parentId: row.parentId ?? undefined,
+      version: row.version,
     };
     return project;
   }
@@ -161,6 +163,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     spentUsd: spend.totalUsd,
     budgetUsd,
     estimateUsd,
+    parentId: row.parentId ?? undefined,
   };
   return project;
 }
@@ -212,7 +215,7 @@ export async function getProjectRowUnscoped(id: string) {
 
 /* ---------- creation: draft → upload assets → start ---------- */
 
-export type NewAdProject = { name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: AdLanguageCode; accent?: string; voiceId?: string; speed: SpeedKey; offer?: string; direction?: string; tone: AdTone; backgroundColor?: string; brand?: { accent?: string; captionStyle?: string; font?: string }; reviewScript: boolean; productName: string; productUrl?: string; description: string; script?: string };
+export type NewAdProject = { parentId?: string; name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: AdLanguageCode; accent?: string; voiceId?: string; speed: SpeedKey; offer?: string; direction?: string; tone: AdTone; backgroundColor?: string; brand?: { accent?: string; captionStyle?: string; font?: string }; reviewScript: boolean; productName: string; productUrl?: string; description: string; script?: string };
 export type NewTranslateProject = {
   name: string;
   sourceFileName: string;
@@ -234,6 +237,7 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
   const { userId, workspaceId } = scope;
   if (input.workflow === "ad") {
     const a = input.ad;
+    const lineage = await versionLineage(scope, a.parentId);
     const [row] = await d
       .insert(projects)
       .values({
@@ -242,6 +246,8 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
         workflow: "ad",
         name: a.name,
         status: "draft",
+        parentId: lineage.rootId,
+        version: lineage.version,
         input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, accent: a.accent, voiceId: a.voiceId, speed: a.speed, offer: a.offer, direction: a.direction, tone: a.tone, background: a.backgroundColor ? { type: "color", value: a.backgroundColor } : undefined, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
       })
       .returning();
@@ -277,6 +283,19 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
   await d.insert(steps).values(TRANSLATE_STEPS.map((key) => ({ projectId: row.id, userId, key, status: "waiting" as const })));
   await d.insert(translations).values(t.targetLanguages.map((language) => ({ projectId: row.id, userId, language, status: "waiting" as const, segments: [] })));
   return row;
+}
+
+/**
+ * "Make another version": every version points at the first ad of the group (the root) and gets
+ * the next number. The parent must be an ad in the same workspace; anything else is "not found".
+ */
+async function versionLineage(scope: DataScope, parentId: string | undefined): Promise<{ rootId: string | null; version: number }> {
+  if (!parentId) return { rootId: null, version: 1 };
+  const parent = await getProjectRow(parentId, scope);
+  if (!parent || parent.workflow !== "ad") throw new DataError("The ad to make a version of was not found.", 404, "not_found");
+  const rootId = parent.parentId ?? parent.id;
+  const [top] = await db().select({ max: sql<number>`coalesce(max(${projects.version}), 1)` }).from(projects).where(and(eq(projects.workspaceId, scope.workspaceId), or(eq(projects.id, rootId), eq(projects.parentId, rootId))));
+  return { rootId, version: Number(top?.max ?? 1) + 1 };
 }
 
 /** Registers an object the browser uploaded with a signed URL. Verifies it really exists. */

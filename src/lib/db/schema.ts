@@ -137,9 +137,13 @@ export const projects = pgTable(
     rightsConfirmedAt: timestamp("rights_confirmed_at", { withTimezone: true }),
     /** Asset id of the finished ad (A). B keeps its results per language in `translations`. */
     finalAssetId: uuid("final_asset_id"),
+    /** Versions of one ad point at the first ad (root); a translation made from an ad points at that ad. */
+    parentId: uuid("parent_id"),
+    /** 1 for the first ad of a group, counting up per "Make another version". */
+    version: integer("version").default(1).notNull(),
     ...timestamps,
   },
-  (t) => [index("projects_owner_created_idx").on(t.ownerId, t.createdAt), index("projects_status_idx").on(t.status)],
+  (t) => [index("projects_owner_created_idx").on(t.ownerId, t.createdAt), index("projects_status_idx").on(t.status), index("projects_parent_idx").on(t.parentId)],
 ).enableRLS();
 
 export const steps = pgTable(

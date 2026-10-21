@@ -137,6 +137,8 @@ export async function listVoices(params: { language: AdLanguageCode; accent?: st
 }
 
 export type AdProjectDraft = {
+  /** "Make another version": the ad this one is a version of. */
+  parentId?: string;
   name: string;
   seconds: number;
   engine: "avatar_iii" | "avatar_iv";
@@ -158,10 +160,13 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
   if (config.demoMode) {
     const imageUrls = await Promise.all(draft.images.map((f) => fileToThumbnail(f)));
     const now = new Date().toISOString();
+    const lineage = demoVersionLineage(draft.parentId);
     const project: AdProject = {
       id: `prj_${Date.now().toString(36)}`,
       workflow: "ad",
       name: draft.name,
+      parentId: lineage.rootId,
+      version: lineage.version,
       seconds: draft.seconds,
       engine: draft.engine,
       lookId: draft.lookId,
@@ -256,6 +261,17 @@ export async function createTranslateProject(draft: TranslateProjectDraft): Prom
   await startWithClearMessage(id);
   await refresh();
   return { id };
+}
+
+/** Demo twin of the server's version numbering: point at the root and take the next number. */
+function demoVersionLineage(parentId: string | undefined): { rootId?: string; version: number } {
+  if (!parentId) return { version: 1 };
+  const all = mockStore.getProjectsSnapshot();
+  const parent = all.find((p) => p.id === parentId);
+  if (!parent || parent.workflow !== "ad") return { version: 1 };
+  const rootId = parent.parentId ?? parent.id;
+  const top = Math.max(1, ...all.filter((p) => p.id === rootId || p.parentId === rootId).map((p) => p.version ?? 1));
+  return { rootId, version: top + 1 };
 }
 
 /** Starts the project; a network failure (server restarting) gets a message a person can act on. */
