@@ -115,7 +115,7 @@ export function MobileNav() {
               })}
             </nav>
 
-            <p className="label-mono mt-auto text-muted">{config.tagline}</p>
+            <p className="mt-auto text-[13px] leading-relaxed text-muted">{config.tagline}</p>
           </div>
         </div>
       )}

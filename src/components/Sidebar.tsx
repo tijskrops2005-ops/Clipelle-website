@@ -48,7 +48,7 @@ export function Sidebar() {
 
       <div className="space-y-3 px-1">
         <DemoModeBadge />
-        <p className="label-mono leading-[1.5] text-muted">{config.tagline}</p>
+        <p className="text-[13px] leading-relaxed text-muted">{config.tagline}</p>
       </div>
     </aside>
   );
