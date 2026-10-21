@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
-import { examples } from "@/content/examples";
+import { firstExample } from "@/lib/examples";
 import { Button } from "@/components/ui/Button";
 import { StepList } from "@/components/ui/StepList";
 import { Reveal } from "@/components/site/Reveal";
@@ -13,7 +13,7 @@ import { adCreditTable } from "@/lib/plans";
 export const metadata: Metadata = { title: "Create ads", description: "From one product photo to a finished 9:16 ad with a presenter and captions." };
 
 export default function PlatformAdsPage() {
-  const sample = examples.find((e) => e.kind === "ad");
+  const sample = firstExample("ad");
   const table = adCreditTable();
   return (
     <div className="space-y-24 sm:space-y-32">
@@ -27,7 +27,7 @@ export default function PlatformAdsPage() {
             <Button href="/pricing" variant="secondary" size="lg">See pricing</Button>
           </div>
         </div>
-        <PhoneFrame src={sample?.src} poster={sample?.poster} />
+        <PhoneFrame src={sample?.src} poster={sample?.posterSrc} />
       </section>
 
       <Reveal as="section">

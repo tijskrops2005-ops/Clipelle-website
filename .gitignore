@@ -39,3 +39,6 @@ Thumbs.db
 
 # Local cost log and other runtime data
 .reelay/
+
+# Example videos for the marketing site live in storage (npm run examples:upload); local copies stay out of git
+/public/examples/

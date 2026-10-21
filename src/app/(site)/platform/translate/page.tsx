@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
-import { examples } from "@/content/examples";
+import { firstExample } from "@/lib/examples";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { StepList } from "@/components/ui/StepList";
@@ -14,7 +14,7 @@ import { translateCredits } from "@/lib/plans";
 export const metadata: Metadata = { title: "Translate videos", description: "A video you own, in other languages, with the speaker's own voice and matching lips." };
 
 export default function PlatformTranslatePage() {
-  const sample = examples.find((e) => e.kind === "translate");
+  const sample = firstExample("translate");
   const perMinute = { speed: translateCredits({ seconds: 60, quality: "speed", enhance: false, languages: 1, hasSourceTranscript: true }), precision: translateCredits({ seconds: 60, quality: "precision", enhance: false, languages: 1, hasSourceTranscript: true }) };
   return (
     <div className="space-y-24 sm:space-y-32">
@@ -28,7 +28,7 @@ export default function PlatformTranslatePage() {
             <Button href="/pricing" variant="secondary" size="lg">See pricing</Button>
           </div>
         </div>
-        <PhoneFrame src={sample?.src} poster={sample?.poster} words={["Hallo", "wereld"]} />
+        <PhoneFrame src={sample?.src} poster={sample?.posterSrc} words={["Hallo", "wereld"]} />
       </section>
 
       <Reveal as="section">

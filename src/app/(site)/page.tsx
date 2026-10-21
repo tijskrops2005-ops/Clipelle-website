@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ArrowRight, Captions, Clock3, Languages, Palette, ShieldCheck, Smartphone, Sparkles, UserRound } from "lucide-react";
 import { config } from "@/lib/config";
-import { examples } from "@/content/examples";
+import { firstExample } from "@/lib/examples";
 import { faq } from "@/content/faq";
 import { Button } from "@/components/ui/Button";
 import { StepList } from "@/components/ui/StepList";
@@ -34,7 +34,8 @@ const youGet = [
 ];
 
 export default function HomePage() {
-  const heroSample = examples.find((e) => e.kind === "ad");
+  const heroSample = firstExample("ad");
+  const translateSample = firstExample("translate");
   return (
     <div className="space-y-24 sm:space-y-32">
       {/* Hero */}
@@ -55,7 +56,7 @@ export default function HomePage() {
           </div>
           <p className="mt-4 text-[13px] text-muted">One free 10-second ad after you verify your e-mail. No card needed.</p>
         </div>
-        <PhoneFrame src={heroSample?.src} poster={heroSample?.poster} />
+        <PhoneFrame src={heroSample?.src} poster={heroSample?.posterSrc} />
       </section>
 
       {/* What you can make */}
@@ -98,7 +99,7 @@ export default function HomePage() {
                     </ul>
                     <Button href="/platform/translate" variant="link" className="mt-5">How translation works <ArrowRight className="size-4" aria-hidden /></Button>
                   </div>
-                  <PhoneFrame src={examples.find((e) => e.kind === "translate")?.src} float={false} className="w-[200px]" words={["Hallo", "wereld"]} />
+                  <PhoneFrame src={translateSample?.src} poster={translateSample?.posterSrc} float={false} className="w-[200px]" words={["Hallo", "wereld"]} />
                 </div>
               ),
             },

@@ -138,5 +138,5 @@ Echte gebruikersaccounts en betalingen, e-mailnotificaties, meerdere varianten i
 9. `RESEND_API_KEY`, `EMAIL_FROM` (geverifieerd domein) en `NOTIFY_EMAIL` zetten; zonder deze worden aanvragen alleen opgeslagen (zichtbaar op `/dev/demo-requests` in development).
 
 **Domein en bestanden**
-10. Domein koppelen; `public/examples/` bevat de voorbeeldvideo's (nu twee eigen testvideo's, 17 MB); overweeg ze later in storage/CDN te zetten.
+10. Domein koppelen. De voorbeeldvideo's staan niet in git maar in de openbare storage-bucket `examples` (`npm run examples:upload` zet alles uit `public/examples/` erin); de site leidt de URL af van `NEXT_PUBLIC_SUPABASE_URL`, of gebruikt `NEXT_PUBLIC_EXAMPLES_BASE_URL` als die gezet is.
 11. Vóór elke push: `npm run check:secrets`.

@@ -13,7 +13,8 @@
     "dev:jobs": "inngest-cli dev -u http://localhost:3001/api/inngest --no-discovery",
     "test": "vitest run",
     "check:secrets": "node scripts/check-secrets.mjs",
-    "stripe:setup": "tsx --env-file=.env.local scripts/stripe-setup.ts"
+    "stripe:setup": "tsx --env-file=.env.local scripts/stripe-setup.ts",
+    "examples:upload": "node --env-file=.env.local scripts/upload-examples.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
