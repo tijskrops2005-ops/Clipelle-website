@@ -6,7 +6,7 @@ const Body = z.object({ password: Password });
 
 /** Sets a new password for the signed-in user (after a recovery link, or from Settings). */
 export async function POST(request: Request) {
-  const blocked = demoBlocked() ?? authRateLimit(request, "password");
+  const blocked = demoBlocked() ?? (await authRateLimit(request, "password"));
   if (blocked) return blocked;
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "Use at least 8 characters." }, { status: 400 });

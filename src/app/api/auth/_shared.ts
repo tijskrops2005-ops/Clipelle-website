@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { config } from "@/lib/config";
-import { clientIp, rateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { clientIp, hashIp, rateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 export const Email = z.string().trim().email().max(200);
 export const Password = z.string().min(8, "Use at least 8 characters.").max(200);
@@ -11,10 +11,20 @@ export function demoBlocked() {
   return null;
 }
 
-/** 10 attempts per address per 10 minutes for every auth action. */
-export function authRateLimit(request: Request, action: string) {
-  const r = rateLimit(`auth:${action}:${clientIp(request)}`, 10, 10 * 60 * 1000);
-  return r.ok ? null : tooManyRequests(r.retryAfterSeconds, "attempts");
+/**
+ * 10 attempts per address per 10 minutes for every auth action, and 10 per e-mail address
+ * (hashed) per 10 minutes, so one account cannot be hammered from many addresses. Counted in
+ * the database, shared by every server instance.
+ */
+export async function authRateLimit(request: Request, action: string, email?: string) {
+  const window = 10 * 60 * 1000;
+  const byIp = await rateLimit(`auth:${action}:ip:${hashIp(clientIp(request))}`, 10, window);
+  if (!byIp.ok) return tooManyRequests(byIp.retryAfterSeconds, "attempts");
+  if (email) {
+    const byEmail = await rateLimit(`auth:${action}:email:${hashIp(email.trim().toLowerCase())}`, 10, window);
+    if (!byEmail.ok) return tooManyRequests(byEmail.retryAfterSeconds, "attempts");
+  }
+  return null;
 }
 
 export function siteUrl(request: Request) {

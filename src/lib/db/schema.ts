@@ -6,6 +6,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   real,
   text,
   timestamp,
@@ -339,3 +340,18 @@ export type WebhookEventRow = typeof webhookEvents.$inferSelect;
 export type DemoRequestRow = typeof demoRequests.$inferSelect;
 export type ProfileRow = typeof profiles.$inferSelect;
 export type CreditLedgerRow = typeof creditLedger.$inferSelect;
+
+/**
+ * Shared counters for rate limits (sign-in, sign-up, demo requests) so a limit holds across
+ * every server instance. One row per key and fixed window; expired rows are swept on the fly.
+ */
+export const rateLimits = pgTable(
+  "rate_limits",
+  {
+    key: text("key").notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+    count: integer("count").default(0).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.key, t.windowStart] }), index("rate_limits_expires_idx").on(t.expiresAt)],
+).enableRLS();

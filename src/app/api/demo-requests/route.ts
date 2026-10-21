@@ -19,7 +19,7 @@ const Body = z.object({
 /** Stores a demo or contact request. Honeypot, 5 per address per 10 minutes, 3 per e-mail per day. */
 export async function POST(request: Request) {
   const ip = clientIp(request);
-  const limited = rateLimit(`demo:${ip}`, 5, 10 * 60 * 1000);
+  const limited = await rateLimit(`demo:ip:${hashIp(ip)}`, 5, 10 * 60 * 1000);
   if (!limited.ok) return tooManyRequests(limited.retryAfterSeconds);
 
   const raw = await request.json().catch(() => null);

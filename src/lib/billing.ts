@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, eq, gte } from "drizzle-orm";
+import { count, eq, gte, sql } from "drizzle-orm";
 import { db, profiles } from "@/lib/db";
 import { CREDIT_VALIDITY, FREE_AD, FREE_AD_CREDITS, PLANS, TOPUPS, planByKey } from "@/lib/plans";
 import { grantCredits } from "@/lib/credits";
@@ -17,9 +17,20 @@ export function freeAdsPerDay() {
 
 export type FreeAdState = { granted: boolean; reason?: "unverified" | "already" | "cap"; capLeft?: number };
 
+/** Advisory lock id for the daily free-ad counter (any constant; only this code uses it). */
+const FREE_AD_LOCK = 7_310_001;
+
+/** Start of the current day in UTC: the cap is a global calendar-day count, the same on every server. */
+function startOfTodayUtc() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
 /**
  * The one free ad: granted once per verified account as a credit grant worth one 10 s Standard ad,
- * limited by a global daily cap (FREE_ADS_PER_DAY). Idempotent.
+ * limited by a global daily cap (FREE_ADS_PER_DAY). Idempotent. The count and the grant run in one
+ * transaction under an advisory lock, so two servers granting at the same moment cannot both pass
+ * the cap (the count lives in profiles.free_ad_granted_at, never in process memory).
  */
 export async function ensureFreeAd(user: AppUser): Promise<FreeAdState> {
   if (!user.emailVerified) return { granted: false, reason: "unverified" };
@@ -27,15 +38,19 @@ export async function ensureFreeAd(user: AppUser): Promise<FreeAdState> {
   const [p] = await d.select({ freeAdGrantedAt: profiles.freeAdGrantedAt }).from(profiles).where(eq(profiles.userId, user.id)).limit(1);
   if (!p) return { granted: false, reason: "unverified" };
   if (p.freeAdGrantedAt) return { granted: true, reason: "already" };
-  const since = new Date();
-  since.setHours(0, 0, 0, 0);
-  const [{ n }] = await d.select({ n: count() }).from(profiles).where(gte(profiles.freeAdGrantedAt, since));
   const cap = freeAdsPerDay();
-  if (n >= cap) return { granted: false, reason: "cap", capLeft: 0 };
   const now = new Date();
-  await d.update(profiles).set({ freeAdGrantedAt: now, updatedAt: now }).where(and(eq(profiles.userId, user.id)));
+  const outcome = await d.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(${FREE_AD_LOCK})`);
+    const [{ n }] = await tx.select({ n: count() }).from(profiles).where(gte(profiles.freeAdGrantedAt, startOfTodayUtc()));
+    if (n >= cap) return { granted: false as const, capLeft: 0 };
+    const updated = await tx.update(profiles).set({ freeAdGrantedAt: now, updatedAt: now }).where(eq(profiles.userId, user.id)).returning({ userId: profiles.userId });
+    if (updated.length === 0) return { granted: false as const, capLeft: cap - n };
+    return { granted: true as const, capLeft: cap - n - 1 };
+  });
+  if (!outcome.granted) return { granted: false, reason: "cap", capLeft: outcome.capLeft };
   await grantCredits({ userId: user.id, credits: FREE_AD_CREDITS, kind: "grant_free", note: `Free first ad (${FREE_AD.seconds} s, Standard)`, expiresAt: validUntil(now, CREDIT_VALIDITY.free), reference: `free:${user.id}` });
-  return { granted: true, capLeft: cap - n - 1 };
+  return { granted: true, capLeft: outcome.capLeft };
 }
 
 /** Whether a free-only account (no paid plan, only the free grant) is limited to the free combination. */

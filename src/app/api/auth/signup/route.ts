@@ -6,10 +6,12 @@ const Body = z.object({ email: Email, password: Password, name: z.string().trim(
 
 /** Creates an account; Supabase sends the verification e-mail (template set in the dashboard). */
 export async function POST(request: Request) {
-  const blocked = demoBlocked() ?? authRateLimit(request, "signup");
+  const blocked = demoBlocked();
   if (blocked) return blocked;
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "Check your e-mail and password." }, { status: 400 });
+  const limited = await authRateLimit(request, "signup", parsed.data.email);
+  if (limited) return limited;
   const { email, password, name } = parsed.data;
   const supabase = await supabaseServer();
   const { data, error } = await supabase.auth.signUp({
