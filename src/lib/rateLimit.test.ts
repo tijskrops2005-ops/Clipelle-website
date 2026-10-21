@@ -37,6 +37,9 @@ describe.skipIf(!hasDb)("rate limits in the database", () => {
     const { rateLimit } = await import("./rateLimit");
     const key = `${prefix}short`;
     const windowMs = 1500;
+    // Start early in a window, so the second call cannot land in the next one by accident.
+    const intoWindow = Date.now() % windowMs;
+    if (intoWindow > windowMs - 700) await new Promise((r) => setTimeout(r, windowMs - intoWindow + 20));
     const first = await rateLimit(key, 1, windowMs);
     expect(first.ok).toBe(true);
     expect((await rateLimit(key, 1, windowMs)).ok).toBe(false);
