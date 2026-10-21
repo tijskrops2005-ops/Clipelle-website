@@ -5,7 +5,7 @@ import { assets, db, projects, steps, translations, type AdInput, type AssetRow,
 import { adProjectCreated, adScriptApproved, inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
 import { applyScriptReview, countWords, normaliseHooks, type AdScript } from "@/lib/services/script";
 import { maxSpokenWords } from "@/lib/pricing";
-import { objectInfo, signedDownloadUrl } from "@/lib/storage";
+import { copyObject, objectPath, objectInfo, signedDownloadUrl } from "@/lib/storage";
 import { checkUserLimits, costGuardResponse, costLimits, creativeSpent, getProjectSpend } from "@/lib/services/costGuard";
 import { estimateAdCost, estimateTranslateCost } from "@/lib/pricing";
 import { workflowSettings } from "@/lib/workflow/settings";
@@ -148,6 +148,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     targetLanguages: input.targetLanguages,
     quality: input.quality,
     rightsConfirmedAt: (row.rightsConfirmedAt ?? row.createdAt).toISOString(),
+    rightsBasis: input.rightsBasis ?? "own_upload",
     steps: Object.fromEntries(TRANSLATE_STEPS.map((k) => [k, toStep(stepsByKey.get(k))])) as Record<TranslateStepKey, Step>,
     translations: await Promise.all(
       translationRows.map(async (t) => ({
@@ -217,6 +218,8 @@ export async function getProjectRowUnscoped(id: string) {
 
 export type NewAdProject = { parentId?: string; name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: AdLanguageCode; accent?: string; voiceId?: string; speed: SpeedKey; offer?: string; direction?: string; tone: AdTone; backgroundColor?: string; brand?: { accent?: string; captionStyle?: string; font?: string }; reviewScript: boolean; productName: string; productUrl?: string; description: string; script?: string };
 export type NewTranslateProject = {
+  /** "Localize this ad": the completed ad whose finished video is the source. */
+  sourceProjectId?: string;
   name: string;
   sourceFileName: string;
   sourceSeconds: number;
@@ -256,6 +259,7 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
   }
   const t = input.translate;
   if (!t.rightsConfirmed) throw new DataError("Confirm the rights to the video first.", 400, "rights_required");
+  const sourceAd = t.sourceProjectId ? await finishedAdAsSource(scope, t.sourceProjectId) : null;
   const [row] = await d
     .insert(projects)
     .values({
@@ -265,10 +269,12 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
       name: t.name,
       status: "draft",
       rightsConfirmedAt: new Date(),
+      parentId: sourceAd?.project.id ?? null,
       input: {
-        sourceFileName: t.sourceFileName,
-        sourceSeconds: t.sourceSeconds,
+        sourceFileName: sourceAd ? `${sourceAd.project.name}.mp4` : t.sourceFileName,
+        sourceSeconds: sourceAd ? sourceAd.seconds : t.sourceSeconds,
         sourceAssetId: "",
+        rightsBasis: sourceAd ? "generated" : "own_upload",
         sourceLanguage: t.sourceLanguage,
         targetLanguages: t.targetLanguages,
         quality: t.quality,
@@ -282,7 +288,35 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
     .returning();
   await d.insert(steps).values(TRANSLATE_STEPS.map((key) => ({ projectId: row.id, userId, key, status: "waiting" as const })));
   await d.insert(translations).values(t.targetLanguages.map((language) => ({ projectId: row.id, userId, language, status: "waiting" as const, segments: [] })));
+  if (sourceAd) {
+    // The finished ad becomes this project's source: the file is copied inside our storage (every
+    // project owns its files; storage paths are unique), no upload from the browser.
+    const target = objectPath({ projectId: row.id, kind: "source", fileName: `${sourceAd.project.name}.mp4` });
+    try {
+      await copyObject(sourceAd.asset.storagePath, target);
+    } catch (error) {
+      await d.delete(projects).where(eq(projects.id, row.id));
+      throw new DataError("The finished video of this ad could not be copied. Try again in a moment.", 503, "copy_failed", error);
+    }
+    const [asset] = await d
+      .insert(assets)
+      .values({ projectId: row.id, userId, kind: "source", storagePath: target, mime: sourceAd.asset.mime, bytes: sourceAd.asset.bytes, seconds: sourceAd.seconds, width: sourceAd.asset.width, height: sourceAd.asset.height })
+      .returning();
+    const [updated] = await d.update(projects).set({ input: { ...(row.input as TranslateInput), sourceAssetId: asset.id }, updatedAt: new Date() }).where(eq(projects.id, row.id)).returning();
+    return updated;
+  }
   return row;
+}
+
+/** "Localize this ad": the ad must be a completed ad of this workspace with a finished video in storage. */
+async function finishedAdAsSource(scope: DataScope, adId: string) {
+  const project = await getProjectRow(adId, scope);
+  if (!project || project.workflow !== "ad") throw new DataError("The ad to translate was not found.", 404, "not_found");
+  if (project.status !== "completed" || !project.finalAssetId) throw new DataError("This ad has no finished video yet. Translate it once it is completed.", 409, "not_completed");
+  const [asset] = await db().select().from(assets).where(eq(assets.id, project.finalAssetId)).limit(1);
+  if (!asset) throw new DataError("The finished video of this ad is missing from storage.", 409, "missing_object");
+  const input = project.input as AdInput;
+  return { project, asset, seconds: asset.seconds ?? input.seconds ?? workflowSettings.adSeconds };
 }
 
 /**
@@ -454,6 +488,8 @@ export function dataErrorResponse(error: unknown): Response {
   const auth = authErrorResponse(error);
   if (auth) return auth;
   if (error instanceof DataError) return Response.json({ error: error.message, code: error.code }, { status: error.status });
+  // Unexpected errors keep their cause in the server log (never in the response).
+  console.error("[data] unexpected error", error instanceof Error ? error.message : error, (error as { cause?: unknown })?.cause);
   const e = error as { message?: string; status?: number };
   return Response.json({ error: e?.message ?? "Unexpected error." }, { status: typeof e?.status === "number" && e.status >= 400 && e.status < 600 ? e.status : 500 });
 }

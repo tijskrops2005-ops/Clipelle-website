@@ -103,6 +103,14 @@ export async function copyFromUrl(url: string, path: string, fallbackMime = "app
   return putObject(path, new Blob([blob], { type: mime }), mime);
 }
 
+/** Copies an object inside the bucket (server side, no download): a finished ad becoming another project's source. */
+export async function copyObject(from: string, to: string) {
+  await ensureBucket();
+  const { error } = await supabaseAdmin().storage.from(BUCKET).copy(from, to);
+  if (error) throw new StorageError(`Copy failed: ${error.message}`, "copy_failed");
+  return to;
+}
+
 export async function deleteObject(path: string) {
   const { error } = await supabaseAdmin().storage.from(BUCKET).remove([path]);
   if (error) throw new StorageError(`Delete failed: ${error.message}`, "delete_failed");

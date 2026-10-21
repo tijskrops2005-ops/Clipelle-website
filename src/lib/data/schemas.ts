@@ -54,6 +54,8 @@ export const TranslateFields = z.object({
   trimSilence: z.boolean().default(true),
   captionPosition: z.enum(["low", "middle"]).default("low"),
   rightsConfirmed: z.literal(true, { error: "Confirm the rights to the video first." }),
+  /** "Localize this ad": the finished ad (same workspace) is the source; no upload, rights recorded as generated here. */
+  sourceProjectId: z.string().uuid().optional(),
 });
 
 export const TranslateBody = TranslateFields.refine((b) => !b.targetLanguages.includes(b.sourceLanguage), { error: "A target language cannot be the same as the spoken language." });

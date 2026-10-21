@@ -108,6 +108,8 @@ export type TranslateInput = {
   format: "original" | "9:16";
   /** Optional picture enhancement before captions. */
   enhance: boolean;
+  /** "Localize this ad": the source is an ad the customer generated here, so the rights are recorded as such. */
+  rightsBasis?: "own_upload" | "generated";
 };
 
 export type ProjectInput = AdInput | TranslateInput;

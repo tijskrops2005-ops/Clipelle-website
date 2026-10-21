@@ -215,7 +215,9 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
 
 export type TranslateProjectDraft = {
   name: string;
-  video: File;
+  /** The uploaded video; absent for "Localize this ad", where `sourceProjectId` names the finished ad. */
+  video?: File;
+  sourceProjectId?: string;
   sourceSeconds: number;
   sourceLanguage: LanguageCode | "auto";
   targetLanguages: LanguageCode[];
@@ -231,20 +233,24 @@ export type TranslateProjectDraft = {
 export async function createTranslateProject(draft: TranslateProjectDraft): Promise<{ id: string }> {
   if (config.demoMode) {
     const now = new Date().toISOString();
+    const sourceAd = draft.sourceProjectId ? mockStore.getProjectsSnapshot().find((p): p is AdProject => p.workflow === "ad" && p.id === draft.sourceProjectId) : undefined;
+    if (draft.sourceProjectId && !sourceAd?.finalVideoUrl) throw new Error("This ad has no finished video yet. Translate it once it is completed.");
     const project: TranslateProject = {
       id: `prj_${Date.now().toString(36)}`,
       workflow: "translate",
       name: draft.name,
       status: "processing",
       createdAt: now,
-      sourceFileName: draft.video.name,
+      sourceFileName: sourceAd ? `${sourceAd.name}.mp4` : (draft.video?.name ?? "video.mp4"),
       sourceSeconds: Math.round(draft.sourceSeconds),
-      // Demo: the browser's object URL only lives in this tab.
-      sourceVideoUrl: URL.createObjectURL(draft.video),
+      // Demo: the browser's object URL only lives in this tab; a localized ad reuses the ad's placeholder clip.
+      sourceVideoUrl: sourceAd ? sourceAd.finalVideoUrl : draft.video ? URL.createObjectURL(draft.video) : undefined,
       sourceLanguage: draft.sourceLanguage,
       targetLanguages: draft.targetLanguages,
       quality: draft.quality,
       rightsConfirmedAt: now,
+      rightsBasis: sourceAd ? "generated" : "own_upload",
+      parentId: sourceAd?.id,
       steps: {
         upload: { status: "processing", startedAt: now, attempt: 1 },
         translate: { status: "waiting" },
@@ -256,8 +262,8 @@ export async function createTranslateProject(draft: TranslateProjectDraft): Prom
     return { id: project.id };
   }
   const { video, ...rest } = draft;
-  const { id } = await api<{ id: string }>("/api/projects", { method: "POST", body: JSON.stringify({ workflow: "translate", ...rest, sourceFileName: video.name }) });
-  await uploadAndAttach(id, "source", video, draft.sourceSeconds);
+  const { id } = await api<{ id: string }>("/api/projects", { method: "POST", body: JSON.stringify({ workflow: "translate", ...rest, sourceFileName: video?.name ?? "generated-ad.mp4" }) });
+  if (video) await uploadAndAttach(id, "source", video, draft.sourceSeconds);
   await startWithClearMessage(id);
   await refresh();
   return { id };
