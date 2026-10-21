@@ -7,6 +7,7 @@ import { CostGuardError, getProjectSpend } from "@/lib/services/costGuard";
 import { settleCredits } from "@/lib/credits";
 import { creditsForUsd } from "@/lib/plans";
 import { TimeoutError, withTimeout } from "@/lib/timeout";
+import { inngest, providerJobFinished } from "@/lib/inngest/client";
 
 /**
  * Shared helpers for the orchestrators (src/lib/inngest/functions/*Workflow.ts).
@@ -129,6 +130,20 @@ export async function withRetries<T>(label: string, fn: () => Promise<T>, attemp
   throw new StepFailure(`${label} failed: ${plainMessage(last)}`, last);
 }
 
+/* ---------- waiting on a provider: webhook first, polling as the fallback ---------- */
+
+type StepTools = Parameters<Parameters<typeof inngest.createFunction>[1]>[0]["step"];
+
+/**
+ * Replaces a plain sleep between two status checks: the run sleeps at most `seconds`, but wakes
+ * at once when the provider's webhook (src/lib/webhooks/incoming.ts) reports the job. Either way
+ * the caller checks the status through the provider API next, so a webhook is never trusted alone.
+ */
+export async function waitForJob(step: StepTools, id: string, provider: "heygen" | "fal" | "shotstack", externalJobId: string, seconds: number) {
+  const safeId = externalJobId.replace(/[^A-Za-z0-9_-]/g, "");
+  await step.waitForEvent(id, { event: providerJobFinished, timeout: `${seconds}s`, if: `async.data.provider == "${provider}" && async.data.externalJobId == "${safeId}"` });
+}
+
 /* ---------- assets ---------- */
 
 /** Copies a provider result into our storage and records it. The provider URL is forgotten. */
@@ -234,6 +249,11 @@ export async function afterProjectEnd(projectId: string) {
     } else {
       const { notifyProjectEnd } = await import("@/lib/notifications");
       await notifyProjectEnd(projectId);
+    }
+    const [row] = await db().select({ status: projects.status }).from(projects).where(eq(projects.id, projectId)).limit(1);
+    if (row?.status === "completed" || row?.status === "failed") {
+      const { enqueueProjectEvent } = await import("@/lib/webhooks/outgoing");
+      await enqueueProjectEvent(projectId, row.status);
     }
   } catch (error) {
     console.error("[batch] status refresh failed", error);

@@ -44,8 +44,8 @@ import {
   storeBytes,
   storeFromUrl,
   withDeadline,
-  withRetries,
-} from "@/lib/workflow/steps";
+  withRetries, waitForJob } from "@/lib/workflow/steps";
+import { callbackUrlFor } from "@/lib/webhooks/incoming";
 
 /**
  * Workflow B — an existing video → the same video in other languages.
@@ -354,7 +354,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
       const estimate = estimateGenerateUsd(input.sourceSeconds, input.quality);
       const reserved = await reserveSpend({ service: "heygen", action: "translate_generate", estimatedUsd: estimate, fingerprintInput: { projectId, code, attempt: stepRow.attempt }, projectId, stepId: stepRow.id, language: code, languageCount, meta: { language: code, mode: input.quality } });
       try {
-        const created = await withRetries("Starting the translated video", () => generateFromProofread(proofreadId, { idempotencyKey: reserved.fingerprint }));
+        const created = await withRetries("Starting the translated video", () => generateFromProofread(proofreadId, { idempotencyKey: reserved.fingerprint, callbackUrl: callbackUrlFor("heygen") }));
         await db().update(translations).set({ translationId: created.video_translation_id, status: "processing", error: null, updatedAt: new Date() }).where(eq(translations.id, t.id));
         return { translationId: created.video_translation_id, entryId: reserved.entryId, estimate, done: false };
       } catch (error) {
@@ -402,7 +402,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         });
         return fail(`The ${lang} video could not be rendered: ${tr.failure_message ?? "unknown reason"}.`);
       }
-      await step.sleep(`${code}-wait-${i}`, `${cfg.pollSeconds}s`);
+      await waitForJob(step, `${code}-wait-${i}`, "heygen", gen.translationId, cfg.pollSeconds);
     }
     if (!finished) return fail(`The ${lang} video took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`);
   } else {
@@ -503,7 +503,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
       const estimate = Math.round(edit.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000;
       const reserved = await reserveSpend({ service: "shotstack", action: "translate_captions", estimatedUsd: estimate, fingerprintInput: { projectId, code, video: video.id }, projectId, stepId: stepRow.id, language: code, languageCount, meta: { env: shotstackEnv() } });
       try {
-        const r = await withRetries("Starting the captions", () => startRender(edit));
+        const r = await withRetries("Starting the captions", () => startRender(edit, callbackUrlFor("shotstack")));
         return { renderId: r.renderId, entryId: reserved.entryId, estimate, stepId: stepRow.id, seconds: edit.meta.totalSeconds };
       } catch (error) {
         await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
@@ -538,7 +538,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
       await step.run(`${code}-captions-failed`, () => settleSpend(render.entryId, { status: "failed", actualUsd: 0 }));
       return fail(`Adding captions to the ${lang} video failed: ${r.error || "unknown reason"}.`);
     }
-    await step.sleep(`${code}-captions-wait-${i}`, `${cfg.pollSeconds}s`);
+    await waitForJob(step, `${code}-captions-wait-${i}`, "shotstack", render.renderId, cfg.pollSeconds);
   }
   return fail(`Captions for ${lang} took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`);
 }

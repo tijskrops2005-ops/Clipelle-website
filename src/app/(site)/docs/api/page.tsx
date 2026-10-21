@@ -14,8 +14,34 @@ const sections = [
   { id: "projects", label: "Read projects" },
   { id: "idempotency", label: "Idempotency" },
   { id: "errors", label: "Errors" },
+  { id: "webhooks", label: "Webhooks" },
   { id: "limits", label: "Limits" },
 ];
+
+const webhookPayload = `{
+  "id": "7a1c…",                       // delivery id, also in X-Reelay-Delivery
+  "event": "project.completed",         // or project.failed
+  "createdAt": "2026-10-21T14:02:11.000Z",
+  "data": { ...the project exactly as GET /api/v1/projects/{id} returns it }
+}`;
+
+const webhookVerify = `import { createHmac, timingSafeEqual } from "node:crypto";
+
+// Express-style handler: read the RAW body (not re-serialised JSON).
+export function verifyReelay(rawBody, header, secret) {
+  const parts = Object.fromEntries(header.split(",").map((p) => p.trim().split("=")));
+  const t = Number(parts.t);
+  if (!Number.isFinite(t) || Math.abs(Date.now() / 1000 - t) > 300) return false; // 5-minute window
+  const expected = createHmac("sha256", secret).update(\`\${t}.\${rawBody}\`).digest("hex");
+  return parts.v1?.length === expected.length && timingSafeEqual(Buffer.from(parts.v1), Buffer.from(expected));
+}
+
+app.post("/reelay/webhook", express.raw({ type: "application/json" }), (req, res) => {
+  if (!verifyReelay(req.body.toString("utf8"), req.get("X-Reelay-Signature") ?? "", process.env.REELAY_WEBHOOK_SECRET)) return res.sendStatus(401);
+  const { event, data } = JSON.parse(req.body.toString("utf8"));
+  // Answer fast; do the work afterwards. The same delivery can arrive more than once: dedupe on its id.
+  res.sendStatus(200);
+});`;
 
 const curlAd = `curl -X POST https://YOUR-DOMAIN/api/v1/ads \\
   -H "Authorization: Bearer rl_your_key" \\
@@ -128,6 +154,7 @@ export default function ApiDocsPage() {
           <li><code className="font-mono">seconds</code>: one of {AD_LENGTHS.join(", ")} (default 30). <code className="font-mono">quality</code>: <code className="font-mono">standard</code> (default) or <code className="font-mono">premium</code>.</li>
           <li><code className="font-mono">language</code>, <code className="font-mono">accent</code>, <code className="font-mono">voiceId</code>, <code className="font-mono">lookId</code>, <code className="font-mono">speed</code> (<code className="font-mono">slower</code>, <code className="font-mono">normal</code>, <code className="font-mono">faster</code>): the same options the form offers; leave them out for the defaults.</li>
           <li><code className="font-mono">tone</code> (<code className="font-mono">elegant</code>, <code className="font-mono">playful</code>, <code className="font-mono">direct</code>, <code className="font-mono">warm</code>), <code className="font-mono">offer</code> (80), <code className="font-mono">direction</code> (200), <code className="font-mono">script</code> (your own text instead of a written one), <code className="font-mono">productUrl</code>, <code className="font-mono">backgroundColor</code> (hex), <code className="font-mono">brand</code> with <code className="font-mono">accent</code>, <code className="font-mono">captionStyle</code>, <code className="font-mono">font</code>.</li>
+          <li><code className="font-mono">format</code>: a preset from the format library (<code className="font-mono">unboxing</code>, <code className="font-mono">testimonial</code>, <code className="font-mono">before-after</code>, <code className="font-mono">problem-fix</code>, <code className="font-mono">three-reasons</code>, <code className="font-mono">product-demo</code>, <code className="font-mono">founder-story</code>, <code className="font-mono">offer</code>). It is stored on the project; send the matching <code className="font-mono">direction</code> and <code className="font-mono">tone</code> yourself (the app form does that for you), the API does not rewrite your fields.</li>
         </ul>
         <p>Script review is a form-only feature: an API project is made in one go.</p>
         <CodeBlock code={responseExample} lang="json" title="Response" />
@@ -178,6 +205,19 @@ export default function ApiDocsPage() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section id="webhooks" className="space-y-4">
+        <h2>Webhooks</h2>
+        <p>Instead of polling, let us call you. In <Link href="/settings/api" className="underline underline-offset-4">Settings → API keys → Webhooks</Link> add a public <code className="font-mono">https://</code> URL and pick the events <code className="font-mono">project.completed</code> and <code className="font-mono">project.failed</code>. The signing secret is shown once.</p>
+        <CodeBlock code={webhookPayload} lang="json" title="Payload" />
+        <p>Every call carries <code className="font-mono">X-Reelay-Signature: t=&lt;unix seconds&gt;,v1=&lt;hex&gt;</code>, where v1 is the HMAC-SHA256 of <code className="font-mono">&quot;t.&quot; + raw body</code> with your secret, plus <code className="font-mono">X-Reelay-Event</code> and <code className="font-mono">X-Reelay-Delivery</code>. Check it like this:</p>
+        <CodeBlock code={webhookVerify} lang="javascript" title="Verifying the signature (Node)" />
+        <ul className="list-disc space-y-1 pl-5 text-[15px] leading-relaxed">
+          <li>Answer with any 2xx within 10 seconds. Anything else is retried with backoff, five more times over about a day; after that the delivery is marked failed and can be sent again from Settings.</li>
+          <li>A delivery can arrive more than once (a slow answer counts as a failure). Deduplicate on <code className="font-mono">id</code>.</li>
+          <li>Redirects are not followed; private addresses and plain http are refused when you add the URL.</li>
+        </ul>
       </section>
 
       <section id="limits" className="space-y-4">

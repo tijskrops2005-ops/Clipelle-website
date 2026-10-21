@@ -291,6 +291,48 @@ export const webhookEvents = pgTable(
   (t) => [uniqueIndex("webhook_events_dedupe_idx").on(t.provider, t.externalId, t.eventType)],
 ).enableRLS();
 
+/**
+ * Outgoing webhooks of the public API (2026-10-21): per workspace, HTTPS URLs that receive
+ * project.completed and project.failed with an HMAC signature. The secret must be readable to
+ * sign deliveries, so it lives here (server-only table, default-deny RLS) and is shown once.
+ */
+export const webhookEndpoints = pgTable(
+  "webhook_endpoints",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workspaceId: uuid("workspace_id").notNull(),
+    userId: text("user_id").notNull(),
+    url: text("url").notNull(),
+    events: jsonb("events").$type<string[]>().notNull(),
+    secret: text("secret").notNull(),
+    active: boolean("active").default(true).notNull(),
+    lastDeliveryAt: timestamp("last_delivery_at", { withTimezone: true }),
+    lastStatus: text("last_status"),
+    ...timestamps,
+  },
+  (t) => [index("webhook_endpoints_workspace_idx").on(t.workspaceId)],
+).enableRLS();
+
+export const webhookDeliveries = pgTable(
+  "webhook_deliveries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    endpointId: uuid("endpoint_id").notNull().references(() => webhookEndpoints.id, { onDelete: "cascade" }),
+    workspaceId: uuid("workspace_id").notNull(),
+    event: text("event").notNull(),
+    projectId: uuid("project_id"),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    attempt: integer("attempt").default(0).notNull(),
+    /** pending | delivered | failed */
+    status: text("status").default("pending").notNull(),
+    responseStatus: integer("response_status"),
+    error: text("error"),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [index("webhook_deliveries_endpoint_idx").on(t.endpointId, t.createdAt), index("webhook_deliveries_workspace_idx").on(t.workspaceId, t.createdAt)],
+).enableRLS();
+
 /** One row per account: profile fields and the brand defaults that prefill the ad form. */
 export const profiles = pgTable(
   "profiles",

@@ -180,3 +180,24 @@ export async function getUsage(): Promise<UsageInfo> {
   if (config.demoMode) return { balance: 120, projectsThisMonth: 4, projects: [], ledger: [{ id: "demo", credits: 120, kind: "grant_manual", note: "Demo credits (simulated)", createdAt: new Date().toISOString(), expiresAt: null }] };
   return api<UsageInfo>("/api/settings/usage");
 }
+
+/* ---------- outgoing webhooks (Settings → API keys → Webhooks) ---------- */
+
+export type WebhookEndpointInfo = { id: string; url: string; events: string[]; active: boolean; createdAt: string; lastDeliveryAt: string | null; lastStatus: string | null };
+export type WebhookDeliveryInfo = { id: string; endpointId: string; event: string; projectId: string | null; attempt: number; status: string; responseStatus: number | null; error: string | null; createdAt: string; deliveredAt: string | null };
+export type WebhooksInfo = { endpoints: WebhookEndpointInfo[]; deliveries: WebhookDeliveryInfo[]; events: string[]; allowed: boolean; role: string };
+
+export async function getWebhooks(): Promise<WebhooksInfo> {
+  if (config.demoMode) return { endpoints: [], deliveries: [], events: ["project.completed", "project.failed"], allowed: false, role: "owner" };
+  return api("/api/settings/webhooks");
+}
+export async function createWebhookEndpoint(url: string, events: string[]): Promise<{ id: string; url: string; events: string[]; secret: string }> {
+  if (config.demoMode) throw new Error("Webhooks need the database and a paid plan; demo mode has neither.");
+  return api("/api/settings/webhooks", { method: "POST", body: JSON.stringify({ url, events }) });
+}
+export async function deleteWebhookEndpoint(id: string) {
+  await api(`/api/settings/webhooks/${id}`, { method: "DELETE" });
+}
+export async function retryWebhookDelivery(id: string) {
+  await api(`/api/settings/webhooks/deliveries/${id}/retry`, { method: "POST" });
+}

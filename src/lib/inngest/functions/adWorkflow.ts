@@ -40,8 +40,8 @@ import {
   storeBytes,
   storeFromUrl,
   withDeadline,
-  withRetries,
-} from "@/lib/workflow/steps";
+  withRetries, waitForJob } from "@/lib/workflow/steps";
+import { callbackUrlFor } from "@/lib/webhooks/incoming";
 
 /**
  * Workflow A — one product → one finished 9:16 ad.
@@ -196,7 +196,7 @@ async function runProductClip(projectId: string, script: AdScript, step: StepToo
       const estimate = estimateClipCost(model, CLIP_SECONDS);
       const reserved = await reserveSpend({ service: "fal", action: `clip_${model}`, estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, model: CLIP_MODELS[model].label, endpointId: CLIP_MODELS[model].endpointId, seconds: CLIP_SECONDS } });
       try {
-        const submitted = await withRetries("Starting the product clip", () => submitProductClip({ image: prepared, model, prompt, durationSeconds: CLIP_SECONDS }));
+        const submitted = await withRetries("Starting the product clip", () => submitProductClip({ image: prepared, model, prompt, durationSeconds: CLIP_SECONDS, webhookUrl: callbackUrlFor("fal") }));
         await annotateSpend(reserved.entryId, { requestId: submitted.requestId }).catch(() => {});
         return { ...submitted, entryId: reserved.entryId, estimate, expandCost, stepId: row.id };
       } catch (error) {
@@ -229,7 +229,7 @@ async function runProductClip(projectId: string, script: AdScript, step: StepToo
         return failStep(projectId, key, new StepFailure(`The product clip could not be generated: ${status.error}`));
       });
     }
-    await step.sleep(`clip-wait-${i}`, `${cfg.pollSeconds}s`);
+    await waitForJob(step, `clip-wait-${i}`, "fal", job.requestId, cfg.pollSeconds);
   }
   return step.run("clip-timeout", () => failStep(projectId, key, new StepFailure(`The product clip took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
 }
@@ -295,7 +295,7 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
         return failStep(projectId, key, new StepFailure(`The presenter video could not be generated: ${video.failure_message ?? video.failure_code ?? "unknown reason"}.`));
       });
     }
-    await step.sleep(`presenter-wait-${i}`, `${cfg.pollSeconds}s`);
+    await waitForJob(step, `presenter-wait-${i}`, "heygen", job.videoId, cfg.pollSeconds);
   }
   return step.run("presenter-timeout", () => failStep(projectId, key, new StepFailure(`The presenter video took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
 }
@@ -399,7 +399,7 @@ async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: st
       const estimate = env === "v1" ? Math.round(edit.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000 : 0;
       const reserved = env === "v1" ? await reserveSpend({ service: "shotstack", action: "ad_render", estimatedUsd: estimate, fingerprintInput: { projectId, attempt: row.attempt }, projectId, stepId: row.id, meta: { attempt: row.attempt, env, seconds: edit.meta.totalSeconds } }) : null;
       try {
-        const render = await withRetries("Starting the final edit", () => startRender(edit));
+        const render = await withRetries("Starting the final edit", () => startRender(edit, callbackUrlFor("shotstack")));
         return { renderId: render.renderId, entryId: reserved?.entryId ?? "", estimate, totalSeconds: edit.meta.totalSeconds, stepId: row.id };
       } catch (error) {
         if (reserved) await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
@@ -431,7 +431,7 @@ async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: st
         return failStep(projectId, key, new StepFailure(`The final edit failed: ${render.error || "unknown reason"}.`));
       });
     }
-    await step.sleep(`final-wait-${i}`, `${cfg.pollSeconds}s`);
+    await waitForJob(step, `final-wait-${i}`, "shotstack", job.renderId, cfg.pollSeconds);
   }
   return step.run("final-timeout", () => failStep(projectId, key, new StepFailure(`The final edit took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
 }

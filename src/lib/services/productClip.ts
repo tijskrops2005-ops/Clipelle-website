@@ -341,6 +341,8 @@ export async function submitProductClip(args: {
   model: ClipModelKey;
   prompt: string;
   durationSeconds?: number;
+  /** Our public webhook URL (only set in production); the queue calls it when the job ends. */
+  webhookUrl?: string;
 }): Promise<{ requestId: string; endpointId: string; imageUrl: string }> {
   const fal = falClient();
   const model = CLIP_MODELS[args.model];
@@ -348,6 +350,7 @@ export async function submitProductClip(args: {
   const imageUrl = await fal.storage.upload(new Blob([new Uint8Array(args.image)], { type: "image/jpeg" }));
   const { request_id } = await fal.queue.submit(model.endpointId, {
     input: model.buildInput({ imageUrl, prompt: args.prompt, durationSeconds }),
+    ...(args.webhookUrl ? { webhookUrl: args.webhookUrl } : {}),
   });
   return { requestId: request_id, endpointId: model.endpointId, imageUrl };
 }

@@ -38,6 +38,16 @@ export const adScriptApproved = eventType("project/ad-script.approved", {
   schema: z.object({ projectId: z.string().uuid() }),
 });
 
+/** A provider told us a job finished (incoming webhook): the job that waits on it wakes up and checks through the API. */
+export const providerJobFinished = eventType("provider/job.finished", {
+  schema: z.object({ provider: z.enum(["heygen", "fal", "shotstack"]), externalJobId: z.string().min(1), status: z.enum(["completed", "failed"]) }),
+});
+
+/** An outgoing webhook delivery row exists; send it (with retries). */
+export const webhookDeliveryCreated = eventType("webhook/delivery.created", {
+  schema: z.object({ deliveryId: z.string().uuid() }),
+});
+
 /** Retry one failed step of a project; the workflow resumes from there. */
 export const stepRetry = eventType("project/step.retry", {
   schema: z.object({ projectId: z.string().uuid(), stepKey: z.string() }),
