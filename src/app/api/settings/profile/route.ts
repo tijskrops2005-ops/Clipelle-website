@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
-import { deleteAccountData, getOrCreateProfile, updateProfileName } from "@/lib/data/profile";
+import { deleteAccountData, getOrCreateProfile, updateNotifyEmail, updateProfileName } from "@/lib/data/profile";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { supabaseServer } from "@/lib/supabase/ssr";
 import { databaseModeOnly, readJson } from "@/app/api/projects/_guard";
@@ -12,13 +12,13 @@ export async function GET() {
   try {
     const user = await requireUser();
     const profile = await getOrCreateProfile(user);
-    return Response.json({ email: user.email, name: profile.name ?? user.name ?? "", emailVerified: user.emailVerified, planKey: profile.planKey, freeAdGrantedAt: profile.freeAdGrantedAt });
+    return Response.json({ email: user.email, name: profile.name ?? user.name ?? "", emailVerified: user.emailVerified, planKey: profile.planKey, freeAdGrantedAt: profile.freeAdGrantedAt, notifyEmail: profile.notifyEmail });
   } catch (error) {
     return dataErrorResponse(error);
   }
 }
 
-const Patch = z.object({ name: z.string().trim().max(120) });
+const Patch = z.object({ name: z.string().trim().max(120).optional(), notifyEmail: z.boolean().optional() });
 
 export async function PATCH(request: Request) {
   const blocked = databaseModeOnly();
@@ -28,9 +28,12 @@ export async function PATCH(request: Request) {
     const parsed = Patch.safeParse(await readJson(request));
     if (!parsed.success) return Response.json({ error: "Enter a name of at most 120 characters." }, { status: 400 });
     await getOrCreateProfile(user);
-    await updateProfileName(user.id, parsed.data.name || null);
-    const supabase = await supabaseServer();
-    await supabase.auth.updateUser({ data: { name: parsed.data.name || null } });
+    if (parsed.data.name !== undefined) {
+      await updateProfileName(user.id, parsed.data.name || null);
+      const supabase = await supabaseServer();
+      await supabase.auth.updateUser({ data: { name: parsed.data.name || null } });
+    }
+    if (parsed.data.notifyEmail !== undefined) await updateNotifyEmail(user.id, parsed.data.notifyEmail);
     return Response.json({ ok: true });
   } catch (error) {
     return dataErrorResponse(error);

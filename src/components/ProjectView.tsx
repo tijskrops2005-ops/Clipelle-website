@@ -9,6 +9,7 @@ import { config } from "@/lib/config";
 import type { AdProject } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
 import { useProject, useProjects, useProjectsReady } from "@/lib/data/client";
+import { useStatusTitle } from "@/lib/useStatusTitle";
 import { otherVersionsOf, translationsOf } from "@/lib/versions";
 import { languageOf } from "@/lib/languages";
 import { formatByKey } from "@/content/formats";
@@ -33,6 +34,7 @@ export function ProjectView({ id }: { id: string }) {
   // Demo: the store hydrates from localStorage after mount; database: the first fetch takes a moment.
   // Either way, show a skeleton instead of a "not found" flash.
   const ready = useProjectsReady();
+  useStatusTitle(project ? { status: project.status, name: project.name } : null);
 
   if (!project) {
     if (!ready) return <ProjectSkeleton />;

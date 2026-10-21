@@ -21,6 +21,11 @@ export async function getOrCreateProfile(user: { id: string; email: string; name
   return again;
 }
 
+/** Settings → Profile: e-mail when a video is ready or fails. */
+export async function updateNotifyEmail(userId: string, on: boolean) {
+  await db().update(profiles).set({ notifyEmail: on, updatedAt: new Date() }).where(eq(profiles.userId, userId));
+}
+
 export async function updateProfileName(userId: string, name: string | null) {
   await db().update(profiles).set({ name, updatedAt: new Date() }).where(eq(profiles.userId, userId));
 }

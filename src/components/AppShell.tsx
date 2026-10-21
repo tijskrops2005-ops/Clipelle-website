@@ -7,6 +7,7 @@ import { ensureFreeAd } from "@/lib/billing";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { DemoRunner } from "@/components/DemoRunner";
+import { StatusWatcher } from "@/components/StatusWatcher";
 
 /**
  * Persistent frame for every app page. The sidebar sits on the page background;
@@ -28,6 +29,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <DemoRunner />
+      <StatusWatcher />
       <div className="hidden lg:block">
         <Suspense fallback={<div className="w-66" aria-hidden />}>
           <Sidebar user={who} />

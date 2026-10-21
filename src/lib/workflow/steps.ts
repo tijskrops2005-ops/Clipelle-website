@@ -226,7 +226,14 @@ export async function afterProjectEnd(projectId: string) {
     const [p] = await db().select({ batchId: projects.batchId }).from(projects).where(eq(projects.id, projectId)).limit(1);
     if (p?.batchId) {
       const { refreshBatchStatus } = await import("@/lib/batches");
-      await refreshBatchStatus(p.batchId);
+      const result = await refreshBatchStatus(p.batchId);
+      if (result?.justFinished) {
+        const { notifyBatchEnd } = await import("@/lib/notifications");
+        await notifyBatchEnd(p.batchId);
+      }
+    } else {
+      const { notifyProjectEnd } = await import("@/lib/notifications");
+      await notifyProjectEnd(projectId);
     }
   } catch (error) {
     console.error("[batch] status refresh failed", error);

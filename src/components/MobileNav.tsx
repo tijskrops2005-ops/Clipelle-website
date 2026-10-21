@@ -11,6 +11,7 @@ import { Brand } from "@/components/Brand";
 import { UserMenu } from "@/components/UserMenu";
 import type { ShellUser } from "@/components/Sidebar";
 import { isActivePath, navItems } from "@/components/nav";
+import { UnseenBadge } from "@/components/StatusWatcher";
 
 /** Top bar with a hamburger that opens a left drawer holding the same links as the sidebar. */
 export function MobileNav({ user }: { user: ShellUser }) {
@@ -111,6 +112,7 @@ export function MobileNav({ user }: { user: ShellUser }) {
                   >
                     <Icon className={cn("size-[18px]", active ? "text-accent" : "text-muted")} aria-hidden />
                     {label}
+                    <UnseenBadge href={href} />
                   </Link>
                 );
               })}

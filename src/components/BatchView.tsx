@@ -6,6 +6,7 @@ import { ArrowLeft, Download, FolderOpen, LayoutGrid, Rows3 } from "lucide-react
 import { config } from "@/lib/config";
 import type { AdProject, BatchStatus } from "@/lib/types";
 import { useBatch } from "@/lib/data/client";
+import { useStatusTitle } from "@/lib/useStatusTitle";
 import { formatByKey, hookByKey } from "@/content/formats";
 import { formatUsd } from "@/lib/pricing";
 import { projectDurationMs, projectEstimateUsd } from "@/lib/projectMeta";
@@ -39,6 +40,7 @@ function variantTitle(p: AdProject) {
 export function BatchView({ id }: { id: string }) {
   const { batch, projects, ready } = useBatch(id);
   const [view, setView] = useState<"cards" | "compare">("cards");
+  useStatusTitle(batch ? { status: batch.status, name: batch.name } : null);
 
   if (!batch) {
     if (!ready) {

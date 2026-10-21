@@ -10,6 +10,7 @@ import { Brand } from "@/components/Brand";
 import { UserMenu } from "@/components/UserMenu";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { isActivePath, navItems } from "@/components/nav";
+import { UnseenBadge } from "@/components/StatusWatcher";
 
 /** Desktop navigation: sits on the page background, only the active item is a white card. */
 export type ShellUser = { email: string; name?: string; credits: number | null; workspace: { id: string; name: string; kind: string; role: string }; workspaces: { id: string; name: string; kind: string; role: string }[] } | null;
@@ -44,6 +45,7 @@ export function Sidebar({ user }: { user: ShellUser }) {
             >
               <Icon className={cn("size-[18px] transition-colors duration-150", active ? "text-accent" : "text-muted group-hover:text-ink")} aria-hidden />
               {label}
+              <UnseenBadge href={href} />
             </Link>
           );
         })}

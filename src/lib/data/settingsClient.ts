@@ -93,11 +93,18 @@ export async function fetchBrandLogoFile(logoUrl: string): Promise<File | null> 
   }
 }
 
-export type ProfileInfo = { email: string; name: string; emailVerified: boolean; planKey: string; freeAdGrantedAt: string | null };
+export type ProfileInfo = { email: string; name: string; emailVerified: boolean; planKey: string; freeAdGrantedAt: string | null; notifyEmail: boolean };
+const NOTIFY_EMAIL_KEY = "reelay.demo.notifyEmail";
 
 export async function getProfile(): Promise<ProfileInfo> {
-  if (config.demoMode) return { email: "demo@reelay.local", name: readLocal<string>(NAME_KEY, "Demo"), emailVerified: true, planKey: "free", freeAdGrantedAt: null };
+  if (config.demoMode) return { email: "demo@reelay.local", name: readLocal<string>(NAME_KEY, "Demo"), emailVerified: true, planKey: "free", freeAdGrantedAt: null, notifyEmail: readLocal<boolean>(NOTIFY_EMAIL_KEY, true) };
   return api<ProfileInfo>("/api/settings/profile");
+}
+
+/** E-mail when a video is ready or fails. */
+export async function saveNotifyEmail(on: boolean) {
+  if (config.demoMode) return writeLocal(NOTIFY_EMAIL_KEY, on);
+  await api("/api/settings/profile", { method: "PATCH", body: JSON.stringify({ notifyEmail: on }) });
 }
 
 export async function saveProfileName(name: string) {

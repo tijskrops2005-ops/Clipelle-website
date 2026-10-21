@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { config } from "@/lib/config";
-import { changePassword, deleteAccount, getProfile, saveProfileName, type ProfileInfo } from "@/lib/data/settingsClient";
+import { changePassword, deleteAccount, getProfile, saveNotifyEmail, saveProfileName, type ProfileInfo } from "@/lib/data/settingsClient";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
@@ -91,6 +91,26 @@ export function ProfileSettings() {
             Save name
           </Button>
         </form>
+      </SectionCard>
+
+      <SectionCard title="Notifications" description="One short e-mail per video or batch when it is ready or stops, with a link. Nothing else is ever sent to this address.">
+        <label className="flex cursor-pointer items-start gap-3 rounded-panel border border-border bg-surface-muted/60 p-4 text-sm text-ink transition-colors duration-150 hover:bg-surface">
+          <input
+            type="checkbox"
+            checked={profile?.notifyEmail ?? true}
+            disabled={!profile || busy === "notify"}
+            onChange={(e) => {
+              const on = e.target.checked;
+              setProfile((p) => (p ? { ...p, notifyEmail: on } : p));
+              void run("notify", () => saveNotifyEmail(on), on ? "You will get an e-mail when a video is ready or stops." : "E-mail notifications are off. The app still shows a badge and a message.");
+            }}
+            className="mt-0.5 size-4"
+          />
+          <span>
+            <span className="font-medium">E-mail me when a video is ready or fails</span>
+            <span className="block text-[13px] leading-relaxed text-muted">Sent to {profile?.email ?? "your address"}. Variations in a batch send one e-mail for the whole batch.</span>
+          </span>
+        </label>
       </SectionCard>
 
       <SectionCard title="Password" description={config.demoMode ? "Demo mode has no accounts, so there is no password." : "Choose a new password for this account."}>

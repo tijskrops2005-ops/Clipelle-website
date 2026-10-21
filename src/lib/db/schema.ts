@@ -1,5 +1,6 @@
 import {
   bigint,
+  boolean,
   doublePrecision,
   index,
   integer,
@@ -149,6 +150,8 @@ export const projects = pgTable(
     version: integer("version").default(1).notNull(),
     /** "Make variations": the batch this project is part of. */
     batchId: uuid("batch_id"),
+    /** When the "ready" or "failed" e-mail went out (or was skipped by choice); one per project. */
+    notifiedAt: timestamp("notified_at", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [index("projects_owner_created_idx").on(t.ownerId, t.createdAt), index("projects_status_idx").on(t.status), index("projects_parent_idx").on(t.parentId), index("projects_batch_idx").on(t.batchId)],
@@ -164,6 +167,8 @@ export const projectBatches = pgTable(
     name: text("name").notNull(),
     /** processing | completed | partial (some failed) | failed; refreshed when a variant finishes. */
     status: text("status").default("processing").notNull(),
+    /** When the one batch e-mail went out. */
+    notifiedAt: timestamp("notified_at", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [index("project_batches_workspace_idx").on(t.workspaceId, t.createdAt)],
@@ -303,6 +308,8 @@ export const profiles = pgTable(
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
     /** When the one free ad was granted; null = not yet. */
     freeAdGrantedAt: timestamp("free_ad_granted_at", { withTimezone: true }),
+    /** E-mail when a video is ready or fails (Settings → Profile). Default on; no marketing ever. */
+    notifyEmail: boolean("notify_email").default(true).notNull(),
     ...timestamps,
   },
 ).enableRLS();
