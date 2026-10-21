@@ -155,3 +155,13 @@ export function formatBytes(bytes: number) {
   if (bytes >= 1e3) return `${Math.round(bytes / 1e3)} KB`;
   return `${bytes} B`;
 }
+
+/** Reads one object back from storage (small files only, e.g. a brand logo served by our own route). */
+export async function downloadObject(path: string): Promise<Blob | null> {
+  const { data, error } = await supabaseAdmin().storage.from(BUCKET).download(path);
+  if (error) {
+    if (/not found|does not exist|404/i.test(error.message)) return null;
+    throw new StorageError(`Download failed: ${error.message}`, "download_failed");
+  }
+  return data;
+}

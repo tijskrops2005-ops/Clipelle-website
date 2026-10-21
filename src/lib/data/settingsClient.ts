@@ -6,8 +6,9 @@ import { config } from "@/lib/config";
  * Settings access for screens, with the demo switch like src/lib/data/client.ts: demo mode keeps
  * everything in localStorage under the demo user, database mode calls /api/settings/*.
  */
-export type BrandDefaults = { accent?: string; captionStyle?: string; font?: string; logoPath?: string };
+export type BrandDefaults = { accent?: string; captionStyle?: string; font?: string; logoPath?: string; /** Where the logo can be fetched (own route, or a data URL in demo mode). */ logoUrl?: string };
 const BRAND_KEY = "reelay.demo.brand";
+const LOGO_KEY = "reelay.demo.brandLogo";
 const NAME_KEY = "reelay.demo.name";
 const WISH_KEY = "reelay.demo.wishes";
 
@@ -35,13 +36,61 @@ function writeLocal(key: string, value: unknown) {
 }
 
 export async function getBrandDefaults(): Promise<BrandDefaults> {
-  if (config.demoMode) return readLocal<BrandDefaults>(BRAND_KEY, {});
+  if (config.demoMode) {
+    const logo = readLocal<string | null>(LOGO_KEY, null);
+    return { ...readLocal<BrandDefaults>(BRAND_KEY, {}), logoPath: logo ? "demo" : undefined, logoUrl: logo ?? undefined };
+  }
   return api<BrandDefaults>("/api/settings/brand");
 }
 
-export async function saveBrandDefaults(brand: BrandDefaults) {
+export async function saveBrandDefaults(brand: Pick<BrandDefaults, "accent" | "captionStyle" | "font">) {
   if (config.demoMode) return writeLocal(BRAND_KEY, brand);
   await api("/api/settings/brand", { method: "PUT", body: JSON.stringify(brand) });
+}
+
+/** Uploads a logo (PNG, JPG or SVG, 2 MB) and returns where it can be shown; the old one is replaced. */
+export async function uploadBrandLogo(file: File): Promise<{ logoUrl: string }> {
+  if (config.demoMode) {
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = () => reject(new Error("Could not read the file."));
+      r.readAsDataURL(file);
+    });
+    writeLocal(LOGO_KEY, dataUrl);
+    return { logoUrl: dataUrl };
+  }
+  const form = new FormData();
+  form.append("file", file, file.name);
+  const r = await fetch("/api/settings/brand/logo", { method: "POST", body: form });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.error ?? `Upload failed (${r.status}).`);
+  return { logoUrl: body.logoUrl as string };
+}
+
+export async function removeBrandLogo() {
+  if (config.demoMode) {
+    try {
+      window.localStorage.removeItem(LOGO_KEY);
+    } catch {
+      /* nothing stored */
+    }
+    return;
+  }
+  await api("/api/settings/brand/logo", { method: "DELETE" });
+}
+
+/** The saved logo as a File, so the ad form can start with it and still send exactly what a manual upload sends. */
+export async function fetchBrandLogoFile(logoUrl: string): Promise<File | null> {
+  try {
+    const r = await fetch(logoUrl, { cache: "no-store" });
+    if (!r.ok) return null;
+    const blob = await r.blob();
+    const ext = blob.type === "image/svg+xml" ? "svg" : blob.type === "image/png" ? "png" : "jpg";
+    return new File([blob], `brand-logo.${ext}`, { type: blob.type || "application/octet-stream" });
+  } catch {
+    return null;
+  }
 }
 
 export type ProfileInfo = { email: string; name: string; emailVerified: boolean; planKey: string; freeAdGrantedAt: string | null };

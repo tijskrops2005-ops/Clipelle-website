@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { config } from "@/lib/config";
 import { createAdProject } from "@/lib/data/client";
-import { getBrandDefaults } from "@/lib/data/settingsClient";
+import { fetchBrandLogoFile, getBrandDefaults } from "@/lib/data/settingsClient";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { PresenterPicker } from "@/components/PresenterPicker";
 import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, formatUsd, type AdLength, type PresenterEngine } from "@/lib/pricing";
@@ -109,6 +109,13 @@ export function ProjectForm() {
         }
         if (b.captionStyle && (CAPTION_STYLES as readonly string[]).includes(b.captionStyle)) setCaptionStyle(b.captionStyle as CaptionStyle);
         if (b.font && (FONT_KEYS as readonly string[]).includes(b.font)) setFont(b.font as FontKey);
+        // The saved logo becomes a File in the dropzone, so the draft carries it exactly like a manual upload.
+        if (b.logoUrl) {
+          void fetchBrandLogoFile(b.logoUrl).then((file) => {
+            if (!alive || !file) return;
+            setLogoImages((cur) => (cur.length ? cur : [{ id: "brand-default-logo", file, previewUrl: URL.createObjectURL(file) }]));
+          });
+        }
       })
       .catch(() => {});
     return () => {
