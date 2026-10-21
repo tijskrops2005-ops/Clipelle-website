@@ -1,13 +1,13 @@
 import "server-only";
 import { count, eq, gte, sql } from "drizzle-orm";
 import { db, profiles } from "@/lib/db";
-import { CREDIT_VALIDITY, FREE_AD, FREE_AD_CREDITS, PLANS, TOPUPS, planByKey } from "@/lib/plans";
+import { CREDIT_EXPIRY, FREE_AD, FREE_AD_CREDITS, PLANS, TOPUPS, planByKey } from "@/lib/plans";
 import { grantCredits } from "@/lib/credits";
 import type { AppUser } from "@/lib/auth";
 
-/** End of the validity window: the month of `from` plus `months` more, last millisecond. */
-export function validUntil(from: Date, months: number) {
-  return new Date(from.getFullYear(), from.getMonth() + months + 1, 1, 0, 0, 0, -1);
+/** When the free first ad expires: a fixed number of days after the grant (paid credits never expire). */
+export function freeAdExpiry(from: Date) {
+  return new Date(from.getTime() + CREDIT_EXPIRY.freeAdDays * 24 * 60 * 60 * 1000);
 }
 
 export function freeAdsPerDay() {
@@ -49,7 +49,7 @@ export async function ensureFreeAd(user: AppUser): Promise<FreeAdState> {
     return { granted: true as const, capLeft: cap - n - 1 };
   });
   if (!outcome.granted) return { granted: false, reason: "cap", capLeft: outcome.capLeft };
-  await grantCredits({ userId: user.id, credits: FREE_AD_CREDITS, kind: "grant_free", note: `Free first ad (${FREE_AD.seconds} s, Standard)`, expiresAt: validUntil(now, CREDIT_VALIDITY.free), reference: `free:${user.id}` });
+  await grantCredits({ userId: user.id, credits: FREE_AD_CREDITS, kind: "grant_free", note: `Free first ad (${FREE_AD.seconds} s, Standard)`, expiresAt: freeAdExpiry(now), reference: `free:${user.id}` });
   return { granted: true, capLeft: outcome.capLeft };
 }
 
@@ -58,17 +58,17 @@ export function isFreeOnlyCombination(seconds: number, engine: string) {
   return seconds === FREE_AD.seconds && engine === FREE_AD.engine;
 }
 
-/** Credits for a plan period, on an invoice paid event. Idempotent on the invoice id. */
-export async function grantPlanCredits(userId: string, planKey: string, invoiceId: string, periodStart: Date) {
+/** Credits for a plan period, on an invoice paid event. Idempotent on the invoice id. They never expire. */
+export async function grantPlanCredits(userId: string, planKey: string, invoiceId: string, _periodStart: Date) {
   const plan = planByKey(planKey);
   if (!plan || plan.creditsPerMonth === 0) return;
-  await grantCredits({ userId, credits: plan.creditsPerMonth, kind: "grant_subscription", note: `${plan.name} plan`, expiresAt: validUntil(periodStart, CREDIT_VALIDITY.subscription), reference: `invoice:${invoiceId}` });
+  await grantCredits({ userId, credits: plan.creditsPerMonth, kind: "grant_subscription", note: `${plan.name} plan`, expiresAt: null, reference: `invoice:${invoiceId}` });
 }
 
 export async function grantTopupCredits(userId: string, topupKey: string, sessionId: string) {
   const pack = TOPUPS.find((t) => t.key === topupKey);
   if (!pack) return;
-  await grantCredits({ userId, credits: pack.credits, kind: "grant_topup", note: `${pack.credits} credits pack`, expiresAt: validUntil(new Date(), CREDIT_VALIDITY.topup), reference: `checkout:${sessionId}` });
+  await grantCredits({ userId, credits: pack.credits, kind: "grant_topup", note: `${pack.credits} credits pack`, expiresAt: null, reference: `checkout:${sessionId}` });
 }
 
 export async function setPlan(userId: string, patch: { planKey?: string; stripeCustomerId?: string | null; stripeSubscriptionId?: string | null; subscriptionStatus?: string | null; currentPeriodEnd?: Date | null }) {

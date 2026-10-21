@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ArrowRight, Check, Minus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { ANNUAL_MONTHS_CHARGED, CREDIT_VALIDITY, PLANS, TOPUPS, adCreditTable, formatPrice, translateCredits, type Plan } from "@/lib/plans";
+import { ANNUAL_MONTHS_CHARGED, CREDIT_EXPIRY, PLANS, TOPUPS, adCreditTable, formatPrice, translateCredits, type Plan } from "@/lib/plans";
 
 type Interval = "monthly" | "annual";
 
@@ -54,7 +54,7 @@ export function PricingTable({ onChoose, busyKey, compact }: { onChoose?: (plan:
         </div>
         <div className="rounded-card bg-surface p-6 shadow-card">
           <p className="text-[17px] font-semibold text-ink">Credit packs</p>
-          <p className="mt-1 text-[15px] text-muted">One-off, on top of a paid plan. Valid for {CREDIT_VALIDITY.topup} months.</p>
+          <p className="mt-1 text-[15px] text-muted">One-off, on top of a paid plan. Credits never expire.</p>
           <ul className="mt-4 space-y-2">
             {TOPUPS.map((t) => (
               <li key={t.key} className="flex items-center justify-between rounded-chip bg-surface-muted px-4 py-2.5 text-sm">
@@ -109,7 +109,7 @@ export function PricingTable({ onChoose, busyKey, compact }: { onChoose?: (plan:
                     ["Premium presenter", (p: Plan) => p.key !== "free"],
                     ["Translations, 190 languages", (p: Plan) => p.key !== "free"],
                     ["Brand defaults saved", () => true],
-                    ["Credits valid", (p: Plan) => (p.key === "free" ? "This month and next" : "This month and next")],
+                    ["Credits expire", (p: Plan) => (p.key === "free" ? "Free ad: " + CREDIT_EXPIRY.freeAdDays + " days" : "Never")],
                     ["Credit packs on top", (p: Plan) => p.key !== "free"],
                     ["Support", () => "Contact form, answered by e-mail"],
                   ].map(([label, fn]) => (

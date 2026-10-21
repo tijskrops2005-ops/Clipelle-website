@@ -1,6 +1,6 @@
 import "server-only";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
-import { costEntries, db, notifyWishes, profiles, projects, type ProfileRow } from "@/lib/db";
+import { costEntries, creditLedger, db, notifyWishes, profiles, projects, type ProfileRow } from "@/lib/db";
 import { chargeOf } from "@/lib/services/costGuard";
 import { listLedger } from "@/lib/credits";
 
@@ -72,10 +72,11 @@ export async function getUsage(userId: string) {
   return { projects: [...perProject.values()].sort((a, b) => b.last.getTime() - a.last.getTime()), projectsThisMonth: Number(m?.n ?? 0), ledger: await listLedger(userId, 50) };
 }
 
-/** Deletes everything of one account: projects (cascade), ledger, wishes, profile. Auth user is deleted by the caller. */
+/** Deletes everything of one account: projects (cascade), the credit ledger (credits are forfeited), wishes, profile. Auth user is deleted by the caller. */
 export async function deleteAccountData(userId: string) {
   const d = db();
   await d.delete(projects).where(eq(projects.ownerId, userId));
+  await d.delete(creditLedger).where(eq(creditLedger.userId, userId));
   await d.delete(notifyWishes).where(eq(notifyWishes.userId, userId));
   await d.delete(profiles).where(eq(profiles.userId, userId));
 }

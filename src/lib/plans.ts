@@ -72,10 +72,10 @@ function plan(key: PlanKey, name: string, tagline: string, monthlyUsd: number, b
 }
 
 export const PLANS: Plan[] = [
-  plan("free", "Free", "Try it once", 0, ["One 10-second ad, Standard presenter", "After e-mail verification, no card", "Presenter, voice, brand style and captions as on every plan"], { creditsNote: "One free 10-second ad" }),
-  plan("starter", "Starter", "For a shop testing its first ads", 19, ["About nine 30-second Standard ads a month", "Translations, all languages", "Credits valid this month and the next"]),
-  plan("pro", "Pro", "For a brand posting every week", 59, ["About twenty-eight 30-second Standard ads a month", "Premium presenter when you want it", "Credits valid this month and the next"]),
-  plan("scale", "Scale", "For agencies and several brands", 159, ["About seventy-seven 30-second Standard ads a month", "Premium presenter and translations included", "Credits valid this month and the next"]),
+  plan("free", "Free", "Try it once", 0, ["One 10-second ad, Standard presenter", "After e-mail verification, no card", "Use it within 30 days"], { creditsNote: "One free 10-second ad" }),
+  plan("starter", "Starter", "For a shop testing its first ads", 19, ["About nine 30-second Standard ads a month", "Translations, all languages", "Credits never expire"]),
+  plan("pro", "Pro", "For a brand posting every week", 59, ["About twenty-eight 30-second Standard ads a month", "Premium presenter when you want it", "Credits never expire"]),
+  plan("scale", "Scale", "For agencies and several brands", 159, ["About seventy-seven 30-second Standard ads a month", "Premium presenter and translations included", "Credits never expire"]),
   plan("enterprise", "Enterprise", "Custom volume and terms", 0, ["Custom credits and billing", "Onboarding and a direct line", "Book a demo to talk"], { creditsNote: "Custom", stripeLookup: undefined }),
 ];
 
@@ -85,11 +85,17 @@ export function planByKey(key: string | null | undefined): Plan | undefined {
 
 export type TopupPack = { key: string; usd: number; credits: number; stripeLookup: string };
 
-/** One-off packs at the top-up margin; credits valid for a year. */
+/** One-off packs at the top-up margin; the credits never expire. */
 export const TOPUPS: TopupPack[] = [10, 25, 50].map((usd) => ({ key: `topup_${usd}`, usd, credits: includedCreditsFor(usd, TOPUP_MARGIN), stripeLookup: `reelay_topup_${usd}` }));
 
-/** How long credits stay valid, in months after the month they were issued. */
-export const CREDIT_VALIDITY = { subscription: 1, topup: 12, free: 1 } as const;
+/**
+ * Expiry (decided 21 October 2026): paid credits (subscriptions and packs) NEVER expire while the
+ * account exists, also after a subscription is cancelled; deleting the account forfeits them.
+ * The free first ad expires 30 days after it is granted. The plan margins assume every credit is
+ * used (planMargin counts the cost of all included credits), so unused credits are never treated
+ * as revenue.
+ */
+export const CREDIT_EXPIRY = { paid: "never" as const, freeAdDays: 30 };
 
 /** Free first ad: the only combination it allows. */
 export const FREE_AD = { seconds: 10, engine: "avatar_iii" as PresenterEngine };
