@@ -131,5 +131,5 @@ export const footerColumns: { title: string; links: { href: string; label: strin
   { title: "Solutions", links: solutionsMenu.map((i) => ({ href: i.href, label: i.title })) },
   { title: "Resources", links: resourcesMenu.map((i) => ({ href: i.href, label: i.title })) },
   { title: "Company", links: [...companyMenu.map((i) => ({ href: i.href, label: i.title })), { href: "/demo", label: "Book a demo" }] },
-  { title: "Legal", links: [{ href: "/legal/terms", label: "Terms of service" }, { href: "/legal/privacy", label: "Privacy" }, { href: "/legal/cookies", label: "Cookies" }] },
+  { title: "Legal", links: [{ href: "/legal/terms", label: "Terms of service" }, { href: "/legal/privacy", label: "Privacy" }, { href: "/legal/cookies", label: "Cookie policy" }, { href: "/legal/data", label: "Files and data" }, { href: "/legal/affiliate-terms", label: "Partner terms" }] },
 ];

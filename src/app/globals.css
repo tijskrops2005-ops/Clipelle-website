@@ -238,3 +238,24 @@
     animation: none;
   }
 }
+
+/* ---------- rendered markdown (blog articles): own type scale, no plugin ---------- */
+.prose-reelay { color: color-mix(in srgb, var(--ink) 90%, transparent); font-size: 17px; line-height: 1.7; }
+.prose-reelay > div > :first-child { margin-top: 0; }
+.prose-reelay p { margin: 0 0 1.25em; }
+.prose-reelay h2 { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; margin: 2.2em 0 0.7em; color: var(--ink); scroll-margin-top: 7rem; }
+.prose-reelay h3 { font-size: 20px; font-weight: 600; margin: 1.8em 0 0.5em; color: var(--ink); }
+.prose-reelay ul, .prose-reelay ol { margin: 0 0 1.25em; padding-left: 1.4em; }
+.prose-reelay li { margin: 0.35em 0; }
+.prose-reelay li > p { margin: 0; }
+.prose-reelay a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 4px; }
+.prose-reelay a:hover { text-decoration-color: var(--ink); }
+.prose-reelay strong { color: var(--ink); font-weight: 600; }
+.prose-reelay blockquote { margin: 1.5em 0; padding: 0.25em 0 0.25em 1.25em; border-left: 3px solid var(--accent); color: var(--muted); }
+.prose-reelay code { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 0.9em; background: var(--surface-muted); padding: 0.1em 0.35em; border-radius: 6px; }
+.prose-reelay pre { background: var(--ink); color: var(--surface); padding: 1rem 1.25rem; border-radius: 16px; overflow-x: auto; margin: 0 0 1.5em; }
+.prose-reelay pre code { background: transparent; padding: 0; color: inherit; }
+.prose-reelay table { width: 100%; border-collapse: collapse; margin: 0 0 1.5em; font-size: 15px; }
+.prose-reelay th, .prose-reelay td { text-align: left; padding: 0.6em 0.75em; border-bottom: 1px solid var(--divider); vertical-align: top; }
+.prose-reelay th { font-weight: 600; color: var(--ink); }
+.prose-reelay hr { border: 0; border-top: 1px solid var(--divider); margin: 2.5em 0; }

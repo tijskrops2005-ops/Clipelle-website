@@ -3,6 +3,7 @@ import { config } from "@/lib/config";
 import { socialLinks, type SocialLink } from "@/content/social";
 import { footerColumns } from "./siteNav";
 import { Year } from "./Year";
+import { CookieSettingsLink } from "./CookieBanner";
 
 /** Big footer: brand, five link columns from siteNav, social icons only when src/content/social.ts lists them. */
 export function SiteFooter() {
@@ -36,6 +37,7 @@ export function SiteFooter() {
                   <Link href={l.href} className="focus-ring rounded-control text-[15px] text-ink/80 transition-colors duration-150 hover:text-ink">{l.label}</Link>
                 </li>
               ))}
+              {col.title === "Legal" && <li><CookieSettingsLink /></li>}
             </ul>
           </nav>
         ))}
