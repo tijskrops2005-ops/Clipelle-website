@@ -475,3 +475,21 @@ export const workspaceInvites = pgTable(
 ).enableRLS();
 
 export type WorkspaceRow = typeof workspaces.$inferSelect;
+
+/** Requests for the managed service (/services/done-for-you). Raw addresses are never stored. */
+export const serviceRequests = pgTable(
+  "service_requests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    company: text("company"),
+    sells: text("sells"),
+    adsPerMonth: text("ads_per_month"),
+    message: text("message"),
+    ipHash: text("ip_hash"),
+    status: text("status").default("new").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("service_requests_created_idx").on(t.createdAt)],
+).enableRLS();
