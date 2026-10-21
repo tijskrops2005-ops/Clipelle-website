@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 import { ArrowRight, Check, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { config } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { BUSINESS_TIERS, CREDIT_EXPIRY, PLANS, TOPUPS, activeListPrice, adCreditTable, formatPrice, translateCredits, type Plan } from "@/lib/plans";
 import { annualTotals, planExamples, usdPerCredit } from "@/lib/pricingHelpers";
 import { PlanFinder } from "./PlanFinder";
+import { dict } from "@/content/i18n";
+import { localizePath, type Locale } from "@/lib/i18n";
 
 type Interval = "monthly" | "annual";
 type Tab = "individual" | "business" | "api";
@@ -19,7 +20,9 @@ type Tab = "individual" | "business" | "api";
  * saving, plan cards (crossed-out prices only from plans.ts), comparison table, plan finder.
  * Every number comes from plans.ts and pricing.ts. `compact` (Billing settings) shows the cards only.
  */
-export function PricingTable({ onChoose, busyKey, compact }: { onChoose?: (plan: Plan, interval: Interval) => void; busyKey?: string | null; compact?: boolean }) {
+export function PricingTable({ onChoose, busyKey, compact, locale = "en" }: { onChoose?: (plan: Plan, interval: Interval) => void; busyKey?: string | null; compact?: boolean; locale?: Locale }) {
+  const t = dict(locale).pricing;
+  const L = (p: string) => localizePath(p, locale);
   const [interval, setInterval] = useState<Interval>("monthly");
   const [tab, setTab] = useState<Tab>("individual");
   const [tier, setTier] = useState<string>(BUSINESS_TIERS[0].key);
@@ -29,12 +32,12 @@ export function PricingTable({ onChoose, busyKey, compact }: { onChoose?: (plan:
   const business = BUSINESS_TIERS.find((t) => t.key === tier) ?? BUSINESS_TIERS[0];
   const maxSaving = useMemo(() => Math.max(...paid.map((p) => annualTotals(p).savingPct)), [paid]);
 
-  const tabs: { key: Tab; label: string }[] = [{ key: "individual", label: "Individual" }, { key: "business", label: "Business" }, { key: "api", label: "API" }];
+  const tabs: { key: Tab; label: string }[] = [{ key: "individual", label: t.tabs.individual }, { key: "business", label: t.tabs.business }, { key: "api", label: t.tabs.api }];
 
   return (
     <div className="space-y-16">
       <div className="flex flex-col items-center gap-4">
-        <div role="tablist" aria-label="Plan types" className="inline-flex gap-1 rounded-full bg-surface-muted p-1" onKeyDown={(e) => {
+        <div role="tablist" aria-label={t.tabs.ariaLabel} className="inline-flex gap-1 rounded-full bg-surface-muted p-1" onKeyDown={(e) => {
           if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
           e.preventDefault();
           const i = tabs.findIndex((t) => t.key === tab);
@@ -48,31 +51,31 @@ export function PricingTable({ onChoose, busyKey, compact }: { onChoose?: (plan:
         </div>
         {tab !== "api" && (
           <div className="flex flex-col items-center gap-2">
-            <SegmentedControl label="Billing period" options={[{ key: "monthly", label: "Monthly" }, { key: "annual", label: `Annual · save up to ${maxSaving}%` }]} value={interval} onChange={setInterval} />
-            <p className="text-[13px] text-muted">Prices in US dollars, excluding VAT where it applies. Credits never expire.</p>
+            <SegmentedControl label={t.period.label} options={[{ key: "monthly", label: t.period.monthly }, { key: "annual", label: t.period.annual.replace("{n}", String(maxSaving)) }]} value={interval} onChange={setInterval} />
+            <p className="text-[13px] text-muted">{t.period.note}</p>
           </div>
         )}
       </div>
 
       <div id={`${base}-panel-individual`} role="tabpanel" aria-labelledby={`${base}-tab-individual`} hidden={tab !== "individual"} className={cn(tab === "individual" && "fold-in")}>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          <PlanCard plan={free} interval={interval} cta={<Button href="/signup" variant="secondary" className="w-full">Start free</Button>} />
+          <PlanCard plan={free} interval={interval} t={t} cta={<Button href="/signup" variant="secondary" className="w-full">{t.startFree}</Button>} />
           {paid.map((p, i) => (
-            <PlanCard key={p.key} plan={p} previous={i === 0 ? free : paid[i - 1]} interval={interval} cta={
+            <PlanCard key={p.key} plan={p} previous={i === 0 ? free : paid[i - 1]} interval={interval} t={t} cta={
               onChoose ? (
-                <Button type="button" variant={p.recommended ? "accent" : "primary"} className="w-full" onClick={() => onChoose(p, interval)} disabled={Boolean(busyKey)}>{busyKey === p.key ? "Opening checkout…" : `Choose ${p.name}`}</Button>
+                <Button type="button" variant={p.recommended ? "accent" : "primary"} className="w-full" onClick={() => onChoose(p, interval)} disabled={Boolean(busyKey)}>{busyKey === p.key ? t.openingCheckout : t.choose.replace("{name}", p.name)}</Button>
               ) : (
-                <Button href={`/signup?next=${encodeURIComponent(`/settings/billing?plan=${p.key}&interval=${interval}`)}`} variant={p.recommended ? "accent" : "primary"} className="w-full">Choose {p.name}</Button>
+                <Button href={`/signup?next=${encodeURIComponent(`/settings/billing?plan=${p.key}&interval=${interval}`)}`} variant={p.recommended ? "accent" : "primary"} className="w-full">{t.choose.replace("{name}", p.name)}</Button>
               )
             } />
           ))}
         </div>
         <div className="mt-8 rounded-card bg-surface p-6 shadow-card">
-          <p className="text-[17px] font-semibold text-ink">Credit packs</p>
-          <p className="mt-1 text-[15px] text-muted">One-off, on top of a paid plan. Credits never expire.</p>
+          <p className="text-[17px] font-semibold text-ink">{t.packs.title}</p>
+          <p className="mt-1 text-[15px] text-muted">{t.packs.text}</p>
           <ul className="mt-4 grid gap-2 sm:grid-cols-3">
-            {TOPUPS.map((t) => (
-              <li key={t.key} className="flex items-center justify-between rounded-chip bg-surface-muted px-4 py-2.5 text-sm"><span className="font-medium text-ink">{t.credits.toLocaleString("en-US")} credits</span><span className="text-muted">{formatPrice(t.usd)}</span></li>
+            {TOPUPS.map((x) => (
+              <li key={x.key} className="flex items-center justify-between rounded-chip bg-surface-muted px-4 py-2.5 text-sm"><span className="font-medium text-ink">{x.credits.toLocaleString("en-US")} {t.packs.credits}</span><span className="text-muted">{formatPrice(x.usd)}</span></li>
             ))}
           </ul>
         </div>
@@ -82,29 +85,29 @@ export function PricingTable({ onChoose, busyKey, compact }: { onChoose?: (plan:
         <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
           <div className="flex flex-col rounded-card bg-surface p-6 shadow-card ring-1 ring-ink">
             <p className="text-[17px] font-semibold text-ink">{business.name}</p>
-            <p className="mt-1 text-[13px] text-muted">{business.tagline}: one shared credit pool, members with their own sign-in, no cost per seat.</p>
+            <p className="mt-1 text-[13px] text-muted">{business.tagline}: {t.business.tagline}</p>
             <div className="mt-5">
-              <p className="mb-2 text-sm font-medium text-ink">Shared credits per month</p>
-              <SegmentedControl label="Business credit level" options={BUSINESS_TIERS.map((t) => ({ key: t.key, label: `${t.creditsPerMonth.toLocaleString("en-US")}` }))} value={tier} onChange={setTier} />
+              <p className="mb-2 text-sm font-medium text-ink">{t.business.level}</p>
+              <SegmentedControl label={t.business.level} options={BUSINESS_TIERS.map((t) => ({ key: t.key, label: `${t.creditsPerMonth.toLocaleString("en-US")}` }))} value={tier} onChange={setTier} />
             </div>
-            <PriceLine plan={business} interval={interval} className="mt-5" />
-            <Examples plan={business} />
+            <PriceLine plan={business} interval={interval} className="mt-5" t={t} />
+            <Examples plan={business} t={t} />
             <ul className="mt-5 flex-1 space-y-2 text-[14px] text-ink/85">{business.bullets.map((b) => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />{b}</li>)}</ul>
-            <p className="mt-4 text-[13px] text-muted">Members need the Business plan on the team workspace; the Owner picks it in Billing after creating the team under Settings → Team.</p>
+            <p className="mt-4 text-[13px] text-muted">{t.business.note}</p>
             <div className="mt-6">
               {onChoose ? (
-                <Button type="button" variant="primary" className="w-full" onClick={() => onChoose(business, interval)} disabled={Boolean(busyKey)}>{busyKey === business.key ? "Opening checkout…" : "Choose Business"}</Button>
+                <Button type="button" variant="primary" className="w-full" onClick={() => onChoose(business, interval)} disabled={Boolean(busyKey)}>{busyKey === business.key ? t.openingCheckout : t.business.choose}</Button>
               ) : (
-                <Button href={`/signup?next=${encodeURIComponent(`/settings/team`)}`} variant="primary" className="w-full">Start with a team workspace</Button>
+                <Button href={`/signup?next=${encodeURIComponent(`/settings/team`)}`} variant="primary" className="w-full">{t.business.start}</Button>
               )}
             </div>
           </div>
           <div className="flex flex-col rounded-card bg-surface p-6 shadow-card">
-            <p className="text-[17px] font-semibold text-ink">Enterprise</p>
-            <p className="mt-1 text-[13px] text-muted">Custom volume and terms</p>
-            <p className="mt-5 text-display">Let&apos;s talk</p>
-            <ul className="mt-5 flex-1 space-y-2 text-[14px] text-ink/85">{["Custom credits and billing", "A direct line for questions", "Onboarding on a call"].map((b) => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />{b}</li>)}</ul>
-            <div className="mt-6"><Button href="/demo" variant="secondary" className="w-full">Contact sales <ArrowRight className="size-4" aria-hidden /></Button></div>
+            <p className="text-[17px] font-semibold text-ink">{t.enterprise.title}</p>
+            <p className="mt-1 text-[13px] text-muted">{t.enterprise.tagline}</p>
+            <p className="mt-5 text-display">{t.enterprise.talk}</p>
+            <ul className="mt-5 flex-1 space-y-2 text-[14px] text-ink/85">{t.enterprise.items.map((b) => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />{b}</li>)}</ul>
+            <div className="mt-6"><Button href={L("/demo")} variant="secondary" className="w-full">{dict(locale).common.contactSales} <ArrowRight className="size-4" aria-hidden /></Button></div>
           </div>
         </div>
       </div>
@@ -112,32 +115,32 @@ export function PricingTable({ onChoose, busyKey, compact }: { onChoose?: (plan:
       <div id={`${base}-panel-api`} role="tabpanel" aria-labelledby={`${base}-tab-api`} hidden={tab !== "api"} className={cn(tab === "api" && "fold-in")}>
         <div className="grid gap-5 md:grid-cols-2">
           <div className="rounded-card bg-surface p-6 shadow-card">
-            <p className="text-[17px] font-semibold text-ink">The same credits, from your code</p>
-            <p className="mt-1 text-[15px] text-muted">The API has no separate prices. Every plan with credits (Starter, Pro, Scale, Business) can create keys in Settings → API keys; an API project costs exactly what the form shows.</p>
-            <ul className="mt-4 space-y-2 text-[14px] text-ink/85">{["60 requests per minute per key", "Images up to 10 MB, logos 2 MB, videos up to 32 MB and 3 minutes, from public links", "Idempotency keys so a retry never makes a second video", "Projects scoped to the workspace of the key", "No webhooks yet: poll the project"].map((b) => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />{b}</li>)}</ul>
-            <div className="mt-6 flex flex-wrap gap-2"><Button href="/docs/api" variant="primary">API docs</Button><Button href="/docs/mcp" variant="secondary">MCP server</Button></div>
+            <p className="text-[17px] font-semibold text-ink">{t.api.title}</p>
+            <p className="mt-1 text-[15px] text-muted">{t.api.text}</p>
+            <ul className="mt-4 space-y-2 text-[14px] text-ink/85">{t.api.items.map((b) => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />{b}</li>)}</ul>
+            <div className="mt-6 flex flex-wrap gap-2"><Button href="/docs/api" variant="primary">{t.api.docs}</Button><Button href="/docs/mcp" variant="secondary">{t.api.mcp}</Button></div>
           </div>
-          <CreditTable />
+          <CreditTable t={t} />
         </div>
       </div>
 
       {!compact && (
         <>
           <section>
-            <h3 className="text-title text-center">What a credit buys</h3>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-[15px] text-muted">One credit is one second of Standard presenter video, including the script, the product clip and the edit. The dollar column is what that costs on the Pro plan (price ÷ credits); the form shows the exact number for your choices before you start.</p>
-            <div className="mt-8"><CreditTable wide /></div>
+            <h3 className="text-title text-center">{t.creditTable.title}</h3>
+            <p className="mx-auto mt-3 max-w-2xl text-center text-[15px] text-muted">{t.creditTable.text}</p>
+            <div className="mt-8"><CreditTable wide t={t} /></div>
           </section>
 
           <section>
-            <h3 className="text-title text-center">Find your plan</h3>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-[15px] text-muted">Move the sliders; the credits, the best fitting plan and the monthly cost follow from the plan prices. Your current cost per video is your own number.</p>
-            <div className="mt-8"><PlanFinder /></div>
+            <h3 className="text-title text-center">{t.finder.title}</h3>
+            <p className="mx-auto mt-3 max-w-2xl text-center text-[15px] text-muted">{t.finder.text}</p>
+            <div className="mt-8"><PlanFinder locale={locale} /></div>
           </section>
 
           <section>
-            <h3 className="text-title text-center">Compare the plans</h3>
-            <CompareTable />
+            <h3 className="text-title text-center">{t.compare.title}</h3>
+            <CompareTable t={t} locale={locale} />
           </section>
         </>
       )}
@@ -145,7 +148,9 @@ export function PricingTable({ onChoose, busyKey, compact }: { onChoose?: (plan:
   );
 }
 
-function PriceLine({ plan, interval, className }: { plan: Plan; interval: Interval; className?: string }) {
+type T = ReturnType<typeof dict>["pricing"];
+
+function PriceLine({ plan, interval, className, t }: { plan: Plan; interval: Interval; className?: string; t: T }) {
   const price = interval === "annual" ? plan.annualMonthlyUsd : plan.monthlyUsd;
   const list = activeListPrice(plan);
   const struck = interval === "annual" && plan.monthlyUsd > 0 ? plan.monthlyUsd : list && list > plan.monthlyUsd ? list : null;
@@ -153,34 +158,34 @@ function PriceLine({ plan, interval, className }: { plan: Plan; interval: Interv
   return (
     <div className={className}>
       <p className="flex flex-wrap items-baseline gap-x-2">
-        {struck !== null && <s className="text-[20px] text-muted" aria-label={`was ${formatPrice(struck)} per month`}>{formatPrice(struck)}</s>}
+        {struck !== null && <s className="text-[20px] text-muted" aria-label={t.was.replace("{price}", formatPrice(struck))}>{formatPrice(struck)}</s>}
         <span className="text-display">{price === 0 ? "Free" : formatPrice(price)}</span>
-        {price > 0 && <span className="text-base font-medium text-muted">/mo</span>}
+        {price > 0 && <span className="text-base font-medium text-muted">{t.perMonth}</span>}
       </p>
       <p className="mt-1 text-[13px] text-muted">
-        {price === 0 ? plan.creditsNote : interval === "annual" ? `${formatPrice(totals.yearUsd)} a year, billed once · saves ${formatPrice(totals.savingUsd)} · ${plan.creditsNote}` : plan.creditsNote}
-        {list && interval === "monthly" && list > plan.monthlyUsd ? ` · launch price until ${new Date(plan.listPrice!.endDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : ""}
+        {price === 0 ? plan.creditsNote : interval === "annual" ? `${t.aYear.replace("{year}", formatPrice(totals.yearUsd)).replace("{saving}", formatPrice(totals.savingUsd))} · ${plan.creditsNote}` : plan.creditsNote}
+        {list && interval === "monthly" && list > plan.monthlyUsd ? ` · ${t.launchUntil} ${new Date(plan.listPrice!.endDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : ""}
       </p>
     </div>
   );
 }
 
-function Examples({ plan }: { plan: Plan }) {
+function Examples({ plan, t }: { plan: Plan; t: T }) {
   if (plan.creditsPerMonth === 0) return null;
   const e = planExamples(plan);
-  return <p className="mt-3 text-[13px] text-muted">About {e.ads30} ads of 30 s, or {e.ads10} of 10 s, or {e.premium30} Premium ads of 30 s, or {e.translateMinutes} translation minutes a month.</p>;
+  return <p className="mt-3 text-[13px] text-muted">{t.examples.replace("{ads30}", String(e.ads30)).replace("{ads10}", String(e.ads10)).replace("{premium30}", String(e.premium30)).replace("{minutes}", String(e.translateMinutes))}</p>;
 }
 
-function PlanCard({ plan, previous, interval, cta }: { plan: Plan; previous?: Plan; interval: Interval; cta: React.ReactNode }) {
+function PlanCard({ plan, previous, interval, cta, t }: { plan: Plan; previous?: Plan; interval: Interval; cta: React.ReactNode; t: T }) {
   return (
     <div className={cn("flex flex-col rounded-card bg-surface p-6 shadow-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card-hover", plan.recommended && "ring-1 ring-ink")}>
-      {plan.recommended && <span className="label-mono mb-3 w-fit rounded-full bg-ink px-2.5 py-1 text-surface">Our recommendation</span>}
+      {plan.recommended && <span className="label-mono mb-3 w-fit rounded-full bg-ink px-2.5 py-1 text-surface">{t.recommendation}</span>}
       <p className="text-[17px] font-semibold text-ink">{plan.name}</p>
       <p className="mt-1 text-[13px] text-muted">{plan.tagline}</p>
-      <PriceLine plan={plan} interval={interval} className="mt-5" />
-      <Examples plan={plan} />
-      <p className="mt-3 text-[13px] font-medium text-ink">{plan.key === "free" ? `The free ad expires after ${CREDIT_EXPIRY.freeAdDays} days.` : "Credits never expire."}</p>
-      {previous && previous.key !== "free" && <p className="mt-4 label-mono text-muted">Everything in {previous.name}, plus</p>}
+      <PriceLine plan={plan} interval={interval} className="mt-5" t={t} />
+      <Examples plan={plan} t={t} />
+      <p className="mt-3 text-[13px] font-medium text-ink">{plan.key === "free" ? t.freeExpires.replace("{n}", String(CREDIT_EXPIRY.freeAdDays)) : t.neverExpire}</p>
+      {previous && previous.key !== "free" && <p className="mt-4 label-mono text-muted">{t.everythingIn.replace("{name}", previous.name)}</p>}
       <ul className="mt-2 flex-1 space-y-2 text-[14px] text-ink/85">
         {plan.bullets.map((b) => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />{b}</li>)}
       </ul>
@@ -189,7 +194,7 @@ function PlanCard({ plan, previous, interval, cta }: { plan: Plan; previous?: Pl
   );
 }
 
-function CreditTable({ wide }: { wide?: boolean }) {
+function CreditTable({ wide, t }: { wide?: boolean; t: T }) {
   const table = adCreditTable();
   const pro = PLANS.find((p) => p.key === "pro")!;
   const rate = usdPerCredit(pro);
@@ -199,7 +204,7 @@ function CreditTable({ wide }: { wide?: boolean }) {
     <div className={cn("grid gap-5", wide && "md:grid-cols-2")}>
       <div className="overflow-hidden rounded-card bg-surface shadow-card">
         <table className="w-full text-left text-[15px]">
-          <thead className="bg-surface-muted text-[13px] text-muted"><tr><th className="px-5 py-3 font-medium">Ad length</th><th className="px-5 py-3 font-medium">Standard</th><th className="px-5 py-3 font-medium">Premium</th></tr></thead>
+          <thead className="bg-surface-muted text-[13px] text-muted"><tr><th className="px-5 py-3 font-medium">{t.creditTable.adLength}</th><th className="px-5 py-3 font-medium">Standard</th><th className="px-5 py-3 font-medium">Premium</th></tr></thead>
           <tbody className="divide-y divide-divider">
             {table.map((r) => (
               <tr key={r.seconds}><td className="px-5 py-3 font-medium text-ink">{r.seconds} s</td><td className="px-5 py-3">{r.standard} credits <span className="text-muted">≈ {usd(r.standard)}</span></td><td className="px-5 py-3">{r.premium} credits <span className="text-muted">≈ {usd(r.premium)}</span></td></tr>
@@ -209,11 +214,11 @@ function CreditTable({ wide }: { wide?: boolean }) {
       </div>
       <div className="overflow-hidden rounded-card bg-surface shadow-card">
         <table className="w-full text-left text-[15px]">
-          <thead className="bg-surface-muted text-[13px] text-muted"><tr><th className="px-5 py-3 font-medium">Translation, per minute per language</th><th className="px-5 py-3 font-medium">Credits</th></tr></thead>
+          <thead className="bg-surface-muted text-[13px] text-muted"><tr><th className="px-5 py-3 font-medium">{t.creditTable.translation}</th><th className="px-5 py-3 font-medium">{t.creditTable.credits}</th></tr></thead>
           <tbody className="divide-y divide-divider">
             <tr><td className="px-5 py-3 font-medium text-ink">Speed</td><td className="px-5 py-3">{perMinute.speed} <span className="text-muted">≈ {usd(perMinute.speed)}</span></td></tr>
             <tr><td className="px-5 py-3 font-medium text-ink">Precision</td><td className="px-5 py-3">{perMinute.precision} <span className="text-muted">≈ {usd(perMinute.precision)}</span></td></tr>
-            <tr><td className="px-5 py-3 text-muted" colSpan={2}>Picture enhancement adds a little per minute; the form shows it. Dollar values at the {pro.name} rate.</td></tr>
+            <tr><td className="px-5 py-3 text-muted" colSpan={2}>{t.creditTable.enhancement.replace("{plan}", pro.name)}</td></tr>
           </tbody>
         </table>
       </div>
@@ -221,28 +226,29 @@ function CreditTable({ wide }: { wide?: boolean }) {
   );
 }
 
-function CompareTable() {
+function CompareTable({ t, locale }: { t: T; locale: Locale }) {
+  const R = t.compare.rows;
   const free = PLANS.find((p) => p.key === "free")!;
   const paid = PLANS.filter((p) => p.key !== "free" && p.key !== "enterprise");
   const business = BUSINESS_TIERS[0];
   const cols = [free, ...paid, business];
   const rows: [string, (p: Plan) => string | boolean][] = [
-    ["Credits per month", (p) => (p.key === "free" ? "One free 10 s ad" : p.team ? `${BUSINESS_TIERS[0].creditsPerMonth.toLocaleString("en-US")} to ${BUSINESS_TIERS[BUSINESS_TIERS.length - 1].creditsPerMonth.toLocaleString("en-US")}` : p.creditsPerMonth.toLocaleString("en-US"))],
-    ["Ad lengths", (p) => (p.key === "free" ? "10 s only" : "10 to 60 s")],
-    ["Premium presenter", (p) => p.key !== "free"],
-    ["Translations, 190 languages", (p) => p.key !== "free"],
-    ["Brand defaults", () => true],
-    ["API access and MCP", (p) => p.key !== "free"],
-    ["Team workspace and members", (p) => Boolean(p.team)],
-    ["Per-member usage for the owner", (p) => Boolean(p.team)],
-    ["Credits expire", (p) => (p.key === "free" ? `Free ad: ${CREDIT_EXPIRY.freeAdDays} days` : "Never")],
-    ["Support", () => "Contact form, answered by e-mail"],
+    [R.credits, (p) => (p.key === "free" ? R.freeAd : p.team ? `${BUSINESS_TIERS[0].creditsPerMonth.toLocaleString("en-US")} – ${BUSINESS_TIERS[BUSINESS_TIERS.length - 1].creditsPerMonth.toLocaleString("en-US")}` : p.creditsPerMonth.toLocaleString("en-US"))],
+    [R.lengths, (p) => (p.key === "free" ? R.tenOnly : R.tenToSixty)],
+    [R.premium, (p) => p.key !== "free"],
+    [R.translations, (p) => p.key !== "free"],
+    [R.brand, () => true],
+    [R.api, (p) => p.key !== "free"],
+    [R.team, (p) => Boolean(p.team)],
+    [R.perMember, (p) => Boolean(p.team)],
+    [R.expire, (p) => (p.key === "free" ? R.freeDays.replace("{n}", String(CREDIT_EXPIRY.freeAdDays)) : R.never)],
+    [R.support, () => R.supportValue],
   ];
   return (
     <div className="mt-8 overflow-x-auto rounded-card bg-surface shadow-card">
       <table className="w-full min-w-[720px] text-left text-[15px]">
         <thead className="bg-surface-muted text-[13px] text-muted lg:sticky lg:top-20">
-          <tr><th className="px-5 py-3 font-medium">Feature</th>{cols.map((p) => <th key={p.key} className="px-5 py-3 font-medium text-ink">{p.name}</th>)}</tr>
+          <tr><th className="px-5 py-3 font-medium">{t.compare.feature}</th>{cols.map((p) => <th key={p.key} className="px-5 py-3 font-medium text-ink">{p.name}</th>)}</tr>
         </thead>
         <tbody className="divide-y divide-divider">
           {rows.map(([label, fn]) => (
@@ -250,13 +256,13 @@ function CompareTable() {
               <td className="px-5 py-3 text-ink">{label}</td>
               {cols.map((p) => {
                 const v = fn(p);
-                return <td key={p.key} className="px-5 py-3 text-muted">{v === true ? <Check className="size-4 text-success" aria-label="Included" /> : v === false ? <Minus className="size-4 text-border" aria-label="Not included" /> : v}</td>;
+                return <td key={p.key} className="px-5 py-3 text-muted">{v === true ? <Check className="size-4 text-success" aria-label={t.compare.included} /> : v === false ? <Minus className="size-4 text-border" aria-label={t.compare.notIncluded} /> : v}</td>;
               })}
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="px-5 py-3 text-[13px] text-muted">Enterprise: custom. <Link href="/demo" className="underline">Contact sales</Link>. The app name is {config.productName} on every plan; there is no white-label.</p>
+      <p className="px-5 py-3 text-[13px] text-muted">{t.compare.enterpriseNote} <Link href={localizePath("/demo", locale)} className="underline">{dict(locale).common.contactSales}</Link>. {t.compare.whiteLabel}</p>
     </div>
   );
 }

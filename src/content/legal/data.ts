@@ -16,3 +16,19 @@ export const dataDoc: LegalDoc = {
     { heading: "Draft", paragraphs: ["This is a draft, to be reviewed. The practices described are the ones built into the product today."] },
   ],
 };
+
+export const dataDocNl: LegalDoc = {
+  slug: "data",
+  title: "Bestanden en gegevens",
+  summary: "Hoe Reelay je uploads en afgeronde video's bewaart, wie erbij kan en hoe ze worden verwijderd.",
+  updated: "2026-10-21",
+  draft: true,
+  sections: [
+    { heading: "Je bestanden", paragraphs: ["Productfoto's, logo's, achtergrondafbeeldingen, geüploade video's en afgeronde video's staan in een afgeschermde opslag die niet vanaf het open internet bereikbaar is. De app leest en schrijft daar met een serversleutel; browsers krijgen die sleutel nooit."] },
+    { heading: "Gesigneerde links", paragraphs: ["Als je een video bekijkt of downloadt, maakt de server een gesigneerde link die beperkte tijd werkt (ongeveer een uur) en daarna stopt. Links die aan de diensten worden gegeven die een video maken, zijn ook tijdelijk. We publiceren nooit een permanente openbare link naar je bestanden."] },
+    { heading: "Per workspace", paragraphs: ["Elk project, bestand, creditboeking en kostenregel hoort bij één workspace. De datalaag controleert de workspace bij elk verzoek; een project van een andere workspace bestaat voor de jouwe niet."] },
+    { heading: "Verwerking", paragraphs: ["Om een video te maken gaan de benodigde invoer (je omschrijving, de foto, de te vertalen video, het script) naar de diensten achter elke stap en komen de resultaten terug in je opslag. Die diensten zijn vervangbaar en worden niet bij naam genoemd in het product; de stapnamen beschrijven wat er gebeurt."] },
+    { heading: "Verwijderen", paragraphs: ["Een project verwijderen verwijdert de bestanden en gegevens ervan. Je account verwijderen in Settings verwijdert je projecten, bestanden, credits en profiel; dat kan niet ongedaan worden gemaakt en je credits gaan ermee verloren."] },
+    { heading: "Concept", paragraphs: ["Dit is een concept, nog te beoordelen. De beschreven werkwijze is wat vandaag in het product is gebouwd."] },
+  ],
+};

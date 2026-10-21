@@ -2,13 +2,16 @@ import { ArrowRight } from "lucide-react";
 import { services } from "@/content/services";
 import { Button } from "@/components/ui/Button";
 import { SectionIntro } from "@/components/site/SectionIntro";
+import { dict } from "@/content/i18n";
+import { localizePath, type Locale } from "@/lib/i18n";
 
 /** "Winning ads, made for you": the managed service. Numbers and times only from src/content/services.ts; no price. */
-export function ServiceSection({ compact }: { compact?: boolean }) {
-  const facts = [services.volumeRange && { label: "Volume", value: services.volumeRange }, services.turnaround && { label: "Turnaround", value: services.turnaround }].filter(Boolean) as { label: string; value: string }[];
+export function ServiceSection({ compact, locale = "en" }: { compact?: boolean; locale?: Locale }) {
+  const t = dict(locale);
+  const facts = [services.volumeRange && { label: t.service.volume, value: services.volumeRange }, services.turnaround && { label: t.service.turnaround, value: services.turnaround }].filter(Boolean) as { label: string; value: string }[];
   return (
     <section className="rounded-card bg-ink px-6 py-12 text-surface sm:px-10 sm:py-14">
-      <SectionIntro eyebrow="Managed service" title="Winning ads, made for you" text="You send the products; we run Reelay for you, pick the hooks, check every script and deliver finished ads. For brands that want the output without the hands-on time." className="[&_h2]:text-surface [&_p]:text-surface/70 [&_.label-mono]:text-surface/60" />
+      <SectionIntro eyebrow={t.service.eyebrow} title={t.service.title} text={t.service.text} className="[&_h2]:text-surface [&_p]:text-surface/70 [&_.label-mono]:text-surface/60" />
       {(facts.length > 0 || services.features.length > 0) && (
         <div className="mx-auto mt-8 grid max-w-3xl gap-4 sm:grid-cols-2">
           {facts.map((f) => (
@@ -20,10 +23,10 @@ export function ServiceSection({ compact }: { compact?: boolean }) {
         </div>
       )}
       <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-        <Button href="/demo" variant="accent" size="lg">Book a demo <ArrowRight className="size-5" aria-hidden /></Button>
-        {!compact && <Button href="/services/done-for-you" variant="secondary" size="lg">How the service works</Button>}
+        <Button href={localizePath("/demo", locale)} variant="accent" size="lg">{t.common.bookDemo} <ArrowRight className="size-5" aria-hidden /></Button>
+        {!compact && <Button href={localizePath("/services/done-for-you", locale)} variant="secondary" size="lg">{t.service.how}</Button>}
       </div>
-      <p className="mt-4 text-center text-[13px] text-surface/60">Scope and pricing are agreed per brand on a call. Nothing here is a fixed offer.</p>
+      <p className="mt-4 text-center text-[13px] text-surface/60">{t.service.note}</p>
     </section>
   );
 }

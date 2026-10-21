@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { legalDocBySlug } from "@/content/legal";
 import { LegalPage } from "@/components/site/LegalPage";
-import { absoluteUrl } from "@/lib/site";
+import { pageMeta } from "@/lib/i18n";
 
-const doc = legalDocBySlug("affiliate-terms")!;
-export const metadata: Metadata = { title: doc.title, description: doc.summary, alternates: { canonical: absoluteUrl("/legal/affiliate-terms") } };
+const locale = "en" as const;
+const doc = legalDocBySlug("affiliate-terms", locale)!;
+export const metadata: Metadata = pageMeta(locale, "/legal/affiliate-terms", { title: doc.title, description: doc.summary });
 
 export default function Page() {
-  return <LegalPage doc={doc} />;
+  return <LegalPage doc={doc} locale={locale} />;
 }

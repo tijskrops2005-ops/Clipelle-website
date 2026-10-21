@@ -19,3 +19,17 @@ export const affiliateTermsDoc: LegalDoc = {
     { heading: "Draft", paragraphs: ["This is a draft of the program terms. The final wording follows after review; the commission rules above will not change in that review."] },
   ],
 };
+
+export const affiliateTermsDocNl: LegalDoc = {
+  slug: "affiliate-terms",
+  title: "Voorwaarden partnerprogramma",
+  summary: "De commissieregels van het Reelay-partnerprogramma.",
+  updated: "2026-10-21",
+  draft: true,
+  sections: [
+    { heading: "Commissie", bullets: ["Een partner ontvangt 25% commissie op de abonnementsbetalingen van elke klant die hij heeft doorverwezen.", "De commissie geldt zolang die klant een abonnement houdt.", "Op los gekochte creditpakketten wordt geen commissie betaald."] },
+    { heading: "Uitbetaling", bullets: ["Commissies worden maandelijks uitbetaald.", "De minimale uitbetaling is 50 Amerikaanse dollar; kleinere saldi schuiven door naar de volgende maand.", "Uitbetalingen lopen via het externe partnerplatform waarop het programma draait; de partner beheert daar zijn gegevens en uitbetaalmethode."] },
+    { heading: "Doorverwijzingen", bullets: ["Een doorverwijzing blijft actief zolang de doorverwezen klant een abonnement houdt."] },
+    { heading: "Concept", paragraphs: ["Dit is een concept van de programmavoorwaarden. De definitieve tekst volgt na beoordeling; de commissieregels hierboven veranderen daarbij niet."] },
+  ],
+};

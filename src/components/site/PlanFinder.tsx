@@ -6,9 +6,14 @@ import { formatPrice } from "@/lib/plans";
 import { creditsNeeded, planFit } from "@/lib/pricingHelpers";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Button } from "@/components/ui/Button";
+import { dict } from "@/content/i18n";
+import type { Locale } from "@/lib/i18n";
 
 /** "Find your plan": sliders for ads and translation minutes, length and quality → credits, best plan, monthly cost, and the visitor's own per-video cost next to it. */
-export function PlanFinder() {
+export function PlanFinder({ locale = "en" }: { locale?: Locale }) {
+  const d = dict(locale);
+  const f = d.pricing.finder;
+  const c = d.calculator;
   const [ads, setAds] = useState(10);
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState<AdLength>(30);
@@ -23,28 +28,28 @@ export function PlanFinder() {
     <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
       <div className="rounded-card bg-surface p-6 shadow-card">
         <div className="space-y-5">
-          <Range id="pf-ads" label="Ads per month" value={ads} min={0} max={100} step={1} onChange={setAds} format={(v) => String(v)} />
-          <Range id="pf-min" label="Translation minutes per month, per language" value={minutes} min={0} max={200} step={1} onChange={setMinutes} format={(v) => `${v} min`} />
+          <Range id="pf-ads" label={f.ads} value={ads} min={0} max={100} step={1} onChange={setAds} format={(v) => String(v)} />
+          <Range id="pf-min" label={f.minutes} value={minutes} min={0} max={200} step={1} onChange={setMinutes} format={(v) => `${v} min`} />
           <div className="grid gap-3 sm:grid-cols-2">
-            <div><p className="mb-2 text-sm font-medium text-ink">Ad length</p><SegmentedControl label="Ad length" size="sm" options={AD_LENGTHS.map((l) => ({ key: String(l), label: `${l} s` }))} value={String(seconds)} onChange={(k) => setSeconds(Number(k) as AdLength)} /></div>
-            <div><p className="mb-2 text-sm font-medium text-ink">Presenter</p><SegmentedControl label="Presenter quality" size="sm" options={[{ key: "avatar_iii", label: "Standard" }, { key: "avatar_iv", label: "Premium" }]} value={engine} onChange={(k) => setEngine(k as PresenterEngine)} /></div>
+            <div><p className="mb-2 text-sm font-medium text-ink">{c.adLength}</p><SegmentedControl label={c.adLength} size="sm" options={AD_LENGTHS.map((l) => ({ key: String(l), label: `${l} s` }))} value={String(seconds)} onChange={(k) => setSeconds(Number(k) as AdLength)} /></div>
+            <div><p className="mb-2 text-sm font-medium text-ink">{c.presenter}</p><SegmentedControl label={c.presenter} size="sm" options={[{ key: "avatar_iii", label: c.standard }, { key: "avatar_iv", label: c.premium }]} value={engine} onChange={(k) => setEngine(k as PresenterEngine)} /></div>
           </div>
-          <Range id="pf-cur" label="What one video costs you today (optional)" value={current} min={0} max={2000} step={10} onChange={setCurrent} format={(v) => (v ? formatPrice(v) : "—")} />
+          <Range id="pf-cur" label={f.current} value={current} min={0} max={2000} step={10} onChange={setCurrent} format={(v) => (v ? formatPrice(v) : "—")} />
         </div>
       </div>
       <div className="rounded-card bg-surface p-6 shadow-card" aria-live="polite">
-        <p className="label-mono text-muted">Credits needed per month</p>
+        <p className="label-mono text-muted">{f.creditsNeeded}</p>
         <p className="mt-1 text-display">{r.need.total.toLocaleString("en-US")}</p>
-        <p className="mt-1 text-[13px] text-muted">{ads} × {r.need.perAd} credits per ad{minutes > 0 ? ` + ${minutes} × ${r.need.perMinute} credits per translation minute` : ""}.</p>
+        <p className="mt-1 text-[13px] text-muted">{f.breakdown.replace("{ads}", String(ads)).replace("{perAd}", String(r.need.perAd))}{minutes > 0 ? f.breakdownMinutes.replace("{minutes}", String(minutes)).replace("{perMinute}", String(r.need.perMinute)) : ""}.</p>
         <div className="mt-5 rounded-[14px] bg-surface-muted p-4">
-          <p className="text-[13px] text-muted">Best fitting plan</p>
-          <p className="mt-1 text-[22px] font-semibold text-ink">{r.fit.plan ? (r.fit.overScale ? `${r.fit.plan.name} + ${r.fit.packs} credit pack${r.fit.packs === 1 ? "" : "s"}` : r.fit.plan.name) : "Free"}</p>
-          <p className="mt-1 text-[15px] text-ink">{formatPrice(r.fit.monthlyUsd)} per month{ads > 0 ? ` · about ${formatPrice(Math.round(r.fit.perVideoUsd * 100) / 100)} per ad` : ""}</p>
+          <p className="text-[13px] text-muted">{f.best}</p>
+          <p className="mt-1 text-[22px] font-semibold text-ink">{r.fit.plan ? (r.fit.overScale ? `${r.fit.plan.name} ${c.plus} ${r.fit.packs} ${c.packs}` : r.fit.plan.name) : f.free}</p>
+          <p className="mt-1 text-[15px] text-ink">{f.perMonthCost.replace("{price}", formatPrice(r.fit.monthlyUsd))}{ads > 0 ? f.perAd.replace("{price}", formatPrice(Math.round(r.fit.perVideoUsd * 100) / 100)) : ""}</p>
           {current > 0 && ads > 0 && (
-            <p className="mt-2 text-[13px] text-muted">Your number: {formatPrice(current)} per video, {formatPrice(current * ads)} per month. Difference: {r.fit.monthlyUsd <= current * ads ? `${formatPrice(current * ads - r.fit.monthlyUsd)} less` : `${formatPrice(r.fit.monthlyUsd - current * ads)} more`} with Reelay, from your own input.</p>
+            <p className="mt-2 text-[13px] text-muted">{f.yourNumber.replace("{per}", formatPrice(current)).replace("{month}", formatPrice(current * ads)).replace("{diff}", r.fit.monthlyUsd <= current * ads ? f.less.replace("{n}", formatPrice(current * ads - r.fit.monthlyUsd)) : f.more.replace("{n}", formatPrice(r.fit.monthlyUsd - current * ads)))}</p>
           )}
         </div>
-        <div className="mt-5"><Button href="/signup" variant="accent">Create your first ad free</Button><p className="mt-2 text-[13px] text-muted">No credit card required.</p></div>
+        <div className="mt-5"><Button href="/signup" variant="accent">{d.common.createFirstAd}</Button><p className="mt-2 text-[13px] text-muted">{d.common.noCard}</p></div>
       </div>
     </div>
   );

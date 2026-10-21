@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
+import { dict } from "@/content/i18n";
+import type { Locale } from "@/lib/i18n";
 
 type Variant = "demo" | "contact";
 
@@ -13,7 +15,8 @@ type Variant = "demo" | "contact";
  * Book-a-demo / contact form. Posts to /api/demo-requests with a honeypot field ("website")
  * that humans never see; the server rate-limits per address and stores the request.
  */
-export function DemoRequestForm({ variant }: { variant: Variant }) {
+export function DemoRequestForm({ variant, locale = "en" }: { variant: Variant; locale?: Locale }) {
+  const f = dict(locale).forms;
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -27,11 +30,11 @@ export function DemoRequestForm({ variant }: { variant: Variant }) {
     try {
       const r = await fetch("/api/demo-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, kind: variant }) });
       const json = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(json.error ?? "Could not send your request.");
+      if (!r.ok) throw new Error(json.error ?? f.error);
       setState("done");
     } catch (err) {
       setState("error");
-      setError(err instanceof Error ? err.message : "Could not send your request.");
+      setError(err instanceof Error ? err.message : f.error);
     }
   }
 
@@ -39,8 +42,8 @@ export function DemoRequestForm({ variant }: { variant: Variant }) {
     return (
       <div className="mx-auto max-w-xl rounded-card bg-surface p-10 text-center shadow-card">
         <span className="mx-auto grid size-12 place-items-center rounded-full bg-success/10 text-success"><CheckCircle2 className="size-6" aria-hidden /></span>
-        <h2 className="mt-5 text-title">Thanks, we have it</h2>
-        <p className="mt-2 text-[15px] text-muted">{variant === "demo" ? "We reply by e-mail within two working days with a time, or with a sample if that is faster." : "We reply by e-mail within two working days."}</p>
+        <h2 className="mt-5 text-title">{f.thanks}</h2>
+        <p className="mt-2 text-[15px] text-muted">{variant === "demo" ? f.thanksDemo : f.thanksText}</p>
       </div>
     );
   }
@@ -53,23 +56,23 @@ export function DemoRequestForm({ variant }: { variant: Variant }) {
         <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field id="name" label="Name">
+        <Field id="name" label={f.name}>
           <Input id="name" name="name" required autoComplete="name" />
         </Field>
-        <Field id="email" label="E-mail">
+        <Field id="email" label={f.email}>
           <Input id="email" name="email" type="email" required autoComplete="email" />
         </Field>
       </div>
-      <Field id="company" label="Company or shop" optional>
+      <Field id="company" label={f.company} optional>
         <Input id="company" name="company" autoComplete="organization" />
       </Field>
       {variant === "demo" && (
-        <Field id="goal" label="What do you want to make?" hint="Ads from product photos, translations, or both. How many a month?">
-          <Input id="goal" name="goal" placeholder="e.g. 20 product ads a month in Dutch and German" />
+        <Field id="goal" label={f.goal} hint={f.goalHint}>
+          <Input id="goal" name="goal" placeholder={f.goalPlaceholder} />
         </Field>
       )}
-      <Field id="message" label="Message" optional={variant === "demo"}>
-        <Textarea id="message" name="message" placeholder={variant === "demo" ? "Anything we should know before we talk." : "How can we help?"} required={variant === "contact"} />
+      <Field id="message" label={f.message} optional={variant === "demo"}>
+        <Textarea id="message" name="message" placeholder={variant === "demo" ? f.demoPlaceholder : f.contactPlaceholder} required={variant === "contact"} />
       </Field>
       {error && (
         <p role="alert" className="text-[13px] text-danger">{error}</p>
@@ -78,7 +81,7 @@ export function DemoRequestForm({ variant }: { variant: Variant }) {
         <p className="text-[13px] text-muted">We use this only to answer you. See the privacy statement.</p>
         <Button type="submit" variant="accent" size="lg" disabled={state === "sending"}>
           {state === "sending" ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Send className="size-5" aria-hidden />}
-          {variant === "demo" ? "Request a demo" : "Send"}
+          {variant === "demo" ? f.requestDemo : f.send}
         </Button>
       </div>
     </form>
