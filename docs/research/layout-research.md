@@ -265,6 +265,50 @@ Bekeken voor de herbouw van de buitenkant: alleen de openbare homepage en prijze
 
 Niet overgenomen: hun logo, kleuren, lettertype, schermafbeeldingen van hun editor, teksten. Screenshots: `creatomate-home-hero-steps.jpg`, `creatomate-home-automation-section.jpg`, `creatomate-home-cards-and-examples.jpg`, `creatomate-home-closing-cta-footer.jpg`, `creatomate-pricing-plans.jpg`, `creatomate-pricing-faq.jpg`.
 
+## 4c. Site, accounts, credits en abonnementen (onderzoek 21 oktober 2026)
+
+Doel: de opbouw van een complete marketingsite plus account- en creditmodel. Alleen openbare pagina's, geen accounts, geen formulieren. AdTruffle: geen officiële site gevonden (twee zoekopdrachten leverden niets op dat zo heet), dus overgeslagen. makeugc.com stuurt door naar makeugc.ai (zelfde product).
+
+### Hoofdmenu's
+
+| Site | Menu | Rechts | Bron |
+|---|---|---|---|
+| Creatify | Platform (uitklapmenu in drie kolommen: Creation, Intelligence, Integrations), Labs, Studio, Resources (Blog, Case Studies, tutorials, Affiliate, Careers, AI Ethics, About), Pricing | Book demo (tekstlink), Log in (knop) | https://creatify.ai/features/url-to-video, https://creatify.ai/pricing |
+| MakeUGC | Features ▾, Developers ▾, AI models ▾, Pricing, Enterprise, Affiliate | Log in, Sign up (zwarte knop); op de prijzenpagina wordt de knop "Start for $1" | https://www.makeugc.ai/, https://www.makeugc.ai/pricing |
+| Creatomate | Product ▾, Use Cases, Pricing, Docs, zoekicoon, in één afgeronde balk | Get started (zwarte knop) | https://creatomate.com/ |
+
+### Homepage-opbouw
+
+- **Creatify**: hero met promptbalk en tabbladen, "zet elk product om in ads", formatenraster, integraties, publicatiekanalen, brand kit, eigen modellen, logostrip, zes case-studykaarten met één getal, totaalcijfers, afsluitende promptbalk; voet in vier kolommen (Features, Tools, Use Cases, Company) met Terms/Privacy/Moderation, sociale iconen en een gloeiende gradiënt (`creatify-feature-page-footer.jpg`).
+- **MakeUGC**: promobalk met aftelklok, hero met drie vinkjes en knop, rij 9:16-tegels, drie stappen met mini-interfaces, "elke soort AI-video" met zes kaarten die bij hover schuiven (`makeugc-home-feature-cards.jpg`), donker modellenblok, AI Flows + bibliotheek met filterchips (`makeugc-home-flows-library-pricing-intro.jpg`), prijsteaser met periode-schakelaar, FAQ, case studies, afsluitend donker blok met drie tegels, voet in vijf kolommen (Features, Scale, AI models, Solutions, Resources), adres en sociale iconen, onderregel met Terms/Privacy/Refunds/Trial policy (`makeugc-home-closing-footer.jpg`).
+- **Creatomate**: zie 4b.
+
+### Vertrouwensblokken
+
+Logostrip ("trusted by"), reviewkaarten met naam/functie, cijferrij, case studies met één getal, "as seen in". Reelay bouwt deze blokken na maar vult ze uitsluitend uit `src/content/trust.ts`; zolang dat leeg is, verschijnen ze in productie niet (geen verzonnen reviews of logo's).
+
+### Credits en abonnementen
+
+| | Creatify | MakeUGC |
+|---|---|---|
+| Wat een credit koopt | Verschilt per model en feature; avatarvideo ≈ 5 credits per 15 s, snel model 0,5 credit per seconde; kosten worden vóór bevestiging getoond | Verschilt per model, duur en resolutie; geen vast tarief gepubliceerd |
+| Gratis | 10 credits per maand (≈ 2 video's), watermerk, niet overdraagbaar naar betaald | Geen gratis plan; elk plan 1 dollar proberen |
+| Maandplannen | Standard $15 / 55 cr, Pro $55 / 280 cr, Max $95 / 730 cr, Business $195 / 1.500+ cr; jaarlijks 30% korting | Starter $29 / 500 cr, Growth $39 / 1.000 cr, Pro $79 / 2.000–5.000 cr (per maand, jaarlijks betaald); kwartaal −31%, jaar −51% |
+| Ongebruikte credits | Vervallen na 2 maanden (dus beperkt overdraagbaar) | Vervallen maandelijks, geen overdracht |
+| Losse pakketten | "Add-on pack" genoemd, zonder prijs | Niet genoemd |
+| Enterprise | Custom, SOC 2, SLA, "book a demo" | Custom pricing, "Contact sales" |
+| Prijzenpagina | Tabbladen Individual/Business/API, kaarten met "Recommended"/"Best value", lange vergelijkingstabel, FAQ | Periode-schakelaar, drie kaarten, Enterprise-kaart, "Compare the plans"-tabel (`makeugc-pricing-enterprise-compare.jpg`), FAQ |
+
+Bronnen: https://creatify.ai/pricing, https://www.makeugc.ai/pricing, https://creatomate.com/pricing.
+
+### Bewegende onderdelen
+
+Hover-lift op kaarten, tegels die bij hover uitwaaieren (MakeUGC), looping videotegels, een marquee met logo's, uitklapmenu's met kaarten, accordeon-FAQ, tabbladen in de hero (Creatify), aftelklok in een promobalk (MakeUGC; niet overgenomen: past niet bij onze toon). Reelay volgt: scroll-reveals, marquee, hover-lift, accordeons, tabbladen, looping voorbeelden, alles uit met "reduce motion".
+
+### Wat Reelay hieruit bouwt (eigen woorden, eigen beeld)
+
+Afgeronde zwevende bovenbalk met Platform- en Resources-uitklapmenu's, Pricing, About, Log in, Book a demo en één hoofdknop; homepage met hero, "What you can make", genummerde stappen, voorbeeldgalerij uit eigen uitvoer, "What you get", vertrouwensblokken uit `trust.ts`, prijsvoorproefje, FAQ, afsluitend blok, voet in vier kolommen. Creditmodel: één credit = één seconde presentatorvideo in Standard; vertalen per minuut; prijs = leverancierskosten × marge (`docs/pricing-model.md`); Free met één gratis advertentie, drie maandplannen met jaarkorting, losse pakketten, credits uit abonnement één maand overdraagbaar, Enterprise via /demo.
+
 ## 5. Vergelijkingstabel
 
 Inspanning: klein (een dagdeel, alleen UI), middel (een dag of twee, UI plus data), groot (meerdere dagen of nieuwe pipeline-stap).
