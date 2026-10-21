@@ -82,6 +82,8 @@ export type AdInput = {
   brand?: { accent?: string; captionStyle?: string; font?: string; logoAssetId?: string };
   /** Pause after the script for the customer's approval (before the paid presenter/clip steps). */
   reviewScript?: boolean;
+  /** Format key from the library; informational (the format only filled direction and tone). */
+  format?: string;
   productName: string;
   productUrl?: string;
   description: string;

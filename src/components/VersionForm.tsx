@@ -7,6 +7,7 @@ import { fetchAsFile } from "@/lib/fetchFile";
 import { nextVersionNumber, versionName } from "@/lib/versions";
 import { BACKGROUND_COLORS, BRAND_COLORS, CAPTION_STYLES, FONT_KEYS, HEX_COLOR, type CaptionStyle, type FontKey } from "@/lib/adOptions";
 import { isAdLength } from "@/lib/pricing";
+import { isFormatKey } from "@/content/formats";
 import { isAdLanguage } from "@/lib/voiceOptions";
 import type { UploadedImage } from "@/components/ui/UploadDropzone";
 import { Button } from "@/components/ui/Button";
@@ -72,6 +73,7 @@ export function VersionForm({ fromId }: { fromId: string }) {
           font: project.brand?.font && (FONT_KEYS as readonly string[]).includes(project.brand.font) ? (project.brand.font as FontKey) : undefined,
           logoImages: logo ? [{ id: "version-logo", file: logo, previewUrl: URL.createObjectURL(logo) }] : [],
           reviewScript: project.reviewScript,
+          format: project.format && isFormatKey(project.format) ? project.format : undefined,
         },
       });
     })();

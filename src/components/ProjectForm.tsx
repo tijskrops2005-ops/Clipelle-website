@@ -39,6 +39,8 @@ import {
   type FontKey,
 } from "@/lib/adOptions";
 import { controlClass, controlStateClass } from "@/components/ui/Field";
+import { FormatPicker } from "@/components/FormatPicker";
+import { formatByKey, type FormatKey } from "@/content/formats";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
@@ -88,6 +90,7 @@ export type ProjectFormInitial = {
     font: FontKey;
     logoImages: UploadedImage[];
     reviewScript: boolean;
+    format: FormatKey;
   }>;
 };
 
@@ -125,7 +128,23 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
   const [font, setFont] = useState<FontKey>(preset.font ?? DEFAULT_FONT);
   const [logoImages, setLogoImages] = useState<UploadedImage[]>(preset.logoImages ?? []);
   const [reviewScript, setReviewScript] = useState(preset.reviewScript ?? false);
+  const [format, setFormat] = useState<FormatKey | undefined>(preset.format);
   const parentId = initial?.parentId;
+
+  /** A format writes its direction into the Direction field and picks the tone; both stay visible and editable. */
+  function chooseFormat(next: FormatKey | undefined) {
+    const prev = formatByKey(format);
+    const chosen = formatByKey(next);
+    setFormat(next);
+    if (chosen) {
+      setTone(chosen.tone);
+      // Keep the seller's own words: a previous format's text is replaced, typed text stays in front.
+      const own = prev && values.direction.trim() === prev.direction ? "" : values.direction.trim();
+      update("direction", own ? `${own} ${chosen.direction}`.slice(0, DIRECTION_MAX_CHARS) : chosen.direction);
+    } else if (prev && values.direction.trim() === prev.direction) {
+      update("direction", "");
+    }
+  }
   const effectiveAccent = effectiveAccentOf(accent, customAccent);
   // White text sits on the accent (the highlighted caption word): warn below 3:1.
   const accentContrast = contrastRatio(effectiveAccent, "#FFFFFF");
@@ -224,6 +243,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
           tone,
           images: images.map((img) => img.file),
           parentId,
+          format,
         }),
       );
       images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
@@ -249,6 +269,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
     { label: "Language", value: `${AD_LANGUAGES[language].label}${voiceAccent ? ` · ${voiceOptions?.accents.find((a) => a.key === voiceAccent)?.label ?? voiceAccent}` : ""}` },
     { label: "Voice speed", value: SPEEDS.find((s) => s.key === speed)?.label ?? "Normal" },
     { label: "Tone", value: TONE_META[tone].label },
+    ...(format ? [{ label: "Format", value: formatByKey(format)?.name ?? format }] : []),
     { label: "Script", value: values.script.trim() ? "Your own" : reviewScript ? "Written, you review first" : "Written for you", muted: true },
     ...(parentId ? [{ label: "Version", value: "New version; the earlier ad stays as it is", muted: true }] : []),
   ];
@@ -488,6 +509,11 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
               autoComplete="off"
             />
           </Field>
+
+          <fieldset>
+            <legend className="mb-1.5 text-sm font-medium text-ink">Format</legend>
+            <FormatPicker value={format} onChange={chooseFormat} disabled={submitting} />
+          </fieldset>
 
           <fieldset>
             <legend className="mb-1.5 text-sm font-medium text-ink">Tone</legend>

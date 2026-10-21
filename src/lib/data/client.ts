@@ -139,6 +139,8 @@ export async function listVoices(params: { language: AdLanguageCode; accent?: st
 export type AdProjectDraft = {
   /** "Make another version": the ad this one is a version of. */
   parentId?: string;
+  /** Format from the library; the form already wrote its direction and tone into the fields. */
+  format?: string;
   name: string;
   seconds: number;
   engine: "avatar_iii" | "avatar_iv";
@@ -180,6 +182,7 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
       background: draft.background?.type === "image" ? { type: "image", url: URL.createObjectURL(draft.background.file) } : draft.background,
       brand: draft.brand ? { accent: draft.brand.accent, captionStyle: draft.brand.captionStyle, font: draft.brand.font, logoUrl: draft.brand.logo ? URL.createObjectURL(draft.brand.logo) : undefined } : undefined,
       reviewScript: draft.reviewScript,
+      format: draft.format,
       productName: draft.productName,
       productUrl: draft.productUrl,
       description: draft.description,

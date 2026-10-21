@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { HowItWorks } from "@/components/dashboard/HowItWorks";
-import { InspirationRow } from "@/components/dashboard/InspirationRow";
+import { FormatsRow } from "@/components/dashboard/FormatsRow";
 import { RecentProjects } from "@/components/dashboard/RecentProjects";
 import { UsageCard } from "@/components/dashboard/UsageCard";
 
@@ -32,7 +32,7 @@ export default async function DashboardPage() {
 
       <div className="grid gap-8 xl:grid-cols-3">
         <div className="min-w-0 xl:col-span-2">
-          <InspirationRow />
+          <FormatsRow />
         </div>
         <div className="min-w-0 xl:pt-[68px]">
           <UsageCard />

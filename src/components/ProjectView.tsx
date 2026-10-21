@@ -11,6 +11,7 @@ import { cn, formatDate } from "@/lib/utils";
 import { useProject, useProjects, useProjectsReady } from "@/lib/data/client";
 import { otherVersionsOf, translationsOf } from "@/lib/versions";
 import { languageOf } from "@/lib/languages";
+import { formatByKey } from "@/content/formats";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -417,8 +418,8 @@ function DetailsCard({ project }: { project: AdProject }) {
             </p>
           </div>
           <div>
-            <p className="label-mono mb-1.5 text-muted">Tone</p>
-            <p className="text-ink/90">{TONE_META[project.tone ?? DEFAULT_TONE].label}</p>
+            <p className="label-mono mb-1.5 text-muted">Tone{project.format ? " · format" : ""}</p>
+            <p className="text-ink/90">{TONE_META[project.tone ?? DEFAULT_TONE].label}{project.format ? ` · ${formatByKey(project.format)?.name ?? project.format}` : ""}</p>
           </div>
           <div>
             <p className="label-mono mb-1.5 text-muted">Offer</p>

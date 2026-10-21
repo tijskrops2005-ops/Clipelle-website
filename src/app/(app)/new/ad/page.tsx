@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { StepList } from "@/components/ui/StepList";
 import { ProjectForm } from "@/components/ProjectForm";
 import { VersionForm } from "@/components/VersionForm";
+import { isFormatKey } from "@/content/formats";
 
 export const metadata: Metadata = { title: "New ad" };
 
@@ -14,9 +15,10 @@ const afterwards = [
 ];
 
 /** `?from=<id>` opens the form as a new version of that ad, with everything prefilled. */
-export default async function NewAdPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
-  const { from } = await searchParams;
+export default async function NewAdPage({ searchParams }: { searchParams: Promise<{ from?: string; format?: string }> }) {
+  const { from, format } = await searchParams;
   const fromId = typeof from === "string" && /^[A-Za-z0-9_-]{3,64}$/.test(from) ? from : undefined;
+  const formatKey = typeof format === "string" && isFormatKey(format) ? format : undefined;
   return (
     <div className="mx-auto max-w-5xl space-y-10">
       <div className="space-y-6">
@@ -27,7 +29,7 @@ export default async function NewAdPage({ searchParams }: { searchParams: Promis
         <StepList items={afterwards} columns={4} />
       </div>
 
-      {fromId ? <VersionForm fromId={fromId} /> : <ProjectForm />}
+      {fromId ? <VersionForm fromId={fromId} /> : <ProjectForm initial={formatKey ? { settings: { format: formatKey } } : undefined} />}
     </div>
   );
 }

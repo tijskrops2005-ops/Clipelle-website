@@ -274,6 +274,8 @@ export const en = {
     text: "Every video here is our own output, labelled as such. More samples are added as real customers approve theirs.",
     ads: "Ads from a product photo",
     translations: "Translated videos",
+    formats: "Eight formats to start from",
+    formatsText: "Pick a format in the ad form and the script direction and tone are filled in. The presenter still speaks a script written from your product; captions are the only thing on screen.",
   },
   pricingPreview: { details: "See details", compare: "Compare all plans and credit packs", creditsPerMonth: "credits per month", freeNote: "One free 10-second ad" },
 

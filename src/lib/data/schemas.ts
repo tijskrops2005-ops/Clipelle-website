@@ -4,6 +4,7 @@ import { config } from "@/lib/config";
 import { DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, isAdLength, isPresenterEngine } from "@/lib/pricing";
 import { AD_TONES, DEFAULT_AD_LANGUAGE, DEFAULT_TONE, DIRECTION_MAX_CHARS, HEX_COLOR, OFFER_MAX_CHARS, CAPTION_STYLES, FONT_KEYS } from "@/lib/adOptions";
 import { AD_LANGUAGE_CODES, DEFAULT_SPEED, SPEEDS } from "@/lib/voiceOptions";
+import { FORMAT_KEYS } from "@/content/formats";
 
 /**
  * The one validation of what a new project may contain, shared by the app's own route
@@ -37,6 +38,8 @@ export const AdBody = z.object({
   script: z.string().trim().max(5000).optional().or(z.literal("")),
   /** "Make another version": the ad this one is a version of (same workspace). */
   parentId: z.string().uuid().optional(),
+  /** Format from the library; the form already wrote its direction and tone into the fields above. */
+  format: z.enum(FORMAT_KEYS).optional(),
 });
 
 /** The translate fields without the cross-field check, so callers can omit/extend before adding it. */

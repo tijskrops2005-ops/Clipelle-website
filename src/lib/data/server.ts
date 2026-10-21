@@ -115,6 +115,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       background: input.background?.type === "color" ? input.background : input.background?.type === "image" ? { type: "image", url: await urlFor(assetsById.get(input.background.assetId)) } : undefined,
       brand: input.brand ? { accent: input.brand.accent, captionStyle: input.brand.captionStyle, font: input.brand.font, logoUrl: input.brand.logoAssetId ? await urlFor(assetsById.get(input.brand.logoAssetId)) : undefined } : undefined,
       reviewScript: input.reviewScript ?? false,
+      format: input.format,
       generatedScript: generatedScriptOf(stepsByKey.get("script"), input.seconds ?? workflowSettings.adSeconds),
       productName: input.productName,
       productUrl: input.productUrl,
@@ -216,7 +217,7 @@ export async function getProjectRowUnscoped(id: string) {
 
 /* ---------- creation: draft → upload assets → start ---------- */
 
-export type NewAdProject = { parentId?: string; name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: AdLanguageCode; accent?: string; voiceId?: string; speed: SpeedKey; offer?: string; direction?: string; tone: AdTone; backgroundColor?: string; brand?: { accent?: string; captionStyle?: string; font?: string }; reviewScript: boolean; productName: string; productUrl?: string; description: string; script?: string };
+export type NewAdProject = { parentId?: string; format?: string; name: string; seconds: number; engine: "avatar_iii" | "avatar_iv"; lookId?: string; language: AdLanguageCode; accent?: string; voiceId?: string; speed: SpeedKey; offer?: string; direction?: string; tone: AdTone; backgroundColor?: string; brand?: { accent?: string; captionStyle?: string; font?: string }; reviewScript: boolean; productName: string; productUrl?: string; description: string; script?: string };
 export type NewTranslateProject = {
   /** "Localize this ad": the completed ad whose finished video is the source. */
   sourceProjectId?: string;
@@ -251,7 +252,7 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
         status: "draft",
         parentId: lineage.rootId,
         version: lineage.version,
-        input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, accent: a.accent, voiceId: a.voiceId, speed: a.speed, offer: a.offer, direction: a.direction, tone: a.tone, background: a.backgroundColor ? { type: "color", value: a.backgroundColor } : undefined, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
+        input: { seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language, accent: a.accent, voiceId: a.voiceId, speed: a.speed, offer: a.offer, direction: a.direction, tone: a.tone, background: a.backgroundColor ? { type: "color", value: a.backgroundColor } : undefined, brand: a.brand, reviewScript: a.reviewScript, format: a.format, productName: a.productName, productUrl: a.productUrl, description: a.description, script: a.script, imageAssetIds: [] } satisfies AdInput,
       })
       .returning();
     await d.insert(steps).values(AD_STEPS.map((key) => ({ projectId: row.id, userId, key, status: "waiting" as const })));

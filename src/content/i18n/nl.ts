@@ -272,6 +272,8 @@ export const nl: SiteDict = {
     text: "Elke video hier is ons eigen resultaat, zo gelabeld. Er komen voorbeelden bij zodra echte klanten de hunne goedkeuren.",
     ads: "Advertenties uit een productfoto",
     translations: "Vertaalde video's",
+    formats: "Acht formats om mee te beginnen",
+    formatsText: "Kies een format in het advertentieformulier en de scriptrichting en toon worden ingevuld. De presentator spreekt nog steeds een script dat uit jouw product is geschreven; ondertitels zijn het enige in beeld.",
   },
   pricingPreview: { details: "Bekijk details", compare: "Vergelijk alle plannen en creditpakketten", creditsPerMonth: "credits per maand", freeNote: "Eén gratis advertentie van 10 seconden" },
 

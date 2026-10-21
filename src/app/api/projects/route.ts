@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     const scope = await requireScope();
     if (body.workflow === "ad") {
       const a = AdBody.parse(body);
-      const row = await createDraft(scope, { workflow: "ad", ad: { parentId: a.parentId, name: a.name, seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language as AdLanguageCode, accent: a.accent || undefined, voiceId: a.voiceId || undefined, speed: a.speed as SpeedKey, offer: a.offer || undefined, direction: a.direction || undefined, tone: a.tone, backgroundColor: a.backgroundColor, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
+      const row = await createDraft(scope, { workflow: "ad", ad: { parentId: a.parentId, format: a.format, name: a.name, seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language as AdLanguageCode, accent: a.accent || undefined, voiceId: a.voiceId || undefined, speed: a.speed as SpeedKey, offer: a.offer || undefined, direction: a.direction || undefined, tone: a.tone, backgroundColor: a.backgroundColor, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
       return Response.json({ id: row.id, status: row.status }, { status: 201 });
     }
     if (body.workflow === "translate") {

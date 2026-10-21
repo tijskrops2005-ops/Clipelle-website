@@ -79,6 +79,8 @@ export type AdFormState = {
   images: File[];
   /** "Make another version": the ad this one is a version of. Absent = a new ad (the draft is unchanged). */
   parentId?: string;
+  /** Format from the library. Absent = the draft is unchanged; present = one extra key, the fields it filled are already in `values` and `tone`. */
+  format?: string;
 };
 
 /** Exactly what the form sends to createAdProject for a given state. */
@@ -87,6 +89,7 @@ export function buildAdDraft(s: AdFormState): AdProjectDraft {
   return {
     // Only present for a version: an ordinary draft keeps exactly the keys it always had.
     ...(s.parentId ? { parentId: s.parentId } : {}),
+    ...(s.format ? { format: s.format } : {}),
     name: s.values.projectName.trim(),
     seconds: s.seconds,
     engine: s.engine,

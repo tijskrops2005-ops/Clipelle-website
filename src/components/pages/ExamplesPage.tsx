@@ -4,6 +4,7 @@ import { SectionIntro } from "@/components/site/SectionIntro";
 import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { Reveal } from "@/components/site/Reveal";
 import { CtaBand } from "@/components/site/CtaBand";
+import { FormatCards } from "@/components/site/FormatCards";
 
 export function ExamplesPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
@@ -12,6 +13,10 @@ export function ExamplesPage({ locale }: { locale: Locale }) {
       <SectionIntro eyebrow={t.home.examplesEyebrow} title={t.examples.title} text={t.examples.text} />
       <section className="space-y-6"><h2 className="text-title">{t.examples.ads}</h2><ExampleGallery kind="ad" limit={6} locale={locale} /></section>
       <section className="space-y-6"><h2 className="text-title">{t.examples.translations}</h2><ExampleGallery kind="translate" limit={6} locale={locale} /></section>
+      <section className="space-y-6">
+        <div className="max-w-2xl"><h2 className="text-title">{t.examples.formats}</h2><p className="mt-2 text-[15px] leading-relaxed text-muted">{t.examples.formatsText}</p></div>
+        <FormatCards locale={locale} />
+      </section>
       <Reveal as="section"><CtaBand locale={locale} /></Reveal>
     </div>
   );

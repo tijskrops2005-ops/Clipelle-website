@@ -84,6 +84,8 @@ export interface AdProject extends ProjectBase {
   brand?: { accent?: string; captionStyle?: string; font?: string; logoUrl?: string };
   /** Pause after the script, before the paid presenter step, until the customer approves. */
   reviewScript?: boolean;
+  /** Chosen format from the library (src/content/formats.ts); it only filled direction and tone. */
+  format?: string;
   /** The generated script, shown for review while the script step waits for the customer. */
   generatedScript?: GeneratedScript;
   productName: string;
