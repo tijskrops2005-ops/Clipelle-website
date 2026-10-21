@@ -23,16 +23,14 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
 /** Plan, credits, free ad, checkout and the customer portal. Without payment keys a disabled state. */
 export function BillingSettings() {
   const params = useSearchParams();
-  const [status, setStatus] = useState<Status | null>(null);
+  const demoStatus: Status = { enabled: false, planKey: "free", subscriptionStatus: null, currentPeriodEnd: null, balance: 120, freeAd: { granted: true }, freeAdsPerDay: 10, emailVerified: true };
+  const [status, setStatus] = useState<Status | null>(() => (config.demoMode ? demoStatus : null));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const checkout = params.get("checkout");
 
   useEffect(() => {
-    if (config.demoMode) {
-      setStatus({ enabled: false, planKey: "free", subscriptionStatus: null, currentPeriodEnd: null, balance: 120, freeAd: { granted: true }, freeAdsPerDay: 10, emailVerified: true });
-      return;
-    }
+    if (config.demoMode) return;
     let alive = true;
     api<Status>("/api/billing/status").then((s) => alive && setStatus(s)).catch((e: Error) => alive && setError(e.message));
     return () => {
