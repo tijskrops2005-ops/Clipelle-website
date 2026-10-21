@@ -99,7 +99,7 @@ export type FetchOptions = {
   timeoutMs?: number;
   maxRedirects?: number;
   /** Accept header and the content-type family that is allowed back ("text/html" or "image/"). */
-  accept: "html" | "image";
+  accept: "html" | "image" | "video";
   fetchImpl?: typeof fetch;
 };
 
@@ -123,7 +123,7 @@ export async function fetchPublicResource(input: string, options: FetchOptions):
         cache: "no-store",
         credentials: "omit",
         headers: {
-          Accept: accept === "html" ? "text/html,application/xhtml+xml;q=0.9,*/*;q=0.5" : "image/*",
+          Accept: accept === "html" ? "text/html,application/xhtml+xml;q=0.9,*/*;q=0.5" : accept === "image" ? "image/*" : "video/*",
           "Accept-Language": "en",
           "User-Agent": "Mozilla/5.0 (compatible; ReelayBot/1.0; product page reader)",
         },
@@ -141,8 +141,8 @@ export async function fetchPublicResource(input: string, options: FetchOptions):
     }
     if (!res.ok) throw new UrlError(`That website answered with an error (${res.status}).`, "http_error", 502);
     const contentType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-    const okType = accept === "html" ? contentType === "text/html" || contentType === "application/xhtml+xml" : contentType.startsWith("image/");
-    if (!okType) throw new UrlError(accept === "html" ? "That link is not a web page." : "That link is not an image.", "content_type", 415);
+    const okType = accept === "html" ? contentType === "text/html" || contentType === "application/xhtml+xml" : accept === "image" ? contentType.startsWith("image/") : contentType.startsWith("video/") || contentType === "application/octet-stream";
+    if (!okType) throw new UrlError(accept === "html" ? "That link is not a web page." : accept === "image" ? "That link is not an image." : "That link is not a video file.", "content_type", 415);
     const declared = Number(res.headers.get("content-length") ?? "0");
     if (declared > maxBytes) throw new UrlError("That file is too large to read.", "too_large", 413);
     const bytes = await readCapped(res, maxBytes);

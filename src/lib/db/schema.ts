@@ -355,3 +355,34 @@ export const rateLimits = pgTable(
   },
   (t) => [primaryKey({ columns: [t.key, t.windowStart] }), index("rate_limits_expires_idx").on(t.expiresAt)],
 ).enableRLS();
+
+/** API keys for the public API (Settings → API keys). Only the SHA-256 hash is stored; the key is shown once. */
+export const apiKeys = pgTable(
+  "api_keys",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").notNull(),
+    name: text("name").notNull(),
+    /** First characters of the key, for recognising it in the list (never enough to use it). */
+    prefix: text("prefix").notNull(),
+    keyHash: text("key_hash").notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("api_keys_hash_idx").on(t.keyHash), index("api_keys_user_idx").on(t.userId)],
+).enableRLS();
+
+/** Idempotency records for the public API: the same key + Idempotency-Key returns the same project. */
+export const apiIdempotency = pgTable(
+  "api_idempotency",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    keyId: uuid("key_id").notNull().references(() => apiKeys.id, { onDelete: "cascade" }),
+    idemKey: text("idem_key").notNull(),
+    requestHash: text("request_hash").notNull(),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("api_idempotency_key_idx").on(t.keyId, t.idemKey)],
+).enableRLS();

@@ -42,3 +42,6 @@ Thumbs.db
 
 # Example videos for the marketing site live in storage (npm run examples:upload); local copies stay out of git
 /public/examples/
+
+# Built MCP server (npm run build in mcp/)
+/mcp/dist/

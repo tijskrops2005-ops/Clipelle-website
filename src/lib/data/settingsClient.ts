@@ -129,6 +129,24 @@ export async function addNotifyWish(feature: string) {
   await api("/api/settings/notify", { method: "POST", body: JSON.stringify({ feature }) });
 }
 
+export type ApiKeyInfo = { id: string; name: string; prefix: string; createdAt: string; lastUsedAt: string | null; revokedAt: string | null };
+
+export async function listApiKeys(): Promise<{ keys: ApiKeyInfo[]; allowed: boolean }> {
+  if (config.demoMode) return { keys: [], allowed: false };
+  return api("/api/settings/api-keys");
+}
+
+/** Returns the full key once; it is never shown again. */
+export async function createApiKey(name: string): Promise<{ id: string; key: string; prefix: string; name: string }> {
+  if (config.demoMode) throw new Error("Demo mode has no accounts, so there are no API keys.");
+  return api("/api/settings/api-keys", { method: "POST", body: JSON.stringify({ name }) });
+}
+
+export async function revokeApiKey(id: string) {
+  if (config.demoMode) return;
+  await api(`/api/settings/api-keys/${id}`, { method: "DELETE" });
+}
+
 export type UsageInfo = { balance: number; projectsThisMonth: number; projects: { projectId: string; name: string; workflow: string; usd: number; calls: number; last: string }[]; ledger: { id: string; credits: number; kind: string; note: string | null; createdAt: string; expiresAt: string | null }[] };
 
 export async function getUsage(): Promise<UsageInfo> {

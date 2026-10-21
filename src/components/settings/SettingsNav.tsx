@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CreditCard, Gauge, Link2, Palette, UserRound, type LucideIcon } from "lucide-react";
+import { CreditCard, Gauge, KeyRound, Link2, Palette, UserRound, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items: { href: string; label: string; icon: LucideIcon }[] = [
@@ -10,6 +10,7 @@ const items: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/settings/brand", label: "Brand", icon: Palette },
   { href: "/settings/usage", label: "Usage", icon: Gauge },
   { href: "/settings/billing", label: "Billing", icon: CreditCard },
+  { href: "/settings/api", label: "API keys", icon: KeyRound },
   { href: "/settings/connections", label: "Connections", icon: Link2 },
 ];
 
