@@ -202,15 +202,138 @@
   100% { opacity: 0; }
 }
 
+/*
+ * Reveal on scroll without JavaScript (2026-10-21): the browser drives the entrance from the
+ * element's own position in the viewport (scroll-driven animations). Browsers without that
+ * support, search engines and the time before hydration all see the content at once: nothing is
+ * ever hidden by default. Stagger with --reveal-delay on the element.
+ */
+@keyframes reveal-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
 .reveal {
-  opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 600ms var(--ease-soft), transform 600ms var(--ease-soft);
-}
-.reveal.is-visible {
   opacity: 1;
-  transform: none;
 }
+@supports (animation-timeline: view()) {
+  .reveal {
+    animation: reveal-in 700ms var(--ease-soft) both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 35%;
+    animation-delay: var(--reveal-delay, 0ms);
+  }
+}
+
+/* Soft loading shimmer: a light sweep instead of a flat pulse. */
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.shimmer {
+  background: linear-gradient(100deg, var(--surface-muted) 35%, var(--surface) 50%, var(--surface-muted) 65%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+}
+
+/* A step that is processing: a breathing ring around its number. */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(212, 63, 27, 0.35); }
+  70% { box-shadow: 0 0 0 10px rgba(212, 63, 27, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 63, 27, 0); }
+}
+.pulse-ring {
+  animation: pulse-ring 1.8s var(--ease-soft) infinite;
+}
+/* A step that just completed: the check pops in once. */
+@keyframes check-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.check-pop {
+  animation: check-pop 420ms var(--ease-soft) both;
+}
+
+/* Hero backdrop: two slow, soft colour fields behind the headline (tokens only). */
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(24px, -18px, 0) scale(1.06); }
+}
+.glow-field {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+  opacity: 0.8;
+  pointer-events: none;
+  animation: drift 14s ease-in-out infinite;
+}
+.glow-field.accent { background: var(--accent-soft); }
+.glow-field.warm { background: color-mix(in srgb, var(--warning) 14%, white); animation-delay: -6s; }
+
+/* Subtle dot texture for alternating sections. */
+.bg-dots {
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Drawn line between the pipeline steps in the hero strip. */
+@keyframes dash-flow {
+  to { stroke-dashoffset: -24; }
+}
+.dash-flow {
+  stroke-dasharray: 6 6;
+  animation: dash-flow 1.6s linear infinite;
+}
+@keyframes dash-move {
+  to { background-position: 24px 0; }
+}
+.dash-line {
+  background: repeating-linear-gradient(90deg, var(--accent) 0 8px, transparent 8px 16px);
+  background-size: 24px 2px;
+  opacity: 0.7;
+  animation: dash-move 1.2s linear infinite;
+}
+/* Captions cycling in the illustrated ad: three words, one highlighted at a time. */
+@keyframes word-cycle {
+  0%, 28% { opacity: 1; transform: translateY(0); }
+  33%, 100% { opacity: 0; transform: translateY(6px); }
+}
+.word-cycle > span {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: word-cycle 4.2s var(--ease-soft) infinite;
+}
+.word-cycle > span:nth-child(2) { animation-delay: 1.4s; }
+.word-cycle > span:nth-child(3) { animation-delay: 2.8s; }
+/* A waveform that breathes while the presenter "speaks". */
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+.wave > i {
+  display: block;
+  width: 3px;
+  border-radius: 2px;
+  background: currentColor;
+  transform-origin: center;
+  animation: wave 1.1s ease-in-out infinite;
+}
+.wave > i:nth-child(2) { animation-delay: 0.15s; }
+.wave > i:nth-child(3) { animation-delay: 0.3s; }
+.wave > i:nth-child(4) { animation-delay: 0.45s; }
+.wave > i:nth-child(5) { animation-delay: 0.6s; }
+/* A playhead sliding along the edit timeline. */
+@keyframes playhead {
+  from { left: 4%; }
+  to { left: 94%; }
+}
+.playhead {
+  animation: playhead 6s linear infinite;
+}
+/* Gentle tilt for stacked cards behind the hero phone. */
+.tilt-left { transform: rotate(-7deg) translateY(10px); }
+.tilt-right { transform: rotate(6deg) translateY(16px); }
 .marquee-track {
   display: flex;
   width: max-content;
@@ -228,15 +351,26 @@
 
 @media (prefers-reduced-motion: reduce) {
   .reveal {
+    animation: none;
     opacity: 1;
     transform: none;
-    transition: none;
   }
   .marquee-track,
   .float-soft,
-  .caption-pop {
+  .caption-pop,
+  .shimmer,
+  .pulse-ring,
+  .check-pop,
+  .glow-field,
+  .dash-flow,
+  .dash-line,
+  .word-cycle > span,
+  .wave > i,
+  .playhead {
     animation: none;
   }
+  .word-cycle > span:first-child { opacity: 1; }
+  .wave > i { transform: none; }
 }
 
 /* ---------- rendered markdown (blog articles): own type scale, no plugin ---------- */

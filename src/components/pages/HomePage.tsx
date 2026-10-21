@@ -8,7 +8,6 @@ import { localizePath, type Locale } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/site";
 import { realAd } from "@/content/realOutput";
 import { Button } from "@/components/ui/Button";
-import { StepList } from "@/components/ui/StepList";
 import { Reveal } from "@/components/site/Reveal";
 import { PhoneFrame } from "@/components/site/PhoneFrame";
 import { SectionIntro } from "@/components/site/SectionIntro";
@@ -21,6 +20,7 @@ import { RealOutput } from "@/components/site/RealOutput";
 import { SavingsCalculator } from "@/components/site/SavingsCalculator";
 import { ExampleMarquee, IntegrationsRow, LatestPosts, MidCta, Outcomes, UseCaseCards } from "@/components/site/HomeSections";
 import { JsonLd } from "@/components/site/JsonLd";
+import { AdSketch, HeroStage, PipelineStrip, ProofChips, ThreeSteps, TranslateSketch } from "@/components/site/Sketches";
 import { faqFor } from "@/content/faqI18n";
 
 /** The homepage in one language. Route files render it with locale "en" (/) or "nl" (/nl). */
@@ -45,25 +45,33 @@ export function HomePage({ locale }: { locale: Locale }) {
             <Button href={L("/examples")} variant="secondary" size="lg">{t.common.seeExamples}<ArrowRight className="size-5" aria-hidden /></Button>
           </div>
           <p className="mt-4 text-[13px] text-muted">{t.common.noCardLong}</p>
+          <ProofChips items={h.proof} className="mt-6" />
         </div>
-        <PhoneFrame src={heroSample?.src} poster={heroSample?.posterSrc} caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} />
+        <HeroStage label={t.common.illustration}>
+          {heroSample ? (
+            <PhoneFrame src={heroSample.src} poster={heroSample.posterSrc} caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} />
+          ) : (
+            <div className="float-soft w-[240px] sm:w-[260px]"><AdSketch label={t.common.illustration} /></div>
+          )}
+        </HeroStage>
       </section>
+      <PipelineStrip labels={h.pipeline} className="-mt-8 sm:-mt-12" />
 
       <Reveal as="section">
         <SectionIntro eyebrow={h.whatEyebrow} title={h.whatTitle} text={h.whatText} />
         <Tabs
           className="mt-10"
           tabs={[
-            { key: "ads", label: h.tabs.ads.label, content: <TabPanel title={h.tabs.ads.title} text={h.tabs.ads.text} points={h.tabs.ads.points} link={{ href: L("/platform/ads"), label: h.tabs.ads.link }} aside={<PhoneFrame src={heroSample?.src} float={false} className="w-[200px]" caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} />} /> },
+            { key: "ads", label: h.tabs.ads.label, content: <TabPanel title={h.tabs.ads.title} text={h.tabs.ads.text} points={h.tabs.ads.points} link={{ href: L("/platform/ads"), label: h.tabs.ads.link }} aside={heroSample ? <PhoneFrame src={heroSample.src} float={false} className="w-[200px]" caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} /> : <AdSketch className="w-[200px]" compact label={t.common.illustration} />} /> },
             { key: "url", label: h.tabs.url.label, content: <TabPanel title={h.tabs.url.title} text={h.tabs.url.text} points={h.tabs.url.points} link={{ href: L("/platform/url-to-video"), label: h.tabs.url.link }} aside={<UrlSketch />} /> },
-            { key: "translate", label: h.tabs.translate.label, content: <TabPanel title={h.tabs.translate.title} text={h.tabs.translate.text} points={h.tabs.translate.points} link={{ href: L("/platform/translate"), label: h.tabs.translate.link }} aside={<PhoneFrame src={translateSample?.src} poster={translateSample?.posterSrc} float={false} className="w-[200px]" words={["Hallo", "wereld"]} caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} />} /> },
+            { key: "translate", label: h.tabs.translate.label, content: <TabPanel title={h.tabs.translate.title} text={h.tabs.translate.text} points={h.tabs.translate.points} link={{ href: L("/platform/translate"), label: h.tabs.translate.link }} aside={translateSample ? <PhoneFrame src={translateSample.src} poster={translateSample.posterSrc} float={false} className="w-[200px]" caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} /> : <TranslateSketch label={t.common.illustration} from={locale === "nl" ? "NL" : "EN"} to={locale === "nl" ? "DE" : "NL"} lines={locale === "nl" ? ["Houdt drinken de hele dag koud.", "Hält Getränke den ganzen Tag kalt."] : ["Keeps drinks cold all day.", "Houdt drinken de hele dag koud."]} />} /> },
           ]}
         />
       </Reveal>
 
       <Reveal as="section" className="scroll-mt-24">
         <SectionIntro eyebrow={t.common.howItWorks} title={h.stepsTitle} text={h.stepsText} />
-        <StepList items={h.steps} columns={3} className="mt-10 [&>li]:bg-surface [&>li]:px-6 [&>li]:py-6 [&>li]:shadow-card" />
+        <ThreeSteps items={h.steps} className="mt-10" />
       </Reveal>
 
       <Reveal as="section">

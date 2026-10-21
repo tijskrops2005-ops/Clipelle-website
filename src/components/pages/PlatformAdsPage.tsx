@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { StepList } from "@/components/ui/StepList";
 import { Reveal } from "@/components/site/Reveal";
 import { PhoneFrame } from "@/components/site/PhoneFrame";
+import { AdSketch, HeroStage } from "@/components/site/Sketches";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { CtaBand } from "@/components/site/CtaBand";
@@ -33,7 +34,9 @@ export async function PlatformAdsPage({ locale }: { locale: Locale }) {
           </div>
           <p className="mt-3 text-[13px] text-muted">{t.common.noCard}</p>
         </div>
-        <PhoneFrame src={sample?.src} poster={sample?.posterSrc} caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} />
+        <HeroStage label={t.common.illustration}>
+          {sample ? <PhoneFrame src={sample.src} poster={sample.posterSrc} caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} /> : <div className="float-soft w-[240px] sm:w-[260px]"><AdSketch label={t.common.illustration} /></div>}
+        </HeroStage>
       </section>
       <Reveal as="section">
         <SectionIntro eyebrow={t.common.howItWorks} title={p.stepsTitle} text={p.stepsText} />

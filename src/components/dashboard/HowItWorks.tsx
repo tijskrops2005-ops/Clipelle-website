@@ -13,7 +13,7 @@ import {
   UploadIllustration,
 } from "@/components/StepIllustrations";
 
-const illustrationClass = "mx-auto h-[64px] w-full max-w-[150px] text-ink/70";
+const illustrationClass = "mx-auto h-[64px] w-full max-w-[150px] text-ink/70 transition-[transform,color] duration-300 group-hover:scale-105 group-hover:text-accent";
 
 type Step = { title: string; service: string; description: string; Illustration: typeof ScriptIllustration };
 
@@ -53,7 +53,7 @@ function WorkflowRow({ kicker, href, steps, columns }: { kicker: string; href: s
       </div>
       <div className={columns === 4 ? "grid gap-5 sm:grid-cols-2 lg:grid-cols-4 md:gap-6" : "grid gap-5 sm:grid-cols-3 md:gap-6"}>
         {steps.map((s, i) => (
-          <StepCard key={s.title} number={i + 1} title={s.title} service={s.service} description={s.description} panel={<s.Illustration className={illustrationClass} />} />
+          <StepCard key={s.title} number={i + 1} title={s.title} service={s.service} description={s.description} className="group hover:-translate-y-0.5 hover:shadow-card-hover" panel={<s.Illustration className={illustrationClass} />} />
         ))}
       </div>
     </div>

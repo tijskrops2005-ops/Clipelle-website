@@ -80,7 +80,7 @@ function StepNumber({
 
   if (status === "completed") {
     return (
-      <span className={cn(base, "bg-success text-white")} aria-label="Completed">
+      <span className={cn(base, "check-pop bg-success text-white")} aria-label="Completed">
         <Check className="size-4" strokeWidth={2.5} aria-hidden />
       </span>
     );
@@ -96,7 +96,7 @@ function StepNumber({
     <span
       className={cn(
         base,
-        status === "processing" && "bg-accent text-white",
+        status === "processing" && "pulse-ring bg-accent text-white",
         status === "needs_input" && "bg-warning text-white",
         (status === undefined || status === "waiting") && "bg-ink text-surface",
       )}

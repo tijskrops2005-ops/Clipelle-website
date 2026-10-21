@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { StepList } from "@/components/ui/StepList";
 import { Reveal } from "@/components/site/Reveal";
 import { PhoneFrame } from "@/components/site/PhoneFrame";
+import { HeroStage, TranslateSketch } from "@/components/site/Sketches";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { CtaBand } from "@/components/site/CtaBand";
@@ -34,7 +35,9 @@ export function PlatformTranslatePage({ locale }: { locale: Locale }) {
           </div>
           <p className="mt-3 text-[13px] text-muted">{t.common.noCard}</p>
         </div>
-        <PhoneFrame src={sample?.src} poster={sample?.posterSrc} words={["Hallo", "wereld"]} caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} />
+        <HeroStage variant="translate" label={t.common.illustration}>
+          {sample ? <PhoneFrame src={sample.src} poster={sample.posterSrc} caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} /> : <div className="float-soft"><TranslateSketch label={t.common.illustration} className="w-[260px]" /></div>}
+        </HeroStage>
       </section>
       <Reveal as="section">
         <SectionIntro eyebrow={t.common.howItWorks} title={p.stepsTitle} />

@@ -3,6 +3,7 @@ import type { SiteDict } from "./en";
 /** Nederlandse teksten van de marketingsite, in natuurlijk Nederlands (geen letterlijke vertaling). */
 export const nl: SiteDict = {
   common: {
+    illustration: "Illustratie",
     createFirstAd: "Maak je eerste advertentie gratis",
     startFree: "Gratis beginnen",
     noCard: "Geen creditcard nodig.",
@@ -87,6 +88,8 @@ export const nl: SiteDict = {
     metaTitle: "Reelay · Videoadvertenties uit één productfoto",
     metaDescription: "Van productinformatie naar een afgeronde videoadvertentie, automatisch. Of vertaal een video van jezelf naar andere talen.",
     eyebrow: "Videoadvertenties, automatisch gemaakt",
+    proof: ["Geen creditcard nodig", "Ondertitels zijn de enige tekst in beeld", "9:16, klaar om te plaatsen"],
+    pipeline: ["Script", "Productclip", "AI-presentator", "Montage"],
     title: "Van één productfoto naar een afgeronde advertentie",
     intro: "Voer een product één keer in. Er wordt een script geschreven, een presentator spreekt het uit, je product komt in beweging en alles wordt gemonteerd tot één 9:16-advertentie met ondertitels. Of vertaal een video van jezelf naar andere talen.",
     whatEyebrow: "Wat je kunt maken",

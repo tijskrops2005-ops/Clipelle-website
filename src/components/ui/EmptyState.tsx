@@ -22,8 +22,9 @@ export function EmptyState({
       )}
     >
       {icon && (
-        <div className="mb-5 grid size-14 place-items-center rounded-full bg-surface-muted text-muted">
-          {icon}
+        <div className="relative mb-5">
+          <span className="absolute -inset-3 rounded-full bg-[radial-gradient(circle,var(--accent-soft),transparent_70%)] opacity-70" aria-hidden />
+          <div className="relative grid size-14 place-items-center rounded-full bg-surface text-muted shadow-card">{icon}</div>
         </div>
       )}
       <h3 className="text-lg font-semibold text-ink">{title}</h3>

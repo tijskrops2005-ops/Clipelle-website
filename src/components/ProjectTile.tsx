@@ -31,6 +31,8 @@ export function ProjectTile({ project, selectable, selected, onToggle }: { proje
           imageUrl={projectPosterUrl(project)}
         />
 
+        {/* a soft sheen that slides over the poster on hover */}
+        <span className="pointer-events-none absolute inset-0 -translate-x-full bg-[linear-gradient(105deg,transparent_40%,rgba(255,255,255,0.18)_50%,transparent_60%)] transition-transform duration-700 group-hover:translate-x-full" aria-hidden />
         <StatusBadge
           status={project.status}
           variant="floating"

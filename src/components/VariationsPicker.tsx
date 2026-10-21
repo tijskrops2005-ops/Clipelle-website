@@ -13,20 +13,23 @@ type Mode = "formats" | "hooks";
  * "Make variations": 2–5 variants of one product, each a different format or a different hook
  * style. Every variant becomes its own project with its own run and its own credits.
  */
-export function VariationsPicker({ on, allowed, planLoaded, variants, onToggle, onChange, disabled, creditsEach, usdEach }: { on: boolean; allowed: boolean; planLoaded: boolean; variants: Variant[]; onToggle: (on: boolean) => void; onChange: (v: Variant[]) => void; disabled?: boolean; creditsEach: number; usdEach: number }) {
+export function VariationsPicker({ on, allowed, planLoaded, variants, onToggle, onChange, disabled, creditsEach, usdEach }: { on: boolean; allowed: boolean; planLoaded: boolean; variants: Variant[]; onToggle: (on: boolean) => void; onChange: (update: (cur: Variant[]) => Variant[]) => void; disabled?: boolean; creditsEach: number; usdEach: number }) {
   const [mode, setMode] = useState<Mode>("formats");
   const active = on && allowed;
   const count = variants.length;
 
+  // Functional updates: quick successive clicks never overwrite each other.
   function toggle(v: Variant) {
     const key = JSON.stringify(v);
-    const has = variants.some((x) => JSON.stringify(x) === key);
-    if (has) onChange(variants.filter((x) => JSON.stringify(x) !== key));
-    else if (count < MAX_BATCH_VARIANTS) onChange([...variants, v]);
+    onChange((cur) => {
+      const has = cur.some((x) => JSON.stringify(x) === key);
+      if (has) return cur.filter((x) => JSON.stringify(x) !== key);
+      return cur.length < MAX_BATCH_VARIANTS ? [...cur, v] : cur;
+    });
   }
   function switchMode(next: Mode) {
     setMode(next);
-    onChange([]);
+    onChange(() => []);
   }
 
   return (

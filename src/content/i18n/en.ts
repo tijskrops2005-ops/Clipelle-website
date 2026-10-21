@@ -5,6 +5,7 @@
  */
 export const en = {
   common: {
+    illustration: "Illustration",
     createFirstAd: "Create your first ad free",
     startFree: "Start free",
     noCard: "No credit card required.",
@@ -89,6 +90,8 @@ export const en = {
     metaTitle: "Reelay · Video ads from one product photo",
     metaDescription: "Turn product info into a finished video ad, automatically. Or translate a video you own into other languages.",
     eyebrow: "Video ads, made automatically",
+    proof: ["No credit card required", "Captions are the only text on screen", "9:16, ready to post"],
+    pipeline: ["Script", "Product clip", "AI presenter", "Final edit"],
     title: "From one product photo to a finished ad",
     intro: "Add a product once. A script is written, a presenter speaks it, your product is animated and everything is cut into one 9:16 ad with captions. Or translate a video you own into other languages.",
     whatEyebrow: "What you can make",

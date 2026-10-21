@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 /** Neutral loading placeholder. Compose a few of these to mirror the page shape. */
 export function Skeleton({ className }: { className?: string }) {
-  return <div aria-hidden className={cn("animate-pulse rounded-control bg-surface-muted", className)} />;
+  return <div aria-hidden className={cn("shimmer rounded-control bg-surface-muted", className)} />;
 }
 
 export function TileSkeleton() {
