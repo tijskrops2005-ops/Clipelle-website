@@ -511,9 +511,42 @@ Gebouwd volgens hoofdstuk 4c: marketingsite met zwevende kop en kaartmenu's, hom
 
 Niet in deze volgorde en niet gepland: varianten in batch (U3), tekst in beeld of eindkaarten, een editor, modelkeuze, analytics.
 
+
+## 8. Platformuitbreiding (21 oktober 2026): site, blog, API, teams, partners
+
+Onderzoek vooraf (alleen openbare pagina's, geen login, geen formulieren, niets overgenomen behalve structuur en labels; bronnen: `https://creatify.ai`, `https://makeugc.ai`, `https://docs.getreditus.com`, `https://getreditus.com/help`). Alles wat op die sites stond is als data behandeld.
+
+### 9.1 Wat de twee referentiesites doen (structuur, eigen woorden)
+
+| Onderdeel | Creatify | MakeUGC | Wat Reelay hieruit bouwt |
+|---|---|---|---|
+| Navigatie | Platform (megamenu in drie groepen + losse links), Resources, Use Cases, Pricing, Log in, Book Demo | Features (drie groepen), Developers, AI models, Pricing, Enterprise, Affiliate, Log in, Sign up | Vier kaartmenu's: Platform, Solutions, Resources, Company + Pricing (`src/components/site/siteNav.ts`); geen modellenmenu (geen modelkeuze bij Reelay) |
+| Home | Hero met invoerveld, formatengalerij, logostrip, connectors, merkkit, modellen, logo's, case-carrousel, cijfers, slot-CTA | Promobalk, hero met lus van 9:16-clips, logo's, drie stappen, platformkaarten, modellenraster, prijsblok, FAQ, klantkaarten, slot-CTA | Hero met eigen voorbeeld, "Real output" (één echte advertentie met foto, script en kosten uit `realOutput.ts`), drie stappen, voorbeelden, uitkomsten per doelgroep, spaarcalculator op gemeten tijden, drie CTA's met "No credit card required". Geen promobalk, geen verzonnen cijfers |
+| Blog | 278 artikelen in zes categorieën, uitgelichte post, rijen per categorie, geen paginering; apart leercentrum met filtertabs | Twee URL's (index en één artikel) | 24 eigen artikelen in vijf categorieën (`src/content/blog/*.md`), categorie- en tagpagina's, inhoudsopgave, Article-schema, OG-afbeelding, RSS; originaliteitscheck tegen 75 bronpagina's: 0 overlappingen |
+| Case studies | Overzicht met kaarten (branche, resultaat in de titel), detail met drie cijfertegels, uitdaging/aanpak/resultaat | Alleen een rij merkkaarten op de home | `/customers` met hetzelfde sjabloon, maar alleen gevuld uit `src/content/case-studies.ts` met een toestemmingsbestand per verhaal; leeg = "stories follow" |
+| Use cases | Overzicht in drie rasters (formaat, platform, branche), detailpagina met zes featureblokken en resultaten | Geen aparte pagina's; `/languages` komt het dichtst in de buurt | Zes solution-pagina's (`src/content/solutions.ts`) met alleen wat Reelay echt doet |
+| Partnerprogramma | 25% recurring eerste jaar, maandelijkse uitbetaling via PayPal, $20 minimum, Rewardful, Google Form | 30% recurring levenslang, 60 dagen cookie, promocode, Tolt, $50 minimum, verdiensimulator | `/partners`: 25% van abonnementsbetalingen, levenslang, alleen abonnementen (pakketten uitgesloten via Stripe-metadata), maandelijks vanaf $50, via Reditus; aanmeldknop pas als `signupUrl` in `partners.ts` gevuld is |
+| Careers | Banner, teamfoto's, kop "Open roles" zonder vacatures | Geen pagina | `/careers`: eerlijk "geen open rollen", vier werkprincipes, open sollicitatie opgeslagen in `career_interests` |
+| Integraties | API, MCP, Slack-bot, Ad Launcher, Labs | API, MCP, webhooks, modelreferentie; geen Slack, geen launcher | API v1 + MCP gebouwd (`/docs/api`, `/docs/mcp`, `mcp/`); Slack-bot en ad launcher als eerlijke "soon"-pagina's met wachtlijst (`waitlist`) |
+| Prijzen | Tabs Individual / Business / API, jaarkorting bij de tabs | Starter / Growth / Pro + Enterprise, drie betaalperiodes, aftelbanner | Tabs Individual / Business / API, maand/jaar, Business in drie creditniveaus, Enterprise "Let's talk", creditvoorbeelden per plan, vergelijkingstabel, "Find your plan" en "Reelay vs doing it yourself" op geteste helpers. Geen aftelbanner, geen lanceerprijs zonder echte eerdere prijs |
+| Cookiebanner | Framer consent-mode, GTM via eigen proxy, PostHog | Geen banner gevonden | Eigen banner (`CookieBanner.tsx`): noodzakelijk altijd, analytics en partnertracking pas na toestemming; voorkeur in `src/lib/consent.ts` |
+
+### 9.2 Reditus: wat de documentatie zegt en wat Reelay besloot
+
+- Trackingscript in de `<head>` van elke pagina; globale `window.gr`; cookie `gr_id` na een klik op `?red=<slug>`; standaard cookievenster 60 dagen. De docs zeggen dat het script **niet** achter een cookiebanner hoort (hun standpunt, geen juridisch advies). **Besluit Reelay: wél pas na toestemming laden** (`ConsentScripts.tsx`), omdat de banner anders leeg is. Gevolg: een partnerklik zonder toestemming wordt niet toegeschreven; dat staat in `docs/partners.md`.
+- Aanmeldsnippet `window.gr("track", "conversion", { email })` één keer na een geslaagde registratie (`PartnerSignupConversion.tsx`), niet bij inloggen.
+- Stripe-koppeling is alleen-lezen en matcht betalingen op het **e-mailadres van de klant**; `client_reference_id` of checkout-metadata voor toeschrijving staan nergens gedocumenteerd, dus die gebruiken we niet. Uitsluiting van een prijs of product via Stripe-metadata `commissions_disabled = yes`: `scripts/stripe-setup.ts` zet dat op de creditpakketten, en `src/lib/billingCheckout.ts`-tests bewijzen dat pakketten geen partnerdata dragen.
+- Open vragen (niet uit de docs te halen, aan Reditus stellen bij het aanzetten): of een eenmalige betaling onder een recurring-programma commissie geeft, de eenheid van `w.gr.ce = 60`, en of `gr_id` op subdomeinen first-party is.
+
+### 9.3 Controle in de browser (21 oktober 2026, databasemodus, laptopbreedte)
+
+Gecontroleerd: home EN en NL met kaartmenu's, cookiebanner (alleen noodzakelijke cookies tot "Accept all"), prijzen (tabs, jaarkorting met doorgestreepte maandprijs, Business-niveaus, vergelijkingstabel, calculators), blog en artikel (inhoudsopgave, Article- en BreadcrumbList-schema, OG-afbeelding, canonical), URL naar video (`example.com` → naam gelezen, stap 2 verschijnt), API-sleutels (aanmaken, één keer tonen, intrekken), partners, careers, managed service, integratiepagina met wachtlijst, `/nl/pricing` (volledig Nederlands na de fix van de plankaartteksten). Niet mogelijk in de verborgen Chrome-tab: 390 px (het `/dev/phone`-frame rendert daar niet), video-afspelen, echte Stripe/e-mail/Reditus.
+
+Productiebuild (`next build` in databasemodus) slaagt na vijf fixes die alleen in de productiebuild zichtbaar waren: `TranslateFields` zonder `.refine` voor `.omit()` in de API, `instant = false` op de app-layout en de verhalenpagina (per-gebruiker, mag blokkeren; geeft echte 404's), `Suspense` om de sitekop en de calculators, een uurlijks gecachte credittabel (`src/lib/pricingCached.ts`) voor de statische platformpagina, en `unstable_rethrow` in de API-foutafhandeling. Lighthouse (mobiel, lokale productieserver, indicatie): zie het eindverslag van 21 oktober.
+
 ---
 
-## 8. Screenshots
+## 9. Screenshots
 
 Alle bestanden in `docs/research/screens/`, publieke pagina's, 20 oktober 2026.
 
@@ -535,3 +568,4 @@ Alle bestanden in `docs/research/screens/`, publieke pagina's, 20 oktober 2026.
 | `reelay-after-quality-standard-recommended.jpg`, `reelay-after-form-button-standard.jpg`, `reelay-after-dashboard-copy.jpg`, `reelay-after-project-standard-spent.jpg` | Correcties van 20 oktober: Standard aanbevolen met de meerprijs van Premium, knop met $0,68, dashboardtekst "alleen ondertitels", projectpagina met werkelijk bedrag |
 | `creatomate-*.jpg` | Creatomate homepage en prijzenpagina (hoofdstuk 4b) |
 | `reelay-redesign-before-*.jpg`, `reelay-redesign-after-*.jpg` | Vóór en ná de herbouw van de buitenkant (20 oktober 2026), laptopbreedte en 390 px (`-phone-`) |
+| `reelay-platform-*.jpg` | Platformuitbreiding (21 oktober 2026): home EN/NL met menu's, voorbeelden en uitkomsten, prijzen (individueel, Business jaarlijks, vergelijking + calculator, NL), blogindex, URL naar video, partners, careers, managed service, integratie-wachtlijst, API-sleutels |

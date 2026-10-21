@@ -140,3 +140,14 @@ Echte gebruikersaccounts en betalingen, e-mailnotificaties, meerdere varianten i
 **Domein en bestanden**
 10. Domein koppelen. De voorbeeldvideo's staan niet in git maar in de openbare storage-bucket `examples` (`npm run examples:upload` zet alles uit `public/examples/` erin); de site leidt de URL af van `NEXT_PUBLIC_SUPABASE_URL`, of gebruikt `NEXT_PUBLIC_EXAMPLES_BASE_URL` als die gezet is.
 11. Vóór elke push: `npm run check:secrets`.
+
+
+**Toegevoegd 21 oktober 2026 (platformuitbreiding)**
+12. **Stripe-producten opnieuw aanmaken**: `npm run stripe:setup` maakt nu ook de drie Business-prijzen (`reelay_business_249_*`, `_499_*`, `_999_*`) en zet op de creditpakketten de metadata `commissions_disabled = yes` (geen partnercommissie op pakketten). Een `listPrice` in `plans.ts` alleen invullen met een echte eerdere prijs en einddatum.
+13. **Reditus** (partnerprogramma): account aanmaken, Stripe alleen-lezen koppelen, de account-specifieke script-URL in `NEXT_PUBLIC_REDITUS_SCRIPT_SRC` zetten en `signupUrl` in `src/content/partners.ts` vullen; tot die tijd staat op `/partners` "Partner program opens soon". Het script laadt pas na cookietoestemming (bewuste afwijking van het Reditus-advies, zie `docs/partners.md`).
+14. **Analytics**: `NEXT_PUBLIC_ANALYTICS_SCRIPT_SRC` en `NEXT_PUBLIC_ANALYTICS_SITE_ID` van de gekozen provider; zonder deze laadt niets. Beide pas na toestemming (`ConsentScripts.tsx`).
+15. **Sitemap en domein**: `src/app/sitemap.ts` en `robots.ts` lezen `NEXT_PUBLIC_SITE_URL`; na koppeling van het domein de sitemap in Search Console aanmelden. `/nl` heeft eigen URL's met hreflang-alternates.
+16. **Supabase → Settings → API → Exposed schemas**: `public` uit de lijst halen (de app gebruikt de Data API niet; RLS is default-deny, dit is een tweede slot). Daarna `/dev/db` opnieuw draaien.
+17. **API v1**: `API_RATE_LIMIT_PER_MINUTE` (standaard 60) op de server zetten; sleutels zijn per werkruimte en alleen op betaalde plannen. Webhooks voor de API zijn nog niet gebouwd (klanten pollen `GET /api/v1/projects/{id}`).
+18. **Inhoud die Tijs aanlevert**: case studies en reviews met toestemming in `content-inbox/` (zie de README daar), volumes en doorlooptijd van de managed service in `src/content/services.ts`, social-links in `src/content/social.ts`, de echte advertentie (foto, script, kosten) in `src/content/realOutput.ts`, gemeten productietijden in `src/content/measured.ts`.
+19. **Statuscodes onder Cache Components**: een `notFound()` in een dynamisch gerenderde route (app-pagina's, `/dev/*` in productie, onbekend klantverhaal) stuurt status 200 met de niet-gevonden-pagina, omdat de statische schil al verzonden is. Functioneel verborgen, maar voor zoekmachines een "soft 404"; bij de deploy een regel in `src/proxy.ts` overwegen die `/dev` en `/api/dev` buiten development hard met 404 beantwoordt.

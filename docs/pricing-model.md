@@ -39,6 +39,18 @@ Datum: 21 oktober 2026. Bron van alle getallen: `src/lib/plans.ts` (plannen, cre
 
 Bij jaarbetaling blijft de marge 3× ten opzichte van de maandprijs minus twee maanden: 10/12 van de prijs voor 12 maanden credits geeft ≈ 2,5× (56%).
 
+### 3b. Business-plannen voor teams (21 oktober 2026)
+
+Zelfde marge (3×) en dezelfde formule als de individuele plannen; het verschil is de teamwerkruimte (leden met eigen login, één gedeelde creditpot, verbruik per lid voor de eigenaar, API-sleutels per werkruimte). Geen kosten per gebruiker.
+
+| Niveau | Prijs per maand | Jaarlijks (10 maanden betalen) | Credits per maand |
+|---|---|---|---|
+| Business 249 | $249 | $207,50 | 3.650 (≈ 121 advertenties van 30 s Standard) |
+| Business 499 | $499 | $415,83 | 7.320 (≈ 244) |
+| Business 999 | $999 | $832,50 | 14.660 (≈ 488) |
+
+De drie niveaus staan in `BUSINESS_TIERS` (`src/lib/plans.ts`, `isTeamPlan`); uitnodigingen van teamleden werken alleen op een Business-plan. Enterprise blijft "Let's talk" via `/demo`.
+
 ## 4. Pakketten (4×)
 
 | Pakket | Prijs | Credits | Kosten | Brutowinst |
@@ -60,4 +72,4 @@ Testmodus, met `STRIPE_SECRET_KEY=sk_test_…` in `.env.local`: `npx tsx --env-f
 
 ## Labels op de prijzenpagina (21 oktober 2026)
 
-Geen aanbevelingslabel op een plan: "Recommended" op Pro is verwijderd, alle plankaarten zijn gelijkwaardig. Elk label op de pagina moet terug te voeren zijn op code of een regel: "Annual · 2 months free" (tien maanden gerekend, `ANNUAL_MONTHS_CHARGED`), "190 languages" (de taallijst van de vertaaldienst), "Credits never expire" (`CREDIT_EXPIRY`), "Use it within 30 days" voor de gratis advertentie, "Premium presenter" niet op Free (de free-plan-regel in `startProject`), "Credit packs on top of a paid plan" (checkout weigert een pakket op het gratis plan), "Support: contact form, answered by e-mail" (het contactformulier; er is geen apart supportsysteem, dus geen "priority"). Nieuwe labels alleen met zo'n grondslag.
+Eén aanbevelingslabel: "Our recommendation" op Pro, gestuurd door `recommended: true` in `plans.ts` (teruggezet bij de herbouw van de prijzenpagina; eerder die dag verwijderd). Een lanceerprijs (`listPrice`) mag alleen een echte eerdere prijs met einddatum zijn en is standaard leeg. Elk label op de pagina moet terug te voeren zijn op code of een regel: "Annual · 2 months free" (tien maanden gerekend, `ANNUAL_MONTHS_CHARGED`), "190 languages" (de taallijst van de vertaaldienst), "Credits never expire" (`CREDIT_EXPIRY`), "Use it within 30 days" voor de gratis advertentie, "Premium presenter" niet op Free (de free-plan-regel in `startProject`), "Credit packs on top of a paid plan" (checkout weigert een pakket op het gratis plan), "Support: contact form, answered by e-mail" (het contactformulier; er is geen apart supportsysteem, dus geen "priority"). Nieuwe labels alleen met zo'n grondslag.
