@@ -19,8 +19,8 @@ export function supabaseBrowser(): SupabaseClient {
   return client;
 }
 
-/** Uploads a File straight from the browser to our storage, bypassing our server. */
-export async function uploadToSignedUrl(path: string, token: string, file: File) {
-  const { error } = await supabaseBrowser().storage.from("reelay").uploadToSignedUrl(path, token, file, { contentType: file.type || undefined });
+/** Uploads a File straight from the browser to our storage, bypassing our server. The bucket name comes with the signed URL. */
+export async function uploadToSignedUrl(bucket: string, path: string, token: string, file: File) {
+  const { error } = await supabaseBrowser().storage.from(bucket).uploadToSignedUrl(path, token, file, { contentType: file.type || undefined });
   if (error) throw new Error(error.message);
 }

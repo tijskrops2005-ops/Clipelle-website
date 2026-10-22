@@ -1,6 +1,6 @@
 import { config } from "@/lib/config";
 import { dataErrorResponse, DataError, getProjectRow } from "@/lib/data/server";
-import { createSignedUpload, MAX_OBJECT_BYTES, objectPath } from "@/lib/storage";
+import { createSignedUpload, MAX_OBJECT_BYTES, objectPath, BUCKET } from "@/lib/storage";
 import { isUploadKind } from "@/lib/data/uploads";
 import { databaseModeOnly, readJson } from "../../projects/_guard";
 import { requireScope } from "@/lib/auth";
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     if (body.mime && !allowed.includes(body.mime)) throw new DataError(`File type ${body.mime} is not supported here.`, 415, "bad_type");
     const path = objectPath({ projectId: row.id, kind: body.kind, fileName: body.fileName });
     const signed = await createSignedUpload(path);
-    return Response.json({ path: signed.path, token: signed.token });
+    return Response.json({ path: signed.path, token: signed.token, bucket: BUCKET });
   } catch (error) {
     return dataErrorResponse(error);
   }

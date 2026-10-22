@@ -1,3 +1,4 @@
+import { BUCKET } from "@/lib/storage";
 import { connection } from "next/server";
 import { getTableName, is, sql } from "drizzle-orm";
 import { PgTable } from "drizzle-orm/pg-core";
@@ -45,7 +46,7 @@ export async function GET() {
       cache: "no-store",
     });
     probes.push({ name: "POST projects", status: ins.status, refused: ins.status === 401 || ins.status === 403, detail: (await ins.text()).slice(0, 120) });
-    const list = await fetch(`${base}/storage/v1/object/list/reelay`, {
+    const list = await fetch(`${base}/storage/v1/object/list/${BUCKET}`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
       body: JSON.stringify({ prefix: "", limit: 5 }),

@@ -1,4 +1,4 @@
-import { createSignedUpload, MAX_OBJECT_BYTES, objectPath } from "@/lib/storage";
+import { createSignedUpload, MAX_OBJECT_BYTES, objectPath, BUCKET } from "@/lib/storage";
 import { devOnly, errorResponse } from "../../_guard";
 
 /** Free: a signed upload URL for the test page (the browser uploads straight to storage). */

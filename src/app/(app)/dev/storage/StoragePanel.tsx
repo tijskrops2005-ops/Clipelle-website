@@ -52,7 +52,7 @@ export function StoragePanel() {
       const signed = await r.json();
       if (!r.ok) throw new Error(signed.error ?? `HTTP ${r.status}`);
       const started = Date.now();
-      await uploadToSignedUrl(signed.path, signed.token, file);
+      await uploadToSignedUrl(signed.bucket, signed.path, signed.token, file);
       setUploadResult(`${signed.path} · ${(file.size / 1e6).toFixed(2)} MB in ${Date.now() - started} ms, straight from the browser`);
       void loadUsage();
     } catch (e) {

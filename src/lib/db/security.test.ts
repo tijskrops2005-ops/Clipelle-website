@@ -103,12 +103,13 @@ describe.skipIf(!ready)("row level security: default deny for the Data API roles
   });
 
   it("keeps the private bucket closed and the examples bucket public", async () => {
+    const { BUCKET: bucket } = await import("@/lib/storage");
     for (const token of [env.anon!, userToken!]) {
       const headers = { apikey: env.anon!, Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
-      const list = await fetch(`${env.url}/storage/v1/object/list/reelay`, { method: "POST", headers, body: JSON.stringify({ prefix: "", limit: 10 }) });
+      const list = await fetch(`${env.url}/storage/v1/object/list/${bucket}`, { method: "POST", headers, body: JSON.stringify({ prefix: "", limit: 10 }) });
       const body = await list.json().catch(() => null);
       expect(list.status >= 400 || (Array.isArray(body) && body.length === 0), `list private bucket: ${list.status}`).toBe(true);
-      const upload = await fetch(`${env.url}/storage/v1/object/reelay/probe/${randomUUID()}.txt`, { method: "POST", headers: { ...headers, "Content-Type": "text/plain" }, body: "probe" });
+      const upload = await fetch(`${env.url}/storage/v1/object/${bucket}/probe/${randomUUID()}.txt`, { method: "POST", headers: { ...headers, "Content-Type": "text/plain" }, body: "probe" });
       expect(upload.status, "upload to private bucket").toBeGreaterThanOrEqual(400);
     }
     const pub = await fetch(`${env.url}/storage/v1/object/public/examples/ad-dress-30s-standard.mp4`, { method: "HEAD" });

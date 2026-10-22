@@ -7,7 +7,7 @@ De merknaam is overal in code, teksten, metadata en documentatie "Clipelle". Eé
 | Wat | Waarom |
 |---|---|
 | Databasetabellen, kolommen en alle bestaande migraties in `drizzle/` | Hernoemen zou een datamigratie zijn; er zit geen merknaam in de tabelnamen. |
-| Storage-bucket `reelay` (`BUCKET` in `src/lib/storage.ts`, `src/lib/supabase/browser.ts`, de beveiligingstest en `/dev/db`) en de bestaande bestandspaden | Een nieuwe bucket betekent alle bestanden verplaatsen en alle paden in `assets` herschrijven. Later te doen als aparte migratie. |
+| De bestaande lokale storage-bucket `reelay` en de bestaande bestandspaden | De bucketnaam is sinds 22 oktober instelbaar met `STORAGE_BUCKET` (standaard `clipelle` voor een nieuwe installatie; `ensureBucket()` maakt hem aan). De lokale omgeving houdt `STORAGE_BUCKET=reelay` in `.env.local`, zodat de bestaande bestanden en paden in `assets` blijven kloppen. Overstappen = nieuwe bucket, bestanden kopiëren, paden ongewijzigd (de paden bevatten de bucketnaam niet). De openbare bucket `examples` heet gewoon zo. |
 | Stripe lookup keys `reelay_<plan>_monthly`, `reelay_<plan>_annual`, `reelay_topup_<usd>` (`src/lib/plans.ts`, `scripts/stripe-setup.ts`, `docs/pricing-model.md`, `docs/stage8-plan.md`) | Lookup keys zijn de koppeling met bestaande Stripe-prijzen; alleen de zichtbare productnamen in `stripe:setup` heten nu "Clipelle …". |
 | Lokale map `.reelay/` (`.gitignore`, `scripts/check-secrets.mjs`, documentatie) | Een lokale, niet-getrackte map met oude logs; de ignore-regel blijft zodat die map nooit meegaat. |
 | Naam van de git-repository en de lokale map `reelay` | Tijs hernoemt die zelf (GitHub: Settings → Repository name; lokaal `mv`). |
@@ -21,7 +21,7 @@ De merknaam is overal in code, teksten, metadata en documentatie "Clipelle". Eé
 ## Wat Tijs later zelf kan hernoemen
 
 - GitHub-repository en lokale map (`reelay` → `clipelle`), daarna het pad in `mcp/README.md` en `/docs/mcp` controleren.
-- Storage-bucket (nieuwe bucket + kopiëren + `assets.storage_path` herschrijven) als aparte, geteste migratie.
+- Storage-bucket: `STORAGE_BUCKET=clipelle` zetten, de objecten van `reelay` naar `clipelle` kopiëren (de paden blijven gelijk) en daarna de oude bucket leegmaken.
 - Stripe lookup keys: alleen bij een nieuwe Stripe-account; anders laten staan.
 - Na één release: de terugvallezers voor de oude cookies, localStorage-sleutels en `REELAY_*`-variabelen verwijderen.
 

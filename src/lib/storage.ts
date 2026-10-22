@@ -11,7 +11,12 @@ import { supabaseAdmin } from "@/lib/supabase/server";
  * without touching the rest of the app.
  */
 
-export const BUCKET = "reelay";
+/**
+ * The private bucket. Configurable since 22 October 2026: STORAGE_BUCKET, default "clipelle" for a
+ * new installation; an existing environment keeps its old bucket by setting the variable (no files
+ * move). ensureBucket() creates it on first use. The public "examples" bucket is separate (examples.ts).
+ */
+export const BUCKET = process.env.STORAGE_BUCKET?.trim() || "clipelle";
 /** Free plan: 1 GB of storage. Shown on /dev/storage and in Settings. */
 export const FREE_PLAN_BYTES = 1024 * 1024 * 1024;
 /** Max object size we accept (free plan allows 50 MB per file). */
