@@ -1,4 +1,5 @@
 import { Suspense, type ReactNode } from "react";
+import { connection } from "next/server";
 import { getScope } from "@/lib/auth";
 import { getCreditBalance } from "@/lib/credits";
 import { config } from "@/lib/config";
@@ -16,6 +17,8 @@ import { isAdmin } from "@/lib/adminAccess";
  * Navigation components read the pathname (runtime data) so they sit behind Suspense.
  */
 export async function AppShell({ children }: { children: ReactNode }) {
+  // Request-time by definition (session, balance, clock): says so explicitly, which also keeps the dev prerender check quiet for the 404 page.
+  await connection();
   const scope = await getScope();
   const user = scope?.user ?? null;
   let workspaces: { id: string; name: string; kind: string; role: string }[] = [];
