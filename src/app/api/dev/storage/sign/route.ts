@@ -17,7 +17,8 @@ export async function POST(request: Request) {
   }
   try {
     const path = objectPath({ projectId: "dev", kind: "upload-test", fileName: body.fileName });
-    return Response.json(await createSignedUpload(path));
+    const signed = await createSignedUpload(path);
+    return Response.json({ ...signed, bucket: BUCKET });
   } catch (error) {
     return errorResponse(error);
   }
