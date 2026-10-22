@@ -9,7 +9,7 @@ summary: "A product video needs a clear photo, a few useful sentences and a vert
 
 Most product videos are not made in a studio. They are made at a kitchen table, in a stockroom, or on a laptop between two other tasks. The studio version looks nicer, but it is not what makes the video work. What makes it work is that someone sees the product clearly, hears one useful thing about it, and knows what to do next. You can get all three without renting a single light.
 
-This article walks through what a product video actually needs, the three ways people usually make one, and the route we built Reelay for: one photo, two or three sentences, a finished vertical ad.
+This article walks through what a product video actually needs, the three ways people usually make one, and the route we built Clipelle for: one photo, two or three sentences, a finished vertical ad.
 
 ## What a product video actually needs
 
@@ -34,7 +34,7 @@ A creator or a small agency will shoot and edit for you. You write a brief, wait
 
 ### Generate it from a photo
 
-The third route skips the camera. You give one product photo and a short description, and the video is written, voiced, cut and captioned for you. This is what [Image to video](/platform/ads) in Reelay does. It will not film your product in someone's hands, and it will not add music or animated text, because it does not do those things. It will give you a vertical ad with a presenter speaking a script, a slow-moving product clip laid over it at fixed moments, and captions across the whole video. For most e-commerce products that is exactly the floor described above, reached in minutes.
+The third route skips the camera. You give one product photo and a short description, and the video is written, voiced, cut and captioned for you. This is what [Image to video](/platform/ads) in Clipelle does. It will not film your product in someone's hands, and it will not add music or animated text, because it does not do those things. It will give you a vertical ad with a presenter speaking a script, a slow-moving product clip laid over it at fixed moments, and captions across the whole video. For most e-commerce products that is exactly the floor described above, reached in minutes.
 
 ## The no-studio route, step by step
 
@@ -50,7 +50,7 @@ Not a spec sheet. Say what the product is, who it is for, and what changes for t
 
 ### 3. Choose a length
 
-Reelay offers 10, 20, 30, 45 or 60 seconds, with 30 as the default. The script has a hard word limit of about 2.5 words per second, so a 30-second ad holds about 75 spoken words. That is enough for a hook, a problem, the product, two benefits and a call to action. A 10-second ad holds 25 words: a hook, the product, the call to action, and nothing else.
+Clipelle offers 10, 20, 30, 45 or 60 seconds, with 30 as the default. The script has a hard word limit of about 2.5 words per second, so a 30-second ad holds about 75 spoken words. That is enough for a hook, a problem, the product, two benefits and a call to action. A 10-second ad holds 25 words: a hook, the product, the call to action, and nothing else.
 
 ### 4. Pick the presenter and the tone
 
@@ -85,7 +85,7 @@ It is rarely the absence of a studio. It is usually one of these:
 - **A weak photo.** Blurry, cropped, shot under a yellow bulb. The clip inherits all of it.
 - **A description that lists features.** "Ceramic, 300 ml, dishwasher safe" produces a script that lists features. Write about the problem and the person.
 - **Too many words for the length.** When the script is cut to fit, something good goes missing. Keep the description focused so the important things survive.
-- **The wrong format.** A landscape video in a vertical feed is a small picture with large empty bars. Reelay only makes 9:16, so this one is handled for you.
+- **The wrong format.** A landscape video in a vertical feed is a small picture with large empty bars. Clipelle only makes 9:16, so this one is handled for you.
 - **A hidden call to action.** If the viewer has to guess what to do, they scroll. Say it out loud in the last sentence.
 
 ## When you do want a studio

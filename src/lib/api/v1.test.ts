@@ -10,7 +10,7 @@ const hasDb = Boolean(process.env.DATABASE_URL);
 const userA = `00000000-0000-0000-0000-0000000000a1`;
 const userB = `00000000-0000-0000-0000-0000000000b1`;
 
-function req(key?: string, url = "https://reelay.test/api/v1/projects") {
+function req(key?: string, url = "https://clipelle.test/api/v1/projects") {
   return new Request(url, { headers: key ? { Authorization: `Bearer ${key}` } : {} });
 }
 
@@ -27,10 +27,10 @@ describe.skipIf(!hasDb)("public API v1", () => {
   beforeAll(async () => {
     const { db, profiles, workspaces } = await import("@/lib/db");
     const { eq } = await import("drizzle-orm");
-    await db().insert(profiles).values([{ userId: userA, email: "api-a@reelay.local" }, { userId: userB, email: "api-b@reelay.local" }]).onConflictDoNothing();
+    await db().insert(profiles).values([{ userId: userA, email: "api-a@clipelle.local" }, { userId: userB, email: "api-b@clipelle.local" }]).onConflictDoNothing();
     const { ensurePersonalWorkspace } = await import("@/lib/workspaces");
-    wsA = (await ensurePersonalWorkspace({ id: userA, email: "api-a@reelay.local" })).id;
-    wsB = (await ensurePersonalWorkspace({ id: userB, email: "api-b@reelay.local" })).id;
+    wsA = (await ensurePersonalWorkspace({ id: userA, email: "api-a@clipelle.local" })).id;
+    wsB = (await ensurePersonalWorkspace({ id: userB, email: "api-b@clipelle.local" })).id;
     await db().update(workspaces).set({ planKey: "starter" }).where(eq(workspaces.id, wsA));
     const { createApiKey } = await import("@/lib/apiKeys");
     const k = await createApiKey(scopeA(), "test");
@@ -95,13 +95,13 @@ describe.skipIf(!hasDb)("public API v1", () => {
     const rowA = await createDraft(scopeA(), { workflow: "ad", ad: { name: "Isolation A", seconds: 10, engine: "avatar_iii", language: "en", speed: "normal", tone: "direct", reviewScript: false, productName: "X", description: "Twenty characters of description here." } });
     made.push(rowA.id);
     const { GET } = await import("@/app/api/v1/projects/[id]/route");
-    const mine = await GET(req(keyA, `https://reelay.test/api/v1/projects/${rowA.id}`), { params: Promise.resolve({ id: rowA.id }) });
+    const mine = await GET(req(keyA, `https://clipelle.test/api/v1/projects/${rowA.id}`), { params: Promise.resolve({ id: rowA.id }) });
     expect(mine.status).toBe(200);
     const body = (await mine.json()) as { project: { id: string; kind: string; steps: { key: string; label: string }[] } };
     expect(body.project.kind).toBe("ad");
     expect(body.project.steps.map((s) => s.key)).toEqual(["script", "productClip", "presenter", "finalEdit"]);
     expect(JSON.stringify(body)).not.toMatch(/heygen|shotstack|fal\.ai|claude|anthropic/i);
-    const theirs = await GET(req(kB.key, `https://reelay.test/api/v1/projects/${rowA.id}`), { params: Promise.resolve({ id: rowA.id }) });
+    const theirs = await GET(req(kB.key, `https://clipelle.test/api/v1/projects/${rowA.id}`), { params: Promise.resolve({ id: rowA.id }) });
     expect(theirs.status).toBe(404);
     const { GET: LIST } = await import("@/app/api/v1/projects/route");
     const listB = (await (await LIST(req(kB.key))).json()) as { projects: { id: string }[] };

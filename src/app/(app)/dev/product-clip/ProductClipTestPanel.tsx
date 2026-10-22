@@ -40,7 +40,7 @@ type Run = {
   startedAt: string; finishedAt?: string; videoUrl?: string; estimateUsd: number; error?: string; entryId?: string;
 };
 
-const STORAGE_KEY = "reelay.dev.product-clip.runs";
+const STORAGE_KEY = "clipelle.dev.product-clip.runs";
 const usd = (n: number) => `$${n.toFixed(3)}`;
 
 export function ProductClipTestPanel({ keyPresent }: { keyPresent: boolean }) {

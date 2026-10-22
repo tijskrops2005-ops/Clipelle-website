@@ -4,10 +4,10 @@ slug: "the-first-ad-checklist"
 date: "2026-10-14"
 category: "costs-and-process"
 tags: ["checklist", "first ad", "beginners"]
-summary: "The ten decisions that shape a Reelay ad, in the order the form asks for them, with a sensible default for each one."
+summary: "The ten decisions that shape a Clipelle ad, in the order the form asks for them, with a sensible default for each one."
 ---
 
-Your first ad takes a few minutes to make and a little longer to think about. Most of the thinking is deciding, and most of the deciding can happen before you open the form. Here are the ten decisions that shape a Reelay ad, in the order the form asks for them, with a recommendation for each if you just want a sensible default.
+Your first ad takes a few minutes to make and a little longer to think about. Most of the thinking is deciding, and most of the deciding can happen before you open the form. Here are the ten decisions that shape a Clipelle ad, in the order the form asks for them, with a recommendation for each if you just want a sensible default.
 
 ## 1. Which product
 
@@ -21,7 +21,7 @@ If you run a shop with many products, resist the urge to make a brand video. A b
 
 The product clip is generated from one photo, with slow camera moves. Everything the clip shows is in that photo, so choose it with care: the product in focus, well lit, on a clean or simple background, filling a good part of the frame. A portrait or square photo suits the 9:16 frame better than a wide one.
 
-If you have a product page, you can paste the link instead and Reelay reads the name, description and large photos for you to check and tick. Only use pages and photos you own or have the rights to use. The full guide is [product photos that make a good product clip](/blog/product-photos-that-make-a-good-product-clip).
+If you have a product page, you can paste the link instead and Clipelle reads the name, description and large photos for you to check and tick. Only use pages and photos you own or have the rights to use. The full guide is [product photos that make a good product clip](/blog/product-photos-that-make-a-good-product-clip).
 
 **Default:** your main listing photo, if it is sharp and uncluttered.
 

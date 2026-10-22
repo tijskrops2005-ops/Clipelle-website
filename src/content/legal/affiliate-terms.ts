@@ -9,7 +9,7 @@ import type { LegalDoc } from "./types";
 export const affiliateTermsDoc: LegalDoc = {
   slug: "affiliate-terms",
   title: "Partner program terms",
-  summary: "The commission rules of the Reelay partner program.",
+  summary: "The commission rules of the Clipelle partner program.",
   updated: "2026-10-21",
   draft: true,
   sections: [
@@ -23,7 +23,7 @@ export const affiliateTermsDoc: LegalDoc = {
 export const affiliateTermsDocNl: LegalDoc = {
   slug: "affiliate-terms",
   title: "Voorwaarden partnerprogramma",
-  summary: "De commissieregels van het Reelay-partnerprogramma.",
+  summary: "De commissieregels van het Clipelle-partnerprogramma.",
   updated: "2026-10-21",
   draft: true,
   sections: [

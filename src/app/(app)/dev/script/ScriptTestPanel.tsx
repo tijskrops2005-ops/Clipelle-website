@@ -40,7 +40,7 @@ type RunResult = {
   warning?: string;
 };
 
-const STORAGE_KEY = "reelay.dev.script.last";
+const STORAGE_KEY = "clipelle.dev.script.last";
 const usd = (n: number) => `$${n.toFixed(4)}`;
 
 /** Downscale a chosen image in the browser so the request stays small and cheap. */

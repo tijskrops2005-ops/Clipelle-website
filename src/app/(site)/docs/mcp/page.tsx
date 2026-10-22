@@ -14,19 +14,19 @@ const sections = [
   { id: "safety", label: "Safety" },
 ];
 
-const install = `git clone https://github.com/YOUR-ORG/reelay.git
-cd reelay/mcp
+const install = `git clone https://github.com/YOUR-ORG/clipelle.git
+cd clipelle/mcp
 npm install
 npm run build   # writes dist/index.js`;
 
 const mcpConfig = `{
   "mcpServers": {
-    "reelay": {
+    "clipelle": {
       "command": "node",
-      "args": ["/absolute/path/to/reelay/mcp/dist/index.js"],
+      "args": ["/absolute/path/to/clipelle/mcp/dist/index.js"],
       "env": {
-        "REELAY_API_KEY": "rl_your_key",
-        "REELAY_API_URL": "https://YOUR-DOMAIN"
+        "CLIPELLE_API_KEY": "rl_your_key",
+        "CLIPELLE_API_URL": "https://YOUR-DOMAIN"
       }
     }
   }
@@ -63,7 +63,7 @@ export default function McpDocsPage() {
         <h2>Configure</h2>
         <p>Make a key on <Link href="/settings/api" className="underline">Settings → API keys</Link>, then add the server to your assistant&apos;s MCP configuration. The shape below is what most desktop assistants use; the key stays in the environment, never in a prompt.</p>
         <CodeBlock code={mcpConfig} lang="json" title="MCP configuration" />
-        <p><code className="font-mono">REELAY_API_URL</code> defaults to the public site when left out. For a local build of the app, point it at your dev server.</p>
+        <p><code className="font-mono">CLIPELLE_API_URL</code> defaults to the public site when left out. For a local build of the app, point it at your dev server.</p>
       </section>
 
       <section id="tools" className="space-y-4">

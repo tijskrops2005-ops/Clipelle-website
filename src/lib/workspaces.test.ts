@@ -6,9 +6,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
  * to a workspace, two members draw from one shared balance, and invitations work end to end.
  */
 const hasDb = Boolean(process.env.DATABASE_URL);
-const owner = { id: "00000000-0000-0000-0000-0000000000e1", email: "team-owner@reelay.local", emailVerified: true, name: "Owner" };
-const member = { id: "00000000-0000-0000-0000-0000000000e2", email: "team-member@reelay.local", emailVerified: true, name: "Member" };
-const outsider = { id: "00000000-0000-0000-0000-0000000000e3", email: "team-outsider@reelay.local", emailVerified: true };
+const owner = { id: "00000000-0000-0000-0000-0000000000e1", email: "team-owner@clipelle.local", emailVerified: true, name: "Owner" };
+const member = { id: "00000000-0000-0000-0000-0000000000e2", email: "team-member@clipelle.local", emailVerified: true, name: "Member" };
+const outsider = { id: "00000000-0000-0000-0000-0000000000e3", email: "team-outsider@clipelle.local", emailVerified: true };
 const ids = [owner.id, member.id, outsider.id];
 
 describe.skipIf(!hasDb)("workspaces and teams", () => {
@@ -39,11 +39,11 @@ describe.skipIf(!hasDb)("workspaces and teams", () => {
     const team = await ws.createTeamWorkspace(owner, "Acme team");
     teamId = team.id;
     // Inviting needs the Business plan on the workspace.
-    await expect(ws.inviteMember(team, owner, member.email, "member", "https://reelay.test")).rejects.toMatchObject({ code: "plan_required" });
+    await expect(ws.inviteMember(team, owner, member.email, "member", "https://clipelle.test")).rejects.toMatchObject({ code: "plan_required" });
     await db().update(workspaces).set({ planKey: "business_249" }).where(eq(workspaces.id, teamId));
     const planned = (await ws.getWorkspace(teamId))!;
-    const invite = await ws.inviteMember(planned, owner, member.email, "member", "https://reelay.test");
-    expect(invite.link).toMatch(/^https:\/\/reelay\.test\/invite\//);
+    const invite = await ws.inviteMember(planned, owner, member.email, "member", "https://clipelle.test");
+    expect(invite.link).toMatch(/^https:\/\/clipelle\.test\/invite\//);
     const token = invite.link.split("/invite/")[1];
     // The wrong address cannot accept; the right one can.
     await expect(ws.acceptInvite(outsider, token)).rejects.toMatchObject({ code: "invite_email_mismatch" });

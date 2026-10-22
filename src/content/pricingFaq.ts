@@ -11,7 +11,7 @@ export const pricingFaq: FaqItem[] = [
   { q: "Do you refund?", a: "The terms draft says what applies: a project that fails is refunded in credits automatically. Refunds of payments are handled case by case through the contact form while the terms are in review." },
   { q: "Which links and languages are supported?", a: "URL to video reads public product pages with product data, sharing tags or a title and photos. Ads can be spoken in the languages that have presenter voices; translations support 190 languages and regional variants." },
   { q: "Is the API included?", a: "Yes, on every plan with credits. Keys are made in Settings → API keys and use the same credits and limits as the form. There is also an MCP server for assistants." },
-  { q: "What is the managed service?", a: "We run Reelay for you: products in, finished ads out, scripts reviewed by a person. Scope and price are agreed per brand on a call; there is no fixed offer on this page." },
+  { q: "What is the managed service?", a: "We run Clipelle for you: products in, finished ads out, scripts reviewed by a person. Scope and price are agreed per brand on a call; there is no fixed offer on this page." },
 ];
 
 export const pricingFaqNl: FaqItem[] = [
@@ -23,6 +23,6 @@ export const pricingFaqNl: FaqItem[] = [
   { q: "Betalen jullie terug?", a: "Het concept van de voorwaarden zegt wat geldt: een mislukt project wordt automatisch in credits terugbetaald. Terugbetalingen van betalingen behandelen we per geval via het contactformulier zolang de voorwaarden in beoordeling zijn." },
   { q: "Welke links en talen worden ondersteund?", a: "Van link naar video leest openbare productpagina's met productgegevens, deeltags of een titel en foto's. Advertenties kunnen worden ingesproken in de talen met presentatorstemmen; vertalingen ondersteunen 190 talen en regionale varianten." },
   { q: "Is de API inbegrepen?", a: "Ja, op elk plan met credits. Sleutels maak je onder Settings → API keys; ze gebruiken dezelfde credits en limieten als het formulier. Er is ook een MCP-server voor assistenten." },
-  { q: "Wat is de beheerde dienst?", a: "Wij draaien Reelay voor je: producten erin, afgeronde advertenties eruit, scripts door een mens gecontroleerd. Omvang en prijs worden per merk in een gesprek afgesproken; er staat geen vast aanbod op deze pagina." },
+  { q: "Wat is de beheerde dienst?", a: "Wij draaien Clipelle voor je: producten erin, afgeronde advertenties eruit, scripts door een mens gecontroleerd. Omvang en prijs worden per merk in een gesprek afgesproken; er staat geen vast aanbod op deze pagina." },
 ];
 export const pricingFaqFor = (locale: "en" | "nl") => (locale === "en" ? pricingFaq : pricingFaqNl);

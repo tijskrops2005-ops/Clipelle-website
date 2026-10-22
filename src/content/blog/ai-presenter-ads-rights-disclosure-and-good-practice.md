@@ -7,11 +7,11 @@ tags: ["rights", "disclosure", "ai presenter", "good practice"]
 summary: "Practical guidance on owning what you upload, the speaker's permission for translations, being open about an AI presenter, and keeping claims true."
 ---
 
-An ad with an AI presenter raises a few questions that a filmed ad does not. Who owns the photo you started from? Can you translate a video with someone else's face in it? Do you have to tell viewers the presenter is generated? This article is practical guidance based on how we think about it at Reelay. It is not legal advice; rules differ by country and platform and change over time, so check the current requirements where you advertise and ask a lawyer when something is unclear.
+An ad with an AI presenter raises a few questions that a filmed ad does not. Who owns the photo you started from? Can you translate a video with someone else's face in it? Do you have to tell viewers the presenter is generated? This article is practical guidance based on how we think about it at Clipelle. It is not legal advice; rules differ by country and platform and change over time, so check the current requirements where you advertise and ask a lawyer when something is unclear.
 
 ## Start with what you own
 
-Everything in a Reelay ad traces back to what you put in: a product photo (or a product page link whose photos you check), a few sentences of description, optionally your own script, your logo and brand colours. The simplest way to stay on safe ground is to use only material you own or have clear permission to use.
+Everything in a Clipelle ad traces back to what you put in: a product photo (or a product page link whose photos you check), a few sentences of description, optionally your own script, your logo and brand colours. The simplest way to stay on safe ground is to use only material you own or have clear permission to use.
 
 That means:
 
@@ -20,13 +20,13 @@ That means:
 - **Your words.** The description you type is yours. If you paste your own script, the same applies: write it or own it.
 - **Your logo.** The logo in the top right corner should be a mark you have the right to use.
 
-When you use the product page link, Reelay reads the name, the description and the large photos from the page so you can check them before anything is generated. That is a convenience, not a licence: only use it on pages for products and photos you own or have the rights to use.
+When you use the product page link, Clipelle reads the name, the description and the large photos from the page so you can check them before anything is generated. That is a convenience, not a licence: only use it on pages for products and photos you own or have the rights to use.
 
 ## Translated videos: the speaker's permission
 
 Translation is where rights questions get sharper, because there is a real person in the video. [Translate & lipsync](/platform/translate) keeps the speaker's own voice and moves their lips to match the new language. That is exactly why you need permission: you are producing new speech in someone's voice and new mouth movements on their face.
 
-Before any translation starts, Reelay asks you to confirm that you own the rights to the video and have the speaker's permission to use their voice and face. The confirmation is stored with the project, with a timestamp. Without it, the translation does not start.
+Before any translation starts, Clipelle asks you to confirm that you own the rights to the video and have the speaker's permission to use their voice and face. The confirmation is stored with the project, with a timestamp. Without it, the translation does not start.
 
 What to actually have in hand before you tick that box:
 
@@ -38,7 +38,7 @@ If the speaker has left the company, or the video was made under a contract that
 
 ## Being transparent that the presenter is AI
 
-The presenter in a Reelay ad is a generated person. Some platforms ask advertisers to label AI-generated or synthetic content, and some countries have rules about it. We cannot tell you what applies to you, but we can give you a sensible default: when a platform or a law asks for a label, use it, and when in doubt, disclose.
+The presenter in a Clipelle ad is a generated person. Some platforms ask advertisers to label AI-generated or synthetic content, and some countries have rules about it. We cannot tell you what applies to you, but we can give you a sensible default: when a platform or a law asks for a label, use it, and when in doubt, disclose.
 
 Practical ways to do that:
 
@@ -59,7 +59,7 @@ Good habits:
 - **Offers must be real.** The Offer line on the form (up to 80 characters) is the only way a deal gets into the call to action. If you type "20% off this week," make sure the discount exists and the week is real.
 - **Review the script when it matters.** Turn on "Review script first" to read every word before the presenter is generated. You pick one of three hooks and edit the text. For regulated categories, make this a habit.
 
-Reelay treats free text as information, not as instructions. The description, the Direction field and the Offer line are facts about the product that the script draws on. That keeps the script predictable; it does not check whether your facts are true. That part is yours.
+Clipelle treats free text as information, not as instructions. The description, the Direction field and the Offer line are facts about the product that the script draws on. That keeps the script predictable; it does not check whether your facts are true. That part is yours.
 
 ## A short pre-publish checklist
 
@@ -73,7 +73,7 @@ Before you publish an AI presenter ad, run through this:
 - The presenter is not posing as a real customer.
 - For translations: I have the speaker's written permission for voice and face, covering the languages and markets I am targeting.
 
-## What Reelay does on its side
+## What Clipelle does on its side
 
 A few things are built in. The rights confirmation for translations is mandatory and stored with a timestamp. The only text on screen is the captions of what the presenter says, plus an optional logo, so no hidden text cards can slip in. Your uploads and results are kept per account in private storage with signed, expiring links, and you can delete your account and its data from Settings. The [Trust](/trust) page describes how data is handled, and the [Terms](/legal/terms) set out what you agree to when you use the service, including that you are responsible for the rights to what you upload.
 

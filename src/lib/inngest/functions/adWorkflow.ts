@@ -255,7 +255,7 @@ async function runPresenter(projectId: string, script: AdScript, step: StepTools
         // looks trained with matting; a look without it answers 400, and then we keep the look's own background.
         const background = await presenterBackground(adInput);
         const speed = speedValue(adInput.speed);
-        const base = { avatarId: lookId, voiceId, script: script.presenterScript, engine, resolution: cfg.heygenResolution, fit: "cover" as const, voiceSettings: speed !== 1 ? { speed } : undefined, title: `Reelay ${projectId.slice(0, 8)}`, idempotencyKey: reserved.fingerprint };
+        const base = { avatarId: lookId, voiceId, script: script.presenterScript, engine, resolution: cfg.heygenResolution, fit: "cover" as const, voiceSettings: speed !== 1 ? { speed } : undefined, title: `Clipelle ${projectId.slice(0, 8)}`, idempotencyKey: reserved.fingerprint };
         let backgroundWarning: string | undefined;
         let created;
         try {

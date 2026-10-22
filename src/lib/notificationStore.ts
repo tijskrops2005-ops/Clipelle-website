@@ -10,7 +10,7 @@ import { useSyncExternalStore } from "react";
  */
 export type AppNotice = { id: string; projectId: string; name: string; status: "completed" | "failed"; at: number; href: string };
 
-const KEY = "reelay.notices.v1";
+const KEY = "clipelle.notices.v1";
 let notices: AppNotice[] = [];
 let toasts: AppNotice[] = [];
 let loaded = false;

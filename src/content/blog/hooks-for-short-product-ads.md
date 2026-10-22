@@ -9,11 +9,11 @@ summary: "A hook has about seven spoken words to stop the scroll. Six hook shape
 
 The first three seconds of a short ad have one job: give the viewer a reason not to scroll. Not to buy, not to understand the product, not to remember the brand. Just to stay for the next sentence. Everything else in the ad depends on that one small win, which is why the hook deserves more thought per word than any other line.
 
-This article is about hooks that are spoken. In a Reelay ad the presenter says the hook, and the captions show it; there is no text card. That changes what a good hook is, and it makes the first three seconds a writing problem with a very tight budget.
+This article is about hooks that are spoken. In a Clipelle ad the presenter says the hook, and the captions show it; there is no text card. That changes what a good hook is, and it makes the first three seconds a writing problem with a very tight budget.
 
 ## The budget: about seven words
 
-The script in Reelay is limited to about 2.5 words per second. Three seconds is therefore seven or eight words. That is the hook. Not a paragraph, not two sentences: one short line that a person could say in one breath.
+The script in Clipelle is limited to about 2.5 words per second. Three seconds is therefore seven or eight words. That is the hook. Not a paragraph, not two sentences: one short line that a person could say in one breath.
 
 For context, a 10-second ad has 25 words in total, so the hook is a third of the whole ad. A 30-second ad has 75 words, and the hook is still the same seven or eight; the rest of the budget goes to the problem, the product, the benefits and the call to action. [A spoken ad script in 75 words](/blog/a-spoken-ad-script-in-75-words) shows how the rest of the budget is spent.
 
@@ -99,7 +99,7 @@ It contradicts what the viewer expects an ad to say, and it sets up the second l
 
 ## How the hook connects to the rest
 
-A Reelay script follows a fixed order: hook, problem, product, benefits, call to action. The hook is the first line, and its job is to hand off cleanly to the problem. The best test of a hook is whether the second sentence feels inevitable after it.
+A Clipelle script follows a fixed order: hook, problem, product, benefits, call to action. The hook is the first line, and its job is to hand off cleanly to the problem. The best test of a hook is whether the second sentence feels inevitable after it.
 
 - "Your coffee is flat, and it's not the beans." → "Most drippers pour too fast and pull out the bitterness first."
 - "If you work from a kitchen table, listen." → "Your laptop screen is a foot too low, and your neck knows it."

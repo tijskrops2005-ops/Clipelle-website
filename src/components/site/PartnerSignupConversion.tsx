@@ -17,7 +17,7 @@ declare global {
 export function PartnerSignupConversion({ email, uid }: { email: string; uid?: string }) {
   useEffect(() => {
     if (!allows("marketing")) return;
-    const key = `reelay:partner-conv:${email}`;
+    const key = `clipelle:partner-conv:${email}`;
     try {
       if (sessionStorage.getItem(key)) return;
     } catch {

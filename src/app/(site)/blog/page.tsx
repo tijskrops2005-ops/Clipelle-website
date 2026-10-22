@@ -10,7 +10,7 @@ import { JsonLd } from "@/components/site/JsonLd";
 
 export const metadata: Metadata = {
   title: "Blog",
-  description: "Practical articles on product video ads, scripts and hooks, captions, translation and what a video really costs. Written by the Reelay team.",
+  description: "Practical articles on product video ads, scripts and hooks, captions, translation and what a video really costs. Written by the Clipelle team.",
   alternates: { canonical: absoluteUrl("/blog"), types: { "application/rss+xml": absoluteUrl("/blog/rss.xml") } },
 };
 
@@ -22,8 +22,8 @@ export default function BlogPage() {
   const tags = allTags();
   return (
     <div className="space-y-16 pt-16 sm:pt-24">
-      <JsonLd data={{ "@context": "https://schema.org", "@type": "Blog", name: "Reelay blog", url: absoluteUrl("/blog"), description: metadata.description }} />
-      <SectionIntro eyebrow="Blog" title="Short videos, explained from the inside" text="What we learn building Reelay: product video, spoken scripts, captions, translation and costs. No filler, no made-up numbers." />
+      <JsonLd data={{ "@context": "https://schema.org", "@type": "Blog", name: "Clipelle blog", url: absoluteUrl("/blog"), description: metadata.description }} />
+      <SectionIntro eyebrow="Blog" title="Short videos, explained from the inside" text="What we learn building Clipelle: product video, spoken scripts, captions, translation and costs. No filler, no made-up numbers." />
       <CategoryChips />
       {posts.length === 0 ? (
         <p className="text-center text-muted">No articles yet.</p>

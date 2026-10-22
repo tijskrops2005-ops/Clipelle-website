@@ -62,11 +62,11 @@ describe.skipIf(!hasDb)("webhook routes with simulated events", () => {
     const { POST } = await import("@/app/api/webhooks/heygen/route");
     const body = JSON.stringify({ event_type: "avatar_video.success", event_data: { video_id: "vid_test_1", url: "https://example.test/v.mp4" } });
     const sig = createHmac("sha256", secret).update(body).digest("hex");
-    const bad = await POST(new Request("https://reelay.test/api/webhooks/heygen", { method: "POST", body, headers: { signature: "deadbeef" } }));
+    const bad = await POST(new Request("https://clipelle.test/api/webhooks/heygen", { method: "POST", body, headers: { signature: "deadbeef" } }));
     expect(bad.status).toBe(401);
-    const first = await POST(new Request("https://reelay.test/api/webhooks/heygen", { method: "POST", body, headers: { signature: sig } }));
+    const first = await POST(new Request("https://clipelle.test/api/webhooks/heygen", { method: "POST", body, headers: { signature: sig } }));
     expect(await first.json()).toMatchObject({ received: true, duplicate: false });
-    const again = await POST(new Request("https://reelay.test/api/webhooks/heygen", { method: "POST", body, headers: { signature: sig } }));
+    const again = await POST(new Request("https://clipelle.test/api/webhooks/heygen", { method: "POST", body, headers: { signature: sig } }));
     expect(await again.json()).toMatchObject({ received: true, duplicate: true });
     expect(sent).toHaveLength(1);
     expect(sent[0]).toMatchObject({ name: "provider/job.finished", data: { provider: "heygen", externalJobId: "vid_test_1", status: "completed" } });
@@ -75,9 +75,9 @@ describe.skipIf(!hasDb)("webhook routes with simulated events", () => {
   it("verifies a Shotstack callback through the API before waking anything", async () => {
     const { POST } = await import("@/app/api/webhooks/shotstack/route");
     const before = sent.length;
-    const pending = await POST(new Request("https://reelay.test/api/webhooks/shotstack", { method: "POST", body: JSON.stringify({ id: "rendering-test-1", status: "done" }) }));
+    const pending = await POST(new Request("https://clipelle.test/api/webhooks/shotstack", { method: "POST", body: JSON.stringify({ id: "rendering-test-1", status: "done" }) }));
     expect(await pending.json()).toMatchObject({ ignored: "rendering" });
-    const done = await POST(new Request("https://reelay.test/api/webhooks/shotstack", { method: "POST", body: JSON.stringify({ id: "done-test-1", status: "done" }) }));
+    const done = await POST(new Request("https://clipelle.test/api/webhooks/shotstack", { method: "POST", body: JSON.stringify({ id: "done-test-1", status: "done" }) }));
     expect(await done.json()).toMatchObject({ received: true, duplicate: false });
     expect(sent.length).toBe(before + 1);
     expect(sent[before]).toMatchObject({ data: { provider: "shotstack", externalJobId: "done-test-1", status: "completed" } });

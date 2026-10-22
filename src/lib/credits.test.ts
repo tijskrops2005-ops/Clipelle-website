@@ -12,9 +12,9 @@ let wsId = "";
 describe.skipIf(!hasDb)("credit expiry rules", () => {
   beforeAll(async () => {
     const { db, profiles } = await import("@/lib/db");
-    await db().insert(profiles).values({ userId, email: "credits-test@reelay.local", planKey: "starter" }).onConflictDoNothing();
+    await db().insert(profiles).values({ userId, email: "credits-test@clipelle.local", planKey: "starter" }).onConflictDoNothing();
     const { ensurePersonalWorkspace } = await import("./workspaces");
-    wsId = (await ensurePersonalWorkspace({ id: userId, email: "credits-test@reelay.local" })).id;
+    wsId = (await ensurePersonalWorkspace({ id: userId, email: "credits-test@clipelle.local" })).id;
   });
   afterAll(async () => {
     const { db, creditLedger, profiles, workspaces } = await import("@/lib/db");

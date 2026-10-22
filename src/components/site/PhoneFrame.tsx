@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
  * A 9:16 phone frame with a looping, muted sample video, or an animated caption placeholder
  * when no sample exists. Used in the hero and the platform pages. Never footage from elsewhere.
  */
-export function PhoneFrame({ src, poster, caption = "Sample made with Reelay", placeholder = "Sample coming soon", words = ["Meet", "your", "glow"], className, float = true }: { src?: string; poster?: string; caption?: string; placeholder?: string; words?: string[]; className?: string; float?: boolean }) {
+export function PhoneFrame({ src, poster, caption = "Sample made with Clipelle", placeholder = "Sample coming soon", words = ["Meet", "your", "glow"], className, float = true }: { src?: string; poster?: string; caption?: string; placeholder?: string; words?: string[]; className?: string; float?: boolean }) {
   return (
     <figure className={cn("relative mx-auto w-[240px] sm:w-[280px]", float && "float-soft", className)}>
       <div className="relative aspect-[9/16] overflow-hidden rounded-[32px] border-[6px] border-ink bg-ink shadow-card-hover">

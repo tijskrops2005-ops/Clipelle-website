@@ -7,7 +7,7 @@ tags: ["localization", "languages", "translation", "strategy"]
 summary: "A way to choose your first target languages from your own demand, the fit of the video and what each market costs you after the render."
 ---
 
-Once you can translate a video into another language without reshooting, the question changes from "can we" to "which first." Reelay's [Translate & lipsync](/platform/translate) offers 190 target languages and regional variants, and several can render in parallel, so the limit is not the tool. The limit is your attention: every language you add is a market you have to serve, a page you have to localize, a support inbox you have to read. Here is a way to choose that does not rely on guesswork.
+Once you can translate a video into another language without reshooting, the question changes from "can we" to "which first." Clipelle's [Translate & lipsync](/platform/translate) offers 190 target languages and regional variants, and several can render in parallel, so the limit is not the tool. The limit is your attention: every language you add is a market you have to serve, a page you have to localize, a support inbox you have to read. Here is a way to choose that does not rely on guesswork.
 
 ## Start from where the demand already is
 
@@ -27,7 +27,7 @@ A country can have several languages, and a language can have several regional v
 - Some countries have two or more widely spoken languages. Shipping to one of them with a single translation can mean speaking to only part of the audience.
 - A language spoken in several countries differs by region in vocabulary, pronunciation and sometimes spelling. A viewer notices when the voice sounds like it comes from somewhere else, even when every word is understood.
 
-Reelay's target list includes regional variants, so you can pick the variant that fits the market rather than a generic version. For a first round, choose the variant of the country you actually ship to. If you later expand to another country with the same language, add that variant then; several languages render in parallel from the same upload, so adding one is a few minutes, not a new project.
+Clipelle's target list includes regional variants, so you can pick the variant that fits the market rather than a generic version. For a first round, choose the variant of the country you actually ship to. If you later expand to another country with the same language, add that variant then; several languages render in parallel from the same upload, so adding one is a few minutes, not a new project.
 
 ## Weigh the market, then weigh the fit
 
@@ -55,13 +55,13 @@ A video that drives people to a page they cannot read is a wasted render. The or
 Here is a sequence that works for most small and mid-sized shops:
 
 1. **One language, one market.** Pick the top of your list. Translate your best-performing video, not your newest one. Run it where you already have some demand.
-2. **Check the result the way a native speaker would.** Reelay's automatic quality check compares every translated line with the original for missing or added words, meaning, numbers, names and natural phrasing, and corrects within the timing. Add your brand name and any product terms to the glossary so they stay as they are. Still, have one person who speaks the language watch it before you spend on it. The check catches the mistakes a machine can catch; a person catches the ones that are merely odd.
+2. **Check the result the way a native speaker would.** Clipelle's automatic quality check compares every translated line with the original for missing or added words, meaning, numbers, names and natural phrasing, and corrects within the timing. Add your brand name and any product terms to the glossary so they stay as they are. Still, have one person who speaks the language watch it before you spend on it. The check catches the mistakes a machine can catch; a person catches the ones that are merely odd.
 3. **Add two or three more at once.** When the first market behaves as expected, add the next few in parallel. Rendering several languages from one upload takes minutes; the thinking in step one is what took time.
 4. **Hold the long tail until the pages exist.** Languages beyond the first handful are cheap to render and expensive to serve. Add them when the page and the support are ready, not before.
 
 ## Speed or Precision, by language
 
-Reelay offers two lip-sync modes. Speed is standard lip-sync; Precision redraws the mouth and is slower and pricier. Which to pick can depend on the language pair. Languages with a rhythm and mouth shapes close to the source often look fine in Speed. A pair where the new language runs much longer or uses very different sounds can benefit from Precision, especially in close-up footage where the mouth is large on screen.
+Clipelle offers two lip-sync modes. Speed is standard lip-sync; Precision redraws the mouth and is slower and pricier. Which to pick can depend on the language pair. Languages with a rhythm and mouth shapes close to the source often look fine in Speed. A pair where the new language runs much longer or uses very different sounds can benefit from Precision, especially in close-up footage where the mouth is large on screen.
 
 A sensible rule: use Speed for the first pass in every language, watch the results, and re-render in Precision only the languages and the videos where the mouth draws attention to itself. The form shows the estimate for each mode before you start, and the project page shows the real amount afterwards, so you can see what the upgrade costs per language.
 

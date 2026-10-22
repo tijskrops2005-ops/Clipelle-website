@@ -67,8 +67,8 @@ export async function createSignedUpload(path: string) {
  * 10 minutes before it expires; the file itself never changes under the same path.
  */
 const SIGNED_URL_REFRESH_MARGIN_MS = 10 * 60 * 1000;
-const signedCache = (globalThis as unknown as { __reelaySignedUrls?: Map<string, { url: string; expiresAt: number }> }).__reelaySignedUrls ??= new Map();
-(globalThis as unknown as { __reelaySignedUrls?: typeof signedCache }).__reelaySignedUrls = signedCache;
+const signedCache = (globalThis as unknown as { __clipelleSignedUrls?: Map<string, { url: string; expiresAt: number }> }).__clipelleSignedUrls ??= new Map();
+(globalThis as unknown as { __clipelleSignedUrls?: typeof signedCache }).__clipelleSignedUrls = signedCache;
 
 export async function signedDownloadUrl(path: string, expiresInSeconds = 3600, download?: string) {
   const key = `${path}|${expiresInSeconds}|${download ?? ""}`;

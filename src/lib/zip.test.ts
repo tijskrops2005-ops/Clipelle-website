@@ -23,7 +23,7 @@ describe("zip writer", () => {
       { name: "a.txt", size: a.length, data: [a] },
       { name: "b.txt", size: b.length, data: [b.subarray(0, 10), b.subarray(10)] },
     ]);
-    const dir = mkdtempSync(join(tmpdir(), "reelay-zip-"));
+    const dir = mkdtempSync(join(tmpdir(), "clipelle-zip-"));
     writeFileSync(join(dir, "t.zip"), zip);
     const listing = execFileSync("unzip", ["-l", join(dir, "t.zip")], { encoding: "utf8" });
     expect(listing).toContain("a.txt");

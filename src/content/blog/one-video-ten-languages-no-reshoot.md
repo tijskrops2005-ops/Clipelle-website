@@ -9,7 +9,7 @@ summary: "How to turn one product video you already own into versions for every 
 
 You have one good video. A founder explaining the product, a presenter walking through the three things it does, a how-to that customers keep sharing. It works in one language, and you sell in six. The usual options are to reshoot it per market, to subtitle it and hope, or to dub it and accept that the mouth says something else. Lipsync translation adds a fourth: the same speaker, the same voice, now speaking each language with matching lips.
 
-This article is about doing that well for many languages at once, using Reelay's [Translate & lipsync](/platform/translate) as the concrete tool. If you want the mechanics of a single translation first, read [How lipsync translation works](/blog/how-lipsync-translation-works).
+This article is about doing that well for many languages at once, using Clipelle's [Translate & lipsync](/platform/translate) as the concrete tool. If you want the mechanics of a single translation first, read [How lipsync translation works](/blog/how-lipsync-translation-works).
 
 ## The three usual routes and what they cost you
 
@@ -23,7 +23,7 @@ This article is about doing that well for many languages at once, using Reelay's
 
 ## What one video becomes
 
-In Reelay you upload one video, pick one or more of 190 target languages and regional variants, choose the options once, and each language becomes its own result on the project page. Every version has the speaker's voice in the new language, the lips matched, captions burned in low or in the middle, and either 9:16 or the original format. Silence at the start and end is trimmed. Picture enhancement is optional.
+In Clipelle you upload one video, pick one or more of 190 target languages and regional variants, choose the options once, and each language becomes its own result on the project page. Every version has the speaker's voice in the new language, the lips matched, captions burned in low or in the middle, and either 9:16 or the original format. Silence at the start and end is trimmed. Picture enhancement is optional.
 
 The languages are processed as separate versions, so one problem in one language does not take the others down with it; each shows its own steps, and a failed one shows a plain explanation with a Retry.
 
@@ -33,7 +33,7 @@ Anything wrong in the source is wrong in every language. An hour on the original
 
 **Clean audio.** One speaker, clear speech, no voices talking over each other. If there is a music bed, keep it low under the voice; the translation has to hear the words.
 
-**No burned-in text.** Captions or titles already in the source stay in the source language. Start from the version without them, and let Reelay add captions per language.
+**No burned-in text.** Captions or titles already in the source stay in the source language. Start from the version without them, and let Clipelle add captions per language.
 
 **Short sentences, natural pauses.** Each translated sentence has to fit the time the original one took. Short sentences give the translation room; a breathless run-on gives it none.
 
@@ -71,7 +71,7 @@ That check is what makes ten languages manageable by one person. What it does no
 6. Read the estimate, start, and leave the page. The project page shows each step per language.
 7. Download each version from the project page and check names and numbers once.
 
-If translating is something you do every week, the same run is available through Reelay's API and its MCP server, so an assistant or a script can start a translation from a file link and read back the results without opening the form.
+If translating is something you do every week, the same run is available through Clipelle's API and its MCP server, so an assistant or a script can start a translation from a file link and read back the results without opening the form.
 
 ## An example: one 45-second product video, five markets
 

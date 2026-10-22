@@ -9,7 +9,7 @@ export async function GET() {
   await connection();
   try {
     const csv = reportToCsv(await buildCostReport());
-    const name = `reelay-costs-${new Date().toISOString().slice(0, 10)}.csv`;
+    const name = `clipelle-costs-${new Date().toISOString().slice(0, 10)}.csv`;
     return new Response(csv, { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${name}"` } });
   } catch (error) {
     return errorResponse(error);

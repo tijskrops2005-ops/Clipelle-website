@@ -9,7 +9,7 @@ summary: "In a presenter-led vertical ad the call to action is a sentence someon
 
 In most video ads the call to action is something you see: a button, an end card, a line of text that slides in at the end. In a short vertical ad where a presenter does the talking, the call to action is something you hear, and read in the captions at the same moment it is said. That is a different medium for the same job, and it changes how you write it.
 
-Reelay is strict about this. The only text on screen is the captions of what the presenter says, plus an optional small logo in the top right corner. There are no text cards, no end cards and no buttons in the video. So if you want the viewer to do something, the presenter has to ask. This article is about asking well.
+Clipelle is strict about this. The only text on screen is the captions of what the presenter says, plus an optional small logo in the top right corner. There are no text cards, no end cards and no buttons in the video. So if you want the viewer to do something, the presenter has to ask. This article is about asking well.
 
 ## Why a spoken ask works
 
@@ -19,7 +19,7 @@ A spoken ask also sounds like a recommendation rather than an instruction. "Grab
 
 ## One sentence, in last place
 
-In Reelay's script structure the call to action is always the final sentence: hook, problem, product, benefits, and then the ask. That order is not arbitrary. By the last sentence the viewer knows what the product is and why it might matter. Asking earlier is asking a stranger.
+In Clipelle's script structure the call to action is always the final sentence: hook, problem, product, benefits, and then the ask. That order is not arbitrary. By the last sentence the viewer knows what the product is and why it might matter. Asking earlier is asking a stranger.
 
 One sentence is the right size. In a 30-second ad of about 75 words, the call to action gets 8 to 12 of them. In a 10-second ad it gets about five. Two asks ("follow us and order today") halve the chance that either one happens.
 
@@ -37,7 +37,7 @@ Clear, short, no cleverness. It suits direct-tone ads and products that need no 
 
 > Order this week and the second one is half price.
 
-The reason is a deal, and in Reelay a deal only reaches the script through the Offer line on the form (80 characters at most). If you leave the Offer empty, the script will not make up a discount, a deadline or free shipping. That protects you from a presenter promising something your store does not honor.
+The reason is a deal, and in Clipelle a deal only reaches the script through the Offer line on the form (80 characters at most). If you leave the Offer empty, the script will not make up a discount, a deadline or free shipping. That protects you from a presenter promising something your store does not honor.
 
 ### The low-commitment ask
 
@@ -64,7 +64,7 @@ Because a person speaks it, the call to action has to pass the simplest test the
 
 ## The captions carry it too
 
-The ask is also the last thing on screen as text, because captions cover the whole video. Reelay highlights the word being spoken in your brand's accent color, so the final sentence is literally emphasized word by word as it is said. Two consequences follow.
+The ask is also the last thing on screen as text, because captions cover the whole video. Clipelle highlights the word being spoken in your brand's accent color, so the final sentence is literally emphasized word by word as it is said. Two consequences follow.
 
 First, keep the sentence short enough to sit in one or two caption lines. A 20-word ask breaks into several caption blocks and loses its punch. Second, choose words that read well. "Grab yours" reads fine; a long product code does not. The [captions article](/blog/captions-people-actually-read) goes into caption style, position and length; the short version is that your call to action should be the easiest sentence in the whole ad to read.
 
@@ -97,8 +97,8 @@ Go through this before you click Generate, or during the script review if you ti
 5. Would you say it out loud to someone you know?
 6. Is it short enough to read in a caption while it is spoken?
 
-## How it fits in Reelay
+## How it fits in Clipelle
 
-On the [ad form](/platform/ads) you do not write the call to action separately. Reelay writes the full spoken script, with the ask as the last sentence, from your product description, the tone you picked and the Offer line if you filled one in. With "Review script first" on, the project pauses after the script is written. You see three hooks to choose from and the complete script with its final sentence, and you can rewrite the ask before the presenter records a word. That review is the cheapest moment in the whole process to get the ending right, because nothing has been generated yet and the estimate on the form is still just an estimate.
+On the [ad form](/platform/ads) you do not write the call to action separately. Clipelle writes the full spoken script, with the ask as the last sentence, from your product description, the tone you picked and the Offer line if you filled one in. With "Review script first" on, the project pauses after the script is written. You see three hooks to choose from and the complete script with its final sentence, and you can rewrite the ask before the presenter records a word. That review is the cheapest moment in the whole process to get the ending right, because nothing has been generated yet and the estimate on the form is still just an estimate.
 
 A good spoken call to action is unremarkable in the best sense. It sounds like the obvious next thing to say.

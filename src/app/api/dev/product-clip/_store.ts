@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 
 /** Dev-only scratch space for uploaded and processed product photos. Cleared by the OS. */
-const DIR = path.join(os.tmpdir(), "reelay-dev-product-clip");
+const DIR = path.join(os.tmpdir(), "clipelle-dev-product-clip");
 
 export type Variant = "original" | "crop" | "expand";
 

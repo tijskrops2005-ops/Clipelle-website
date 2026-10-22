@@ -1,11 +1,11 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
- * Signature of outgoing webhooks (public API). Header `X-Reelay-Signature: t=<unix seconds>,v1=<hex>`
+ * Signature of outgoing webhooks (public API). Header `X-Clipelle-Signature: t=<unix seconds>,v1=<hex>`
  * where v1 = HMAC-SHA256 over "<t>.<raw body>" with the endpoint secret. The timestamp blocks
  * replays; receivers should refuse anything older than 5 minutes. Pure, shared with the docs.
  */
-export const SIGNATURE_HEADER = "X-Reelay-Signature";
+export const SIGNATURE_HEADER = "X-Clipelle-Signature";
 export const SIGNATURE_TOLERANCE_SECONDS = 300;
 
 export function signWebhook(secret: string, body: string, timestampSeconds = Math.floor(Date.now() / 1000)): string {

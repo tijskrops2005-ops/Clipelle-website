@@ -9,7 +9,7 @@ import { supabaseServer } from "@/lib/supabase/ssr";
  */
 export type AppUser = { id: string; email: string; emailVerified: boolean; name?: string };
 
-export const DEMO_USER: AppUser = { id: "00000000-0000-0000-0000-000000000001", email: "demo@reelay.local", emailVerified: true, name: "Demo" };
+export const DEMO_USER: AppUser = { id: "00000000-0000-0000-0000-000000000001", email: "demo@clipelle.local", emailVerified: true, name: "Demo" };
 
 export class AuthError extends Error {
   constructor(message = "Sign in to continue.", public readonly status = 401) {

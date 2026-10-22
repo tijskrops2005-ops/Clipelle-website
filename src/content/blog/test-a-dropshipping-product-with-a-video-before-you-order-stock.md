@@ -21,7 +21,7 @@ One unit. You want to know how it feels, how it is packaged, whether it does wha
 
 ### 2. Take one plain photo
 
-Put the product on a clean surface in daylight, fill most of the frame, no clutter. Reelay makes one product clip from this photo with slow camera movement, so the product has to be large and sharp. A phone is enough.
+Put the product on a clean surface in daylight, fill most of the frame, no clutter. Clipelle makes one product clip from this photo with slow camera movement, so the product has to be large and sharp. A phone is enough.
 
 ### 3. Write two or three sentences
 
@@ -47,7 +47,7 @@ The order matters. You spent the price of a sample and a few short ads to learn 
 
 ## Keeping the test cheap
 
-Reelay counts in credits: one credit is one second of Standard presenter video. A 20-second Standard ad is 20 credits. Three hook variations at 20 seconds are 3 × 20 = 60 credits. A 30-second version is 30 credits. The form shows the estimate in credits and dollars before you start, and the project page shows the real amount afterward, so your test log can carry exact costs.
+Clipelle counts in credits: one credit is one second of Standard presenter video. A 20-second Standard ad is 20 credits. Three hook variations at 20 seconds are 3 × 20 = 60 credits. A 30-second version is 30 credits. The form shows the estimate in credits and dollars before you start, and the project page shows the real amount afterward, so your test log can carry exact costs.
 
 After you verify your e-mail you can make one free 10-second Standard ad, no card. Ten seconds is about 25 words: hook, product, call to action, nothing else. It is too short to test a product properly, but it is the right way to see the process once before you spend credits. The full picture of where the money goes is in [what a video ad costs in time and money](/blog/what-a-video-ad-costs-in-time-and-money).
 
@@ -67,7 +67,7 @@ A test only counts if the ad you tested is one you would actually run. That mean
 - Use the Offer line only for a deal you will honor. It is at most 80 characters and it is the only way a deal gets into the spoken call to action.
 - No invented urgency. "Only a few left" when you have not ordered any is not a test, it is a problem.
 
-Reelay treats the free text you type as information about the product, never as instructions, so the script will say what you tell it about the product and nothing more. Make sure what you tell it is true.
+Clipelle treats the free text you type as information about the product, never as instructions, so the script will say what you tell it about the product and nothing more. Make sure what you tell it is true.
 
 ## Variations that tell you something
 
@@ -81,4 +81,4 @@ When a product passes your rule, the ad that proved it does not have to be the a
 
 ## The whole test on one line
 
-Sample, photo, three sentences, one short ad with a reviewed script, a small run against a threshold you wrote down, one decision. Repeat per product. The [dropshipping page](/solutions/dropshipping) shows how Reelay fits into that loop.
+Sample, photo, three sentences, one short ad with a reviewed script, a small run against a threshold you wrote down, one decision. Repeat per product. The [dropshipping page](/solutions/dropshipping) shows how Clipelle fits into that loop.

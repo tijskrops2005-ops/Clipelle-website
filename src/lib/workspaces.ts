@@ -11,10 +11,10 @@ import { isTeamPlan } from "@/lib/plans";
 /**
  * Workspaces: every user has one personal workspace; a team workspace is shared by an Owner and
  * Members. Projects, credits, API keys and billing belong to a workspace. The current workspace is
- * remembered in the cookie `reelay_ws` (falls back to the personal one). No cost per seat.
+ * remembered in the cookie `clipelle_ws` (falls back to the personal one). No cost per seat.
  */
 export type Role = "owner" | "member";
-export const WORKSPACE_COOKIE = "reelay_ws";
+export const WORKSPACE_COOKIE = "clipelle_ws";
 const INVITE_DAYS = 7;
 
 export async function ensurePersonalWorkspace(user: Pick<AppUser, "id" | "email" | "name">): Promise<WorkspaceRow> {
@@ -52,7 +52,8 @@ export async function listWorkspacesFor(userId: string) {
 export async function resolveScope(user: AppUser): Promise<{ workspace: WorkspaceRow; role: Role }> {
   let wanted: string | undefined;
   try {
-    wanted = (await cookies()).get(WORKSPACE_COOKIE)?.value;
+    const jar = await cookies();
+    wanted = jar.get(WORKSPACE_COOKIE)?.value ?? jar.get("reelay_ws")?.value; // old name read until the next switch
   } catch {
     wanted = undefined;
   }
@@ -115,7 +116,7 @@ export async function inviteMember(workspace: WorkspaceRow, invitedBy: AppUser, 
   await d.delete(workspaceInvites).where(and(eq(workspaceInvites.workspaceId, workspace.id), eq(workspaceInvites.email, clean), isNull(workspaceInvites.acceptedAt)));
   const [row] = await d.insert(workspaceInvites).values({ workspaceId: workspace.id, email: clean, role, tokenHash: hashToken(token), invitedBy: invitedBy.id, expiresAt }).returning();
   const link = `${siteUrl}/invite/${token}`;
-  const mail = await sendEmail({ to: clean, subject: `You are invited to ${workspace.name} on Reelay`, text: `${invitedBy.name || invitedBy.email} invited you to the workspace "${workspace.name}" on Reelay as ${role}.\n\nAccept the invitation (valid ${INVITE_DAYS} days):\n${link}\n\nIf you did not expect this, ignore this e-mail.` });
+  const mail = await sendEmail({ to: clean, subject: `You are invited to ${workspace.name} on Clipelle`, text: `${invitedBy.name || invitedBy.email} invited you to the workspace "${workspace.name}" on Clipelle as ${role}.\n\nAccept the invitation (valid ${INVITE_DAYS} days):\n${link}\n\nIf you did not expect this, ignore this e-mail.` });
   return { id: row.id, email: clean, role, expiresAt, link, mailed: mail.sent };
 }
 

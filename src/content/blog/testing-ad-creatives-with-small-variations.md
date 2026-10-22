@@ -21,7 +21,7 @@ Not every change is worth testing. Vary the things that move the result most, an
 
 ### 1. The hook
 
-The first sentence decides whether the rest is heard. It is the single highest-leverage change, and it is also the cheapest: the words change, nothing else does. With Reelay, "Review script first" pauses after the script is written and shows three hooks; you pick one and the rest of the script stays the same. Make one project per hook with everything else identical. For how to write hooks that are worth testing, see [hooks for short product ads](/blog/hooks-for-short-product-ads).
+The first sentence decides whether the rest is heard. It is the single highest-leverage change, and it is also the cheapest: the words change, nothing else does. With Clipelle, "Review script first" pauses after the script is written and shows three hooks; you pick one and the rest of the script stays the same. Make one project per hook with everything else identical. For how to write hooks that are worth testing, see [hooks for short product ads](/blog/hooks-for-short-product-ads).
 
 ### 2. The offer
 
@@ -29,7 +29,7 @@ With an offer line or without one, or two different offers. The Offer field is a
 
 ### 3. The length
 
-Reelay makes 10, 20, 30, 45 or 60-second ads. A 20-second version of a winning 30-second script is a legitimate test: fewer words, same message. Keep the hook fixed when you test length, or you will not know which change did the work.
+Clipelle makes 10, 20, 30, 45 or 60-second ads. A 20-second version of a winning 30-second script is a legitimate test: fewer words, same message. Keep the hook fixed when you test length, or you will not know which change did the work.
 
 ### 4. The tone
 
@@ -49,7 +49,7 @@ Caption style, accent color, font, logo. Test these last, if at all. They matter
 
 ## What to keep fixed
 
-Within a test pair, keep identical: the product photo, the product name and description, the language, the presenter quality (Standard unless you have a reason), the format and, unless length is the variable, the length. In Reelay you get this for free by duplicating your choices and changing one field. Give the projects names that say what changed: "Bottle, hook A, 30 s" and "Bottle, hook B, 30 s."
+Within a test pair, keep identical: the product photo, the product name and description, the language, the presenter quality (Standard unless you have a reason), the format and, unless length is the variable, the length. In Clipelle you get this for free by duplicating your choices and changing one field. Give the projects names that say what changed: "Bottle, hook A, 30 s" and "Bottle, hook B, 30 s."
 
 ## A test plan you can run this week
 
@@ -100,4 +100,4 @@ Fill in the result with the metric you chose and nothing else. After a few produ
 
 ## When the product itself is the test
 
-For dropshipping, the question is often not "which hook" but "does anyone want this at all." The discipline is the same: one variable, same conditions, one metric, a decision rule written down in advance. The [dropshipping page](/solutions/dropshipping) explains how Reelay fits into that, and [test a dropshipping product with a video before you order stock](/blog/test-a-dropshipping-product-with-a-video-before-you-order-stock) walks through the whole sequence.
+For dropshipping, the question is often not "which hook" but "does anyone want this at all." The discipline is the same: one variable, same conditions, one metric, a decision rule written down in advance. The [dropshipping page](/solutions/dropshipping) explains how Clipelle fits into that, and [test a dropshipping product with a video before you order stock](/blog/test-a-dropshipping-product-with-a-video-before-you-order-stock) walks through the whole sequence.

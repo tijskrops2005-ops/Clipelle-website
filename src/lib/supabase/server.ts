@@ -25,13 +25,13 @@ function secretKey() {
   return key;
 }
 
-const globalForSupabase = globalThis as unknown as { __reelaySupabaseAdmin?: SupabaseClient };
+const globalForSupabase = globalThis as unknown as { __clipelleSupabaseAdmin?: SupabaseClient };
 
 export function supabaseAdmin(): SupabaseClient {
-  if (!globalForSupabase.__reelaySupabaseAdmin) {
-    globalForSupabase.__reelaySupabaseAdmin = createClient(supabaseUrl(), secretKey(), {
+  if (!globalForSupabase.__clipelleSupabaseAdmin) {
+    globalForSupabase.__clipelleSupabaseAdmin = createClient(supabaseUrl(), secretKey(), {
       auth: { persistSession: false, autoRefreshToken: false },
     });
   }
-  return globalForSupabase.__reelaySupabaseAdmin;
+  return globalForSupabase.__clipelleSupabaseAdmin;
 }

@@ -7,7 +7,7 @@ tags: ["costs", "credits", "production"]
 summary: "A way to put your own numbers on a video ad, line by line, and what changes in that math when the ad is made from a photo in minutes."
 ---
 
-Ask what a video ad costs and the honest answer is "it depends on how you make it," which helps nobody. A better answer is a short list of cost lines you can fill in with your own numbers. Once you have that list, you can compare any two ways of making an ad fairly, including making one with Reelay. This article gives you the list and then shows where Reelay changes the math and where it does not.
+Ask what a video ad costs and the honest answer is "it depends on how you make it," which helps nobody. A better answer is a short list of cost lines you can fill in with your own numbers. Once you have that list, you can compare any two ways of making an ad fairly, including making one with Clipelle. This article gives you the list and then shows where Clipelle changes the math and where it does not.
 
 ## The four cost lines of any video ad
 
@@ -37,9 +37,9 @@ Now the redo question. If you wanted a second hook for that same ad, what would 
 
 Keep those numbers. They are the baseline for everything below.
 
-## What changes with Reelay
+## What changes with Clipelle
 
-Reelay makes a finished vertical ad from one product photo and two or three sentences about the product. Here is how that lands on the four lines.
+Clipelle makes a finished vertical ad from one product photo and two or three sentences about the product. Here is how that lands on the four lines.
 
 ### People's time
 
@@ -47,7 +47,7 @@ The form takes a few minutes: a photo or a product page link, the product name, 
 
 ### Money paid out
 
-Reelay counts in credits. One credit is one second of Standard presenter video, so a 30-second Standard ad is 30 credits and a 60-second one is 60. Premium presenter quality, with more natural head and hand movement and the best lip-sync, costs more per second. Before you start, the form shows the estimate in credits and in dollars for the exact combination you picked. After the run, the project page shows the real amount spent next to that estimate. Plans include a monthly amount of credits; the current numbers are on the [pricing page](/pricing) and they are not repeated here so this article does not go stale.
+Clipelle counts in credits. One credit is one second of Standard presenter video, so a 30-second Standard ad is 30 credits and a 60-second one is 60. Premium presenter quality, with more natural head and hand movement and the best lip-sync, costs more per second. Before you start, the form shows the estimate in credits and in dollars for the exact combination you picked. After the run, the project page shows the real amount spent next to that estimate. Plans include a monthly amount of credits; the current numbers are on the [pricing page](/pricing) and they are not repeated here so this article does not go stale.
 
 One more fact for the money line: after you verify your e-mail you can make one free 10-second Standard ad, with no card. It is a fair way to put a real number on the "people's time" line before you decide anything.
 
@@ -59,13 +59,13 @@ A typical ad is ready in minutes, and you can leave the page while it runs. The 
 
 This is where the math changes most. A second hook, a different tone, a longer version or another language of presenter voice is a new project with one setting changed. It costs that ad's credits again, not a reshoot. The script's hard word limit of about 2.5 words per second (75 words at 30 seconds) also means a redo never turns into a rewrite of a long piece; it is a short piece of text you can read in under a minute.
 
-Put the same placeholders on a Reelay ad: X is the credits from the estimate, H is minutes rather than hours, D is the same day, and V is as many as you choose to make. Then compare per version with your baseline.
+Put the same placeholders on a Clipelle ad: X is the credits from the estimate, H is minutes rather than hours, D is the same day, and V is as many as you choose to make. Then compare per version with your baseline.
 
-## What Reelay does not take off the bill
+## What Clipelle does not take off the bill
 
 A fair comparison includes the lines that stay.
 
-- **Media spend.** Reelay makes the ad; it does not launch or manage it. Whatever you pay the platforms to show it is unchanged.
+- **Media spend.** Clipelle makes the ad; it does not launch or manage it. Whatever you pay the platforms to show it is unchanged.
 - **The product photo.** A good photo makes a good product clip, and that photo has to exist. If you have none, you still need to take one.
 - **Your thinking.** Who the ad is for, what problem it solves and what the offer is still have to come from you. The form has a Direction field for the audience and emphasis and an Offer line for the deal, but the content of both is yours.
 - **The landing page.** The call to action is spoken by the presenter, and the viewer still has to land somewhere that delivers on it.
@@ -81,7 +81,7 @@ A fair comparison includes the lines that stay.
 
 ## How to compare two ways fairly
 
-Use this checklist when you put Reelay, or anything else, next to your baseline:
+Use this checklist when you put Clipelle, or anything else, next to your baseline:
 
 1. Same length. A 30-second ad against a 30-second ad.
 2. Same number of versions. If one way gives you three hooks for the price, compare per version.

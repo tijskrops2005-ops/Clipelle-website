@@ -7,11 +7,11 @@ tags: ["clothing", "product photos", "scripts"]
 summary: "How to make a vertical ad for a garment from the flat lay or mannequin photo you already have, and what to say when nobody is wearing it."
 ---
 
-Clothing is the category where "we need a model and a shoot" feels most true. The garment has to be seen on a body, the fabric has to move, the fit has to be shown. All of that is right for a catalog. For a short vertical ad it is less true than it feels. Most clothing shops already have the photo that works: a flat lay, a ghost mannequin shot or a clean hanger photo. This article is about turning that photo into an ad with [Reelay](/platform/ads), and about what to say when nobody in the picture is wearing the clothes.
+Clothing is the category where "we need a model and a shoot" feels most true. The garment has to be seen on a body, the fabric has to move, the fit has to be shown. All of that is right for a catalog. For a short vertical ad it is less true than it feels. Most clothing shops already have the photo that works: a flat lay, a ghost mannequin shot or a clean hanger photo. This article is about turning that photo into an ad with [Clipelle](/platform/ads), and about what to say when nobody in the picture is wearing the clothes.
 
 ## What you get, and what you do not
 
-Set expectations first. Reelay makes one product clip from your photo with slow camera movement, lays it over an AI presenter who speaks the script, and adds captions of what is said. The clip does not invent a model and put your shirt on them. A flat lay stays a flat lay, in motion. A mannequin stays a mannequin.
+Set expectations first. Clipelle makes one product clip from your photo with slow camera movement, lays it over an AI presenter who speaks the script, and adds captions of what is said. The clip does not invent a model and put your shirt on them. A flat lay stays a flat lay, in motion. A mannequin stays a mannequin.
 
 That is fine, because the human side of the ad is the presenter. The presenter talks about the garment while it appears on screen at fixed moments. The viewer hears why it matters and sees what it looks like. For a 30-second ad that is exactly the split you want: words carry the fit, the feel and the occasion; the picture carries the cut, the color and the print.
 
@@ -37,7 +37,7 @@ A close-up of fabric, stitching or a button. Beautiful, but on its own it does n
 
 ## The script: fabric, fit, occasion
 
-Reelay writes the script automatically from your product name and two or three sentences, in the shape hook, problem, product, benefits, call to action, with a hard limit of about 2.5 words per second. At 30 seconds that is 75 words. Clothing scripts work best when those sentences cover three things the photo cannot show:
+Clipelle writes the script automatically from your product name and two or three sentences, in the shape hook, problem, product, benefits, call to action, with a hard limit of about 2.5 words per second. At 30 seconds that is 75 words. Clothing scripts work best when those sentences cover three things the photo cannot show:
 
 - **Fabric.** What it feels like, how heavy it is, how it behaves after washing.
 - **Fit.** Relaxed, slim, true to size, runs large. Say it plainly; it saves returns.
@@ -61,7 +61,7 @@ The deal goes in the Offer line, at most 80 characters, and it is the only way a
 
 ## Tone and presenter
 
-Reelay has four tones. A rough match for clothing:
+Clipelle has four tones. A rough match for clothing:
 
 - **Elegant** for occasion wear, tailoring, silk, cashmere.
 - **Playful** for kids' clothes, streetwear, prints.
@@ -72,7 +72,7 @@ Pick a presenter whose look fits the shop, not the garment. The presenter is not
 
 ## Brand style
 
-Clothing brands live on a consistent look, and the few visual choices in Reelay are made for that. The accent color highlights the spoken word in the captions; set it to a color from your palette. Pick a caption look and a font once and save them as brand defaults in Settings so every ad for the shop matches. The small logo top right is optional. The presenter's background can be a flat color from your palette or your own image, such as the shop interior or a textured wall that matches the season's photos.
+Clothing brands live on a consistent look, and the few visual choices in Clipelle are made for that. The accent color highlights the spoken word in the captions; set it to a color from your palette. Pick a caption look and a font once and save them as brand defaults in Settings so every ad for the shop matches. The small logo top right is optional. The presenter's background can be a flat color from your palette or your own image, such as the shop interior or a textured wall that matches the season's photos.
 
 Nothing else appears on screen: no text cards, no end card, no price sticker. The captions are the only text, which keeps the garment and the presenter in view.
 

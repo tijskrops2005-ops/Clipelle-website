@@ -7,11 +7,11 @@ tags: ["shopify", "url to video", "product video"]
 summary: "Paste a product page link, check the name, description and photos it fills in, and get a vertical ad for that product without retyping anything."
 ---
 
-Your Shopify product page already has what a short ad needs: the product name, a description and photos. Retyping all of that into another form is the kind of small friction that stops people making ads for more than their one best seller. Reelay's [URL to video](/platform/url-to-video) removes it. You paste the link to a product page you own, the name, description and photos are read for you, you check them, and the normal ad form opens prefilled. This article explains what gets read, what you should check, and how to make ads for a whole store look like they belong to one store.
+Your Shopify product page already has what a short ad needs: the product name, a description and photos. Retyping all of that into another form is the kind of small friction that stops people making ads for more than their one best seller. Clipelle's [URL to video](/platform/url-to-video) removes it. You paste the link to a product page you own, the name, description and photos are read for you, you check them, and the normal ad form opens prefilled. This article explains what gets read, what you should check, and how to make ads for a whole store look like they belong to one store.
 
 ## What happens when you paste a link
 
-Reelay reads the public product page on the server and fills in three things: the product name, the description and the large photos it finds. Nothing is created at that point. You see the name and description as editable text and the photos as a set you can tick or leave unticked. Only after you confirm are the photos you ticked copied, and only then does the ad form open with everything in place. From there the flow is the same as starting from a photo: pick a length, a presenter, a tone, and click Generate. If you have not seen that flow, [from one product photo to a finished ad](/blog/from-one-product-photo-to-a-finished-ad) walks through it.
+Clipelle reads the public product page on the server and fills in three things: the product name, the description and the large photos it finds. Nothing is created at that point. You see the name and description as editable text and the photos as a set you can tick or leave unticked. Only after you confirm are the photos you ticked copied, and only then does the ad form open with everything in place. From there the flow is the same as starting from a photo: pick a length, a presenter, a tone, and click Generate. If you have not seen that flow, [from one product photo to a finished ad](/blog/from-one-product-photo-to-a-finished-ad) walks through it.
 
 Two rules before you paste anything. The page has to be public, because a draft or password-protected page cannot be read. And it has to be your product and your photos. Pasting someone else's product page is not allowed, and the rights confirmation on the form is there for a reason.
 
@@ -37,7 +37,7 @@ You pick the hook, change "the shop" to your store name, and let it run. The ad 
 
 ## Make the whole store look like one store
 
-A store with twenty ads needs them to match. Reelay keeps the visual choices small and lets you save them once in Settings as brand defaults:
+A store with twenty ads needs them to match. Clipelle keeps the visual choices small and lets you save them once in Settings as brand defaults:
 
 - The accent color, which highlights the word being spoken in the captions. Use your store's primary color.
 - The caption look and the font.
@@ -57,7 +57,7 @@ Download the 9:16 MP4 and post it wherever your customers are: TikTok, Reels and
 
 ## Doing it for many products
 
-If you want an ad for every product in a collection, the form is still the fastest way for the first few, because it makes you check the name, description and photo per product, and that check is where the quality comes from. For larger numbers, Reelay has an API and an MCP server, so an assistant or a script can create ads from product links and read back their status. The same checks still apply: the products must be yours, and someone should still read the first script of each new product line.
+If you want an ad for every product in a collection, the form is still the fastest way for the first few, because it makes you check the name, description and photo per product, and that check is where the quality comes from. For larger numbers, Clipelle has an API and an MCP server, so an assistant or a script can create ads from product links and read back their status. The same checks still apply: the products must be yours, and someone should still read the first script of each new product line.
 
 ## A short checklist per product page
 

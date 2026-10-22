@@ -7,17 +7,17 @@ tags: ["translation", "localization", "checklist"]
 summary: "What to check before, during and after you translate a product video, from rights and glossary terms to numbers, captions and the landing page."
 ---
 
-A product video that works in one language rarely survives a translation untouched. The translated words can be perfect and the video can still miss, because the things around the words were made for one market: the price, the unit of measurement, the offer, the text printed on the packaging, the page the viewer lands on. This checklist walks through those things in the order you meet them. It is written with Reelay's [translate and lipsync](/platform/translate) flow in mind, but most of it applies however you translate.
+A product video that works in one language rarely survives a translation untouched. The translated words can be perfect and the video can still miss, because the things around the words were made for one market: the price, the unit of measurement, the offer, the text printed on the packaging, the page the viewer lands on. This checklist walks through those things in the order you meet them. It is written with Clipelle's [translate and lipsync](/platform/translate) flow in mind, but most of it applies however you translate.
 
 ## Before you upload
 
 ### Rights
 
-Confirm two things before anything else: you own the video, and the person speaking has given you permission to use their voice and face in other languages. Reelay asks you to tick this before any translation starts, and the server refuses the job without it. Treat it as a real question, not a formality. A video made by a freelancer or a creator often comes with a license for one use, and a translated version is a new use.
+Confirm two things before anything else: you own the video, and the person speaking has given you permission to use their voice and face in other languages. Clipelle asks you to tick this before any translation starts, and the server refuses the job without it. Treat it as a real question, not a formality. A video made by a freelancer or a creator often comes with a license for one use, and a translated version is a new use.
 
 ### The source file
 
-- Length and size: Reelay accepts videos up to 32 MB and 3 minutes. If your video is longer, cut it to the part that matters before you upload.
+- Length and size: Clipelle accepts videos up to 32 MB and 3 minutes. If your video is longer, cut it to the part that matters before you upload.
 - One speaker at a time. The translation keeps the speaker's own voice and matches the lips to the new language, which works best when speech is clear and not fighting background noise.
 - Spoken language: pick it or let the service detect it. If the video mixes two languages, pick the one that carries the message.
 - Silence at the start and end is trimmed automatically. A long intro with no speech is not, so cut it yourself if you do not want it.
@@ -30,7 +30,7 @@ This is the point people miss most often. The translation changes the speech and
 
 ### The brand glossary
 
-Write down every term that should come through untouched: brand name, product name, model numbers, ingredient names, feature names you use consistently, and anything trademarked. Reelay has a glossary field for exactly this: terms to keep. Fill it in before the first language, and reuse the list for every language that follows.
+Write down every term that should come through untouched: brand name, product name, model numbers, ingredient names, feature names you use consistently, and anything trademarked. Clipelle has a glossary field for exactly this: terms to keep. Fill it in before the first language, and reuse the list for every language that follows.
 
 Decide once whether your product name is translated. In most cases it is not. If your product is called "Nightfall Serum" in English, it is probably still "Nightfall Serum" in German.
 
@@ -50,13 +50,13 @@ If a number has to differ per market, you have two options: keep the source vide
 
 ## During: the automatic quality check
 
-When Reelay translates, each translated line is compared with the original before the paid render: missing or added words, meaning, numbers, names and natural phrasing. Lines that fall short are corrected within the timing, and the changes and warnings are shown on the project page per language. Read them. A corrected line tells you the first draft of that line was off. A warning tells you something you should look at yourself, often a number or a name that the glossary did not cover.
+When Clipelle translates, each translated line is compared with the original before the paid render: missing or added words, meaning, numbers, names and natural phrasing. Lines that fall short are corrected within the timing, and the changes and warnings are shown on the project page per language. Read them. A corrected line tells you the first draft of that line was off. A warning tells you something you should look at yourself, often a number or a name that the glossary did not cover.
 
 The check is a good safety net, not a replacement for a native speaker in the market you care most about. For your biggest new market, have one person who lives there watch the finished video once. For the rest, the check plus your own review is usually enough. Read [one video, ten languages, no reshoot](/blog/one-video-ten-languages-no-reshoot) for how that scales.
 
 ## Speed or Precision
 
-Reelay offers two modes. Speed is the standard lipsync. Precision redraws the mouth for the new language, takes longer and costs more. The choice depends on how large the face is in the frame:
+Clipelle offers two modes. Speed is the standard lipsync. Precision redraws the mouth for the new language, takes longer and costs more. The choice depends on how large the face is in the frame:
 
 - A close-up talking head where the mouth fills a good part of the screen: Precision earns its cost.
 - A demo where the speaker is small, half turned away or only in frame some of the time: Speed is usually fine.

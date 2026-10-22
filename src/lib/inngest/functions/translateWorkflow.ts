@@ -177,7 +177,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       }
       try {
         const created = await withRetries("Starting the translation", () =>
-          createProofread({ video: { assetId: upload.heygenAssetId }, outputLanguages: outputs.map((o) => o.heygen), mode: input.quality, title: `Reelay ${projectId.slice(0, 8)}`, brandGlossaryId, idempotencyKey: `${projectId}:proofread:${row.attempt}` }),
+          createProofread({ video: { assetId: upload.heygenAssetId }, outputLanguages: outputs.map((o) => o.heygen), mode: input.quality, title: `Clipelle ${projectId.slice(0, 8)}`, brandGlossaryId, idempotencyKey: `${projectId}:proofread:${row.attempt}` }),
         );
         const sessions: SessionMap = {};
         outputs.forEach((o, i) => {

@@ -115,7 +115,7 @@ export async function attemptDelivery(deliveryId: string, lookup?: Lookup): Prom
     const res = await fetch(url, {
       method: "POST",
       redirect: "manual",
-      headers: { "Content-Type": "application/json", "User-Agent": "Reelay-Webhooks/1", [SIGNATURE_HEADER]: signWebhook(endpoint.secret, body), "X-Reelay-Event": delivery.event, "X-Reelay-Delivery": delivery.id },
+      headers: { "Content-Type": "application/json", "User-Agent": "Clipelle-Webhooks/1", [SIGNATURE_HEADER]: signWebhook(endpoint.secret, body), "X-Clipelle-Event": delivery.event, "X-Clipelle-Delivery": delivery.id },
       body,
       signal: AbortSignal.timeout(10_000),
     });

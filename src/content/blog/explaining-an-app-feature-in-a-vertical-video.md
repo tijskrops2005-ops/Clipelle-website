@@ -23,7 +23,7 @@ A good candidate feature:
 
 ## The screenshot is your product photo
 
-In an e-commerce ad, the product clip comes from a product photo. For software, the equivalent is a screenshot. Reelay generates one product clip from the image you upload, with slow camera moves, and lays it over the presenter at fixed moments. So the screenshot you pick is the picture the viewer will see.
+In an e-commerce ad, the product clip comes from a product photo. For software, the equivalent is a screenshot. Clipelle generates one product clip from the image you upload, with slow camera moves, and lays it over the presenter at fixed moments. So the screenshot you pick is the picture the viewer will see.
 
 What makes a good one:
 
@@ -57,9 +57,9 @@ Here is a full example, 69 words:
 
 Software buyers are often watching with the sound off at work. Two things follow.
 
-First, the captions do most of the work. In a Reelay video, the only text on screen is the captions of what the presenter says, with the current word highlighted in your accent colour, plus an optional small logo in the top right. There are no text cards to fall back on, so the spoken sentences must read well as captions. Short sentences help. So does avoiding jargon that reads fine but sounds odd aloud.
+First, the captions do most of the work. In a Clipelle video, the only text on screen is the captions of what the presenter says, with the current word highlighted in your accent colour, plus an optional small logo in the top right. There are no text cards to fall back on, so the spoken sentences must read well as captions. Short sentences help. So does avoiding jargon that reads fine but sounds odd aloud.
 
-Second, the tone should match the product's seriousness. Reelay offers four tones (elegant, playful, direct, warm). For most B2B features, direct is right: it keeps the sentences plain and the claims clear. Playful fits consumer apps and anything aimed at a younger audience. Pick the presenter the same way: a neutral, professional look rather than the most striking one. Standard quality is the recommended starting point; Premium adds more natural head and hand movement and the best lip-sync at a higher cost per second, which matters more in slow, close-up ads than in a quick feature explainer.
+Second, the tone should match the product's seriousness. Clipelle offers four tones (elegant, playful, direct, warm). For most B2B features, direct is right: it keeps the sentences plain and the claims clear. Playful fits consumer apps and anything aimed at a younger audience. Pick the presenter the same way: a neutral, professional look rather than the most striking one. Standard quality is the recommended starting point; Premium adds more natural head and hand movement and the best lip-sync at a higher cost per second, which matters more in slow, close-up ads than in a quick feature explainer.
 
 Use the Direction field (up to 200 characters) to tell the script who the viewer is and what to emphasize: "Audience: operations managers at small agencies. Emphasize: no setup, works with the inbox they already have."
 
@@ -67,7 +67,7 @@ Use the Direction field (up to 200 characters) to tell the script who the viewer
 
 One feature per video has a second advantage: you end up with a series. Five features, five 30-second videos, the same presenter, the same caption style, the same logo in the corner. Together they explain the product better than one long video would, and each one can be tested on its own.
 
-Reelay stores brand defaults in Settings (accent colour, caption look, font, logo) so every video in the series comes out matching without retyping. If your team would rather create these from a script or an assistant than from the form, there is an API and an MCP server that create the same projects with the same options.
+Clipelle stores brand defaults in Settings (accent colour, caption look, font, logo) so every video in the series comes out matching without retyping. If your team would rather create these from a script or an assistant than from the form, there is an API and an MCP server that create the same projects with the same options.
 
 ## A short checklist for a feature video
 

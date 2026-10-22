@@ -20,10 +20,14 @@ export async function proxy(request: NextRequest) {
     return new NextResponse("Not found", { status: 404 });
   }
   // Language preference (cookie set only after a cookie choice): the root goes to /nl when the visitor chose Dutch.
-  if (request.nextUrl.pathname === "/" && request.cookies.get("reelay_lang")?.value === "nl") {
+  const lang = request.cookies.get("clipelle_lang")?.value ?? request.cookies.get("reelay_lang")?.value;
+  if (request.nextUrl.pathname === "/" && lang === "nl") {
     const nl = request.nextUrl.clone();
     nl.pathname = "/nl";
-    return NextResponse.redirect(nl);
+    const redirect = NextResponse.redirect(nl);
+    // A preference stored under the pre-rename cookie name is carried over once.
+    if (!request.cookies.get("clipelle_lang") && lang) redirect.cookies.set("clipelle_lang", lang, { path: "/", maxAge: 365 * 24 * 3600, sameSite: "lax" });
+    return redirect;
   }
   const demo = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

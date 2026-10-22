@@ -7,10 +7,10 @@ import { config } from "@/lib/config";
  * everything in localStorage under the demo user, database mode calls /api/settings/*.
  */
 export type BrandDefaults = { accent?: string; captionStyle?: string; font?: string; logoPath?: string; /** Where the logo can be fetched (own route, or a data URL in demo mode). */ logoUrl?: string };
-const BRAND_KEY = "reelay.demo.brand";
-const LOGO_KEY = "reelay.demo.brandLogo";
-const NAME_KEY = "reelay.demo.name";
-const WISH_KEY = "reelay.demo.wishes";
+const BRAND_KEY = "clipelle.demo.brand";
+const LOGO_KEY = "clipelle.demo.brandLogo";
+const NAME_KEY = "clipelle.demo.name";
+const WISH_KEY = "clipelle.demo.wishes";
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
@@ -94,10 +94,10 @@ export async function fetchBrandLogoFile(logoUrl: string): Promise<File | null> 
 }
 
 export type ProfileInfo = { email: string; name: string; emailVerified: boolean; planKey: string; freeAdGrantedAt: string | null; notifyEmail: boolean };
-const NOTIFY_EMAIL_KEY = "reelay.demo.notifyEmail";
+const NOTIFY_EMAIL_KEY = "clipelle.demo.notifyEmail";
 
 export async function getProfile(): Promise<ProfileInfo> {
-  if (config.demoMode) return { email: "demo@reelay.local", name: readLocal<string>(NAME_KEY, "Demo"), emailVerified: true, planKey: "free", freeAdGrantedAt: null, notifyEmail: readLocal<boolean>(NOTIFY_EMAIL_KEY, true) };
+  if (config.demoMode) return { email: "demo@clipelle.local", name: readLocal<string>(NAME_KEY, "Demo"), emailVerified: true, planKey: "free", freeAdGrantedAt: null, notifyEmail: readLocal<boolean>(NOTIFY_EMAIL_KEY, true) };
   return api<ProfileInfo>("/api/settings/profile");
 }
 

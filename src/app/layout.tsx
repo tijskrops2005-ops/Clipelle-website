@@ -32,7 +32,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {/* One-time carry-over of browser storage written under the pre-rename prefix (22 Oct 2026); runs before hydration so no preference is lost. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var s=window.localStorage;for(var i=s.length-1;i>=0;i--){var k=s.key(i);if(k&&(k.indexOf("reelay.")===0||k.indexOf("reelay:")===0)){var n="clipelle"+k.slice(6);if(s.getItem(n)===null)s.setItem(n,s.getItem(k));s.removeItem(k);}}}catch(e){}`,
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

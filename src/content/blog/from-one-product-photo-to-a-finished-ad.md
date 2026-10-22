@@ -7,7 +7,7 @@ tags: ["image to video", "how it works", "product video"]
 summary: "Upload a photo, type a few sentences, click Generate. Here is each step that runs in between and what it means for what you put in."
 ---
 
-You upload a product photo, type a few sentences, click Generate, and some minutes later a vertical ad is ready to download. Between those two moments a fixed sequence of steps runs. Knowing what they are makes you better at the input, because every choice on the form lands in one specific step. This article follows one ad through the whole chain as Reelay runs it.
+You upload a product photo, type a few sentences, click Generate, and some minutes later a vertical ad is ready to download. Between those two moments a fixed sequence of steps runs. Knowing what they are makes you better at the input, because every choice on the form lands in one specific step. This article follows one ad through the whole chain as Clipelle runs it.
 
 ## Step 0: what goes in
 

@@ -13,9 +13,9 @@ describe.skipIf(!hasDb)("notifications", () => {
   const ids: string[] = [];
   beforeAll(async () => {
     dbmod = await import("@/lib/db");
-    await dbmod.db().insert(dbmod.profiles).values({ userId, email: "notify-test@reelay.local", name: "Notify Tester" }).onConflictDoNothing();
+    await dbmod.db().insert(dbmod.profiles).values({ userId, email: "notify-test@clipelle.local", name: "Notify Tester" }).onConflictDoNothing();
     const { ensurePersonalWorkspace } = await import("@/lib/workspaces");
-    scope = { userId, workspaceId: (await ensurePersonalWorkspace({ id: userId, email: "notify-test@reelay.local" })).id };
+    scope = { userId, workspaceId: (await ensurePersonalWorkspace({ id: userId, email: "notify-test@clipelle.local" })).id };
   });
   afterAll(async () => {
     const { eq, inArray } = await import("drizzle-orm");
@@ -37,7 +37,7 @@ describe.skipIf(!hasDb)("notifications", () => {
     await notifyProjectEnd(row.id);
     await notifyProjectEnd(row.id);
     expect(sent).toHaveLength(1);
-    expect(sent[0]).toMatchObject({ to: "notify-test@reelay.local", subject: 'Your ad "Notify me" stopped' });
+    expect(sent[0]).toMatchObject({ to: "notify-test@clipelle.local", subject: 'Your ad "Notify me" stopped' });
   });
 
   it("respects the owner's switch", async () => {

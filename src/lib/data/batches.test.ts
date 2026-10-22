@@ -33,8 +33,8 @@ describe.skipIf(!hasDb)("batches", () => {
     credits = await import("@/lib/credits");
     const { ensurePersonalWorkspace } = await import("@/lib/workspaces");
     const { eq } = await import("drizzle-orm");
-    scopeA = { userId: userA, workspaceId: (await ensurePersonalWorkspace({ id: userA, email: "batch-a@reelay.local" })).id };
-    scopeB = { userId: userB, workspaceId: (await ensurePersonalWorkspace({ id: userB, email: "batch-b@reelay.local" })).id };
+    scopeA = { userId: userA, workspaceId: (await ensurePersonalWorkspace({ id: userA, email: "batch-a@clipelle.local" })).id };
+    scopeB = { userId: userB, workspaceId: (await ensurePersonalWorkspace({ id: userB, email: "batch-b@clipelle.local" })).id };
     await dbmod.db().update(dbmod.workspaces).set({ planKey: "pro" }).where(eq(dbmod.workspaces.id, scopeA.workspaceId));
   });
 

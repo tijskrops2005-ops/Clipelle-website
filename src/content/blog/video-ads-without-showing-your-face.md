@@ -37,7 +37,7 @@ If you have the time and a product that films well, this is a good route. Keep t
 
 The second route is to put a face in the video, just not yours. An AI presenter is a realistic, generated person who speaks a script you provide or approve. You choose the look, the voice and the language. The presenter does the talking; your product appears in a clip laid over the presenter at the right moments.
 
-This is what Reelay does. You upload one product photo and write two or three sentences about the product. A spoken script is written for you (hook, problem, product, benefits, call to action), a product clip with slow camera moves is generated from the photo, the presenter speaks the script, and the final edit places the product clip over the presenter with short fades and captions over the whole video. You never record anything.
+This is what Clipelle does. You upload one product photo and write two or three sentences about the product. A spoken script is written for you (hook, problem, product, benefits, call to action), a product clip with slow camera moves is generated from the photo, the presenter speaks the script, and the final edit places the product clip over the presenter with short fades and captions over the whole video. You never record anything.
 
 What this route gives you:
 
@@ -69,13 +69,13 @@ You can also mix them over time: start with presenter ads to test which message 
 
 An AI presenter is only as good as the choices around it. A few things that matter:
 
-**Pick a presenter that fits the product, not the one that looks most striking.** A calm, neutral look suits most products. Reelay offers portrait looks in two qualities: Standard, which is recommended for most ads, and Premium, with more natural head and hand movement and the best lip-sync, at a higher cost per second. The article on [choosing a presenter and a voice](/blog/choosing-a-presenter-and-voice-for-your-ad) goes deeper.
+**Pick a presenter that fits the product, not the one that looks most striking.** A calm, neutral look suits most products. Clipelle offers portrait looks in two qualities: Standard, which is recommended for most ads, and Premium, with more natural head and hand movement and the best lip-sync, at a higher cost per second. The article on [choosing a presenter and a voice](/blog/choosing-a-presenter-and-voice-for-your-ad) goes deeper.
 
 **Match the voice to the audience.** Language, accent and speaking speed are separate choices. A slightly slower pace helps when the product needs explaining; a faster pace suits a simple offer.
 
 **Let the words sound like speech.** The script is spoken, so short sentences beat clever ones. If you want control, turn on "Review script first": the run pauses after the script, you pick one of three hooks and edit the words before anything else is generated. The word limit is about 2.5 words per second, so a 30-second ad has room for about 75 words.
 
-**Keep the screen clean.** In a Reelay ad, the only text on screen is the captions of what the presenter says, plus an optional small logo in the top right corner. That is deliberate. Captions are what people read with the sound off; extra text cards would compete with them.
+**Keep the screen clean.** In a Clipelle ad, the only text on screen is the captions of what the presenter says, plus an optional small logo in the top right corner. That is deliberate. Captions are what people read with the sound off; extra text cards would compete with them.
 
 ## Being open about it
 
@@ -91,4 +91,4 @@ The product clip shows the dripper on a wooden counter with a slow push-in; the 
 
 ## Where to start
 
-If you have never made a video ad, the presenter route is the lower-effort first step: one photo, a few sentences, and a result you can watch within minutes. Reelay's [image to video](/platform/ads) page explains each step. If the first ad shows you what to say, you will know exactly what to film if you later want a product-only version too.
+If you have never made a video ad, the presenter route is the lower-effort first step: one photo, a few sentences, and a result you can watch within minutes. Clipelle's [image to video](/platform/ads) page explains each step. If the first ad shows you what to say, you will know exactly what to film if you later want a product-only version too.

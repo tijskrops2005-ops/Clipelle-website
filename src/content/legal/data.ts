@@ -4,7 +4,7 @@ import type { LegalDoc } from "./types";
 export const dataDoc: LegalDoc = {
   slug: "data",
   title: "Files and data",
-  summary: "How Reelay stores your uploads and finished videos, who can reach them, and how they are deleted.",
+  summary: "How Clipelle stores your uploads and finished videos, who can reach them, and how they are deleted.",
   updated: "2026-10-21",
   draft: true,
   sections: [
@@ -20,7 +20,7 @@ export const dataDoc: LegalDoc = {
 export const dataDocNl: LegalDoc = {
   slug: "data",
   title: "Bestanden en gegevens",
-  summary: "Hoe Reelay je uploads en afgeronde video's bewaart, wie erbij kan en hoe ze worden verwijderd.",
+  summary: "Hoe Clipelle je uploads en afgeronde video's bewaart, wie erbij kan en hoe ze worden verwijderd.",
   updated: "2026-10-21",
   draft: true,
   sections: [

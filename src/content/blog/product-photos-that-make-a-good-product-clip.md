@@ -7,7 +7,7 @@ tags: ["product photos", "product clip", "image to video"]
 summary: "The product clip in your ad is generated from one photo. Here is what that photo needs and how to pick the right one from the ones you have."
 ---
 
-In a Reelay ad, the product clip is generated from a single photo. The camera moves slowly over it while the presenter talks. That makes the photo the most important asset you upload: a strong one gives you a clip that looks shot for the ad, a weak one gives you a weak clip, only now it moves. This article is about picking that photo well, from whatever you already have.
+In a Clipelle ad, the product clip is generated from a single photo. The camera moves slowly over it while the presenter talks. That makes the photo the most important asset you upload: a strong one gives you a clip that looks shot for the ad, a weak one gives you a weak clip, only now it moves. This article is about picking that photo well, from whatever you already have.
 
 ## What the product clip is, and what it is not
 
@@ -41,7 +41,7 @@ Two kinds of background work. A clean, plain one: white, grey, a single soft col
 
 ### 5. No text baked in
 
-Promotional badges, price stickers, "New!" banners, watermarks, and any text added to the image in an editor: leave them off. Reelay already puts captions on the whole video, and the only text that belongs on screen is what the presenter says. Baked-in text moves with the camera, is cut off at the edges, and fights the captions for the same attention. If your photo has a badge in the corner, pick a different photo or ask for the version without it.
+Promotional badges, price stickers, "New!" banners, watermarks, and any text added to the image in an editor: leave them off. Clipelle already puts captions on the whole video, and the only text that belongs on screen is what the presenter says. Baked-in text moves with the camera, is cut off at the edges, and fights the captions for the same attention. If your photo has a badge in the corner, pick a different photo or ask for the version without it.
 
 ## Photos with a person in them
 

@@ -10,8 +10,8 @@ import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
 
 /**
- * "Reelay vs doing it yourself": the visitor types what a video costs them now, how many they make a
- * month and how long one takes. Next to that: Reelay's credits and the best fitting plan from
+ * "Clipelle vs doing it yourself": the visitor types what a video costs them now, how many they make a
+ * month and how long one takes. Next to that: Clipelle's credits and the best fitting plan from
  * src/lib/plans.ts, the measured time per video from src/content/measured.ts, and the difference.
  * No market prices, no competitor names, nothing invented: the left column is the visitor's own input.
  */
@@ -63,7 +63,7 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
         <p className="text-[17px] font-semibold text-ink">{c.sideBySide}</p>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-[15px]">
-            <thead className="text-[13px] text-muted"><tr><th className="py-2 pr-3 font-medium"> </th><th className="py-2 pr-3 font-medium">{c.diy}</th><th className="py-2 font-medium">{c.withReelay}</th></tr></thead>
+            <thead className="text-[13px] text-muted"><tr><th className="py-2 pr-3 font-medium"> </th><th className="py-2 pr-3 font-medium">{c.diy}</th><th className="py-2 font-medium">{c.withClipelle}</th></tr></thead>
             <tbody className="divide-y divide-divider">
               <tr><td className="py-3 pr-3 font-medium text-ink">{c.perVideo}</td><td className="py-3 pr-3">{formatPrice(currentCost)}</td><td className="py-3">{r.perAd} {c.credits} · {c.about} {formatPrice(Math.round(r.fit.perVideoUsd * 100) / 100)} {c.on} {r.fit.plan?.name ?? c.aPlan}</td></tr>
               <tr><td className="py-3 pr-3 font-medium text-ink">{c.perMonth}</td><td className="py-3 pr-3">{formatPrice(r.yourMonthly)}</td><td className="py-3">{formatPrice(r.fit.monthlyUsd)}{r.fit.overScale ? ` (Scale ${c.plus} ${r.fit.packs} ${c.packs})` : ` (${r.fit.plan?.name}, ${r.fit.plan?.creditsPerMonth.toLocaleString("en-US")} ${c.credits})`}</td></tr>

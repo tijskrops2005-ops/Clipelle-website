@@ -18,7 +18,7 @@ import { withTimeout } from "@/lib/timeout";
 type Health = { demoMode: boolean; database: boolean | null; jobs: boolean | null; checkedAt: string; cached?: boolean };
 const CACHE_MS = 30_000;
 const CHECK_MS = 3_000;
-const g = globalThis as unknown as { __reelayHealth?: { at: number; value: Health; pending?: Promise<Health> } };
+const g = globalThis as unknown as { __clipelleHealth?: { at: number; value: Health; pending?: Promise<Health> } };
 
 async function check(): Promise<Health> {
   const database = await withTimeout(CHECK_MS, "database check timed out", () => db().execute(sql`select 1`))
@@ -41,13 +41,13 @@ export async function GET() {
   await connection();
   if (config.demoMode) return Response.json({ demoMode: true, database: null, jobs: null, checkedAt: new Date().toISOString() });
 
-  const cache = g.__reelayHealth;
+  const cache = g.__clipelleHealth;
   if (cache && Date.now() - cache.at < CACHE_MS) return Response.json({ ...cache.value, cached: true });
   // One check at a time: concurrent callers share the same promise instead of each hitting the services.
   if (cache?.pending) return Response.json({ ...(await cache.pending), cached: true });
   const pending = check();
-  g.__reelayHealth = { at: cache?.at ?? 0, value: cache?.value ?? { demoMode: false, database: null, jobs: null, checkedAt: "" }, pending };
+  g.__clipelleHealth = { at: cache?.at ?? 0, value: cache?.value ?? { demoMode: false, database: null, jobs: null, checkedAt: "" }, pending };
   const value = await pending;
-  g.__reelayHealth = { at: Date.now(), value };
+  g.__clipelleHealth = { at: Date.now(), value };
   return Response.json(value);
 }

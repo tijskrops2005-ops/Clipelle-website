@@ -26,8 +26,8 @@ function inject(id: string, src: string, attrs: Record<string, string> = {}) {
 export function ConsentScripts() {
   useEffect(() => {
     const apply = (c: Consent | null) => {
-      if (ANALYTICS_SRC && allows("analytics", c)) inject("reelay-analytics", ANALYTICS_SRC, ANALYTICS_SITE ? { "data-site": ANALYTICS_SITE } : {});
-      if (REDITUS_SRC && allows("marketing", c)) inject("reelay-partner-tracking", REDITUS_SRC);
+      if (ANALYTICS_SRC && allows("analytics", c)) inject("clipelle-analytics", ANALYTICS_SRC, ANALYTICS_SITE ? { "data-site": ANALYTICS_SITE } : {});
+      if (REDITUS_SRC && allows("marketing", c)) inject("clipelle-partner-tracking", REDITUS_SRC);
     };
     apply(readConsent());
     const onConsent = (e: Event) => apply((e as CustomEvent<Consent>).detail);

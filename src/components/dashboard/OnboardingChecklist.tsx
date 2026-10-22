@@ -8,7 +8,7 @@ import { useProjects } from "@/lib/data/client";
 import { Card, CardContent } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 
-const DISMISS_KEY = "reelay.onboarding.dismissed.v1";
+const DISMISS_KEY = "clipelle.onboarding.dismissed.v1";
 
 const ITEMS: { key: keyof OnboardingState; label: string; text: string; href: string }[] = [
   { key: "firstAd", label: "Make your first ad", text: "One product photo and a few sentences; the rest runs on its own.", href: "/new/ad" },

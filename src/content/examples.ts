@@ -1,5 +1,5 @@
 /**
- * Examples shown on the marketing site. Only our own output, labelled "Sample made with Reelay".
+ * Examples shown on the marketing site. Only our own output, labelled "Sample made with Clipelle".
  * The files are NOT in git (21 October 2026): they live in the public storage bucket "examples"
  * (uploaded with `npm run examples:upload`), and locally in public/examples/ (ignored by git) for
  * work without a network. src/lib/examples.ts resolves each file to a URL; a file that exists in

@@ -7,7 +7,7 @@ import { categoryBySlug } from "@/content/blogCategories";
 
 /**
  * The blog: markdown files with a small front matter in src/content/blog/. Parsed once per process,
- * rendered to HTML with heading ids for the table of contents. Author is always "Reelay Team".
+ * rendered to HTML with heading ids for the table of contents. Author is always "Clipelle Team".
  */
 export type BlogPost = {
   slug: string;

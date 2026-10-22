@@ -7,7 +7,7 @@ import type { AdInput, TranslateInput } from "@/lib/db/schema";
  */
 const hasDb = Boolean(process.env.DATABASE_URL);
 const userId = "00000000-0000-0000-0000-00000000000d";
-const user = { id: userId, email: "free-test@reelay.local", emailVerified: true };
+const user = { id: userId, email: "free-test@clipelle.local", emailVerified: true };
 let scope: { userId: string; workspaceId: string };
 
 describe.skipIf(!hasDb)("free ad rules", () => {

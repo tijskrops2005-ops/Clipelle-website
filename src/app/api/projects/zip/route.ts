@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       },
     });
     const stamp = new Date().toISOString().slice(0, 10);
-    return new Response(stream, { headers: { "Content-Type": "application/zip", "Content-Disposition": `attachment; filename="reelay-videos-${stamp}.zip"`, "Cache-Control": "no-store" } });
+    return new Response(stream, { headers: { "Content-Type": "application/zip", "Content-Disposition": `attachment; filename="clipelle-videos-${stamp}.zip"`, "Cache-Control": "no-store" } });
   } catch (error) {
     return dataErrorResponse(error);
   }

@@ -11,9 +11,9 @@ let wsId = "";
 describe.skipIf(!hasDb)("stripe webhook applier", () => {
   beforeAll(async () => {
     const { db, profiles } = await import("@/lib/db");
-    await db().insert(profiles).values({ userId, email: "webhook-test@reelay.local" }).onConflictDoNothing();
+    await db().insert(profiles).values({ userId, email: "webhook-test@clipelle.local" }).onConflictDoNothing();
     const { ensurePersonalWorkspace } = await import("./workspaces");
-    wsId = (await ensurePersonalWorkspace({ id: userId, email: "webhook-test@reelay.local" })).id;
+    wsId = (await ensurePersonalWorkspace({ id: userId, email: "webhook-test@clipelle.local" })).id;
   });
   afterAll(async () => {
     const { db, creditLedger, profiles, workspaces } = await import("@/lib/db");

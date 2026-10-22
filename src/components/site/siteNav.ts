@@ -87,7 +87,7 @@ export const menus: Menu[] = [
         items: [
           { href: "/blog", title: "Blog", text: "Practical articles on product video, scripts, captions and translation.", icon: Newspaper },
           { href: "/resources/guides", title: "Guides", text: "Step-by-step handbooks for the things people ask about most.", icon: FileText },
-          { href: "/customers", title: "Case studies", text: "Stories from brands that use Reelay, as they share them.", icon: BookOpen },
+          { href: "/customers", title: "Case studies", text: "Stories from brands that use Clipelle, as they share them.", icon: BookOpen },
           { href: "/resources/faq", title: "FAQ", text: "Costs, credits, rights, what is placed on screen.", icon: HelpCircle },
         ],
       },
@@ -95,7 +95,7 @@ export const menus: Menu[] = [
         title: "More",
         items: [
           { href: "/resources/changelog", title: "Changelog", text: "What changed, in plain words.", icon: ListChecks },
-          { href: "/partners", title: "Partner program", text: "Recommend Reelay and earn a share of subscriptions.", icon: Handshake },
+          { href: "/partners", title: "Partner program", text: "Recommend Clipelle and earn a share of subscriptions.", icon: Handshake },
           { href: "/docs/api", title: "API docs", text: "Endpoints, examples, error codes and limits.", icon: Code2 },
           { href: "/docs/mcp", title: "MCP docs", text: "Install the MCP server and connect an assistant.", icon: Plug },
         ],
@@ -108,7 +108,7 @@ export const menus: Menu[] = [
     columns: [
       {
         items: [
-          { href: "/about", title: "About", text: "Why Reelay exists and how it is built.", icon: Building2 },
+          { href: "/about", title: "About", text: "Why Clipelle exists and how it is built.", icon: Building2 },
           { href: "/careers", title: "Careers", text: "How we work and how to get in touch.", icon: Briefcase },
           { href: "/contact", title: "Contact", text: "Questions, feedback, press.", icon: Mail },
           { href: "/trust", title: "Trust", text: "Rights, data, files, costs: what we do and do not do.", icon: ShieldCheck },

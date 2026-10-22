@@ -60,6 +60,6 @@ describe("safe URL rules", () => {
     expect(init?.redirect).toBe("manual");
     const headers = init?.headers as Record<string, string>;
     expect(Object.keys(headers).map((k) => k.toLowerCase())).not.toContain("cookie");
-    expect(headers["User-Agent"]).toContain("ReelayBot");
+    expect(headers["User-Agent"]).toContain("ClipelleBot");
   });
 });

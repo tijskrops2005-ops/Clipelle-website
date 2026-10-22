@@ -77,7 +77,7 @@ export async function POST(request: Request) {
         video: { assetId: body.assetId },
         outputLanguages: outputs.map((o) => o.heygen),
         mode,
-        title: `Reelay translate test · ${new Date().toISOString()}`,
+        title: `Clipelle translate test · ${new Date().toISOString()}`,
         idempotencyKey: fingerprint,
       });
       // HeyGen returns the ids in the order of output_languages.

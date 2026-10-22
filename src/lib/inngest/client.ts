@@ -14,7 +14,7 @@ import { z } from "zod";
  * Production: INNGEST_EVENT_KEY and INNGEST_SIGNING_KEY from the Inngest dashboard (step 11).
  */
 
-export const inngest = new Inngest({ id: "reelay" });
+export const inngest = new Inngest({ id: "clipelle" });
 
 /* ---------- typed events (validated with zod when sent) ---------- */
 

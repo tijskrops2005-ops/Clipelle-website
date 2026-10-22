@@ -10,7 +10,7 @@ export type Locale = "en" | "nl";
 export const LOCALES: Locale[] = ["en", "nl"];
 export const DEFAULT_LOCALE: Locale = "en";
 export const LOCALE_LABELS: Record<Locale, string> = { en: "English", nl: "Nederlands" };
-export const LANG_COOKIE = "reelay_lang";
+export const LANG_COOKIE = "clipelle_lang";
 
 /** Stores the language preference, only when a cookie choice exists (the consent cookie). Browser only. */
 export function rememberLanguage(locale: Locale, hasConsentChoice: boolean) {

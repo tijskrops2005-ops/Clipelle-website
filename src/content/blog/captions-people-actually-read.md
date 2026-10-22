@@ -4,14 +4,14 @@ slug: "captions-people-actually-read"
 date: "2026-10-08"
 category: "captions-and-formats"
 tags: ["captions", "readability", "brand style"]
-summary: "Why the captions are the only text in a Reelay ad, what makes a caption readable in a feed, and how to set yours up once."
+summary: "Why the captions are the only text in a Clipelle ad, what makes a caption readable in a feed, and how to set yours up once."
 ---
 
 A viewer scrolling a feed with the sound off meets your ad as a moving picture with words on it. If the words are readable, they get the message. If the words are too small, too many, badly timed or hidden behind the app's own buttons, they get a picture of someone talking. Captions are the part of a vertical ad that decides whether the silent viewer is reached at all, and they deserve more care than they usually get.
 
 ## Why the captions are the only text
 
-In a Reelay ad, the captions of what the presenter says are the only text on screen. There is no hook card at the start, no benefit labels floating next to the product, no end card with a button. The one exception is a small optional logo in the top right. This is a design decision, and it is worth explaining.
+In a Clipelle ad, the captions of what the presenter says are the only text on screen. There is no hook card at the start, no benefit labels floating next to the product, no end card with a button. The one exception is a small optional logo in the top right. This is a design decision, and it is worth explaining.
 
 A video has one audio track and one picture. When the presenter says one thing and a text card says another, the viewer has to choose what to follow. Most people read faster than the presenter talks, so they finish the card, wait, and lose the thread of the voice. When the only text is what is being said, reading and listening move at the same pace. The eye follows the highlighted word, the ear follows the voice, and the two reinforce each other instead of competing.
 
@@ -21,7 +21,7 @@ It also keeps the message honest. If the call to action has to be spoken, it has
 
 ### Few words at a time
 
-A caption is not a subtitle for a film. In a feed the viewer gives each frame a fraction of a second. Short groups of words, shown as they are spoken, are read; a full sentence dropped on screen at once is skimmed or skipped. Reelay captions follow the voice word by word, with the word being spoken highlighted, so the amount of text on screen stays tied to the pace of speech.
+A caption is not a subtitle for a film. In a feed the viewer gives each frame a fraction of a second. Short groups of words, shown as they are spoken, are read; a full sentence dropped on screen at once is skimmed or skipped. Clipelle captions follow the voice word by word, with the word being spoken highlighted, so the amount of text on screen stays tied to the pace of speech.
 
 ### Timed to the voice
 
@@ -37,7 +37,7 @@ The apps draw their own interface over the bottom of the screen and the right ed
 
 ### One highlight, one colour
 
-Highlighting the word being spoken does two jobs: it tells the eye where to be, and it shows the pace. One colour is enough. In Reelay the accent colour in your brand style is used for exactly this, the spoken word, and nothing else. Pick a colour that stands out against the presenter's background; if the background is a light colour, a pale accent disappears.
+Highlighting the word being spoken does two jobs: it tells the eye where to be, and it shows the pace. One colour is enough. In Clipelle the accent colour in your brand style is used for exactly this, the spoken word, and nothing else. Pick a colour that stands out against the presenter's background; if the background is a light colour, a pale accent disappears.
 
 ### A plain font
 
@@ -45,7 +45,7 @@ Decorative fonts are hard to read at speed and at phone size. A clear sans-serif
 
 ## Setting captions up once
 
-All the caption choices in Reelay live in the brand style: the accent colour for the spoken word, the caption look, the font, and the optional logo. Set them in Settings and they are prefilled on every ad form. The same choices are also on the form itself, under the brand style section, when one ad needs to differ.
+All the caption choices in Clipelle live in the brand style: the accent colour for the spoken word, the caption look, the font, and the optional logo. Set them in Settings and they are prefilled on every ad form. The same choices are also on the form itself, under the brand style section, when one ad needs to differ.
 
 The point of setting them once is consistency. An account whose ads all use the same caption look and colour is recognisable in the feed before the brand is named, and consistency costs nothing when the defaults do the work.
 

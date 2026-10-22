@@ -23,13 +23,13 @@ The arithmetic is simple and worth memorizing, because it decides how many ideas
 | 45 seconds | about 112 |
 | 60 seconds | 150 |
 
-Reelay treats this as a hard limit. When it writes the script for you, it writes within the count for the length you picked. When you paste your own script, the same limit applies. The reason is not stubbornness. A presenter who has to squeeze 100 words into 30 seconds sounds like the fine print at the end of a radio commercial, and captions that flash past faster than people read them stop being captions. Fewer words, spoken at a human pace, is what makes the ad feel like a person talking.
+Clipelle treats this as a hard limit. When it writes the script for you, it writes within the count for the length you picked. When you paste your own script, the same limit applies. The reason is not stubbornness. A presenter who has to squeeze 100 words into 30 seconds sounds like the fine print at the end of a radio commercial, and captions that flash past faster than people read them stop being captions. Fewer words, spoken at a human pace, is what makes the ad feel like a person talking.
 
-Speaking speed does not buy you more room either. Reelay lets you set the presenter to slower, normal or faster, but the word budget is fixed at a normal pace. Faster speech is a delivery choice, not a way to smuggle in an extra benefit.
+Speaking speed does not buy you more room either. Clipelle lets you set the presenter to slower, normal or faster, but the word budget is fixed at a normal pace. Faster speech is a delivery choice, not a way to smuggle in an extra benefit.
 
 ## Five parts, one budget
 
-A spoken ad script in Reelay runs in a fixed order: hook, problem, product, benefits, call to action. Every part is spoken; nothing is a text card. Here is a reasonable way to spend 75 words across those five parts. Treat it as a budget, not a formula.
+A spoken ad script in Clipelle runs in a fixed order: hook, problem, product, benefits, call to action. Every part is spoken; nothing is a text card. Here is a reasonable way to spend 75 words across those five parts. Treat it as a budget, not a formula.
 
 ### Hook: 8 to 12 words
 
@@ -49,7 +49,7 @@ Two or three benefits, one per sentence, each concrete enough to picture. "Keeps
 
 ### Call to action: 8 to 10 words
 
-The last sentence, always. It asks for one thing and says where to do it. If there is a deal, this is where it lands, and in Reelay the only way a deal gets into the call to action is the Offer line on the form (80 characters at most). Without an Offer, the script will not invent one. More on this in [Calls to action that are spoken, not shown](/blog/calls-to-action-that-are-spoken-not-shown).
+The last sentence, always. It asks for one thing and says where to do it. If there is a deal, this is where it lands, and in Clipelle the only way a deal gets into the call to action is the Offer line on the form (80 characters at most). Without an Offer, the script will not invent one. More on this in [Calls to action that are spoken, not shown](/blog/calls-to-action-that-are-spoken-not-shown).
 
 ## Two example scripts
 
@@ -80,9 +80,9 @@ A script is read aloud by a presenter and shown as captions at the same time, so
 
 The word budget forces a choice most product descriptions avoid: what is the one problem and who has it? A product page can list twelve features for twelve kinds of buyers. A 75-word ad cannot, and should not try. Pick one buyer, one problem, three benefits. If you want to reach a second kind of buyer, make a second ad with a different hook. That is also the honest way to test what works, as the [30-second ad structure](/blog/a-30-second-ad-structure-that-holds-attention) article explains in more depth.
 
-## How this works in Reelay
+## How this works in Clipelle
 
-On the ad form you give one product photo (or a product page link, which fills in the name, description and photos for you to check), two or three sentences about the product, and a length. Reelay writes the spoken script inside the word limit for that length, in the tone you chose: elegant, playful, direct or warm. The Direction field (200 characters) steers the audience and emphasis, for example "office workers, stress the leak-proof lid." The Offer line puts a real deal into the last sentence. Free text in these fields is treated as information about the product, never as instructions.
+On the ad form you give one product photo (or a product page link, which fills in the name, description and photos for you to check), two or three sentences about the product, and a length. Clipelle writes the spoken script inside the word limit for that length, in the tone you chose: elegant, playful, direct or warm. The Direction field (200 characters) steers the audience and emphasis, for example "office workers, stress the leak-proof lid." The Offer line puts a real deal into the last sentence. Free text in these fields is treated as information about the product, never as instructions.
 
 If you want to see the words before anything else is made, tick "Review script first." The project pauses after the script step: you pick one of three hooks, edit any sentence, and only then does the product clip and presenter work begin. For the two or three sentences you type at the start, the [product description guide](/resources/guides/product-description-that-makes-a-good-script) shows what gives the script writer something to work with.
 

@@ -10,7 +10,7 @@ import { ACCENTS, AD_LANGUAGES, AD_LANGUAGE_CODES, accentOf, type AdLanguageCode
 
 const CACHE_MS = 15 * 60 * 1000;
 type Cache = { at: number; byLanguage: Map<AdLanguageCode, Voice[]> };
-const g = globalThis as unknown as { __reelayVoices?: Cache | Promise<Cache> };
+const g = globalThis as unknown as { __clipelleVoices?: Cache | Promise<Cache> };
 
 const NAME_TO_CODE: Record<string, AdLanguageCode> = Object.fromEntries(
   Object.entries(AD_LANGUAGES).flatMap(([code, l]) => [[l.heygenName.toLowerCase(), code as AdLanguageCode], [code, code as AdLanguageCode]]),
@@ -32,17 +32,17 @@ async function load(): Promise<Cache> {
 }
 
 async function catalogue(): Promise<Cache> {
-  const cached = g.__reelayVoices;
+  const cached = g.__clipelleVoices;
   if (cached && !(cached instanceof Promise) && Date.now() - cached.at < CACHE_MS) return cached;
   if (cached instanceof Promise) return cached;
   const pending = load();
-  g.__reelayVoices = pending;
+  g.__clipelleVoices = pending;
   try {
     const result = await pending;
-    g.__reelayVoices = result;
+    g.__clipelleVoices = result;
     return result;
   } catch (error) {
-    g.__reelayVoices = undefined;
+    g.__clipelleVoices = undefined;
     throw error;
   }
 }

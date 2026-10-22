@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PLANS, TOPUPS } from "./plans";
 import { REFERRAL_KEYS, subscriptionSessionParams, topupSessionParams, TOPUP_METADATA } from "./billingCheckout";
 
-const input = { customerId: "cus_test", userId: "user-1", workspaceId: "ws-1", priceId: "price_test", origin: "https://reelay.test" };
+const input = { customerId: "cus_test", userId: "user-1", workspaceId: "ws-1", priceId: "price_test", origin: "https://clipelle.test" };
 
 describe("checkout sessions and the partner program", () => {
   it("a credit pack session carries no referral data and its product is excluded from commissions", () => {

@@ -35,17 +35,17 @@ function createDb() {
     max_lifetime: 60 * 10,
     connect_timeout: 10,
     ssl: "require",
-    connection: { application_name: "reelay" },
+    connection: { application_name: "clipelle" },
   });
   return drizzle({ client, schema });
 }
 
 // Cached on globalThis so Next.js dev hot reloads reuse the connection.
-const globalForDb = globalThis as unknown as { __reelayDb?: Db };
+const globalForDb = globalThis as unknown as { __clipelleDb?: Db };
 
 export function db(): Db {
-  if (!globalForDb.__reelayDb) globalForDb.__reelayDb = createDb();
-  return globalForDb.__reelayDb;
+  if (!globalForDb.__clipelleDb) globalForDb.__clipelleDb = createDb();
+  return globalForDb.__clipelleDb;
 }
 
 export { schema };

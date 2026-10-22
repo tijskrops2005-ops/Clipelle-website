@@ -26,8 +26,8 @@ describe.skipIf(!hasDb)("outgoing webhooks", () => {
     out = await import("./outgoing");
     dbmod = await import("@/lib/db");
     const { ensurePersonalWorkspace } = await import("@/lib/workspaces");
-    scopeA = { userId: userA, workspaceId: (await ensurePersonalWorkspace({ id: userA, email: "wh-a@reelay.local" })).id };
-    scopeB = { userId: userB, workspaceId: (await ensurePersonalWorkspace({ id: userB, email: "wh-b@reelay.local" })).id };
+    scopeA = { userId: userA, workspaceId: (await ensurePersonalWorkspace({ id: userA, email: "wh-a@clipelle.local" })).id };
+    scopeB = { userId: userB, workspaceId: (await ensurePersonalWorkspace({ id: userB, email: "wh-b@clipelle.local" })).id };
   });
   afterAll(async () => {
     const { inArray } = await import("drizzle-orm");
@@ -74,8 +74,8 @@ describe.skipIf(!hasDb)("outgoing webhooks", () => {
     const ok = await out.attemptDelivery(delivery.id, publicLookup);
     expect(ok).toMatchObject({ ok: true, status: 200 });
     expect(calls).toHaveLength(2);
-    expect(calls[1].headers["X-Reelay-Event"]).toBe("project.completed");
-    expect(verifyWebhookSignature(secretRow.secret, calls[1].body, calls[1].headers["X-Reelay-Signature"])).toBe(true);
+    expect(calls[1].headers["X-Clipelle-Event"]).toBe("project.completed");
+    expect(verifyWebhookSignature(secretRow.secret, calls[1].body, calls[1].headers["X-Clipelle-Signature"])).toBe(true);
     expect(signWebhook(secretRow.secret, "x")).toMatch(/^t=\d+,v1=/);
     expect(JSON.parse(calls[1].body)).toMatchObject({ id: delivery.id, event: "project.completed", data: { id: "p1" } });
     const { eq } = await import("drizzle-orm");

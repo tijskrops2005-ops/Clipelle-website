@@ -1,19 +1,20 @@
 /**
- * Cookie consent, browser-safe. One cookie, `reelay_consent`, holds the visitor's choice; it is a
+ * Cookie consent, browser-safe. One cookie, `clipelle_consent`, holds the visitor's choice; it is a
  * necessary cookie (it only stores the choice). Nothing optional loads before a choice is made.
  * Categories: analytics (a provider script set by NEXT_PUBLIC_ANALYTICS_SCRIPT_SRC) and marketing
  * (partner tracking set by NEXT_PUBLIC_REDITUS_SCRIPT_SRC). Without those variables nothing loads.
  */
 export type Consent = { v: 1; necessary: true; analytics: boolean; marketing: boolean; at: string };
 
-export const CONSENT_COOKIE = "reelay_consent";
+export const CONSENT_COOKIE = "clipelle_consent";
 const MAX_AGE_DAYS = 180;
-export const CONSENT_EVENT = "reelay:consent";
-export const OPEN_CONSENT_EVENT = "reelay:open-consent";
+export const CONSENT_EVENT = "clipelle:consent";
+export const OPEN_CONSENT_EVENT = "clipelle:open-consent";
 
 export function readConsent(): Consent | null {
   if (typeof document === "undefined") return null;
-  const m = document.cookie.match(new RegExp(`(?:^|; )${CONSENT_COOKIE}=([^;]*)`));
+  // Read the current name, else the pre-rename cookie once (22 Oct 2026); the next save writes the new name.
+  const m = document.cookie.match(new RegExp(`(?:^|; )${CONSENT_COOKIE}=([^;]*)`)) ?? document.cookie.match(/(?:^|; )reelay_consent=([^;]*)/);
   if (!m) return null;
   try {
     const parsed = JSON.parse(decodeURIComponent(m[1])) as Partial<Consent>;

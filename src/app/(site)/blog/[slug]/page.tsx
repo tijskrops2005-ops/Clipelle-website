@@ -91,7 +91,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           )}
           <div className="mt-6 hidden lg:block"><ShareLinks url={url} title={post.title} /></div>
         </aside>
-        <div className="prose-reelay max-w-2xl">
+        <div className="prose-clipelle max-w-2xl">
           <div dangerouslySetInnerHTML={{ __html: first }} />
           {second && <InlineCta variant={ctaVariant} />}
           <div dangerouslySetInnerHTML={{ __html: second }} />

@@ -23,7 +23,7 @@ export const FEATURED_LOOK_IDS = [
 
 const CACHE_MS = 15 * 60 * 1000;
 type Cache = { at: number; items: Presenter[] };
-const g = globalThis as unknown as { __reelayPresenters?: Cache | Promise<Cache> };
+const g = globalThis as unknown as { __clipellePresenters?: Cache | Promise<Cache> };
 
 function toPresenter(l: AvatarLook): Presenter {
   const gender = (l.gender ?? "").toLowerCase();
@@ -51,17 +51,17 @@ async function load(): Promise<Cache> {
 }
 
 export async function getPresenterCatalogue(): Promise<Presenter[]> {
-  const cached = g.__reelayPresenters;
+  const cached = g.__clipellePresenters;
   if (cached && !(cached instanceof Promise) && Date.now() - cached.at < CACHE_MS) return cached.items;
   if (cached instanceof Promise) return (await cached).items;
   const pending = load();
-  g.__reelayPresenters = pending;
+  g.__clipellePresenters = pending;
   try {
     const result = await pending;
-    g.__reelayPresenters = result;
+    g.__clipellePresenters = result;
     return result.items;
   } catch (error) {
-    g.__reelayPresenters = undefined;
+    g.__clipellePresenters = undefined;
     throw error;
   }
 }

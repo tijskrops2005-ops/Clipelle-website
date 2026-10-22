@@ -19,7 +19,7 @@ The common pixel size follows from the ratio. At 1080 pixels wide, 9:16 gives 10
 
 Phones are held upright. A video that fills the upright screen has nothing beside it: no neighbouring post, no sidebar, no comments competing for the eye until the viewer asks for them. For an ad, that is the most attention a feed is ever going to give you. A landscape video in the same feed sits as a small strip in the middle of the screen with large empty areas above and below, and it reads as something that belongs somewhere else.
 
-So the first rule is simple: make the ad vertical from the start. Everything made with [Image to video](/platform/ads) in Reelay is 9:16, with a portrait presenter and a product clip generated for the tall frame, so you never have to think about this one.
+So the first rule is simple: make the ad vertical from the start. Everything made with [Image to video](/platform/ads) in Clipelle is 9:16, with a portrait presenter and a product clip generated for the tall frame, so you never have to think about this one.
 
 ## Where the interface sits on top of your video
 
@@ -27,13 +27,13 @@ Here the three apps differ in detail but agree in principle. Each draws its own 
 
 The practical consequence is that the middle of the frame is the safe part. Keep the subject there. Anything placed in the bottom quarter or along the right edge may be hidden behind the app's own text and buttons, and the exact areas shift between apps and between updates.
 
-In a Reelay ad there are only two things on screen besides the presenter and the product clip: the captions, and an optional small logo in the top right. The presenter is framed as a portrait, which puts the face in the safe middle. If you translate an existing video, you choose whether the burned-in captions sit low or in the middle; for a video going into a feed, the middle is the safer choice, because the low position is closest to the area the apps cover.
+In a Clipelle ad there are only two things on screen besides the presenter and the product clip: the captions, and an optional small logo in the top right. The presenter is framed as a portrait, which puts the face in the safe middle. If you translate an existing video, you choose whether the burned-in captions sit low or in the middle; for a video going into a feed, the middle is the safer choice, because the low position is closest to the area the apps cover.
 
 ## One file for three apps
 
 A common question is whether each app needs its own export. For the file itself, no. A 9:16 MP4 of the right length works across TikTok, Instagram Reels and YouTube Shorts. The differences are in how each app handles the upload, the description and the sound, not in the video.
 
-What does vary is tolerance for length. All three feeds reward videos that make their point quickly, and a product ad has no reason to be long. Reelay offers 10, 20, 30, 45 or 60 seconds, with 30 as the default. Thirty seconds is enough for a hook, a problem, the product, the benefits and a spoken call to action. Make the 30-second version first; if it works, a 10 or 20-second cut of the same idea is a cheap second test.
+What does vary is tolerance for length. All three feeds reward videos that make their point quickly, and a product ad has no reason to be long. Clipelle offers 10, 20, 30, 45 or 60 seconds, with 30 as the default. Thirty seconds is enough for a hook, a problem, the product, the benefits and a spoken call to action. Make the 30-second version first; if it works, a 10 or 20-second cut of the same idea is a cheap second test.
 
 ## Making a vertical ad from scratch
 
@@ -49,7 +49,7 @@ The other case is an existing landscape video, often an explainer or a founder t
 
 A 16:9 video reframed to 9:16 shows only the middle part of the width. If the speaker stands in the centre, that works: you get a tall frame with the person in it. If the video has two people at the edges, a slide on one side, or text that spans the width, the middle crop loses them.
 
-[Translate & lipsync](/platform/translate) in Reelay gives you the choice per project: 9:16 for the vertical feeds, or the original format when the width carries information. The translated speech is lip-synced in either case, and the captions are burned in low or in the middle. Silence at the start and end is trimmed, which matters in a feed where the first second decides whether the viewer stays. When in doubt, look at the video and ask: is everything I need inside the middle third of the width? If yes, go vertical.
+[Translate & lipsync](/platform/translate) in Clipelle gives you the choice per project: 9:16 for the vertical feeds, or the original format when the width carries information. The translated speech is lip-synced in either case, and the captions are burned in low or in the middle. Silence at the start and end is trimmed, which matters in a feed where the first second decides whether the viewer stays. When in doubt, look at the video and ask: is everything I need inside the middle third of the width? If yes, go vertical.
 
 ## A checklist before you upload
 
@@ -62,4 +62,4 @@ A 16:9 video reframed to 9:16 shows only the middle part of the width. If the sp
 
 ## Where captions come in
 
-In a vertical feed the captions are not a courtesy; many viewers never turn the sound on, and in a Reelay ad the captions are the only text there is. How to make them readable, and why we chose captions over text cards, is the subject of [Captions people actually read](/blog/captions-people-actually-read).
+In a vertical feed the captions are not a courtesy; many viewers never turn the sound on, and in a Clipelle ad the captions are the only text there is. How to make them readable, and why we chose captions over text cards, is the subject of [Captions people actually read](/blog/captions-people-actually-read).

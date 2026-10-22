@@ -19,7 +19,7 @@ const sections = [
 ];
 
 const webhookPayload = `{
-  "id": "7a1c…",                       // delivery id, also in X-Reelay-Delivery
+  "id": "7a1c…",                       // delivery id, also in X-Clipelle-Delivery
   "event": "project.completed",         // or project.failed
   "createdAt": "2026-10-21T14:02:11.000Z",
   "data": { ...the project exactly as GET /api/v1/projects/{id} returns it }
@@ -28,7 +28,7 @@ const webhookPayload = `{
 const webhookVerify = `import { createHmac, timingSafeEqual } from "node:crypto";
 
 // Express-style handler: read the RAW body (not re-serialised JSON).
-export function verifyReelay(rawBody, header, secret) {
+export function verifyClipelle(rawBody, header, secret) {
   const parts = Object.fromEntries(header.split(",").map((p) => p.trim().split("=")));
   const t = Number(parts.t);
   if (!Number.isFinite(t) || Math.abs(Date.now() / 1000 - t) > 300) return false; // 5-minute window
@@ -36,8 +36,8 @@ export function verifyReelay(rawBody, header, secret) {
   return parts.v1?.length === expected.length && timingSafeEqual(Buffer.from(parts.v1), Buffer.from(expected));
 }
 
-app.post("/reelay/webhook", express.raw({ type: "application/json" }), (req, res) => {
-  if (!verifyReelay(req.body.toString("utf8"), req.get("X-Reelay-Signature") ?? "", process.env.REELAY_WEBHOOK_SECRET)) return res.sendStatus(401);
+app.post("/clipelle/webhook", express.raw({ type: "application/json" }), (req, res) => {
+  if (!verifyClipelle(req.body.toString("utf8"), req.get("X-Clipelle-Signature") ?? "", process.env.CLIPELLE_WEBHOOK_SECRET)) return res.sendStatus(401);
   const { event, data } = JSON.parse(req.body.toString("utf8"));
   // Answer fast; do the work afterwards. The same delivery can arrive more than once: dedupe on its id.
   res.sendStatus(200);
@@ -63,7 +63,7 @@ const curlAd = `curl -X POST https://YOUR-DOMAIN/api/v1/ads \\
 const jsAd = `const res = await fetch("https://YOUR-DOMAIN/api/v1/ads", {
   method: "POST",
   headers: {
-    Authorization: \`Bearer \${process.env.REELAY_API_KEY}\`,
+    Authorization: \`Bearer \${process.env.CLIPELLE_API_KEY}\`,
     "Content-Type": "application/json",
     "Idempotency-Key": "order-1234",
   },
@@ -98,7 +98,7 @@ const curlTranslate = `curl -X POST https://YOUR-DOMAIN/api/v1/translations \\
 const jsPoll = `async function waitForVideo(id) {
   for (;;) {
     const res = await fetch(\`https://YOUR-DOMAIN/api/v1/projects/\${id}\`, {
-      headers: { Authorization: \`Bearer \${process.env.REELAY_API_KEY}\` },
+      headers: { Authorization: \`Bearer \${process.env.CLIPELLE_API_KEY}\` },
     });
     const { project } = await res.json();
     if (project.status === "completed") return project.result.videoUrl; // valid for about an hour
@@ -211,7 +211,7 @@ export default function ApiDocsPage() {
         <h2>Webhooks</h2>
         <p>Instead of polling, let us call you. In <Link href="/settings/api" className="underline underline-offset-4">Settings → API keys → Webhooks</Link> add a public <code className="font-mono">https://</code> URL and pick the events <code className="font-mono">project.completed</code> and <code className="font-mono">project.failed</code>. The signing secret is shown once.</p>
         <CodeBlock code={webhookPayload} lang="json" title="Payload" />
-        <p>Every call carries <code className="font-mono">X-Reelay-Signature: t=&lt;unix seconds&gt;,v1=&lt;hex&gt;</code>, where v1 is the HMAC-SHA256 of <code className="font-mono">&quot;t.&quot; + raw body</code> with your secret, plus <code className="font-mono">X-Reelay-Event</code> and <code className="font-mono">X-Reelay-Delivery</code>. Check it like this:</p>
+        <p>Every call carries <code className="font-mono">X-Clipelle-Signature: t=&lt;unix seconds&gt;,v1=&lt;hex&gt;</code>, where v1 is the HMAC-SHA256 of <code className="font-mono">&quot;t.&quot; + raw body</code> with your secret, plus <code className="font-mono">X-Clipelle-Event</code> and <code className="font-mono">X-Clipelle-Delivery</code>. Check it like this:</p>
         <CodeBlock code={webhookVerify} lang="javascript" title="Verifying the signature (Node)" />
         <ul className="list-disc space-y-1 pl-5 text-[15px] leading-relaxed">
           <li>Answer with any 2xx within 10 seconds. Anything else is retried with backoff, five more times over about a day; after that the delivery is marked failed and can be sent again from Settings.</li>

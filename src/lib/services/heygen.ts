@@ -328,7 +328,7 @@ export async function createAvatarVideo(input: CreateAvatarVideoInput) {
       ...(input.removeBackground ? { remove_background: true } : {}),
       ...(input.voiceSettings ? { voice_settings: input.voiceSettings } : {}),
       engine: { type: input.engine },
-      title: input.title ?? "Reelay test",
+      title: input.title ?? "Clipelle test",
     }),
   });
   return data;

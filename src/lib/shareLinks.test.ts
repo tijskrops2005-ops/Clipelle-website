@@ -15,8 +15,8 @@ describe.skipIf(!hasDb)("share links", () => {
     links = await import("./shareLinks");
     dbmod = await import("@/lib/db");
     const { ensurePersonalWorkspace } = await import("@/lib/workspaces");
-    scopeA = { userId: userA, workspaceId: (await ensurePersonalWorkspace({ id: userA, email: "share-a@reelay.local" })).id };
-    scopeB = { userId: userB, workspaceId: (await ensurePersonalWorkspace({ id: userB, email: "share-b@reelay.local" })).id };
+    scopeA = { userId: userA, workspaceId: (await ensurePersonalWorkspace({ id: userA, email: "share-a@clipelle.local" })).id };
+    scopeB = { userId: userB, workspaceId: (await ensurePersonalWorkspace({ id: userB, email: "share-b@clipelle.local" })).id };
     const [p] = await dbmod.db().insert(dbmod.projects).values({ ownerId: userA, workspaceId: scopeA.workspaceId, workflow: "ad", name: "Shareable", status: "completed", input: { productName: "Mug", description: "A ceramic mug that keeps coffee warm.", imageAssetIds: [], script: "secret script" } }).returning();
     projectId = p.id;
     // Signing a download needs a real object: a few bytes under the project's own path (removed afterwards).

@@ -30,7 +30,7 @@ type Run = {
   entryId?: string;
 };
 
-const STORAGE_KEY = "reelay.dev.final-edit.runs";
+const STORAGE_KEY = "clipelle.dev.final-edit.runs";
 
 export function FinalEditTestPanel({ keyPresent, env }: { keyPresent: boolean; env: "stage" | "v1" }) {
   const [presenterUrl, setPresenterUrl] = useState("");

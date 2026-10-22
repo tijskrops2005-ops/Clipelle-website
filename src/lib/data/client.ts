@@ -407,7 +407,7 @@ export async function downloadZip(ids: string[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = r.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ?? "reelay-videos.zip";
+  a.download = r.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ?? "clipelle-videos.zip";
   document.body.append(a);
   a.click();
   a.remove();
@@ -433,7 +433,7 @@ export async function getOnboarding(): Promise<OnboardingState> {
     const all = mockStore.getProjectsSnapshot();
     let brand = false;
     try {
-      brand = Boolean(window.localStorage.getItem("reelay.demo.brand"));
+      brand = Boolean(window.localStorage.getItem("clipelle.demo.brand"));
     } catch {
       /* ignore */
     }

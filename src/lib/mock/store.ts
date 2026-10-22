@@ -10,7 +10,7 @@ import { mockProjects } from "./projects";
  * with a real database behind the same functions.
  */
 // v2: step keys were renamed from provider names to step names; v1 entries are ignored.
-const STORAGE_KEY = "reelay.demo.projects.v2";
+const STORAGE_KEY = "clipelle.demo.projects.v2";
 
 type Listener = () => void;
 
@@ -103,7 +103,7 @@ export function updateProject(id: string, patch: (p: Project) => Project) {
 
 /* ---------- batches ("Make variations"), demo only: the grouping lives next to the projects ---------- */
 
-const BATCH_KEY = "reelay.demo.batches.v1";
+const BATCH_KEY = "clipelle.demo.batches.v1";
 let batches: Batch[] = [];
 let batchesLoaded = false;
 

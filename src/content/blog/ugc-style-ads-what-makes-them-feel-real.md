@@ -9,7 +9,7 @@ summary: "UGC-style ads work because they look like a person talking into a phon
 
 "UGC-style" describes ads that look like a customer talking into a phone camera rather than a brand talking from a studio. People respond to them because they resemble the videos they chose to watch a moment earlier. The style is easy to describe and surprisingly easy to get wrong, and when it goes wrong, viewers can tell within a sentence.
 
-Having built Reelay around a presenter who speaks the whole ad, we have spent a lot of time on the question of what makes a presenter-led video feel like a person and what makes it feel like an advert wearing a person. This article is what we have learned, from the script outward.
+Having built Clipelle around a presenter who speaks the whole ad, we have spent a lot of time on the question of what makes a presenter-led video feel like a person and what makes it feel like an advert wearing a person. This article is what we have learned, from the script outward.
 
 ## What "real" is actually made of
 
@@ -43,7 +43,7 @@ A person makes one point, then another. An ad makes six at once. If a sentence c
 
 ### The mouth is not quite saying the words
 
-This is the one visual giveaway that matters. A viewer who cannot name what is wrong will still feel it when lip movement lags the audio or hands move on a loop. In Reelay this is the difference between the Standard and Premium presenter: Premium gives more natural head and hand movement and the best lip-sync, and costs more per second. For a tight talking-head ad where the face fills the frame, that is where the extra credits go. [Choosing a presenter and a voice](/blog/choosing-a-presenter-and-voice-for-your-ad) covers the full decision.
+This is the one visual giveaway that matters. A viewer who cannot name what is wrong will still feel it when lip movement lags the audio or hands move on a loop. In Clipelle this is the difference between the Standard and Premium presenter: Premium gives more natural head and hand movement and the best lip-sync, and costs more per second. For a tight talking-head ad where the face fills the frame, that is where the extra credits go. [Choosing a presenter and a voice](/blog/choosing-a-presenter-and-voice-for-your-ad) covers the full decision.
 
 ### Polish that does not match the voice
 
@@ -55,18 +55,18 @@ A studio-lit face with a chatty script, or a casual look with an announcer's cad
 
 ## A script that sounds like a person
 
-Here is a 30-second UGC-style script for an invented lunch box, written in a warm tone. It stays under 75 words, Reelay's limit for 30 seconds, and every claim is about the product, not about an imaginary purchase.
+Here is a 30-second UGC-style script for an invented lunch box, written in a warm tone. It stays under 75 words, Clipelle's limit for 30 seconds, and every claim is about the product, not about an imaginary purchase.
 
 > Okay, I did not expect to care this much about a lunch box. Mine used to leak into my bag by ten in the morning, so I bought sad sandwiches instead. This one shuts with a proper seal, keeps everything cold until two, and the strap just clips onto whatever bag I have. No leaks, no soggy anything. If yours leaks too, the link is right below.
 
 What makes it work: it opens on a reaction, names a specific problem, gives three benefits in plain words, and ends with a spoken call to action that echoes the hook. There is no greeting and no brand pitch. The hook is doing most of the work; the [hooks article](/blog/hooks-for-short-product-ads) explains why that first sentence decides whether anyone hears the rest.
 
-## Reelay settings that push toward "real"
+## Clipelle settings that push toward "real"
 
-Reelay writes the script, generates one product clip from your photo and has an AI presenter speak the words, then lays the clip over the presenter at fixed moments with captions throughout. Several choices on the form nudge the result toward the UGC feel.
+Clipelle writes the script, generates one product clip from your photo and has an AI presenter speak the words, then lays the clip over the presenter at fixed moments with captions throughout. Several choices on the form nudge the result toward the UGC feel.
 
 - **Tone: warm or playful.** Direct also works. Elegant tends to produce copy that sounds composed rather than spoken, which is right for some brands and wrong for this style.
-- **Direction.** The 200-character Direction field is where you say "like a friend recommending it, stress the leaking lid, audience is people who commute." Reelay treats this as information about the ad, not as commands, but it shapes the register.
+- **Direction.** The 200-character Direction field is where you say "like a friend recommending it, stress the leaking lid, audience is people who commute." Clipelle treats this as information about the ad, not as commands, but it shapes the register.
 - **Presenter and voice.** Pick a portrait look that your buyer would plausibly be, and keep the voice that belongs to the look unless the accent is wrong for your market. Normal speaking speed.
 - **Background.** Keep the presenter's own background rather than a flat color. A flat color says "studio"; a room says "phone."
 - **Captions.** A bold caption look with the spoken word highlighted in your accent color is the recognizable grammar of phone video. Captions cover the whole ad; there are no text cards to add, and that absence is itself part of the realness.
@@ -76,7 +76,7 @@ Shops that run this style at volume tend to keep one presenter and change the ho
 
 ## Where honesty ends and the ad begins
 
-A presenter in Reelay is a scripted spokesperson. The viewer sees someone recommending a product, and that is fine; people understand that ads are made. What is not fine is scripting a customer history that did not happen: a purchase date, a before-and-after, a family member's reaction. Keep the first person to things that are true of the product and the problem. "This seals properly" is a claim about the box. "I have used it for three years" is a claim about a person who does not exist.
+A presenter in Clipelle is a scripted spokesperson. The viewer sees someone recommending a product, and that is fine; people understand that ads are made. What is not fine is scripting a customer history that did not happen: a purchase date, a before-and-after, a family member's reaction. Keep the first person to things that are true of the product and the problem. "This seals properly" is a claim about the box. "I have used it for three years" is a claim about a person who does not exist.
 
 Two practical rules follow. Do not label a presenter ad as a customer review anywhere, in the video or around it. And check the disclosure rules of the platform where the ad runs; several ask for synthetic or AI-generated content to be marked as such, and the rules change. The ad does not get worse for being honest about what it is. In our experience it gets slightly better, because nothing in it is waiting to be found out.
 

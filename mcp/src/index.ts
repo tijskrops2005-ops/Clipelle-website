@@ -4,7 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 
 /**
- * Reelay MCP server (stdio). Four tools that call the public API v1 with the key from the
+ * Clipelle MCP server (stdio). Four tools that call the public API v1 with the key from the
  * environment: create_ad, translate_video, get_project, list_projects. Nothing is stored here;
  * every video is a normal project on the account's dashboard with the same credits and limits.
  *
@@ -16,7 +16,7 @@ const API_URL = (process.env.CLIPELLE_API_URL ?? process.env.REELAY_API_URL ?? "
 const API_KEY = (process.env.CLIPELLE_API_KEY ?? process.env.REELAY_API_KEY);
 
 async function call(method: "GET" | "POST", path: string, body?: unknown, idempotencyKey?: string) {
-  if (!API_KEY) return { ok: false, status: 0, body: { error: { code: "no_key", message: "Set CLIPELLE_API_KEY in the server's environment (Settings → API keys in Reelay)." } } };
+  if (!API_KEY) return { ok: false, status: 0, body: { error: { code: "no_key", message: "Set CLIPELLE_API_KEY in the server's environment (Settings → API keys in Clipelle)." } } };
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers: { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json", ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}) },
@@ -28,13 +28,13 @@ async function call(method: "GET" | "POST", path: string, body?: unknown, idempo
 
 const asText = (r: { ok: boolean; status: number; body: unknown }) => ({ content: [{ type: "text" as const, text: JSON.stringify(r.body, null, 2) }], isError: !r.ok });
 
-const server = new McpServer({ name: "reelay", version: "0.1.0" });
+const server = new McpServer({ name: "clipelle", version: "0.1.0" });
 
 server.registerTool(
   "create_ad",
   {
     title: "Create a product ad",
-    description: "Creates a 9:16 video ad from a product name, description and public image links. Spends credits on the Reelay account. Returns the project id and status; use get_project to follow it.",
+    description: "Creates a 9:16 video ad from a product name, description and public image links. Spends credits on the Clipelle account. Returns the project id and status; use get_project to follow it.",
     inputSchema: {
       name: z.string().min(2).max(120).describe("Project name shown in Studio"),
       productName: z.string().min(1).max(120),

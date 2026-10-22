@@ -125,7 +125,7 @@ export async function fetchPublicResource(input: string, options: FetchOptions):
         headers: {
           Accept: accept === "html" ? "text/html,application/xhtml+xml;q=0.9,*/*;q=0.5" : accept === "image" ? "image/*" : "video/*",
           "Accept-Language": "en",
-          "User-Agent": "Mozilla/5.0 (compatible; ReelayBot/1.0; product page reader)",
+          "User-Agent": "Mozilla/5.0 (compatible; ClipelleBot/1.0; product page reader)",
         },
       });
     } catch (e) {

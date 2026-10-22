@@ -9,7 +9,7 @@ summary: "What changes and what stays the same when a video is translated with l
 
 Translating a video used to mean one of two compromises. Subtitles keep the original voice and ask the viewer to read. Dubbing swaps in another voice while the mouth keeps forming the old words, which everyone notices and nobody enjoys. Lipsync translation changes the third thing: the mouth. The speaker appears to say the new language, in a voice that still sounds like them.
 
-This article explains what actually happens between uploading a video and getting a translated one back, using Reelay's [Translate & lipsync](/platform/translate) as the concrete case. No technical background needed.
+This article explains what actually happens between uploading a video and getting a translated one back, using Clipelle's [Translate & lipsync](/platform/translate) as the concrete case. No technical background needed.
 
 ## Three things change, one does not
 
@@ -25,7 +25,7 @@ What does not change: everything else in the frame. The room, the gestures, the 
 
 ## Step by step
 
-Here is the whole path as it runs in Reelay.
+Here is the whole path as it runs in Clipelle.
 
 ### 1. Upload a video you own
 
@@ -45,7 +45,7 @@ The spoken words become a transcript, and the transcript becomes one translation
 
 ### 5. The automatic quality check
 
-Before any paid rendering, Reelay compares every translated line with the original and looks for missing or added words, changes of meaning, wrong numbers, mangled names and phrasing that no native speaker would use. Corrections are made within the timing limits of each line, so a fix never makes a sentence too long for its slot. The changes and any warnings are shown on the project page, so you can see what was touched and why.
+Before any paid rendering, Clipelle compares every translated line with the original and looks for missing or added words, changes of meaning, wrong numbers, mangled names and phrasing that no native speaker would use. Corrections are made within the timing limits of each line, so a fix never makes a sentence too long for its slot. The changes and any warnings are shown on the project page, so you can see what was touched and why.
 
 ### 6. Voice and mouth
 
@@ -63,7 +63,7 @@ For you, this means two things. Speak at a natural pace in the source video and 
 
 ## Speed or Precision
 
-Reelay offers two lipsync modes.
+Clipelle offers two lipsync modes.
 
 **Speed** is standard lipsync. The mouth is matched to the new speech in the way that works for most talking-head content: a presenter mid-frame, a founder explaining a product, a how-to. It is faster and costs less.
 

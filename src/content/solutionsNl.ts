@@ -4,7 +4,7 @@ import type { Solution } from "./solutions";
 export const solutionsNl: Record<string, Solution> = {
   "ecommerce-brands": {
     slug: "ecommerce-brands", eyebrow: "E-commercemerken", title: "Een vaste stroom productadvertenties zonder studiodag",
-    intro: "Een winkel met een catalogus heeft elke week een nieuwe advertentie nodig, voor producten die veranderen. Reelay maakt van één productfoto en een paar zinnen een afgeronde 9:16-advertentie met presentator en ondertitels, tegen kosten die je vooraf ziet.",
+    intro: "Een winkel met een catalogus heeft elke week een nieuwe advertentie nodig, voor producten die veranderen. Clipelle maakt van één productfoto en een paar zinnen een afgeronde 9:16-advertentie met presentator en ondertitels, tegen kosten die je vooraf ziet.",
     problem: { title: "Het probleem", points: ["Een shoot kost een dag en dekt een handvol producten; de catalogus heeft er honderden.", "Elke advertentie heeft een script, beelden, een presentator, een montage en ondertitels nodig, in die volgorde, in verschillende tools.", "Kosten zijn pas bekend bij de factuur."] },
     helps: [
       { title: "Eén formulier per product", text: "Foto, naam, twee zinnen, lengte. Het script wordt geschreven, de productclip gegenereerd, de presentator spreekt, de montage wordt gemaakt met ondertitels." },
@@ -22,7 +22,7 @@ export const solutionsNl: Record<string, Solution> = {
   },
   "shopify-stores": {
     slug: "shopify-stores", eyebrow: "Shopify-winkels", title: "Van productpagina naar advertentie, link voor link",
-    intro: "De meeste productpagina's hebben al wat een advertentie nodig heeft: een naam, een omschrijving en goede foto's. Reelay leest een openbare productpagina, laat je controleren en corrigeren wat het vond, en maakt daarna de advertentie.",
+    intro: "De meeste productpagina's hebben al wat een advertentie nodig heeft: een naam, een omschrijving en goede foto's. Clipelle leest een openbare productpagina, laat je controleren en corrigeren wat het vond, en maakt daarna de advertentie.",
     problem: { title: "Het probleem", points: ["Productgegevens staan op de pagina; ze overtypen in een advertentietool is traag en foutgevoelig.", "De foto's zijn al gemaakt; wat ontbreekt is beweging, een stem en ondertitels.", "Een nieuwe advertentie per product, per week, past niet in een handmatig proces."] },
     helps: [
       { title: "Van link naar video", text: "Plak de productlink. Naam, omschrijving, foto's en prijs worden uit de productgegevens van de pagina gelezen; jij controleert en past aan voordat er iets wordt gebruikt." },
@@ -39,7 +39,7 @@ export const solutionsNl: Record<string, Solution> = {
   },
   dropshipping: {
     slug: "dropshipping", eyebrow: "Dropshipping", title: "Test een product met een video voordat je voorraad inkoopt",
-    intro: "Als je producten snel test, is een video per kandidaat het knelpunt. Reelay maakt een korte advertentie van de productfoto die je al hebt, zodat de test kan starten vóór de eerste bestelling.",
+    intro: "Als je producten snel test, is een video per kandidaat het knelpunt. Clipelle maakt een korte advertentie van de productfoto die je al hebt, zodat de test kan starten vóór de eerste bestelling.",
     problem: { title: "Het probleem", points: ["Een test heeft een video nodig, en het product is nog niet in je handen.", "Tientallen kandidaten per maand passen niet in een shoot of bij een editor.", "Uitgaven aan creatives moeten voorspelbaar blijven zolang het product onbewezen is."] },
     helps: [
       { title: "Een advertentie uit de foto die je hebt", text: "Eén duidelijke productfoto wordt een productclip met langzame camerabewegingen; een presentator spreekt de pitch; ondertitels maken hem leesbaar zonder geluid." },
@@ -51,12 +51,12 @@ export const solutionsNl: Record<string, Solution> = {
     faq: [
       { q: "Kan ik foto's van de leverancier gebruiken?", a: "Alleen foto's waarvan je de rechten hebt. Het formulier vraagt je dat te bevestigen." },
       { q: "Hoe snel is een video klaar?", a: "Meestal binnen enkele minuten; je kunt de pagina verlaten en de afgeronde video verschijnt op je dashboard." },
-      { q: "Plaatst Reelay de advertenties?", a: "Nee. Reelay maakt de video; de campagne draai jij in je advertentieplatform." },
+      { q: "Plaatst Clipelle de advertenties?", a: "Nee. Clipelle maakt de video; de campagne draai jij in je advertentieplatform." },
     ],
   },
   agencies: {
     slug: "agencies", eyebrow: "Bureaus", title: "Veel merken, één proces, kosten vooraf bekend",
-    intro: "Een bureau draait hetzelfde productieproces voor elke klant, met andere invoer. Reelay houdt dat proces vast en toont de kosten van elke video voordat hij start, zodat offreren en leveren eenvoudig blijven.",
+    intro: "Een bureau draait hetzelfde productieproces voor elke klant, met andere invoer. Clipelle houdt dat proces vast en toont de kosten van elke video voordat hij start, zodat offreren en leveren eenvoudig blijven.",
     problem: { title: "Het probleem", points: ["Elke klantadvertentie doorloopt dezelfde stappen, met de hand, in meerdere tools.", "Merkconsistentie per klant vraagt discipline van het hele team.", "Klanten willen de kosten vooraf weten, niet achteraf."] },
     helps: [
       { title: "Een vast proces", text: "Script, productclip, presentator, montage, altijd in die volgorde, met dezelfde kwaliteitscontroles." },
@@ -68,13 +68,13 @@ export const solutionsNl: Record<string, Solution> = {
     example: { title: "Voorbeeldstroom", steps: ["Ontvang de productsheet van een klant; plak de productpagina in van link naar video.", "Pas de kleur, ondertitelstijl en het logo van de klant toe in het blok merkstijl.", "Vink Review script first aan; stuur de drie hooks naar de klant, keur de gekozen goed.", "Lever de 9:16-advertentie en de Duitse en Franse versies uit de vertaalstroom."] },
     faq: [
       { q: "Kunnen meerdere mensen in één account werken?", a: "Ja. Een teamworkspace deelt projecten en credits; de eigenaar beheert plan, credits en leden. Eén teamworkspace per klant of per bureau is de praktische opzet." },
-      { q: "Kunnen we Reelay white-labelen?", a: "Nee. De afgeronde video's dragen geen Reelay-merk; de app zelf is Reelay." },
+      { q: "Kunnen we Clipelle white-labelen?", a: "Nee. De afgeronde video's dragen geen Clipelle-merk; de app zelf is Clipelle." },
       { q: "Hoe factureren we klanten?", a: "De projectpagina toont het werkelijke bedrag per video; de pagina Usage toont de uitgaven per project voor je eigen facturatie." },
     ],
   },
   "apps-and-saas": {
     slug: "apps-and-saas", eyebrow: "Apps en SaaS", title: "Leg een functie uit in een verticale video met presentator",
-    intro: "Een functie uitgelegd in 30 gesproken seconden, met een schermafbeelding als productbeeld, doet het goed op verticale platforms. Reelay maakt die video uit één afbeelding en een korte omschrijving.",
+    intro: "Een functie uitgelegd in 30 gesproken seconden, met een schermafbeelding als productbeeld, doet het goed op verticale platforms. Clipelle maakt die video uit één afbeelding en een korte omschrijving.",
     problem: { title: "Het probleem", points: ["Schermopnames zijn lang en hebben een stem, ondertitels en een montage nodig.", "Een presentator voor de camera kost een shoot; een slidedeck houdt de aandacht niet vast.", "Elke functielancering heeft dezelfde video opnieuw nodig."] },
     helps: [
       { title: "Een schermafbeelding als product", text: "Upload een schone schermafbeelding of app-visual; die wordt de productclip met langzame camerabewegingen terwijl de presentator uitlegt." },
@@ -91,7 +91,7 @@ export const solutionsNl: Record<string, Solution> = {
   },
   "creators-and-localization": {
     slug: "creators-and-localization", eyebrow: "Creators en lokalisatie", title: "Eén video, veel talen, je eigen stem",
-    intro: "De video van een creator werkt in één taal; het publiek spreekt er tien. Reelay vertaalt een video van jezelf naar andere talen met je eigen stem en kloppende lippen, en brandt voor elke taal ondertitels in.",
+    intro: "De video van een creator werkt in één taal; het publiek spreekt er tien. Clipelle vertaalt een video van jezelf naar andere talen met je eigen stem en kloppende lippen, en brandt voor elke taal ondertitels in.",
     problem: { title: "Het probleem", points: ["Opnieuw opnemen in elke taal is onmogelijk; alleen ondertitels verliezen de verbinding.", "Nasynchroniseren met een andere stem verandert wie er spreekt.", "Elke versie heeft eigen ondertitels nodig en een controle van namen en getallen."] },
     helps: [
       { title: "Jouw stem, andere woorden", text: "De vertaling behoudt de eigen stem van de spreker en laat de lippen de nieuwe taal volgen, in Speed- of Precision-kwaliteit." },

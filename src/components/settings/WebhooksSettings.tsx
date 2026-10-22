@@ -85,7 +85,7 @@ export function WebhooksSettings() {
         {canManage && (
           <form onSubmit={onCreate} className="space-y-3">
             <Field id="webhookUrl" label="Endpoint URL" hint="A public https:// URL on your server. Private addresses and plain http are refused.">
-              <Input id="webhookUrl" type="url" inputMode="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://yourshop.com/reelay/webhook" required />
+              <Input id="webhookUrl" type="url" inputMode="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://yourshop.com/clipelle/webhook" required />
             </Field>
             <fieldset className="flex flex-wrap gap-3">
               <legend className="mb-1 text-sm font-medium text-ink">Events</legend>
@@ -106,7 +106,7 @@ export function WebhooksSettings() {
           <div role="status" className="rounded-[14px] border border-success/30 bg-success/5 p-4">
             <p className="text-sm font-semibold text-ink">Copy the signing secret now. It is shown once.</p>
             <code className="mt-2 block select-all overflow-x-auto rounded-control bg-surface px-3 py-2 font-mono text-[13px] text-ink">{fresh.secret}</code>
-            <p className="mt-2 text-[13px] text-muted">Every call to {fresh.url} carries <span className="font-mono">X-Reelay-Signature: t=…,v1=…</span>; v1 is the HMAC-SHA256 of &quot;t.body&quot; with this secret. The API docs show the check.</p>
+            <p className="mt-2 text-[13px] text-muted">Every call to {fresh.url} carries <span className="font-mono">X-Clipelle-Signature: t=…,v1=…</span>; v1 is the HMAC-SHA256 of &quot;t.body&quot; with this secret. The API docs show the check.</p>
           </div>
         )}
         <ul className="space-y-2">

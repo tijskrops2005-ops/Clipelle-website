@@ -57,7 +57,7 @@ describe.skipIf(!ready)("row level security: default deny for the Data API roles
     // A throw-away verified user, so the "authenticated" role is tested with a real session.
     const { createClient } = await import("@supabase/supabase-js");
     const admin = createClient(env.url!, env.secret!, { auth: { persistSession: false, autoRefreshToken: false } });
-    const email = `rls-probe-${randomUUID().slice(0, 8)}@reelay.local`;
+    const email = `rls-probe-${randomUUID().slice(0, 8)}@clipelle.local`;
     const password = randomUUID();
     const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
     if (created.error || !created.data.user) throw new Error(`Could not create the probe user: ${created.error?.message}`);
