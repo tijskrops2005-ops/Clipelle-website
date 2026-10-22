@@ -356,7 +356,7 @@ Gebouwd na de opschoonronde (`820c883` … `ffd4139`) en vóór de tag `pre-plat
 - **API v1 + MCP**: sleutels per werkruimte (`/settings/api`, alleen op betaalde plannen), `POST /api/v1/ads`, `POST /api/v1/translations`, `GET /api/v1/projects[/id]`, idempotentie per sleutel, limiet per minuut (`API_RATE_LIMIT_PER_MINUTE`), docs op `/docs/api` en `/docs/mcp`, MCP-server in `mcp/` met vier tools. Dezelfde credits, limieten en projecten als in de app; geen webhooks (open punt).
 - **Werkruimtes en teams**: elke gebruiker heeft een persoonlijke werkruimte; Business-plannen (drie creditniveaus, 3× marge) geven een teamwerkruimte met uitnodigingen, rollen en één gedeelde creditpot (`src/lib/workspaces.ts`, migratie 0014). Credits, facturatie en API-sleutels hangen aan de werkruimte.
 - **Credits vervallen nooit** (besluit 21 oktober; marges ongewijzigd 68/67/67%); de gratis advertentie vervalt na 30 dagen.
-- **Prijzenpagina**: tabs Individual / Business / API, maand/jaar met de echte jaarkorting, "Our recommendation" op Pro uit `plans.ts`, creditvoorbeelden, vergelijkingstabel, "Find your plan" en "Reelay vs doing it yourself" (`src/lib/pricingHelpers.ts`, getest tegen `plans.ts`).
+- **Prijzenpagina**: tabs Individual / Business / API, maand/jaar met de echte jaarkorting, "Our recommendation" op Pro uit `plans.ts`, creditvoorbeelden, vergelijkingstabel, "Find your plan" en "Clipelle vs doing it yourself" (`src/lib/pricingHelpers.ts`, getest tegen `plans.ts`).
 - **Company**: `/customers` (alleen verhalen met toestemmingsbestand; nu leeg), `/partners` (25% van abonnementsbetalingen via Reditus; aanmelden pas als `signupUrl` gevuld is), `/careers` (geen open rollen, open sollicitatie), `/trust`, `/services/done-for-you` (managed service zonder prijs; volumes en doorlooptijd pas tonen als `src/content/services.ts` gevuld is).
 - **Integratiepagina's**: API en MCP (gebouwd), Slack-bot en ad launcher als "soon" met wachtlijst.
 - **Productiebuild in databasemodus** slaagt sinds 21 oktober (zie hoofdstuk 8.3 van de layout-research): app-routes mogen blokkeren (`instant = false`), sitekop en calculators achter `Suspense`, credittabel voor de statische platformpagina uurlijks gecacht (`src/lib/pricingCached.ts`).
@@ -369,7 +369,7 @@ Gebouwd na de opschoonronde (`820c883` … `ffd4139`) en vóór de tag `pre-plat
 Tag `pre-growth-features` markeert de staat ervoor. Per onderdeel één commit; details in `CLAUDE.md` onder "Growth features".
 
 1. **Andere versie** van een advertentie met alles vooringevuld; projecten gegroepeerd als versies ("Version 2 of …"), lijst "Other versions" op de projectpagina.
-2. **Deze advertentie vertalen**: de afgeronde video is de bron, geen upload; rechten vastgelegd als "gegenereerd in Reelay"; gegroepeerd onder de advertentie.
+2. **Deze advertentie vertalen**: de afgeronde video is de bron, geen upload; rechten vastgelegd als "gegenereerd in Clipelle"; gegroepeerd onder de advertentie.
 3. **Formatbibliotheek**: acht echte formats die alleen richting en toon invullen; chips in het formulier, rij op het dashboard, sectie op /examples (EN en NL).
 4. **Batch-variaties**: 2–5 varianten per format of hookstijl, elk een eigen project en run, alle credits vooraf gereserveerd, per variant het budget per creatie, gedeeltelijk falen betaalt alleen die variant terug; batchpagina met Compare en Download all; niet op het gratis plan.
 5. **Notificaties**: één e-mail per project of per batch (uit te zetten in Profile), badge, toast en paginatitel in de app.

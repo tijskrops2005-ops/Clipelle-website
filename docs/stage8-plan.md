@@ -125,7 +125,7 @@ Echte gebruikersaccounts en betalingen, e-mailnotificaties, meerdere varianten i
 **Supabase Auth (dashboard → Authentication)**
 1. URL configuration: *Site URL* = het echte domein (bijv. `https://app.example.com`); *Redirect URLs*: `https://<domein>/auth/callback`, `https://<domein>/auth/callback?next=/reset-password` en voor lokaal `http://localhost:3001/auth/callback`.
 2. Providers → Email: *Confirm email* aan; *Secure email change* aan. Magic link blijft aan (standaard). Google alleen als `NEXT_PUBLIC_AUTH_GOOGLE=true`: client-id en secret in Supabase invullen.
-3. Email templates (teksten in eigen woorden, Engels, geen leveranciersnamen): *Confirm signup* ("Verify your e-mail", knop "Verify and open Reelay", link `{{ .ConfirmationURL }}`), *Magic Link* ("Your sign-in link"), *Reset Password* ("Choose a new password", link naar `/auth/callback?next=/reset-password` via `{{ .ConfirmationURL }}`), *Change Email*. Zet onder SMTP een eigen afzender (de ingebouwde mailer heeft een laag uurplafond).
+3. Email templates (teksten in eigen woorden, Engels, geen leveranciersnamen): *Confirm signup* ("Verify your e-mail", knop "Verify and open Clipelle", link `{{ .ConfirmationURL }}`), *Magic Link* ("Your sign-in link"), *Reset Password* ("Choose a new password", link naar `/auth/callback?next=/reset-password` via `{{ .ConfirmationURL }}`), *Change Email*. Zet onder SMTP een eigen afzender (de ingebouwde mailer heeft een laag uurplafond).
 4. Rate limits (Authentication → Rate limits): laat de standaard staan; onze eigen limiet is 10 per adres per 10 minuten per actie.
 5. `.env` op de server: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_DEMO_MODE=false`, de Supabase-sleutels, `MAX_COST_PER_USER_*`, `FREE_ADS_PER_DAY`.
 

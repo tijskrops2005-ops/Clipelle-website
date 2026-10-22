@@ -1,6 +1,6 @@
-# Layout-onderzoek: Creatify en MakeUGC vergeleken met Reelay
+# Layout-onderzoek: Creatify en MakeUGC vergeleken met Clipelle
 
-Datum: 20 oktober 2026. Doel: leren hoe twee volwassen AI-advertentietools hun navigatie, creatieflow, resultaatpagina en prijzen opbouwen, en daar een concreet layoutvoorstel voor Reelay uit afleiden. Er is **niets gebouwd** en geen code gewijzigd; dit document en de screenshots in `docs/research/screens/` zijn het enige resultaat.
+Datum: 20 oktober 2026. Doel: leren hoe twee volwassen AI-advertentietools hun navigatie, creatieflow, resultaatpagina en prijzen opbouwen, en daar een concreet layoutvoorstel voor Clipelle uit afleiden. Er is **niets gebouwd** en geen code gewijzigd; dit document en de screenshots in `docs/research/screens/` zijn het enige resultaat.
 
 Hoe gelezen:
 
@@ -13,18 +13,18 @@ Opmerking over Creatify: de Chrome-browser bleek al ingelogd bij Creatify onder 
 
 ---
 
-## 1. Tien inzichten voor Reelay
+## 1. Tien inzichten voor Clipelle
 
-1. **Eén invoer eerst, de rest later.** Beide tools beginnen met één ding (een URL, een prompt, een script) en vragen pas daarna om details. Reelay's advertentieformulier toont nu alles tegelijk (foto's, naam, URL, beschrijving, lengte, taal, accent, stem, presentator, achtergrond, merkstijl, aanbod, regie, script). Dat is compleet, maar de eerste indruk is "veel werk". Een flow in twee of drie blokken (Product → Presentator en stijl → Script) met ingeklapte "Optioneel"-secties houdt dezelfde opties en verlaagt de drempel.
-2. **Aanbevolen standaard zichtbaar maken.** Creatify's video-instellingen tonen de aanbeveling expliciet (9:16, 30 s, Engels, "aanbevolen voor TikTok/Reels"). Reelay heeft goede standaarden maar noemt ze niet als aanbeveling. Een korte regel "Aanbevolen: 30 s, 9:16, Engels" bij de lengtekeuze geeft vertrouwen en nodigt uit om niets te veranderen.
-3. **Kosten vooraf, in één getal, op de plek van de knop.** Beide concurrenten tonen credits bij de knop en herinneren eraan vlak voor de render. Reelay toont de schatting al onder de knop; dat is sterk. Wat ontbreekt: de schatting ook in de bevestigingsstap herhalen en per taalversie (Workflow B) op het resultaat tonen wat het werkelijk kostte, zonder leveranciersnamen.
-4. **Resultaten als 9:16-tegels met status erop.** Creatify en MakeUGC tonen klaar werk als verticale tegels met een label en een afspeelknop. Reelay heeft dat al (`ProjectTile`), maar op de projectpagina staat het resultaat onderaan onder de pipeline. Zodra een video klaar is, hoort de video bovenaan te staan en de pipeline ingeklapt eronder.
-5. **Varianten zijn het verdienmodel van de concurrent, niet onze MVP.** Creatify rendert standaard 6–8 varianten, MakeUGC 10 in batch. Dat is bewust buiten onze scope (U3 op de roadmap). Wel kunnen we het goedkoop voorbereiden: de drie gesproken hooks die Reelay al schrijft als drie kaarten tonen, met één gekozen hook voor de render. De layout kan later een "Maak alle drie"-knop krijgen zonder herontwerp.
-6. **Het editor-escape is overal, maar klein.** Beide tools hebben een "snelle bewerking" (presentator, stem, muziek, captions, formaat wisselen) naast een volledige editor. Reelay bouwt bewust geen editor. Het equivalent dat wél past: "Opnieuw renderen met andere instelling" vanaf de resultaatpagina, die het formulier vooringevuld opent (script, presentator, stem) en alleen de gewijzigde stap opnieuw laat lopen. Dat is retry-logica die we al hebben, met een ander label.
-7. **Formaat- en platformkeuze als preset.** Creatify laat eerst het platform kiezen en leidt daar formaat en lengte uit af. Reelay is 9:16-only, en dat is een bewuste keuze. Een klein label "9:16, geschikt voor TikTok, Reels en Shorts" bij de upload legt het uit zonder een keuze toe te voegen.
-8. **Een "Mijn merk"-plek hoort apart.** Beide tools hebben Brand Kit / Brand Space (logo, kleuren, lettertype, stemvoorkeur, product). Reelay vraagt merkstijl nu per project opnieuw. Een Settings-tabblad "Merk" dat de laatste merkstijl bewaart en als standaard invult, scheelt het meeste werk per video. Niets nieuws in de pipeline, alleen standaardwaarden.
-9. **Projectenlijst filtert op status én soort.** De concurrenten groeperen output per tool. Reelay's projectenlijst filtert op status; met twee workflows is een tweede filter "Advertentie / Vertaling" en een duidelijk soort-label op de tegel genoeg.
-10. **Toon: kort, actiegericht, zonder jargon.** Beide tools schrijven koppen als werkwoordzinnen ("Paste a link. Get a video ad.") en noemen geen modellen of leveranciers in de klantflow, behalve MakeUGC dat juist met "15 modellen" adverteert. Reelay zit al op de kalme kant; de teksten op de stappenkaarten mogen korter (één zin wat het doet, geen uitleg hoe).
+1. **Eén invoer eerst, de rest later.** Beide tools beginnen met één ding (een URL, een prompt, een script) en vragen pas daarna om details. Clipelle's advertentieformulier toont nu alles tegelijk (foto's, naam, URL, beschrijving, lengte, taal, accent, stem, presentator, achtergrond, merkstijl, aanbod, regie, script). Dat is compleet, maar de eerste indruk is "veel werk". Een flow in twee of drie blokken (Product → Presentator en stijl → Script) met ingeklapte "Optioneel"-secties houdt dezelfde opties en verlaagt de drempel.
+2. **Aanbevolen standaard zichtbaar maken.** Creatify's video-instellingen tonen de aanbeveling expliciet (9:16, 30 s, Engels, "aanbevolen voor TikTok/Reels"). Clipelle heeft goede standaarden maar noemt ze niet als aanbeveling. Een korte regel "Aanbevolen: 30 s, 9:16, Engels" bij de lengtekeuze geeft vertrouwen en nodigt uit om niets te veranderen.
+3. **Kosten vooraf, in één getal, op de plek van de knop.** Beide concurrenten tonen credits bij de knop en herinneren eraan vlak voor de render. Clipelle toont de schatting al onder de knop; dat is sterk. Wat ontbreekt: de schatting ook in de bevestigingsstap herhalen en per taalversie (Workflow B) op het resultaat tonen wat het werkelijk kostte, zonder leveranciersnamen.
+4. **Resultaten als 9:16-tegels met status erop.** Creatify en MakeUGC tonen klaar werk als verticale tegels met een label en een afspeelknop. Clipelle heeft dat al (`ProjectTile`), maar op de projectpagina staat het resultaat onderaan onder de pipeline. Zodra een video klaar is, hoort de video bovenaan te staan en de pipeline ingeklapt eronder.
+5. **Varianten zijn het verdienmodel van de concurrent, niet onze MVP.** Creatify rendert standaard 6–8 varianten, MakeUGC 10 in batch. Dat is bewust buiten onze scope (U3 op de roadmap). Wel kunnen we het goedkoop voorbereiden: de drie gesproken hooks die Clipelle al schrijft als drie kaarten tonen, met één gekozen hook voor de render. De layout kan later een "Maak alle drie"-knop krijgen zonder herontwerp.
+6. **Het editor-escape is overal, maar klein.** Beide tools hebben een "snelle bewerking" (presentator, stem, muziek, captions, formaat wisselen) naast een volledige editor. Clipelle bouwt bewust geen editor. Het equivalent dat wél past: "Opnieuw renderen met andere instelling" vanaf de resultaatpagina, die het formulier vooringevuld opent (script, presentator, stem) en alleen de gewijzigde stap opnieuw laat lopen. Dat is retry-logica die we al hebben, met een ander label.
+7. **Formaat- en platformkeuze als preset.** Creatify laat eerst het platform kiezen en leidt daar formaat en lengte uit af. Clipelle is 9:16-only, en dat is een bewuste keuze. Een klein label "9:16, geschikt voor TikTok, Reels en Shorts" bij de upload legt het uit zonder een keuze toe te voegen.
+8. **Een "Mijn merk"-plek hoort apart.** Beide tools hebben Brand Kit / Brand Space (logo, kleuren, lettertype, stemvoorkeur, product). Clipelle vraagt merkstijl nu per project opnieuw. Een Settings-tabblad "Merk" dat de laatste merkstijl bewaart en als standaard invult, scheelt het meeste werk per video. Niets nieuws in de pipeline, alleen standaardwaarden.
+9. **Projectenlijst filtert op status én soort.** De concurrenten groeperen output per tool. Clipelle's projectenlijst filtert op status; met twee workflows is een tweede filter "Advertentie / Vertaling" en een duidelijk soort-label op de tegel genoeg.
+10. **Toon: kort, actiegericht, zonder jargon.** Beide tools schrijven koppen als werkwoordzinnen ("Paste a link. Get a video ad.") en noemen geen modellen of leveranciers in de klantflow, behalve MakeUGC dat juist met "15 modellen" adverteert. Clipelle zit al op de kalme kant; de teksten op de stappenkaarten mogen korter (één zin wat het doet, geen uitleg hoe).
 
 ---
 
@@ -86,9 +86,9 @@ Extra uit de API (zeker, `docs.creatify.ai`): captions kunnen uit, muziek uit, C
 
 **Credits** (zeker, pricing en API-docs): URL-naar-video en avatarvideo kosten 5 credits per blok van 30 s; het snelle model 0,5 credit per seconde; productvideo 2 credits per beeld; credits vervallen na twee maanden.
 
-### 2.4 Tools van Creatify tegenover Reelay
+### 2.4 Tools van Creatify tegenover Clipelle
 
-| Tool bij Creatify | Reelay | Toelichting |
+| Tool bij Creatify | Clipelle | Toelichting |
 |---|---|---|
 | URL to Video (link → complete ad) | **Missen, deels gepland** | Roadmap S1 (Shopify-import). Wij vragen de URL als context, halen niets op. |
 | AI Avatar (script → presentator) | **Hebben** | Workflow A, stap Presentator; presentatorkiezer, stem, snelheid, achtergrond. |
@@ -115,11 +115,11 @@ Zeker, `creatify.ai/pricing` (`screens/creatify-pricing-plans.jpg`, `screens/cre
 - Onder de kaarten een lange vergelijkingstabel (credits, watermerk, bibliotheek, custom avatars, sjablonen, agent-functies, duur per video, parallelle renders, seats, brand spaces, support) en een FAQ (gratis plan, hoe credits opgaan, meenemen naar volgende maand, wijzigen/opzeggen, restitutie).
 - API apart: twee creditbundels per maand.
 
-Wat we eruit halen: één getal (credits of euro) per video is de taal die klanten begrijpen; een vergelijkingstabel is pas nodig bij meerdere plannen. Reelay heeft nu een budget per video en een schatting per formulier; dat is het goede begin.
+Wat we eruit halen: één getal (credits of euro) per video is de taal die klanten begrijpen; een vergelijkingstabel is pas nodig bij meerdere plannen. Clipelle heeft nu een budget per video en een schatting per formulier; dat is het goede begin.
 
 ### 2.6 Visuele en interactieve patronen (eigen woorden)
 
-- Donkere, glanzende marketingstijl met grote gradiënten en een monospace accent voor knoppen. Niet onze richting (Reelay is licht en kalm), maar de **rangorde** is bruikbaar: één invoerveld boven de vouw, één knop, één bewijslijn.
+- Donkere, glanzende marketingstijl met grote gradiënten en een monospace accent voor knoppen. Niet onze richting (Clipelle is licht en kalm), maar de **rangorde** is bruikbaar: één invoerveld boven de vouw, één knop, één bewijslijn.
 - "Hoe het werkt" altijd in drie genummerde stappen met een klein beeld per stap.
 - Formaten als een raster van kaarten met één zin.
 - Prijskaarten met één uitgelicht plan, kortingslabel bij jaarbetaling, en een lange tabel onder de vouw.
@@ -187,9 +187,9 @@ Credits (zeker, pricing en API): 500 / 1.000 / 2.000–5.000 credits per plan; 1
 
 Fouten en bewerken: niet publiek gedocumenteerd (aanname: zelfde patroon als Creatify, mislukte render terugbetaald; niet bevestigd).
 
-### 3.4 Tools van MakeUGC tegenover Reelay
+### 3.4 Tools van MakeUGC tegenover Clipelle
 
-| Tool bij MakeUGC | Reelay | Toelichting |
+| Tool bij MakeUGC | Clipelle | Toelichting |
 |---|---|---|
 | Talking actors (script → presentator) | **Hebben** | Stap Presentator. |
 | Product in de hand (foto, achtergrond weg) | **Missen** | Interessant voor later; HeyGen kent het niet als API-optie, dus niet gepland. |
@@ -210,15 +210,15 @@ Zeker (`screens/makeugc-pricing-plans.jpg`): kop, een regel "probeer elk plan vo
 
 ### 3.6 Visuele en interactieve patronen (eigen woorden)
 
-- Licht, veel wit, zwarte knoppen, één blauwe accentknop voor het aanbevolen plan. Dichter bij Reelay's stijl dan Creatify.
+- Licht, veel wit, zwarte knoppen, één blauwe accentknop voor het aanbevolen plan. Dichter bij Clipelle's stijl dan Creatify.
 - De "drie stappen" tonen **echte mini-interfaces** in de kaarten (tabbladen, tellers, schakelaars) in plaats van illustraties. Dat legt de app uit zonder tekst.
-- Tegels met een klein monospace label linksboven en een ronde afspeelknop rechtsonder; precies het patroon dat Reelay's `ProjectTile` al gebruikt.
+- Tegels met een klein monospace label linksboven en een ronde afspeelknop rechtsonder; precies het patroon dat Clipelle's `ProjectTile` al gebruikt.
 - Tellers bij tekstvelden ("142 / 1500") maken limieten voelbaar.
-- Schaarste-elementen (aftelklok, "limited") zijn marketing en passen niet bij Reelay's kalme toon.
+- Schaarste-elementen (aftelklok, "limited") zijn marketing en passen niet bij Clipelle's kalme toon.
 
 ### 3.7 Taal en toon
 
-Engels, kort, met vinkjes en cijfers. Koppen als belofte. Modellen worden juist wél bij naam genoemd (verkoopargument "elk model in één studio"). Voor Reelay blijft de regel: geen leveranciers in de klantflow.
+Engels, kort, met vinkjes en cijfers. Koppen als belofte. Modellen worden juist wél bij naam genoemd (verkoopargument "elk model in één studio"). Voor Clipelle blijft de regel: geen leveranciers in de klantflow.
 
 ### 3.8 Bronnen voor dit hoofdstuk
 
@@ -232,7 +232,7 @@ Achter de inlog: dashboard, bibliotheek, de wizard zelf, de editor, foutmeldinge
 
 ---
 
-## 4. Reelay nu (alleen gelezen, niets gewijzigd)
+## 4. Clipelle nu (alleen gelezen, niets gewijzigd)
 
 Bekeken in de browser eerder deze sessie (screenshots `screens/reelay-*.jpg`) en in de code (`src/components/ProjectForm.tsx`, `src/components/translate/TranslateForm.tsx`, `src/components/translate/TranslateProjectView.tsx`, `src/components/dashboard/*`, `src/components/Sidebar.tsx`).
 
@@ -253,13 +253,13 @@ Bekeken voor de herbouw van de buitenkant: alleen de openbare homepage en prijze
 
 **Gevolgde patronen (zeker, in eigen uitvoering gebouwd):**
 
-| Patroon | Bron | Waar het in Reelay zit |
+| Patroon | Bron | Waar het in Clipelle zit |
 |---|---|---|
 | Afgeronde, zwevende navigatiebalk met één zwarte knop rechts | https://creatomate.com/ (kop) | Mobiele bovenbalk van de app (`MobileNav`) en de kop van `/welcome` |
 | Hero: kleine kop in mono erboven, grote titel, één zin, twee knoppen (gevuld + omlijnd) | https://creatomate.com/ (hero) | `/welcome` |
 | Genummerde "hoe werkt het"-blokken: mono nummer "01", een kort lijntje, titel, één zin | https://creatomate.com/ (blokken 01–03 onder de hero) | `StepList` boven beide formulieren en op `/welcome` |
 | Rij van vier gelijke kaarten met één zin, veel witruimte eromheen | https://creatomate.com/ (use-case-kaarten) | "What you get"-kaarten op `/welcome`, de How-it-works-rijen op het dashboard |
-| Prijskaarten met een uitgelichte kaart (gekleurde kop "Most Popular"), vinkjes en kruisjes per regel, een maand/jaar-schakelaar, FAQ in twee kolommen | https://creatomate.com/pricing | Nog geen prijzenpagina in Reelay; de FAQ in twee kolommen staat op `/welcome` |
+| Prijskaarten met een uitgelichte kaart (gekleurde kop "Most Popular"), vinkjes en kruisjes per regel, een maand/jaar-schakelaar, FAQ in twee kolommen | https://creatomate.com/pricing | Nog geen prijzenpagina in Clipelle; de FAQ in twee kolommen staat op `/welcome` |
 | Afsluitend blok met één kop, één zin en één knop; voet met mono-tekst | https://creatomate.com/ (onderaan) | `/welcome` |
 | Ruimtegebruik: secties ver uit elkaar, tekstbreedte beperkt, één accentkleur | beide pagina's | Hele app: `max-w` per sectie, 64–96 px tussen secties |
 
@@ -285,7 +285,7 @@ Doel: de opbouw van een complete marketingsite plus account- en creditmodel. All
 
 ### Vertrouwensblokken
 
-Logostrip ("trusted by"), reviewkaarten met naam/functie, cijferrij, case studies met één getal, "as seen in". Reelay bouwt deze blokken na maar vult ze uitsluitend uit `src/content/trust.ts`; zolang dat leeg is, verschijnen ze in productie niet (geen verzonnen reviews of logo's).
+Logostrip ("trusted by"), reviewkaarten met naam/functie, cijferrij, case studies met één getal, "as seen in". Clipelle bouwt deze blokken na maar vult ze uitsluitend uit `src/content/trust.ts`; zolang dat leeg is, verschijnen ze in productie niet (geen verzonnen reviews of logo's).
 
 ### Credits en abonnementen
 
@@ -303,9 +303,9 @@ Bronnen: https://creatify.ai/pricing, https://www.makeugc.ai/pricing, https://cr
 
 ### Bewegende onderdelen
 
-Hover-lift op kaarten, tegels die bij hover uitwaaieren (MakeUGC), looping videotegels, een marquee met logo's, uitklapmenu's met kaarten, accordeon-FAQ, tabbladen in de hero (Creatify), aftelklok in een promobalk (MakeUGC; niet overgenomen: past niet bij onze toon). Reelay volgt: scroll-reveals, marquee, hover-lift, accordeons, tabbladen, looping voorbeelden, alles uit met "reduce motion".
+Hover-lift op kaarten, tegels die bij hover uitwaaieren (MakeUGC), looping videotegels, een marquee met logo's, uitklapmenu's met kaarten, accordeon-FAQ, tabbladen in de hero (Creatify), aftelklok in een promobalk (MakeUGC; niet overgenomen: past niet bij onze toon). Clipelle volgt: scroll-reveals, marquee, hover-lift, accordeons, tabbladen, looping voorbeelden, alles uit met "reduce motion".
 
-### Wat Reelay hieruit bouwt (eigen woorden, eigen beeld)
+### Wat Clipelle hieruit bouwt (eigen woorden, eigen beeld)
 
 Afgeronde zwevende bovenbalk met Platform- en Resources-uitklapmenu's, Pricing, About, Log in, Book a demo en één hoofdknop; homepage met hero, "What you can make", genummerde stappen, voorbeeldgalerij uit eigen uitvoer, "What you get", vertrouwensblokken uit `trust.ts`, prijsvoorproefje, FAQ, afsluitend blok, voet in vier kolommen. Creditmodel: één credit = één seconde presentatorvideo in Standard; vertalen per minuut; prijs = leverancierskosten × marge (`docs/pricing-model.md`); Free met één gratis advertentie, drie maandplannen met jaarkorting, losse pakketten, credits uit abonnement één maand overdraagbaar, Enterprise via /demo.
 
@@ -340,7 +340,7 @@ Alles blijft in het bestaande ontwerpsysteem (lichte stijl, kaarten, één accen
 Ongewijzigd in opzet, met één toevoeging onder Settings:
 
 ```
-[Reelay]
+[Clipelle]
 (● Create new video)            ← accentpil, blijft
 
 Dashboard
@@ -518,22 +518,22 @@ Onderzoek vooraf (alleen openbare pagina's, geen login, geen formulieren, niets 
 
 ### 9.1 Wat de twee referentiesites doen (structuur, eigen woorden)
 
-| Onderdeel | Creatify | MakeUGC | Wat Reelay hieruit bouwt |
+| Onderdeel | Creatify | MakeUGC | Wat Clipelle hieruit bouwt |
 |---|---|---|---|
-| Navigatie | Platform (megamenu in drie groepen + losse links), Resources, Use Cases, Pricing, Log in, Book Demo | Features (drie groepen), Developers, AI models, Pricing, Enterprise, Affiliate, Log in, Sign up | Vier kaartmenu's: Platform, Solutions, Resources, Company + Pricing (`src/components/site/siteNav.ts`); geen modellenmenu (geen modelkeuze bij Reelay) |
+| Navigatie | Platform (megamenu in drie groepen + losse links), Resources, Use Cases, Pricing, Log in, Book Demo | Features (drie groepen), Developers, AI models, Pricing, Enterprise, Affiliate, Log in, Sign up | Vier kaartmenu's: Platform, Solutions, Resources, Company + Pricing (`src/components/site/siteNav.ts`); geen modellenmenu (geen modelkeuze bij Clipelle) |
 | Home | Hero met invoerveld, formatengalerij, logostrip, connectors, merkkit, modellen, logo's, case-carrousel, cijfers, slot-CTA | Promobalk, hero met lus van 9:16-clips, logo's, drie stappen, platformkaarten, modellenraster, prijsblok, FAQ, klantkaarten, slot-CTA | Hero met eigen voorbeeld, "Real output" (één echte advertentie met foto, script en kosten uit `realOutput.ts`), drie stappen, voorbeelden, uitkomsten per doelgroep, spaarcalculator op gemeten tijden, drie CTA's met "No credit card required". Geen promobalk, geen verzonnen cijfers |
 | Blog | 278 artikelen in zes categorieën, uitgelichte post, rijen per categorie, geen paginering; apart leercentrum met filtertabs | Twee URL's (index en één artikel) | 24 eigen artikelen in vijf categorieën (`src/content/blog/*.md`), categorie- en tagpagina's, inhoudsopgave, Article-schema, OG-afbeelding, RSS; originaliteitscheck tegen 75 bronpagina's: 0 overlappingen |
 | Case studies | Overzicht met kaarten (branche, resultaat in de titel), detail met drie cijfertegels, uitdaging/aanpak/resultaat | Alleen een rij merkkaarten op de home | `/customers` met hetzelfde sjabloon, maar alleen gevuld uit `src/content/case-studies.ts` met een toestemmingsbestand per verhaal; leeg = "stories follow" |
-| Use cases | Overzicht in drie rasters (formaat, platform, branche), detailpagina met zes featureblokken en resultaten | Geen aparte pagina's; `/languages` komt het dichtst in de buurt | Zes solution-pagina's (`src/content/solutions.ts`) met alleen wat Reelay echt doet |
+| Use cases | Overzicht in drie rasters (formaat, platform, branche), detailpagina met zes featureblokken en resultaten | Geen aparte pagina's; `/languages` komt het dichtst in de buurt | Zes solution-pagina's (`src/content/solutions.ts`) met alleen wat Clipelle echt doet |
 | Partnerprogramma | 25% recurring eerste jaar, maandelijkse uitbetaling via PayPal, $20 minimum, Rewardful, Google Form | 30% recurring levenslang, 60 dagen cookie, promocode, Tolt, $50 minimum, verdiensimulator | `/partners`: 25% van abonnementsbetalingen, levenslang, alleen abonnementen (pakketten uitgesloten via Stripe-metadata), maandelijks vanaf $50, via Reditus; aanmeldknop pas als `signupUrl` in `partners.ts` gevuld is |
 | Careers | Banner, teamfoto's, kop "Open roles" zonder vacatures | Geen pagina | `/careers`: eerlijk "geen open rollen", vier werkprincipes, open sollicitatie opgeslagen in `career_interests` |
 | Integraties | API, MCP, Slack-bot, Ad Launcher, Labs | API, MCP, webhooks, modelreferentie; geen Slack, geen launcher | API v1 + MCP gebouwd (`/docs/api`, `/docs/mcp`, `mcp/`); Slack-bot en ad launcher als eerlijke "soon"-pagina's met wachtlijst (`waitlist`) |
-| Prijzen | Tabs Individual / Business / API, jaarkorting bij de tabs | Starter / Growth / Pro + Enterprise, drie betaalperiodes, aftelbanner | Tabs Individual / Business / API, maand/jaar, Business in drie creditniveaus, Enterprise "Let's talk", creditvoorbeelden per plan, vergelijkingstabel, "Find your plan" en "Reelay vs doing it yourself" op geteste helpers. Geen aftelbanner, geen lanceerprijs zonder echte eerdere prijs |
+| Prijzen | Tabs Individual / Business / API, jaarkorting bij de tabs | Starter / Growth / Pro + Enterprise, drie betaalperiodes, aftelbanner | Tabs Individual / Business / API, maand/jaar, Business in drie creditniveaus, Enterprise "Let's talk", creditvoorbeelden per plan, vergelijkingstabel, "Find your plan" en "Clipelle vs doing it yourself" op geteste helpers. Geen aftelbanner, geen lanceerprijs zonder echte eerdere prijs |
 | Cookiebanner | Framer consent-mode, GTM via eigen proxy, PostHog | Geen banner gevonden | Eigen banner (`CookieBanner.tsx`): noodzakelijk altijd, analytics en partnertracking pas na toestemming; voorkeur in `src/lib/consent.ts` |
 
-### 9.2 Reditus: wat de documentatie zegt en wat Reelay besloot
+### 9.2 Reditus: wat de documentatie zegt en wat Clipelle besloot
 
-- Trackingscript in de `<head>` van elke pagina; globale `window.gr`; cookie `gr_id` na een klik op `?red=<slug>`; standaard cookievenster 60 dagen. De docs zeggen dat het script **niet** achter een cookiebanner hoort (hun standpunt, geen juridisch advies). **Besluit Reelay: wél pas na toestemming laden** (`ConsentScripts.tsx`), omdat de banner anders leeg is. Gevolg: een partnerklik zonder toestemming wordt niet toegeschreven; dat staat in `docs/partners.md`.
+- Trackingscript in de `<head>` van elke pagina; globale `window.gr`; cookie `gr_id` na een klik op `?red=<slug>`; standaard cookievenster 60 dagen. De docs zeggen dat het script **niet** achter een cookiebanner hoort (hun standpunt, geen juridisch advies). **Besluit Clipelle: wél pas na toestemming laden** (`ConsentScripts.tsx`), omdat de banner anders leeg is. Gevolg: een partnerklik zonder toestemming wordt niet toegeschreven; dat staat in `docs/partners.md`.
 - Aanmeldsnippet `window.gr("track", "conversion", { email })` één keer na een geslaagde registratie (`PartnerSignupConversion.tsx`), niet bij inloggen.
 - Stripe-koppeling is alleen-lezen en matcht betalingen op het **e-mailadres van de klant**; `client_reference_id` of checkout-metadata voor toeschrijving staan nergens gedocumenteerd, dus die gebruiken we niet. Uitsluiting van een prijs of product via Stripe-metadata `commissions_disabled = yes`: `scripts/stripe-setup.ts` zet dat op de creditpakketten, en `src/lib/billingCheckout.ts`-tests bewijzen dat pakketten geen partnerdata dragen.
 - Open vragen (niet uit de docs te halen, aan Reditus stellen bij het aanzetten): of een eenmalige betaling onder een recurring-programma commissie geeft, de eenheid van `w.gr.ce = 60`, en of `gr_id` op subdomeinen first-party is.

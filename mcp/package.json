@@ -1,10 +1,10 @@
 {
-  "name": "reelay-mcp",
+  "name": "clipelle-mcp",
   "version": "0.1.0",
   "private": true,
-  "description": "MCP server (stdio) that creates ads, translates videos and reads projects through the Reelay API.",
+  "description": "MCP server (stdio) that creates ads, translates videos and reads projects through the Clipelle API.",
   "type": "module",
-  "bin": { "reelay-mcp": "dist/index.js" },
+  "bin": { "clipelle-mcp": "dist/index.js" },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",

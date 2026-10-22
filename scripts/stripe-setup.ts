@@ -26,10 +26,10 @@ async function main() {
 
   for (const p of PLANS) {
     if (!p.stripeLookup) continue;
-    await ensurePrice(p.stripeLookup.monthly, `Reelay ${p.name}`, Math.round(p.monthlyUsd * 100), { interval: "month" });
-    await ensurePrice(p.stripeLookup.annual, `Reelay ${p.name}`, Math.round(p.annualMonthlyUsd * 12 * 100), { interval: "year" });
+    await ensurePrice(p.stripeLookup.monthly, `Clipelle ${p.name}`, Math.round(p.monthlyUsd * 100), { interval: "month" });
+    await ensurePrice(p.stripeLookup.annual, `Clipelle ${p.name}`, Math.round(p.annualMonthlyUsd * 12 * 100), { interval: "year" });
   }
-  for (const t of TOPUPS) await ensurePrice(t.stripeLookup, `Reelay credits (${t.credits})`, Math.round(t.usd * 100), undefined, TOPUP_METADATA);
+  for (const t of TOPUPS) await ensurePrice(t.stripeLookup, `Clipelle credits (${t.credits})`, Math.round(t.usd * 100), undefined, TOPUP_METADATA);
   console.log("Done. Add the webhook endpoint /api/billing/webhook for: checkout.session.completed, invoice.paid, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted");
 }
 

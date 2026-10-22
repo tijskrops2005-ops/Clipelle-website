@@ -1,4 +1,4 @@
-# HeyGen API: wat het kan (referentie voor Reelay)
+# HeyGen API: wat het kan (referentie voor Clipelle)
 
 Peildatum: 18 oktober 2026. Bronnen: `https://developers.heygen.com` (index in `llms.txt` naast dit bestand, OpenAPI-spec op `/openapi/external-api.json`, 179 endpoints). Alles hieronder is in eigen woorden en bewust beknopt; **haal vóór het schrijven van code altijd de actuele bronpagina op**, want de documentatie verandert vaak (v1/v2 verdwijnen op 31 oktober 2026, velden worden hernoemd, prijzen verschuiven).
 

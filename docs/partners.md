@@ -1,6 +1,6 @@
 # Partnerprogramma via Reditus (21 oktober 2026)
 
-Het partnerprogramma loopt via het externe platform Reditus. Reelay bouwt geen eigen aanmeldformulier, tracking of uitbetaling. Wat wél in de code zit en wat Tijs zelf instelt staat hieronder. Bron: de openbare documentatie van Reditus, gelezen op 21 oktober 2026 (hoofdstuk C in `docs/research/layout-research.md`); geen login, geen formulieren.
+Het partnerprogramma loopt via het externe platform Reditus. Clipelle bouwt geen eigen aanmeldformulier, tracking of uitbetaling. Wat wél in de code zit en wat Tijs zelf instelt staat hieronder. Bron: de openbare documentatie van Reditus, gelezen op 21 oktober 2026 (hoofdstuk C in `docs/research/layout-research.md`); geen login, geen formulieren.
 
 ## Afgesproken voorwaarden (staan op /partners en in /legal/affiliate-terms)
 

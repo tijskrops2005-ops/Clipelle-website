@@ -1,6 +1,6 @@
 # Content plan: blog and guides (21 October 2026)
 
-Research source: `docs/research/layout-research.md`, chapter "Platform, blog en integraties" (overview pages and the first three pages per site plus every category of creatify.ai/blog and makeugc.ai/blog, 21 October 2026). Only titles and categories were recorded; no text was taken over. Every Reelay article below has its own title (never the same as a source), its own structure, its own examples and is written from what Reelay really does.
+Research source: `docs/research/layout-research.md`, chapter "Platform, blog en integraties" (overview pages and the first three pages per site plus every category of creatify.ai/blog and makeugc.ai/blog, 21 October 2026). Only titles and categories were recorded; no text was taken over. Every Clipelle article below has its own title (never the same as a source), its own structure, its own examples and is written from what Clipelle really does.
 
 ## 1. Categories
 
@@ -49,11 +49,11 @@ Existing: product description that makes a good script; Standard or Premium pres
 
 ## 4. Source topics and how we cover them
 
-Topics from both sites, de-duplicated, with the Reelay article that covers the same kind of subject (own angle, own title) or "skip" when the subject needs a feature Reelay does not have (ad launching, analytics, creator marketplaces, model lists, competitor comparisons). Comparison and "alternatives" pieces are skipped on purpose: we do not name competitors.
+Topics from both sites, de-duplicated, with the Clipelle article that covers the same kind of subject (own angle, own title) or "skip" when the subject needs a feature Clipelle does not have (ad launching, analytics, creator marketplaces, model lists, competitor comparisons). Comparison and "alternatives" pieces are skipped on purpose: we do not name competitors.
 
-| Source title (topic only) | Site | Category | Reelay fit | Reelay article |
+| Source title (topic only) | Site | Category | Clipelle fit | Clipelle article |
 |---|---|---|---|---|
-| Topic (one row per topic; title as found) | Site | Category | Reelay fit | skip or later |
+| Topic (one row per topic; title as found) | Site | Category | Clipelle fit | skip or later |
 | How to make a product video (no studio needed) | Creatify | Video Marketing | yes | #1, #2, #3 |
 | How to create killer product videos (camera-shy) | Creatify | Video Marketing | yes | #1, #2, #3 |
 | Product marketing video with limited media assets | Creatify | Video Marketing | yes | #1, #2, #3 |
@@ -102,12 +102,12 @@ Topics from both sites, de-duplicated, with the Reelay article that covers the s
 | Best AI avatar tools for ads (no filming) | Creatify | Creatify 101 | partial | skip (comparison, competitors named) |
 | Best AI avatar generators and tools | Creatify | Comparison | partial | skip (comparison, competitors named) |
 | Best AI video generators | Creatify | Comparison | partial | skip (comparison, competitors named) |
-| HeyGen alternatives / HeyGen review | Creatify | Comparison | partial (Reelay runs on HeyGen; handle carefully) | skip (comparison, competitors named) |
+| HeyGen alternatives / HeyGen review | Creatify | Comparison | partial (Clipelle runs on HeyGen; handle carefully) | skip (comparison, competitors named) |
 | Synthesia alternatives / what is Synthesia | Creatify | Comparison | partial | skip (comparison, competitors named) |
 | D-ID competitors & alternatives | Creatify | Comparison | partial | skip (comparison, competitors named) |
 | I tested every AI lip sync avatar tool | Creatify | Creatify 101 | partial | skip (comparison, competitors named) |
 | Aurora vs HeyGen avatar | Creatify | Video Marketing | skip (vendor model comparison) | skip (comparison, competitors named) |
-| Creatify vs X (QuickAds, Arcads, Pictory, Kapwing, Oxolo, AdCreative, Krea, Synthesia) | Creatify | Comparison | partial (Reelay vs X pages, only when honest) | skip (comparison, competitors named) |
+| Creatify vs X (QuickAds, Arcads, Pictory, Kapwing, Oxolo, AdCreative, Krea, Synthesia) | Creatify | Comparison | partial (Clipelle vs X pages, only when honest) | skip (comparison, competitors named) |
 | TikTok ads complete guide / TikTok ad types / TikTok video ads steps | Creatify | Creatify 101 | partial (creative only) | #4 |
 | TikTok ad creatives that convert with AI | Creatify | Creatify 101 | partial | #4 |
 | Viral AI UGC TikTok ads without filming yourself | Creatify | Creatify 101 | yes | #9, #4 |
@@ -133,15 +133,15 @@ Topics from both sites, de-duplicated, with the Reelay article that covers the s
 | AI marketing trends / AI-powered marketing / how to use AI in marketing / which companies use AI | Creatify | Video Marketing | skip | skip or later |
 | AI in social media marketing / social media trends / social media marketing plan | Creatify | Video Marketing | skip | skip or later |
 | ChatGPT prompts for marketing / for social media | Creatify | Video Marketing | skip | skip or later |
-| Target audience / startup digital marketing / launch a campaign from scratch / advertising strategies | Creatify | Video Marketing | skip | skip (feature Reelay does not have) |
+| Target audience / startup digital marketing / launch a campaign from scratch / advertising strategies | Creatify | Video Marketing | skip | skip (feature Clipelle does not have) |
 | Product advertising: definition, types, strategies | Creatify | Video Marketing | partial | skip or later |
-| Turn product URLs into video ads (two variants) | Creatify | Video Marketing | partial (Reelay starts from a photo, not a URL) | #18 |
+| Turn product URLs into video ads (two variants) | Creatify | Video Marketing | partial (Clipelle starts from a photo, not a URL) | #18 |
 | Dynamic creative / automated ads / creative automation tools | Creatify | Video Marketing | skip | skip or later |
 | Ad analytics tools / ad optimization tools / ad testing platforms / A/B vs multivariate | Creatify | Video Marketing | skip | skip (comparison, competitors named) |
 | Split testing on TikTok / Meta with AI; testing 50+ creatives; optimizing multiple creatives | Creatify | Video Marketing | skip | #4, #15 |
 | Good CPC, CPM, CTR for Meta ads | Creatify | Video Marketing | skip | skip or later |
 | Competitor ad analysis / advertising intelligence / ad libraries / spy on and clone competitor ads / TikTok Creative Center | Creatify | Video Marketing | skip | skip (comparison, competitors named) |
-| Media buying / programmatic / Google Performance Max / Meta + PMax assets / optimize ads automatically | Creatify | Video Marketing | skip | skip (feature Reelay does not have) |
+| Media buying / programmatic / Google Performance Max / Meta + PMax assets / optimize ads automatically | Creatify | Video Marketing | skip | skip (feature Clipelle does not have) |
 | Mobile user acquisition / mobile game ads / Axon AppLovin ads | Creatify | Video Marketing | skip | #4 |
 | CTV ads with AI / Comcast TV ads | Creatify | Video Marketing | skip | skip or later |
 | Mortgage lead generation ads | Creatify | Creatify 101 | skip | skip or later |
@@ -157,13 +157,13 @@ Topics from both sites, de-duplicated, with the Reelay article that covers the s
 | AI marketing campaign examples / AI in digital advertising examples | Creatify | Comparison | skip | skip or later |
 | Best social media advertising tools / best AI marketing tools | Creatify | Comparison | skip | skip (comparison, competitors named) |
 | Opus Clip review | Creatify | Comparison | skip | skip (comparison, competitors named) |
-| Agency growth without cold outreach / agency-level ads with one agent | Creatify | Video Marketing | skip | skip (feature Reelay does not have) |
+| Agency growth without cold outreach / agency-level ads with one agent | Creatify | Video Marketing | skip | skip (feature Clipelle does not have) |
 | Vibe marketing | Creatify | Video Marketing | skip | skip or later |
 | Google anti-trust trial | Creatify | Video Marketing | skip | skip or later |
 | Email + video marketing duo / followers into customers / TikTok SEO / bookmarked videos | Creatify | Video Marketing | skip | #4 |
-| Agent / Ad Flow / node-based tools / AI media buyer / MCP + Claude workflows / 100+ ads with one agent | Creatify | Creatify 101 | skip (node editors and launching are out of scope) | skip (feature Reelay does not have) |
+| Agent / Ad Flow / node-based tools / AI media buyer / MCP + Claude workflows / 100+ ads with one agent | Creatify | Creatify 101 | skip (node editors and launching are out of scope) | skip (feature Clipelle does not have) |
 | Ad templates / viral templates to clone / product-to-video templates | Creatify | Creatify 101 | skip | skip or later |
 | AI Ad Library overview / create viral ads with the ad library | Creatify | Creatify 101 | skip | skip or later |
-| Product and company news (Boreal, G2, Seedance, Wan, Runware, fal, ElevenLabs, Series A, Asset Generator, Smart Assets, AI Music, workspace, batch mode, custom avatar, selfie mode, emotional avatars, lifestyle avatars, HTML ads, API launch) | Creatify | Product Updates / Company News | skip (format "changelog" yes, topics no) | skip (feature Reelay does not have) |
+| Product and company news (Boreal, G2, Seedance, Wan, Runware, fal, ElevenLabs, Series A, Asset Generator, Smart Assets, AI Music, workspace, batch mode, custom avatar, selfie mode, emotional avatars, lifestyle avatars, HTML ads, API launch) | Creatify | Product Updates / Company News | skip (format "changelog" yes, topics no) | skip (feature Clipelle does not have) |
 | Customer stories (DeNA, Zerorez, LAIFE, Alibaba, Flamingo Shop, etc.) | Creatify | Customer Stories | skip as topics; the case-study page format is worth copying in structure only | skip or later |
 | Top 7 TikTok agency ad accounts | MakeUGC | none | skip | #4 |
