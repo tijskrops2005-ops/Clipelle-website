@@ -1,9 +1,12 @@
+import { brand } from "@/lib/brand";
+
 /**
- * App-wide constants. "Reelay" is a temporary product name — change it here only.
+ * App-wide constants. The product name and tagline come from src/lib/brand.ts (the one place for
+ * the brand); they are mirrored here so older imports keep working.
  */
 export const config = {
-  productName: "Reelay",
-  tagline: "Turn product info into a finished video ad — automatically.",
+  productName: brand.name,
+  tagline: brand.tagline,
   /**
    * While true, the UI runs on simulated data from src/lib/mock and shows a visible
    * "Demo mode" label. Set NEXT_PUBLIC_DEMO_MODE=false in .env.local to use the database

@@ -1,4 +1,5 @@
 import "server-only";
+import { emailFrom } from "@/lib/brand";
 
 /**
  * The one place outgoing e-mail goes through. Without a provider configured it only logs the
@@ -11,7 +12,7 @@ export type OutgoingEmail = { to: string; subject: string; text: string };
 
 export async function sendEmail(mail: OutgoingEmail): Promise<{ sent: boolean; reason?: string }> {
   const key = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.EMAIL_FROM?.trim();
+  const from = emailFrom();
   if (!key || !from) {
     console.info(`[email] not configured; would send "${mail.subject}" to ${mail.to}`);
     return { sent: false, reason: "not_configured" };

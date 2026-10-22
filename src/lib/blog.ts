@@ -1,3 +1,4 @@
+import { brand } from "@/lib/brand";
 import "server-only";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -24,7 +25,7 @@ export type BlogPost = {
   text: string;
 };
 
-export const BLOG_AUTHOR = "Reelay Team";
+export const BLOG_AUTHOR = brand.blogAuthor;
 const DIR = path.join(process.cwd(), "src", "content", "blog");
 
 export function slugify(s: string) {

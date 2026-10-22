@@ -8,13 +8,15 @@ import { z } from "zod";
  * environment: create_ad, translate_video, get_project, list_projects. Nothing is stored here;
  * every video is a normal project on the account's dashboard with the same credits and limits.
  *
- * Environment: REELAY_API_KEY (required), REELAY_API_URL (default https://reelay.app).
+ * Environment: CLIPELLE_API_KEY (required) and CLIPELLE_API_URL (the base URL of your Clipelle
+ * account's app, e.g. the address shown in Settings → API keys; the older REELAY_* names still
+ * work for one release).
  */
-const API_URL = (process.env.REELAY_API_URL ?? "https://reelay.app").replace(/\/$/, "");
-const API_KEY = process.env.REELAY_API_KEY;
+const API_URL = (process.env.CLIPELLE_API_URL ?? process.env.REELAY_API_URL ?? "http://localhost:3001").replace(/\/$/, "");
+const API_KEY = (process.env.CLIPELLE_API_KEY ?? process.env.REELAY_API_KEY);
 
 async function call(method: "GET" | "POST", path: string, body?: unknown, idempotencyKey?: string) {
-  if (!API_KEY) return { ok: false, status: 0, body: { error: { code: "no_key", message: "Set REELAY_API_KEY in the server's environment (Settings → API keys in Reelay)." } } };
+  if (!API_KEY) return { ok: false, status: 0, body: { error: { code: "no_key", message: "Set CLIPELLE_API_KEY in the server's environment (Settings → API keys in Reelay)." } } };
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers: { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json", ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}) },
