@@ -11,6 +11,7 @@ import { menus, menusFor, type MenuItem, type MenuKey } from "./siteNav";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
 import { LanguageSwitch } from "./LanguageSwitch";
+import { LogoFull, LogoLockup, LogoMark } from "@/components/Logo";
 
 /**
  * Floating rounded top bar of the public site: Platform, Solutions, Resources and Company open
@@ -181,9 +182,11 @@ export function SiteHeader({ account, locale = "en" }: { account: ReactNode; loc
             <button type="button" aria-label={t.header.menuOpen} aria-expanded={drawer} onClick={() => setDrawer(true)} className="focus-ring grid size-10 place-items-center rounded-full text-ink transition-colors duration-150 hover:bg-ink/5 lg:hidden">
               <Menu className="size-5" aria-hidden />
             </button>
-            <Link href={L("/")} className="focus-ring ml-1 flex items-center gap-2.5 rounded-control">
-              <span aria-hidden className="grid size-8 place-items-center rounded-[10px] bg-ink text-sm font-bold text-surface">{config.productName.charAt(0)}</span>
-              <span className="text-[17px] font-semibold tracking-tight text-ink">{config.productName}</span>
+            <Link href={L("/")} aria-label={config.productName} className="focus-ring ml-1 flex items-center rounded-control">
+              <LogoFull priority className="hidden h-11 lg:block" />
+              {/* Below lg the compact lockup; on a phone the bar is full, so only the icon. */}
+              <span className="hidden sm:inline lg:hidden"><LogoLockup /></span>
+              <span className="sm:hidden"><LogoMark /></span>
             </Link>
           </div>
 
@@ -257,7 +260,7 @@ export function SiteHeader({ account, locale = "en" }: { account: ReactNode; loc
           <button type="button" aria-label={t.header.menuClose} onClick={() => setDrawer(false)} className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" />
           <div role="dialog" aria-modal="true" aria-label="Menu" className="absolute inset-y-0 left-0 flex w-[min(22rem,88vw)] flex-col overflow-y-auto rounded-r-card bg-surface px-5 py-5 shadow-card-hover">
             <div className="flex items-center justify-between">
-              <span className="text-[17px] font-semibold tracking-tight text-ink">{config.productName}</span>
+              <LogoLockup />
               <button type="button" aria-label={t.header.menuClose} onClick={() => setDrawer(false)} className="focus-ring grid size-10 place-items-center rounded-full text-ink hover:bg-ink/5">
                 <X className="size-5" aria-hidden />
               </button>

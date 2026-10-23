@@ -18,6 +18,12 @@
   --warning: #d97706;
   --danger: #dc2626;
 
+  /* Brand gold from the logo (brand style guide v1.1, 23 Oct 2026): used on ink only, never as text on paper. */
+  --gold: #d68e3c;
+  --gold-light: #f6c68a;
+  --gold-deep: #ae662a;
+  --champagne: #f5ead9;
+
   --radius-card: 20px;
   --radius-tile: 16px;
   --radius-control: 12px;
@@ -58,6 +64,10 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-gold-deep: var(--gold-deep);
+  --color-champagne: var(--champagne);
 
   --radius-card: var(--radius-card);
   --radius-tile: var(--radius-tile);
@@ -209,20 +219,57 @@
  * ever hidden by default. Stagger with --reveal-delay on the element.
  */
 @keyframes reveal-in {
-  from { opacity: 0; transform: translateY(18px); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translateY(22px) scale(0.985); filter: blur(10px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
 }
 .reveal {
   opacity: 1;
 }
 @supports (animation-timeline: view()) {
   .reveal {
-    animation: reveal-in 700ms var(--ease-soft) both;
+    animation: reveal-in 800ms var(--ease-soft) both;
     animation-timeline: view();
-    animation-range: entry 0% entry 35%;
+    animation-range: entry 0% entry 40%;
     animation-delay: var(--reveal-delay, 0ms);
   }
 }
+
+/* ---------- hero showcase: a fanned row of 9:16 tiles that rises once on page load ---------- */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(36px); }
+  to { opacity: 1; transform: none; }
+}
+.fan {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 14px;
+}
+.fan > li {
+  animation: rise-in 900ms var(--ease-soft) both;
+  animation-delay: var(--rise-delay, 0ms);
+}
+.fan > li > * {
+  transform: rotate(var(--r, 0deg)) translateY(var(--y, 0px));
+  transition: transform var(--motion-base) var(--ease-soft);
+}
+.fan > li:hover > * {
+  transform: rotate(0deg) translateY(calc(var(--y, 0px) - 10px));
+}
+/* Soft colour field behind the showcase and the feature panels (tokens only). */
+.stage-glow {
+  background:
+    radial-gradient(60% 70% at 30% 40%, var(--accent-soft) 0%, transparent 70%),
+    radial-gradient(50% 60% at 75% 55%, color-mix(in srgb, var(--warning) 16%, white) 0%, transparent 70%);
+  filter: blur(40px);
+}
+/* Panel for the alternating feature rows: a quiet gradient that stays inside the palette. */
+.stage-panel {
+  background: linear-gradient(160deg, var(--accent-soft) 0%, var(--surface) 48%, var(--ink-soft) 100%);
+}
+/* Dark band (CTA): the brand gold lives here, on ink only. */
+.glow-field.gold { background: var(--gold); opacity: 0.22; }
+.glow-field.gold-deep { background: var(--gold-deep); opacity: 0.28; }
 
 /* Soft loading shimmer: a light sweep instead of a flat pulse. */
 @keyframes shimmer {
@@ -353,6 +400,13 @@
   .reveal {
     animation: none;
     opacity: 1;
+    transform: none;
+  }
+  .fan > li {
+    animation: none;
+  }
+  .fan > li > *,
+  .fan > li:hover > * {
     transform: none;
   }
   .marquee-track,

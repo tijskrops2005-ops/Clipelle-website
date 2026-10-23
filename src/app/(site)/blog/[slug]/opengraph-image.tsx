@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { postBySlug } from "@/lib/blog";
 import { config } from "@/lib/config";
 
@@ -12,11 +14,13 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const post = postBySlug(slug);
   const title = post?.title ?? config.productName;
   const label = post?.categoryLabel ?? "Blog";
+  const icon = await readFile(path.join(process.cwd(), "public", "brand", "icon-192.png"));
+  const iconSrc = `data:image/png;base64,${icon.toString("base64")}`;
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#111114", color: "#FFFFFF", padding: 72, fontFamily: "sans-serif" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: "#FFFFFF", color: "#111114", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 700 }}>{config.productName.charAt(0)}</div>
+          <img src={iconSrc} alt="" width={56} height={56} style={{ width: 56, height: 56 }} />
           <div style={{ fontSize: 30, fontWeight: 600 }}>{config.productName}</div>
           <div style={{ marginLeft: "auto", fontSize: 22, color: "#B8B8BE", letterSpacing: 2, textTransform: "uppercase" }}>{label}</div>
         </div>

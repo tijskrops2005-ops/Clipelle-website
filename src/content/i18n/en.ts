@@ -144,6 +144,26 @@ export const en = {
     blogText: "What we learn making short videos, written by the Clipelle team.",
     allArticles: "All articles",
     readyLine: "A typical ad is ready in a few minutes.",
+    /** Caption triples for the drawn ads in the hero fan and the feature panels (illustrations, not output). */
+    showcaseWords: [
+      ["This just arrived…", "Trail Bottle.", "Cold all day."],
+      ["Three reasons…", "One: it lasts.", "Tap to shop."],
+      ["Tired of dull skin?", "Meet Glow.", "Brighter in two weeks."],
+      ["Still carrying two bags?", "One pocket.", "Done."],
+      ["Before. After.", "Same mug.", "No more chips."],
+      ["Why I switched", "Quieter mornings.", "Try it for 30 days."],
+    ],
+    /** Product facts that hold today; never marketing numbers. */
+    facts: [
+      { value: "10–60 s", label: "Ad length, your choice" },
+      { value: "190", label: "Languages for a video you own" },
+      { value: "9:16", label: "1080p, ready to post" },
+      { value: "1 click", label: "Script, clip, presenter and edit run on their own" },
+    ],
+    choicesEyebrow: "You decide",
+    choicesTitle: "Every choice, on one form",
+    choicesText: "These are the things you set. Everything else runs on its own.",
+    choices: ["Length", "Presenter", "Language", "Accent", "Voice", "Speed", "Tone", "Offer", "Direction", "Background", "Caption style", "Accent colour", "Logo", "9:16 or original", "Review the script first"],
   },
   realOutput: {
     eyebrow: "Real output",

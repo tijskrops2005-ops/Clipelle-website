@@ -13,6 +13,7 @@ import { dict } from "@/content/i18n";
 import { FORMATS } from "@/content/formats";
 import { FormatIllustration } from "@/components/FormatIllustrations";
 import { localizePath, type Locale } from "@/lib/i18n";
+import { LogoFull } from "@/components/Logo";
 
 /** Server-rendered homepage sections that read content: examples marquee, use cases, integrations, blog cards, outcomes. */
 
@@ -117,11 +118,13 @@ export function LatestPosts({ locale = "en" }: { locale?: Locale }) {
 export function MidCta({ locale = "en" }: { locale?: Locale }) {
   const t = dict(locale);
   return (
-    <Reveal as="section" className="relative overflow-hidden rounded-card bg-ink px-6 py-12 text-center text-surface sm:py-14">
-      <div className="glow-field left-[-6%] top-[-30%] h-64 w-64 bg-accent opacity-30" aria-hidden />
-      <div className="glow-field warm right-[-6%] bottom-[-40%] h-72 w-72 opacity-25" aria-hidden />
-      <div className="bg-dots absolute inset-0 opacity-[0.12] [background-image:radial-gradient(rgba(255,255,255,0.5)_1px,transparent_1px)]" aria-hidden />
-      <h2 className="relative text-[clamp(1.75rem,3.5vw,2.5rem)] font-semibold tracking-[-0.02em]">{t.midCta.title}</h2>
+    <Reveal as="section" className="relative overflow-hidden rounded-card bg-ink px-6 py-12 text-center text-surface sm:py-16">
+      {/* The brand gold lives on ink only (brand style guide): two soft gold fields and the light logo. */}
+      <div className="glow-field gold left-[-6%] top-[-30%] h-72 w-72" aria-hidden />
+      <div className="glow-field gold-deep right-[-6%] bottom-[-40%] h-80 w-80" aria-hidden />
+      <div className="bg-dots absolute inset-0 opacity-[0.1] [background-image:radial-gradient(rgba(255,255,255,0.5)_1px,transparent_1px)]" aria-hidden />
+      <div className="relative mx-auto mb-8 flex justify-center"><LogoFull tone="light" className="h-12 sm:h-14" /></div>
+      <h2 className="relative text-[clamp(1.75rem,3.5vw,2.5rem)] font-semibold tracking-[-0.02em] text-champagne">{t.midCta.title}</h2>
       <p className="mx-auto mt-3 max-w-md text-[15px] text-surface/70">{t.midCta.text}</p>
       <div className="mt-7 flex justify-center">
         <Button href="/signup" variant="accent" size="lg">{t.common.createFirstAd} <ArrowRight className="size-5" aria-hidden /></Button>

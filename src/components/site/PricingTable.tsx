@@ -188,7 +188,7 @@ function PlanCard({ plan, previous, interval, cta, t }: { plan: Plan; previous?:
   const words = planWords(plan, t);
   return (
     <div className={cn("flex flex-col rounded-card bg-surface p-6 shadow-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card-hover", plan.recommended && "ring-1 ring-ink")}>
-      {plan.recommended && <span className="label-mono mb-3 w-fit rounded-full bg-ink px-2.5 py-1 text-surface">{t.recommendation}</span>}
+      {plan.recommended && <span className="label-mono mb-3 w-fit rounded-full bg-ink px-2.5 py-1 text-gold-light">{t.recommendation}</span>}
       <p className="text-[17px] font-semibold text-ink">{plan.name}</p>
       <p className="mt-1 text-[13px] text-muted">{words.tagline}</p>
       <PriceLine plan={plan} interval={interval} className="mt-5" t={t} />

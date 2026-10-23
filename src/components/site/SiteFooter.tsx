@@ -6,6 +6,7 @@ import { localizePath, type Locale } from "@/lib/i18n";
 import { footerColumnsFor } from "./siteNav";
 import { Year } from "./Year";
 import { CookieSettingsLink } from "./CookieBanner";
+import { LogoFull } from "@/components/Logo";
 
 /** Big footer: brand, five link columns, social icons only when src/content/social.ts lists them. Localized. */
 export function SiteFooter({ locale = "en" }: { locale?: Locale }) {
@@ -15,9 +16,8 @@ export function SiteFooter({ locale = "en" }: { locale?: Locale }) {
     <footer className="mt-24 border-t border-divider px-4 py-14 sm:mt-32 sm:px-6">
       <div className="mx-auto grid max-w-6xl gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[1.3fr_repeat(5,1fr)]">
         <div className="sm:col-span-2 md:col-span-3 lg:col-span-1">
-          <Link href={localizePath("/", locale)} className="focus-ring inline-flex items-center gap-2.5 rounded-control">
-            <span aria-hidden className="grid size-8 place-items-center rounded-[10px] bg-ink text-sm font-bold text-surface">{config.productName.charAt(0)}</span>
-            <span className="text-[17px] font-semibold tracking-tight text-ink">{config.productName}</span>
+          <Link href={localizePath("/", locale)} aria-label={config.productName} className="focus-ring inline-flex rounded-control">
+            <LogoFull className="h-12" />
           </Link>
           <p className="mt-4 max-w-xs text-[15px] leading-relaxed text-muted">{t.footer.tagline}</p>
           {socialLinks.length > 0 && (
