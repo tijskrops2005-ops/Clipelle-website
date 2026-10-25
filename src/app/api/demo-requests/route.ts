@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     .returning();
 
   const to = notifyAddress();
-  const mailed = to ? await sendEmail({ to, subject: `${body.kind === "demo" ? "Demo request" : "Contact"} from ${body.name}`, text: `${body.name} <${body.email}>${body.company ? ` (${body.company})` : ""}\n\n${body.goal ? `Goal: ${body.goal}\n\n` : ""}${body.message ?? ""}` }) : { sent: false, reason: "not_configured" as const };
+  const mailed = to ? await sendEmail({ to, replyTo: body.email, subject: `${body.kind === "demo" ? "Demo request" : "Contact"} from ${body.name}`, text: `${body.name} <${body.email}>${body.company ? ` (${body.company})` : ""}\n\n${body.goal ? `Goal: ${body.goal}\n\n` : ""}${body.message ?? ""}` }) : { sent: false, reason: "not_configured" as const };
   await db().update(demoRequests).set({ emailed: mailed.sent ? "sent" : mailed.reason ?? "failed" }).where(eq(demoRequests.id, row.id));
   return Response.json({ ok: true, stored: true });
 }

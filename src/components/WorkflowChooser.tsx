@@ -5,16 +5,17 @@ import { useMemo } from "react";
 import { ArrowRight, Clock, Tag } from "lucide-react";
 import { useProjects, useProjectsReady } from "@/lib/data/client";
 import { projectDurationMs } from "@/lib/projectMeta";
+import { measured } from "@/content/measured";
 import { DEFAULTS, estimateAdCost, estimateTranslateCost, formatUsd } from "@/lib/pricing";
 import type { Project, WorkflowKind } from "@/lib/types";
 import { PresenterIllustration, ProductVideoIllustration, TranslateIllustration } from "@/components/StepIllustrations";
 
 /**
- * Typical wait when nothing has been measured yet. The translation value is one measured run
- * (8 s video, one language, 20 Oct 2026: about 5 minutes); the ad value is an assumption until the
- * first paid run, based on the providers' stated render times.
+ * Typical wait before this account has finished a project of that kind: our own measured runs
+ * (src/content/measured.ts), or an assumption from the providers' stated render times when a
+ * value is missing there.
  */
-const FALLBACK_MINUTES: Record<WorkflowKind, number> = { ad: 10, translate: 5 };
+const FALLBACK_MINUTES: Record<WorkflowKind, number> = { ad: measured.adMinutes ?? 10, translate: measured.translationMinutes ?? 5 };
 
 /** Average wall-clock time of completed projects of one kind, in minutes; undefined without data. */
 function averageMinutes(projects: Project[], kind: WorkflowKind) {

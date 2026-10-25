@@ -12,6 +12,27 @@ Legenda voor de kolom "Voor ons": zie `docs/roadmap.md`, sectie "HeyGen-functies
 
 ---
 
+
+## Self-serve API-tarieven (gelezen op platform.heygen.com/pricing, 24 oktober 2026, ingelogd account van Tijs)
+
+Dit zijn de tarieven die óns account betaalt (pay-as-you-go, USD-saldo). De enterprise-cijfers hieronder (1 credit = $0,50) zijn een ander contract en waren te hoog voor vertalen en te laag voor avatars.
+
+| Product | Self-serve tarief | Per minuut |
+|---|---|---|
+| Video Translation · Speed · lip sync | $0,0135 / s | $0,81 |
+| Video Translation · Speed · audio only | $0,0095 / s | $0,57 |
+| Video Translation · Precision · lip sync | $0,025 / s | $1,50 |
+| Lipsync (los) · Speed / Precision | $0,014 / $0,029 per s | $0,84 / $1,74 |
+| Avatar III · Studio Avatar (publieke looks) | $0,0165 / s | $0,99 |
+| Avatar III · Custom Video Avatar | $0,01 / s | $0,60 |
+| Avatar IV · Studio / Custom | $0,0805 / s | $4,83 |
+| Avatar V · Custom | $0,12 / s | $7,20 |
+| HeyGen Voice · speech to speech | $0,12 / min | $0,12 |
+| Filler word removal | $0,005 / s bron, minimum 1 min | $0,30 |
+
+- Op de pagina: "Proofread mode is available on Enterprise plans only." Toch zijn op 19 oktober twee vertaalverzoeken (proofread + render) op dit self-serve account gefactureerd en voltooid. Bij de eerste betaalde test bevestigen of proofread nog werkt; zo niet, dan moet Workflow B zonder proofread (zie `src/lib/services/translate.ts`).
+- Gemeten Avatar III op 19 oktober: ≈ $0,017/s; dat klopt met Studio Avatar $0,0165/s. `PRICING.presenterUsdPerSecond` in `src/lib/pricing.ts` rekent nog met $0,0083/s (Standard) en $0,05/s (Premium): te laag.
+
 ## 1. Video maken met een presentator
 
 ### 1.1 Avatar-video (script → sprekende presentator)

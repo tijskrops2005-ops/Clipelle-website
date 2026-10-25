@@ -8,6 +8,7 @@ import { SectionIntro } from "@/components/site/SectionIntro";
 import { CtaBand } from "@/components/site/CtaBand";
 import { Accordion } from "@/components/site/Accordion";
 import { JsonLd } from "@/components/site/JsonLd";
+import { LatestPosts } from "@/components/site/HomeSections";
 
 export function PlatformUrlPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
@@ -53,6 +54,7 @@ export function PlatformUrlPage({ locale }: { locale: Locale }) {
         <SectionIntro eyebrow={t.common.faq} title={p.faqTitle} />
         <Accordion items={p.faq} className="mx-auto mt-10 max-w-3xl" />
       </Reveal>
+      <LatestPosts locale={locale} categories={["product-video"]} />
       <Reveal as="section"><CtaBand locale={locale} /></Reveal>
     </div>
   );

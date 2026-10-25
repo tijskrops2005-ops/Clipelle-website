@@ -14,6 +14,7 @@ import { FORMATS } from "@/content/formats";
 import { FormatIllustration } from "@/components/FormatIllustrations";
 import { localizePath, type Locale } from "@/lib/i18n";
 import { LogoFull } from "@/components/Logo";
+import { LazyVideo } from "@/components/site/LazyVideo";
 
 /** Server-rendered homepage sections that read content: examples marquee, use cases, integrations, blog cards, outcomes. */
 
@@ -23,22 +24,20 @@ export function ExampleMarquee({ locale = "en" }: { locale?: Locale }) {
   const items = list.length > 0
     ? list.map((e) => (
         <div key={e.id} className="relative aspect-[9/16] w-[150px] overflow-hidden rounded-tile bg-ink shadow-card">
-          <video src={e.src} poster={e.posterSrc} muted loop playsInline autoPlay preload="metadata" aria-label={`${e.title}: ${e.note}`} className="size-full object-cover" />
+          <LazyVideo src={e.src} poster={e.posterSrc} label={`${e.title}: ${e.note}`} />
           <span className="label-mono absolute left-2 top-2 rounded-full bg-surface/90 px-2 py-0.5 text-[10px] text-ink">{t.common.sampleMadeWith}</span>
         </div>
       ))
     : [];
-  const placeholders = Array.from({ length: Math.max(0, 6 - items.length) }, (_, i) => {
-    const f = FORMATS[i % FORMATS.length];
-    return (
-      <div key={`ph-${i}`} className="relative flex aspect-[9/16] w-[150px] flex-col items-center justify-center gap-3 rounded-tile bg-[linear-gradient(170deg,var(--surface),var(--surface-muted))] shadow-card">
-        <FormatIllustration format={f.key} className="h-10 w-14 text-ink/50" />
-        <span className="text-[12px] font-medium text-ink/70">{locale === "nl" ? f.nl.name : f.name}</span>
-        <span className="label-mono absolute left-2 top-2 rounded-full bg-surface px-2 py-0.5 text-[10px] text-muted shadow-soft">{t.common.sampleComingSoon}</span>
-      </div>
-    );
-  });
-  return <Marquee ariaLabel="Example videos" items={[...items, ...placeholders]} className="mt-10" />;
+  // Next to our samples: the eight formats as cards (real presets that open the ad form), never "coming soon" tiles.
+  const formats = FORMATS.map((f) => (
+    <Link key={`f-${f.key}`} href={`/login?next=${encodeURIComponent(`/new/ad?format=${f.key}`)}`} className="focus-ring group relative flex aspect-[9/16] w-[150px] flex-col items-center justify-center gap-3 rounded-tile bg-[linear-gradient(170deg,var(--surface),var(--surface-muted))] shadow-card transition-transform duration-200 hover:-translate-y-1">
+      <FormatIllustration format={f.key} className="h-10 w-14 text-ink/50 transition-colors duration-200 group-hover:text-accent" />
+      <span className="px-3 text-center text-[13px] font-semibold text-ink">{locale === "nl" ? f.nl.name : f.name}</span>
+      <span className="label-mono absolute left-2 top-2 rounded-full bg-surface px-2 py-0.5 text-[10px] text-muted shadow-soft">{locale === "nl" ? "Format" : "Format"}</span>
+    </Link>
+  ));
+  return <Marquee ariaLabel="Example videos and formats" items={[...items, ...formats]} className="mt-10" gap="gap-5" />;
 }
 
 const OUTCOME_ICONS: LucideIcon[] = [Clock3, Wallet, Smartphone, Captions, Languages, UserRound, Palette, ShieldCheck];
@@ -97,9 +96,15 @@ export function IntegrationsRow({ locale = "en" }: { locale?: Locale }) {
   );
 }
 
-export function LatestPosts({ locale = "en" }: { locale?: Locale }) {
+/**
+ * Three articles on a site page (not on the homepage since 24 Oct 2026): from the given categories
+ * first, newest first, topped up with the newest others so there are always three.
+ */
+export function LatestPosts({ locale = "en", categories }: { locale?: Locale; categories?: string[] }) {
   const t = dict(locale);
-  const posts = allPosts().slice(0, 3);
+  const all = allPosts();
+  const matching = categories ? all.filter((p) => categories.includes(p.category)) : [];
+  const posts = [...matching, ...all.filter((p) => !matching.includes(p))].slice(0, 3);
   if (posts.length === 0) return null;
   return (
     <Reveal as="section">

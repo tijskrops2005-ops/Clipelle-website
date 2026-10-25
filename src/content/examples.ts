@@ -25,6 +25,7 @@ export const examples: Example[] = [
     title: "Long-sleeve dress",
     kind: "ad",
     file: "ad-dress-30s-standard.mp4",
+    poster: "ad-dress-30s-standard.jpg",
     note: "30 s · Dutch · Standard presenter · first real run",
   },
   {
@@ -32,6 +33,7 @@ export const examples: Example[] = [
     title: "Product explainer, translated",
     kind: "translate",
     file: "translate-senvia-nl.mp4",
+    poster: "translate-senvia-nl.jpg",
     note: "8 s · English to Dutch · Speed · captions",
   },
 ];

@@ -2,20 +2,15 @@
 
 import { config } from "@/lib/config";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { Menu, Plus, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Brand } from "@/components/Brand";
 import { UserMenu } from "@/components/UserMenu";
-import type { ShellUser } from "@/components/Sidebar";
-import { isActivePath, navItems, adminNavItem } from "@/components/nav";
-import { UnseenBadge } from "@/components/StatusWatcher";
+import { SidebarLinks, type ShellUser } from "@/components/Sidebar";
 
 /** Top bar with a hamburger that opens a left drawer holding the same links as the sidebar. */
 export function MobileNav({ user }: { user: ShellUser }) {
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const close = () => setOpen(false);
@@ -96,29 +91,11 @@ export function MobileNav({ user }: { user: ShellUser }) {
               Create new video
             </Button>
 
-            <nav aria-label="Main" className="mt-6 flex flex-col gap-1">
-              {[...navItems, ...(user?.isAdmin ? [adminNavItem] : [])].map(({ href, label, icon: Icon }) => {
-                const active = isActivePath(pathname, href);
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={close}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "focus-ring flex h-11 items-center gap-3 rounded-control px-3 text-[15px] font-medium transition-colors duration-150",
-                      active ? "bg-surface-muted text-ink" : "text-muted hover:bg-ink/5 hover:text-ink",
-                    )}
-                  >
-                    <Icon className={cn("size-[18px]", active ? "text-accent" : "text-muted")} aria-hidden />
-                    {label}
-                    <UnseenBadge href={href} />
-                  </Link>
-                );
-              })}
-            </nav>
+            <div className="-mx-2 mt-5 min-h-0 flex-1 overflow-y-auto px-2 pb-4">
+              <SidebarLinks isAdmin={user?.isAdmin} onNavigate={close} />
+            </div>
 
-            <p className="mt-auto text-[13px] leading-relaxed text-muted">{config.tagline}</p>
+            <p className="pt-3 text-[13px] leading-relaxed text-muted">{config.tagline}</p>
           </div>
         </div>
       )}

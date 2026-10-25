@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CodeBlock } from "@/components/site/CodeBlock";
 import { DocsLayout } from "@/components/site/DocsLayout";
 import { config } from "@/lib/config";
+import { viaLogin } from "@/components/site/siteNav";
 
 export const metadata: Metadata = { title: "MCP server", description: "Let an AI assistant create ads, translate videos and read projects through the Model Context Protocol." };
 
@@ -61,7 +62,7 @@ export default function McpDocsPage() {
 
       <section id="configure" className="space-y-4">
         <h2>Configure</h2>
-        <p>Make a key on <Link href="/settings/api" className="underline">Settings → API keys</Link>, then add the server to your assistant&apos;s MCP configuration. The shape below is what most desktop assistants use; the key stays in the environment, never in a prompt.</p>
+        <p>Make a key on <Link href={viaLogin("/settings/api")} className="underline">Settings → API keys</Link>, then add the server to your assistant&apos;s MCP configuration. The shape below is what most desktop assistants use; the key stays in the environment, never in a prompt.</p>
         <CodeBlock code={mcpConfig} lang="json" title="MCP configuration" />
         <p><code className="font-mono">CLIPELLE_API_URL</code> defaults to the public site when left out. For a local build of the app, point it at your dev server.</p>
       </section>

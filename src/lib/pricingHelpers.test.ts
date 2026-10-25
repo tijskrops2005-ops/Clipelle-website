@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AD_LENGTHS, type AdLength } from "./pricing";
-import { ALL_PLANS, BUSINESS_TIERS, CREDIT_COST_USD, PLANS, SUBSCRIPTION_MARGIN, TOPUPS, adCredits, annualSaving, translateCredits } from "./plans";
+import { ALL_PLANS, BUSINESS_TIERS, CREDIT_COST_USD, MIN_SUBSCRIPTION_MARGIN, PLANS, TOPUPS, adCredits, annualSaving, translateCredits } from "./plans";
 import { annualTotals, creditsNeeded, INDIVIDUAL_PAID, planExamples, planFit } from "./pricingHelpers";
 
 describe("pricing helpers match plans.ts for every combination", () => {
@@ -52,10 +52,10 @@ describe("pricing helpers match plans.ts for every combination", () => {
     }
   });
 
-  it("business tiers keep the subscription margin", () => {
+  it("business tiers keep at least the minimum subscription margin", () => {
     for (const t of BUSINESS_TIERS) {
       expect(t.team).toBe(true);
-      expect(t.creditsPerMonth * CREDIT_COST_USD * SUBSCRIPTION_MARGIN).toBeLessThanOrEqual(t.monthlyUsd);
+      expect(t.creditsPerMonth * CREDIT_COST_USD * MIN_SUBSCRIPTION_MARGIN).toBeLessThanOrEqual(t.monthlyUsd);
     }
   });
 });

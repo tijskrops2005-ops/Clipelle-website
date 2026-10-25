@@ -1,16 +1,17 @@
 import "server-only";
 import { listVoices, type Voice } from "@/lib/services/heygen";
+import { memoCached } from "@/lib/memoCache";
 import { ACCENTS, AD_LANGUAGES, AD_LANGUAGE_CODES, accentOf, type AdLanguageCode, type VoiceOption, type VoiceOptions } from "@/lib/voiceOptions";
 
 /**
- * Public HeyGen voices, fetched with free listing calls and cached in memory for 15 minutes.
+ * Public HeyGen voices, fetched with free listing calls and cached in memory (fresh for 15
+ * minutes, then served stale while a background refresh runs; see memoCache.ts).
  * Language names in the list are messy ("English", "en", "Filipino ", "", "unknown"), so they are
  * normalised here; voices without a usable language are left out.
  */
 
 const CACHE_MS = 15 * 60 * 1000;
 type Cache = { at: number; byLanguage: Map<AdLanguageCode, Voice[]> };
-const g = globalThis as unknown as { __clipelleVoices?: Cache | Promise<Cache> };
 
 const NAME_TO_CODE: Record<string, AdLanguageCode> = Object.fromEntries(
   Object.entries(AD_LANGUAGES).flatMap(([code, l]) => [[l.heygenName.toLowerCase(), code as AdLanguageCode], [code, code as AdLanguageCode]]),
@@ -22,29 +23,18 @@ function codeOf(v: Voice): AdLanguageCode | undefined {
 }
 
 async function load(): Promise<Cache> {
-  // One paginated listing per language we offer (free; 1–21 calls each, 100 per page).
-  const byLanguage = new Map<AdLanguageCode, Voice[]>();
-  for (const code of AD_LANGUAGE_CODES) {
-    const items = await listVoices({ language: AD_LANGUAGES[code].heygenName, limit: 100, all: true });
-    byLanguage.set(code, items.filter((v) => codeOf(v) === code && v.voice_id));
-  }
-  return { at: Date.now(), byLanguage };
+  // One paginated listing per language we offer (free; 1–21 calls each, 100 per page), all languages at once.
+  const lists = await Promise.all(
+    AD_LANGUAGE_CODES.map(async (code) => {
+      const items = await listVoices({ language: AD_LANGUAGES[code].heygenName, limit: 100, all: true });
+      return [code, items.filter((v) => codeOf(v) === code && v.voice_id)] as const;
+    }),
+  );
+  return { at: Date.now(), byLanguage: new Map(lists) };
 }
 
-async function catalogue(): Promise<Cache> {
-  const cached = g.__clipelleVoices;
-  if (cached && !(cached instanceof Promise) && Date.now() - cached.at < CACHE_MS) return cached;
-  if (cached instanceof Promise) return cached;
-  const pending = load();
-  g.__clipelleVoices = pending;
-  try {
-    const result = await pending;
-    g.__clipelleVoices = result;
-    return result;
-  } catch (error) {
-    g.__clipelleVoices = undefined;
-    throw error;
-  }
+function catalogue(): Promise<Cache> {
+  return memoCached("voices", CACHE_MS, load);
 }
 
 function toOption(v: Voice, language: AdLanguageCode): VoiceOption {

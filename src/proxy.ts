@@ -61,9 +61,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(login);
   }
   if (user && AUTH_PAGES.includes(path)) {
+    // Already signed in: go where the link was heading (?next=, own paths only), else the dashboard.
+    const wanted = request.nextUrl.searchParams.get("next");
+    const target = wanted && wanted.startsWith("/") && !wanted.startsWith("//") && !wanted.startsWith("/\\") ? new URL(wanted, request.nextUrl.origin) : null;
     const home = request.nextUrl.clone();
-    home.pathname = "/dashboard";
-    home.search = "";
+    home.pathname = target?.pathname ?? "/dashboard";
+    home.search = target?.search ?? "";
     return NextResponse.redirect(home);
   }
   return response;

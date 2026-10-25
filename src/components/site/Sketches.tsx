@@ -74,7 +74,8 @@ export function PipelineStrip({ labels = STEPS, className }: { labels?: string[]
       <div className="dash-line pointer-events-none absolute inset-x-10 top-1/2 h-0.5 -translate-y-1/2" aria-hidden />
       {labels.map((l, i) => (
         <div key={l} className="relative flex items-center gap-2 rounded-full bg-surface px-1">
-          <span className="grid size-7 place-items-center rounded-full bg-ink text-[12px] font-semibold text-surface">{i + 1}</span>
+          {/* The steps light up one after the other, like a run in progress (off under "reduce motion"). */}
+          <span className="step-glow grid size-7 place-items-center rounded-full bg-ink text-[12px] font-semibold text-surface" style={{ "--step-delay": `${(i * 4.8) / labels.length}s` } as React.CSSProperties}>{i + 1}</span>
           <span className="hidden text-[13px] font-medium text-ink sm:inline">{l}</span>
         </div>
       ))}

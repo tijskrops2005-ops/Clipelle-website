@@ -275,7 +275,7 @@ export function SiteHeader({ account, locale = "en" }: { account: ReactNode; loc
               <div className="px-3 py-2"><LanguageSwitch locale={locale} /></div>
             </nav>
             <Button href="/signup" variant="accent" size="lg" className="mt-auto w-full" onClick={closeAll}>
-              {t.common.createFirstAd}
+              {t.common.startFree}
             </Button>
           </div>
         </div>

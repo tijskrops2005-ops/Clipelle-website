@@ -4,6 +4,7 @@ import { CodeBlock } from "@/components/site/CodeBlock";
 import { DocsLayout } from "@/components/site/DocsLayout";
 import { AD_LENGTHS } from "@/lib/pricing";
 import { config } from "@/lib/config";
+import { viaLogin } from "@/components/site/siteNav";
 
 export const metadata: Metadata = { title: "API documentation", description: "Create ads and translations from your own code: endpoints, examples in curl and JavaScript, error codes and limits." };
 
@@ -133,7 +134,7 @@ export default function ApiDocsPage() {
       <header>
         <p className="label-mono text-muted">API v1</p>
         <h1 className="mt-3 text-display">The {config.productName} API</h1>
-        <p className="mt-4 max-w-2xl">Everything the form can do, from your own code: create an ad from a product and image links, translate a video you own, and read the result. A key acts as your account: the same credits, the same cost limits, the same projects on your dashboard. Keys are made on <Link href="/settings/api" className="underline">Settings → API keys</Link> and come with a plan that includes credits.</p>
+        <p className="mt-4 max-w-2xl">Everything the form can do, from your own code: create an ad from a product and image links, translate a video you own, and read the result. A key acts as your account: the same credits, the same cost limits, the same projects on your dashboard. Keys are made on <Link href={viaLogin("/settings/api")} className="underline">Settings → API keys</Link> and come with a plan that includes credits.</p>
       </header>
 
       <section id="auth" className="space-y-4">
@@ -209,7 +210,7 @@ export default function ApiDocsPage() {
 
       <section id="webhooks" className="space-y-4">
         <h2>Webhooks</h2>
-        <p>Instead of polling, let us call you. In <Link href="/settings/api" className="underline underline-offset-4">Settings → API keys → Webhooks</Link> add a public <code className="font-mono">https://</code> URL and pick the events <code className="font-mono">project.completed</code> and <code className="font-mono">project.failed</code>. The signing secret is shown once.</p>
+        <p>Instead of polling, let us call you. In <Link href={viaLogin("/settings/api")} className="underline underline-offset-4">Settings → API keys → Webhooks</Link> add a public <code className="font-mono">https://</code> URL and pick the events <code className="font-mono">project.completed</code> and <code className="font-mono">project.failed</code>. The signing secret is shown once.</p>
         <CodeBlock code={webhookPayload} lang="json" title="Payload" />
         <p>Every call carries <code className="font-mono">X-Clipelle-Signature: t=&lt;unix seconds&gt;,v1=&lt;hex&gt;</code>, where v1 is the HMAC-SHA256 of <code className="font-mono">&quot;t.&quot; + raw body</code> with your secret, plus <code className="font-mono">X-Clipelle-Event</code> and <code className="font-mono">X-Clipelle-Delivery</code>. Check it like this:</p>
         <CodeBlock code={webhookVerify} lang="javascript" title="Verifying the signature (Node)" />

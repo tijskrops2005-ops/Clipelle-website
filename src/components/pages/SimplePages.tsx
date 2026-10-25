@@ -15,6 +15,8 @@ import { CtaBand } from "@/components/site/CtaBand";
 import { JsonLd } from "@/components/site/JsonLd";
 import { DemoRequestForm } from "@/components/site/DemoRequestForm";
 import { MenuCard } from "@/components/site/MenuCard";
+import { companyLine } from "@/content/company";
+import { supportEmail } from "@/lib/brand";
 
 /** Small site pages in both languages: FAQ, resources, changelog, guides index, about, demo, contact. */
 
@@ -122,10 +124,20 @@ export function DemoPage({ locale }: { locale: Locale }) {
 
 export function ContactPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
+  const email = supportEmail();
   return (
     <div className="space-y-12 pt-16 sm:pt-24">
       <SectionIntro eyebrow={t.contact.eyebrow} title={t.contact.title} text={t.contact.text} />
       <DemoRequestForm variant="contact" locale={locale} />
+      <address className="mx-auto max-w-xl text-center text-[13px] not-italic leading-relaxed text-muted">
+        {email && (
+          <span className="mb-2 block text-[15px]">
+            {locale === "nl" ? "Liever direct mailen?" : "Prefer e-mail?"}{" "}
+            <a href={`mailto:${email}`} className="focus-ring rounded-control text-ink underline decoration-border underline-offset-4 hover:decoration-ink">{email}</a>
+          </span>
+        )}
+        {companyLine(locale)}
+      </address>
     </div>
   );
 }

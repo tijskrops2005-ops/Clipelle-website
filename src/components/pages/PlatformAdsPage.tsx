@@ -13,7 +13,7 @@ import { SectionIntro } from "@/components/site/SectionIntro";
 import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { CtaBand } from "@/components/site/CtaBand";
 import { RealOutput } from "@/components/site/RealOutput";
-import { MidCta } from "@/components/site/HomeSections";
+import { LatestPosts, MidCta } from "@/components/site/HomeSections";
 
 export async function PlatformAdsPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
@@ -73,6 +73,7 @@ export async function PlatformAdsPage({ locale }: { locale: Locale }) {
       </Reveal>
       <RealOutput data={realAd} kind="ad" locale={locale} />
       <MidCta locale={locale} />
+      <LatestPosts locale={locale} categories={["product-video", "scripts-and-hooks"]} />
       <Reveal as="section"><CtaBand locale={locale} /></Reveal>
     </div>
   );

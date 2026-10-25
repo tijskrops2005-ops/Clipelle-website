@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
+import { Honeypot } from "@/components/site/Honeypot";
 
 /** "Tell me when it is ready": stores an e-mail and the feature, nothing more. */
 export function WaitlistForm({ feature, label, locale = "en" }: { feature: WaitlistFeature; label: string; locale?: Locale }) {
@@ -46,7 +47,7 @@ export function WaitlistForm({ feature, label, locale = "en" }: { feature: Waitl
     <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <label className="sr-only" htmlFor={`waitlist-${feature}`}>E-mail</label>
       <Input id={`waitlist-${feature}`} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className="sm:max-w-xs" disabled={state === "busy"} />
-      <input type="text" name="website" value={website} onChange={(e) => setWebsite(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
+      <Honeypot value={website} onChange={setWebsite} />
       <Button type="submit" variant="primary" disabled={state === "busy" || !email}>
         {state === "busy" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
         {t.tellMe}

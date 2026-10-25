@@ -2,6 +2,29 @@
 
 Datum: 21 oktober 2026. Bron van alle getallen: `src/lib/plans.ts` (plannen, credits, marges) en `src/lib/pricing.ts` (leverancierskosten). Dit document is uit die code gegenereerd met `npx tsx scripts/pricing-table.ts`; verander getallen alleen in de code en draai het script opnieuw.
 
+## 0. Wijziging van 24 oktober 2026: volumekorting en goedkoper vertalen
+
+Besluit van Tijs: een groter abonnement moet per video voordeliger zijn, met goede marges, en vertalen klonk te duur. De maandprijzen ($19 / $59 / $159 en Business $249 / $499 / $999) en de Stripe-producten blijven gelijk; alleen het aantal credits per abonnement steeg.
+
+- **Marge per abonnement** (`PLAN_MARGINS` in `src/lib/plans.ts`): Starter 2,75× · Pro 2,5× · Scale 2,25× · Business 249 2,25× · Business 499 2,2× · Business 999 2,15×. Ondergrens voor elk abonnement: **2,15× (≈ 53%)** op de maandprijs (`MIN_SUBSCRIPTION_MARGIN`, getest).
+- **Vertalen** kost in credits 80% van de leverancierskosten (`TRANSLATE_CREDIT_FACTOR`); de marge op een vertaling blijft op elk abonnement ≥ 1,7× (`MIN_TRANSLATE_MARGIN`, getest). De afrekening na afloop gebruikt dezelfde regel (`creditsForSpend`), zodat een klant nooit meer betaalt dan het formulier toonde door deze korting.
+- Pakketten blijven 4×. Starter dekt nu precies tien advertenties van 30 s (getest).
+- Leverancierskosten van vertalen ($2,21 per minuut Speed) maken prijzen onder ± $3,50 per minuut onmogelijk zonder verlies; lager kan alleen met betere inkoopprijzen.
+
+| Vertaling, per minuut bron per taal | Credits (80% van de kosten) | Kosten |
+|---|---|---|
+| Speed | 78 | $2,21 |
+| Precision | 131 | $3,71 |
+
+| Plan | Prijs per maand | Marge (doel) | Credits per maand | Advertenties van 30 s | Prijs per 30-s-advertentie | Vertaalminuut (Speed) | Brutomarge maand | Marge bij jaarbetaling |
+|---|---|---|---|---|---|---|---|---|
+| Starter | $19 | 2,75× | 300 | 10 | $1,90 | $4,94 | 64% | 2,33× (57%) |
+| Pro | $59 | 2,50× | 1.030 | 34 | $1,72 | $4,47 | 60% | 2,10× (52%) |
+| Scale | $159 | 2,25× | 3.110 | 103 | $1,53 | $3,99 | 56% | 1,88× (47%) |
+| Business 249 | $249 | 2,25× | 4.870 | 162 | $1,53 | $3,99 | 56% | 1,88× (47%) |
+| Business 499 | $499 | 2,20× | 9.990 | 333 | $1,50 | $3,90 | 55% | 1,83× (45%) |
+| Business 999 | $999 | 2,15× | 20.460 | 682 | $1,46 | $3,81 | 54% | 1,79× (44%) |
+
 ## 1. Wat een credit is
 
 **Eén credit = de leverancierskosten van één seconde Standard-advertentie bij de aanbevolen lengte**, inclusief het aandeel script, productclip en montage: een advertentie van 30 s met Standard-presentator kost ons $0,68 (script $0,03, foto aanvullen tot $0,04, productclip $0,26, presentator $0,25, ondertitels en montage $0,10), dus **$0,0227 per credit** (`CREDIT_COST_USD`). Alle andere producten worden met dezelfde schattingen in credits omgerekend (`creditsForUsd = ceil(kosten / 0,0227)`), zodat de klant naast het dollarbedrag één getal ziet dat overal hetzelfde betekent.
@@ -14,10 +37,7 @@ Datum: 21 oktober 2026. Bron van alle getallen: `src/lib/plans.ts` (plannen, cre
 | 45 s | 38 credits | 121 credits | $0,85 | $2,73 |
 | 60 s | 46 credits | 156 credits | $1,03 | $3,53 |
 
-| Vertaling, per minuut bron per taal | Credits | Kosten |
-|---|---|---|
-| Speed | 98 | $2,21 |
-| Precision | 164 | $3,71 |
+(Vervangen op 24 oktober 2026, zie §0: Speed 78 credits, Precision 131 credits per minuut.)
 
 (Schattingen bij MiniMax Turbo tot 31 oktober; na 1 november stijgt de clip met $0,16 en schuiven de credits mee omdat ze uit dezelfde functie komen.)
 
@@ -27,7 +47,7 @@ Datum: 21 oktober 2026. Bron van alle getallen: `src/lib/plans.ts` (plannen, cre
 - Losse creditpakketten: **4×** (`TOPUP_MARGIN`).
 - Per plan één getal: de prijs staat vast op een rond bedrag en de inbegrepen credits worden daaruit berekend (`includedCreditsFor(prijs) = floor(prijs / (0,0227 × marge) / 10) × 10`), zodat de marge nooit onder het doel zakt.
 
-## 3. Plannen
+## 3. Plannen (situatie 21 oktober 2026, vervangen door §0)
 
 | Plan | Prijs per maand | Jaarlijks (10 maanden betalen) | Credits per maand | Kosten van die credits | Brutowinst | Marge |
 |---|---|---|---|---|---|---|
@@ -39,7 +59,7 @@ Datum: 21 oktober 2026. Bron van alle getallen: `src/lib/plans.ts` (plannen, cre
 
 Bij jaarbetaling blijft de marge 3× ten opzichte van de maandprijs minus twee maanden: 10/12 van de prijs voor 12 maanden credits geeft ≈ 2,5× (56%).
 
-### 3b. Business-plannen voor teams (21 oktober 2026)
+### 3b. Business-plannen voor teams (21 oktober 2026, credits vervangen door §0)
 
 Zelfde marge (3×) en dezelfde formule als de individuele plannen; het verschil is de teamwerkruimte (leden met eigen login, één gedeelde creditpot, verbruik per lid voor de eigenaar, API-sleutels per werkruimte). Geen kosten per gebruiker.
 

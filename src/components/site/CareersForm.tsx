@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
+import { Honeypot } from "@/components/site/Honeypot";
 
 /** Open application: name, e-mail, area, link, message. Stored, nothing else. */
 export function CareersForm({ locale = "en" }: { locale?: Locale }) {
@@ -52,7 +53,7 @@ export function CareersForm({ locale = "en" }: { locale?: Locale }) {
         <Field id="c-link" label={f.link} optional hint={f.linkHint}><Input id="c-link" type="url" value={v.link} onChange={set("link")} maxLength={300} /></Field>
       </div>
       <Field id="c-message" label={f.message} hint={f.messageHint}><Textarea id="c-message" value={v.message} onChange={set("message")} required minLength={10} maxLength={4000} rows={5} /></Field>
-      <input type="text" name="website" value={v.website} onChange={set("website")} tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
+      <Honeypot value={v.website} onChange={(website) => setV((p) => ({ ...p, website }))} />
       {error && <p role="alert" className="text-[13px] text-danger">{error}</p>}
       <Button type="submit" variant="primary" disabled={state === "busy"}>
         {state === "busy" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}

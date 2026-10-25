@@ -22,7 +22,14 @@ export async function ensurePersonalWorkspace(user: Pick<AppUser, "id" | "email"
   const [existing] = await d.select().from(workspaces).where(and(eq(workspaces.ownerUserId, user.id), eq(workspaces.kind, "personal"))).limit(1);
   if (existing) return existing;
   const name = user.name?.trim() || user.email.split("@")[0] || "Personal";
-  const [row] = await d.insert(workspaces).values({ name, kind: "personal", ownerUserId: user.id }).returning();
+  // Several requests of a first visit can get here at once: the unique index (one personal
+  // workspace per owner) lets only one insert win; the others read the winner's row.
+  const [created] = await d
+    .insert(workspaces)
+    .values({ name, kind: "personal", ownerUserId: user.id })
+    .onConflictDoNothing({ target: workspaces.ownerUserId, where: sql`kind = 'personal'` })
+    .returning();
+  const row = created ?? (await d.select().from(workspaces).where(and(eq(workspaces.ownerUserId, user.id), eq(workspaces.kind, "personal"))).limit(1))[0];
   await d.insert(workspaceMembers).values({ workspaceId: row.id, userId: user.id, role: "owner" }).onConflictDoNothing();
   return row;
 }

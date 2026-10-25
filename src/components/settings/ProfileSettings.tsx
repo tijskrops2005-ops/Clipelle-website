@@ -77,10 +77,11 @@ export function ProfileSettings() {
       )}
       <SectionCard title="Profile" description="How we address you and where we send e-mail." aside={<DemoBadge>Demo user</DemoBadge>}>
         <form onSubmit={onName} className="space-y-5">
-          <Field id="email" label="E-mail" hint={profile?.emailVerified ? "Verified." : "Not verified yet: open the link we sent you."}>
+          {/* Nothing about verification is shown until the profile has loaded: a default "Unverified" would be wrong for most people. */}
+          <Field id="email" label="E-mail" hint={!profile ? undefined : profile.emailVerified ? "Verified." : "Not verified yet: open the link we sent you."}>
             <div className="flex items-center gap-3">
-              <Input id="email" value={profile?.email ?? ""} readOnly className="bg-surface-muted" />
-              <Badge tone={profile?.emailVerified ? "success" : "warning"}>{profile?.emailVerified ? "Verified" : "Unverified"}</Badge>
+              <Input id="email" value={profile?.email ?? ""} placeholder={profile ? undefined : "Loading…"} readOnly className="bg-surface-muted" />
+              {profile && <Badge tone={profile.emailVerified ? "success" : "warning"}>{profile.emailVerified ? "Verified" : "Unverified"}</Badge>}
             </div>
           </Field>
           <Field id="name" label="Name" optional>

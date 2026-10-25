@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { AdSketch, TranslateSketch } from "@/components/site/Sketches";
+import { CountUp } from "@/components/motion/CountUp";
+import { LazyVideo } from "@/components/site/LazyVideo";
 import { cn } from "@/lib/utils";
 
 /**
@@ -33,7 +35,7 @@ const ACCENTS = ["var(--accent)", "var(--gold-light)", "var(--warning)", "var(--
 function VideoTile({ sample, label }: { sample: ResolvedExample; label: string }) {
   return (
     <div className="relative aspect-[9/16] overflow-hidden rounded-[28px] border-[5px] border-ink bg-ink shadow-card-hover">
-      <video src={sample.src} poster={sample.posterSrc} muted autoPlay loop playsInline preload="metadata" aria-label={`${sample.title}: ${sample.note}`} className="size-full object-cover" />
+      <LazyVideo src={sample.src} poster={sample.posterSrc} label={`${sample.title}: ${sample.note}`} />
       <span className="label-mono absolute left-3 top-3 rounded-full bg-surface/90 px-2 py-0.5 text-[10px] text-ink">{label}</span>
     </div>
   );
@@ -58,7 +60,7 @@ export function HeroShowcase({ words, illustrationLabel, sampleLabel, className 
     }
   }
   return (
-    <div className={cn("relative pb-14", className)}>
+    <div className={cn("relative pb-14 max-sm:overflow-x-clip", className)}>
       <div className="stage-glow pointer-events-none absolute inset-x-[10%] inset-y-[-10%]" aria-hidden />
       <ul className="fan relative" aria-label="Examples">
         {SLOTS.map((slot, i) => (
@@ -71,15 +73,17 @@ export function HeroShowcase({ words, illustrationLabel, sampleLabel, className 
   );
 }
 
-/* ---------- facts band ---------- */
+/* ---------- stats band: real numbers that count up once in view ---------- */
 
-export function FactsBand({ items, className }: { items: { value: string; label: string }[]; className?: string }) {
+export type Stat = { value: number; decimals?: number; suffix?: string; label: string };
+
+export function StatsBand({ items, className }: { items: Stat[]; className?: string }) {
   return (
     <Reveal className={className}>
       <dl className="grid gap-px overflow-hidden rounded-card bg-surface-muted sm:grid-cols-2 lg:grid-cols-4">
         {items.map((f) => (
           <div key={f.label} className="bg-surface-muted px-6 py-8 text-center sm:px-8">
-            <dd className="text-display text-ink">{f.value}</dd>
+            <dd className="text-display text-ink"><CountUp value={f.value} decimals={f.decimals} suffix={f.suffix} duration={1400} /></dd>
             <dt className="mt-1 text-[15px] text-muted">{f.label}</dt>
           </div>
         ))}

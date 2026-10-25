@@ -1,3 +1,4 @@
+import { companyLine } from "@/content/company";
 import type { LegalDoc } from "./types";
 
 /** Terms of service, draft for review; English and Dutch say the same. Credits never expire (21 October 2026). */
@@ -17,7 +18,7 @@ export const termsDoc: LegalDoc = {
     { heading: "7. Availability and changes", paragraphs: ["We aim for the service to be available at all times but cannot promise it. Services behind the steps change; we may replace them without notice as long as the result stays comparable. We may change these terms; the date at the top tells you when, and continued use after that date means you accept the change."] },
     { heading: "8. Liability", paragraphs: ["We deliver videos as they come out of the automated process. Check a video before you publish it. To the extent the law allows, our liability is limited to the amount you paid in the three months before the claim. We are not liable for indirect damage, lost profit, or claims that follow from content you provided."] },
     { heading: "9. Ending", paragraphs: ["You can delete your account in Settings at any time; your projects, files and credits are deleted with it within 30 days. We may suspend or end an account that breaks these terms, with notice where reasonable."] },
-    { heading: "10. Contact and law", paragraphs: ["Questions about these terms: use the contact page. These terms are governed by Dutch law; disputes go to the competent court in the Netherlands unless mandatory consumer law says otherwise. Clipelle is a working name of the operating company; the legal entity and address will be listed here before launch."] },
+    { heading: "10. Contact and law", paragraphs: ["Questions about these terms: use the contact page. These terms are governed by Dutch law; disputes go to the competent court in the Netherlands unless mandatory consumer law says otherwise. " + companyLine("en")] },
   ],
 };
 
@@ -37,6 +38,6 @@ export const termsDocNl: LegalDoc = {
     { heading: "7. Beschikbaarheid en wijzigingen", paragraphs: ["We streven ernaar dat de dienst altijd beschikbaar is, maar kunnen dat niet beloven. Diensten achter de stappen veranderen; we kunnen ze zonder bericht vervangen zolang het resultaat vergelijkbaar blijft. We kunnen deze voorwaarden wijzigen; de datum bovenaan zegt wanneer, en verder gebruik na die datum betekent dat je de wijziging accepteert."] },
     { heading: "8. Aansprakelijkheid", paragraphs: ["We leveren video's zoals ze uit het automatische proces komen. Controleer een video voordat je hem publiceert. Voor zover de wet het toestaat is onze aansprakelijkheid beperkt tot het bedrag dat je in de drie maanden vóór de claim hebt betaald. We zijn niet aansprakelijk voor indirecte schade, gederfde winst of claims die voortkomen uit inhoud die jij hebt aangeleverd."] },
     { heading: "9. Beëindiging", paragraphs: ["Je kunt je account altijd verwijderen in Settings; je projecten, bestanden en credits worden binnen 30 dagen mee verwijderd. We kunnen een account dat deze voorwaarden overtreedt schorsen of beëindigen, met kennisgeving waar dat redelijk is."] },
-    { heading: "10. Contact en recht", paragraphs: ["Vragen over deze voorwaarden: gebruik de contactpagina. Op deze voorwaarden is Nederlands recht van toepassing; geschillen gaan naar de bevoegde rechter in Nederland, tenzij dwingend consumentenrecht anders bepaalt. Clipelle is een werknaam van de exploiterende onderneming; de rechtspersoon en het adres worden hier vóór de lancering vermeld."] },
+    { heading: "10. Contact en recht", paragraphs: ["Vragen over deze voorwaarden: gebruik de contactpagina. Op deze voorwaarden is Nederlands recht van toepassing; geschillen gaan naar de bevoegde rechter in Nederland, tenzij dwingend consumentenrecht anders bepaalt. " + companyLine("nl")] },
   ],
 };

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Handshake, ShieldCheck } from "lucide-react";
+import { ArrowRight, BookOpen, Handshake, Mail, ShieldCheck } from "lucide-react";
 import { config } from "@/lib/config";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
@@ -16,6 +16,9 @@ import { CtaBand } from "@/components/site/CtaBand";
 import { JsonLd } from "@/components/site/JsonLd";
 import { TrustBlocks } from "@/components/site/TrustBlocks";
 import { CareersForm } from "@/components/site/CareersForm";
+import { LogoFull } from "@/components/Logo";
+import { company } from "@/content/company";
+import { siteUrl, supportEmail } from "@/lib/brand";
 
 const fill = (s: string, vars: Record<string, string>) => Object.entries(vars).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, v), s);
 
@@ -27,11 +30,15 @@ export function CustomersPage({ locale }: { locale: Locale }) {
   return (
     <div className="space-y-24 pt-16 sm:pt-24 sm:space-y-32">
       <SectionIntro eyebrow={c.eyebrow} title={c.title} text={c.text} />
+      <ul className="grid gap-5 md:grid-cols-2">
+        {c.pillars.map((p) => <li key={p.title} className="rounded-card bg-surface p-6 shadow-card"><p className="text-[17px] font-semibold text-ink">{p.title}</p><p className="mt-1.5 text-[15px] leading-relaxed text-muted">{p.text}</p></li>)}
+      </ul>
       {stories.length === 0 ? (
         <section className="mx-auto max-w-2xl rounded-card bg-surface p-8 text-center shadow-card">
           <span className="mx-auto grid size-12 place-items-center rounded-full bg-accent-soft text-accent"><BookOpen className="size-5" aria-hidden /></span>
-          <h2 className="mt-5 text-title">{c.shareTitle}</h2>
-          <p className="mx-auto mt-2 max-w-md text-[15px] text-muted">{c.shareText}</p>
+          <h2 className="mt-5 text-title">{c.soonTitle}</h2>
+          <p className="mx-auto mt-2 max-w-md text-[15px] text-muted">{c.soonText}</p>
+          <p className="mx-auto mt-6 max-w-md border-t border-divider pt-6 text-[15px] text-muted"><span className="font-semibold text-ink">{c.shareTitle}.</span> {c.shareText}</p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row"><Button href={L("/demo")} variant="primary">{t.common.bookDemo} <ArrowRight className="size-4" aria-hidden /></Button><Button href={L("/examples")} variant="secondary">{c.seeExamples}</Button></div>
         </section>
       ) : (
@@ -139,6 +146,71 @@ export function TrustPage({ locale }: { locale: Locale }) {
       <section className="mx-auto max-w-2xl text-center text-[15px] text-muted">
         <p>{r.footer} <Link href={L("/contact")} className="underline">{r.write}</Link>. {r.drafts} <Link href={L("/legal/terms")} className="underline">{r.terms}</Link>, <Link href={L("/legal/privacy")} className="underline">{r.privacy}</Link>, <Link href={L("/legal/data")} className="underline">{r.dataLink}</Link>, <Link href={L("/legal/cookies")} className="underline">{r.cookiesLink}</Link>.</p>
       </section>
+      <CtaBand locale={locale} />
+    </div>
+  );
+}
+
+/**
+ * Press and brand information (/press, 25 Oct 2026). Copy supplied by Tijs; no publication logos,
+ * customer numbers or endorsements here: those appear only from src/content/trust.ts with permission.
+ */
+export function PressPage({ locale }: { locale: Locale }) {
+  const t = dict(locale);
+  const p = t.press;
+  const L = (x: string) => localizePath(x, locale);
+  const email = supportEmail();
+  const site = siteUrl();
+  const rows: [string, string][] = [
+    [p.info.brand, config.productName],
+    [p.info.industry, p.info.industryValue],
+    [p.info.audience, p.info.audienceValue],
+    [p.info.website, site.replace(/^https?:\/\//, "")],
+    [p.info.company, `${company.operator} · ${company.city}, ${company.country[locale]} · KvK ${company.kvk}`],
+  ];
+  return (
+    <div className="space-y-24 pt-16 sm:pt-24 sm:space-y-32">
+      <section className="text-center">
+        <SectionIntro eyebrow={p.eyebrow} title={p.title} text={p.text} />
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Button href={L("/")} variant="accent" size="lg">{p.explore}<ArrowRight className="size-5" aria-hidden /></Button>
+          <Button href={L("/contact")} variant="secondary" size="lg">{p.touch}</Button>
+        </div>
+      </section>
+
+      <Reveal as="section">
+        <SectionIntro eyebrow={p.teamsEyebrow} title={p.teamsTitle} text={p.teamsText} />
+        <ul className="mt-10 grid gap-5 md:grid-cols-3">
+          {p.pillars.map((x) => <li key={x.title} className="rounded-card bg-surface p-6 shadow-card"><p className="text-[17px] font-semibold text-ink">{x.title}</p><p className="mt-1.5 text-[15px] leading-relaxed text-muted">{x.text}</p></li>)}
+        </ul>
+      </Reveal>
+
+      <Reveal as="section">
+        <SectionIntro eyebrow={p.forEyebrow} title={p.forTitle} />
+        <ul className="mt-10 grid gap-5 sm:grid-cols-2">
+          {p.audiences.map((x) => <li key={x.title} className="rounded-card bg-surface p-6 shadow-card"><p className="text-[17px] font-semibold text-ink">{x.title}</p><p className="mt-1.5 text-[15px] leading-relaxed text-muted">{x.text}</p></li>)}
+        </ul>
+      </Reveal>
+
+      <Reveal as="section" className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
+        <div className="rounded-card bg-surface p-8 shadow-card">
+          <p className="label-mono text-muted">{p.mediaEyebrow}</p>
+          <h2 className="mt-3 text-title">{p.mediaTitle}</h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-muted">{p.mediaText}</p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button href={L("/contact")} variant="primary">{p.contact}<ArrowRight className="size-4" aria-hidden /></Button>
+            {email && <a href={`mailto:${email}`} className="focus-ring inline-flex items-center gap-2 rounded-control text-[15px] font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink"><Mail className="size-4" aria-hidden />{email}</a>}
+          </div>
+        </div>
+        <div className="rounded-card bg-surface p-8 shadow-card">
+          <LogoFull className="h-9 w-auto" />
+          <h2 className="mt-6 text-[17px] font-semibold text-ink">{p.infoTitle}</h2>
+          <dl className="mt-3 divide-y divide-divider text-[14.5px]">
+            {rows.map(([k, v]) => <div key={k} className="grid grid-cols-[7.5rem_1fr] gap-3 py-2.5"><dt className="text-muted">{k}</dt><dd className="text-ink">{v}</dd></div>)}
+          </dl>
+        </div>
+      </Reveal>
+
       <CtaBand locale={locale} />
     </div>
   );

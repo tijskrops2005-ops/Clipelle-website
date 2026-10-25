@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
+import { Honeypot } from "@/components/site/Honeypot";
 
 /** Request form for the managed service: name, e-mail, company, what you sell, ads per month, message. Stored, nothing else. */
 export function ServiceRequestForm({ locale = "en" }: { locale?: Locale }) {
@@ -61,7 +62,7 @@ export function ServiceRequestForm({ locale = "en" }: { locale?: Locale }) {
         </Field>
       </div>
       <Field id="s-message" label={f.message} optional hint={f.messageHint}><Textarea id="s-message" value={v.message} onChange={set("message")} maxLength={4000} rows={4} /></Field>
-      <input type="text" name="website" value={v.website} onChange={set("website")} tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
+      <Honeypot value={v.website} onChange={(website) => setV((p) => ({ ...p, website }))} />
       {error && <p role="alert" className="text-[13px] text-danger">{error}</p>}
       <Button type="submit" variant="primary" disabled={state === "busy"}>
         {state === "busy" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
+import { Honeypot } from "@/components/site/Honeypot";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
 
@@ -50,11 +51,7 @@ export function DemoRequestForm({ variant, locale = "en" }: { variant: Variant; 
 
   return (
     <form ref={formRef} onSubmit={onSubmit} noValidate className="mx-auto max-w-xl space-y-5 rounded-card bg-surface p-6 shadow-card sm:p-8">
-      {/* Honeypot: hidden from people, filled by simple bots */}
-      <div className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden" aria-hidden>
-        <label htmlFor="website">Website</label>
-        <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
-      </div>
+      <Honeypot />
       <div className="grid gap-5 sm:grid-cols-2">
         <Field id="name" label={f.name}>
           <Input id="name" name="name" required autoComplete="name" />

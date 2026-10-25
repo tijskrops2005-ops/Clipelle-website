@@ -45,3 +45,18 @@ Thumbs.db
 
 # Built MCP server (npm run build in mcp/)
 /mcp/dist/
+
+# Customer material waiting to be imported (names, photos, permissions): keep it out of git;
+# only the instructions and the two templates are tracked.
+/content-inbox/*
+!/content-inbox/README.md
+!/content-inbox/reviews.md
+!/content-inbox/brands.md
+!/content-inbox/numbers.md
+!/content-inbox/press.md
+!/content-inbox/links.md
+!/content-inbox/stories/
+/content-inbox/stories/*
+!/content-inbox/stories/_template/
+/content-inbox/stories/_template/*
+!/content-inbox/stories/_template/story.md

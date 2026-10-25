@@ -7,15 +7,28 @@ import type { TranslationQuality } from "@/lib/types";
  * One credit = the provider cost of one second of a Standard-quality ad at the recommended length
  * (30 s Standard ≈ $0.68 all-in → $0.68 / 30 ≈ $0.0227 per credit; see docs/pricing-model.md).
  * Everything else is expressed in that unit from the same estimates the forms show, so the customer
- * sees one number next to the dollar estimate. Prices = provider cost × margin:
- * subscriptions 3× (SUBSCRIPTION_MARGIN), top-up packs 4× (TOPUP_MARGIN). Plan prices are fixed to
- * round numbers; the included credits are derived from the price so the margin is never below target.
+ * sees one number next to the dollar estimate. Prices = provider cost × margin. Since 24 Oct 2026 a
+ * bigger plan is cheaper per credit (PLAN_MARGINS: Starter 2.75× … Business 999 2.15×), never below
+ * MIN_SUBSCRIPTION_MARGIN; top-up packs stay at 4× (TOPUP_MARGIN). Plan prices are fixed to round
+ * numbers; the included credits are derived from the price and the plan's margin.
  */
 
 export const CREDIT_COST_USD = Math.round((estimateAdCost({ seconds: 30, clipModel: DEFAULTS.clipModel, engine: "avatar_iii" }).total / 30) * 10_000) / 10_000;
 
+/** Default subscription margin (used when a plan has no own entry in PLAN_MARGINS). */
 export const SUBSCRIPTION_MARGIN = 3;
+/** Price ÷ provider cost per plan: the bigger the plan, the cheaper each credit (decided 24 Oct 2026). */
+export const PLAN_MARGINS: Partial<Record<PlanKey, number>> = { starter: 2.75, pro: 2.5, scale: 2.25, business_249: 2.25, business_499: 2.2, business_999: 2.15 };
+/** No subscription may ever go below this margin on the monthly price (≈ 53% gross). */
+export const MIN_SUBSCRIPTION_MARGIN = 2.15;
 export const TOPUP_MARGIN = 4;
+/**
+ * Translations take 80% of their provider cost in credits (decided 24 Oct 2026): translation is the
+ * main product and the market prices it per minute far below ads. On every plan the margin on a
+ * translation stays at or above MIN_TRANSLATE_MARGIN; packs still keep ≥ 3.2×.
+ */
+export const TRANSLATE_CREDIT_FACTOR = 0.8;
+export const MIN_TRANSLATE_MARGIN = 1.7;
 /** Annual billing: pay for ten months, get twelve. */
 export const ANNUAL_MONTHS_CHARGED = 10;
 
@@ -31,7 +44,12 @@ export function adCredits(input: { seconds: number; engine: PresenterEngine; spe
 
 /** Credits per language version of a translation. */
 export function translateCredits(input: { seconds: number; quality: TranslationQuality; enhance: boolean; languages: number; hasSourceTranscript: boolean }) {
-  return creditsForUsd(estimateTranslateCost(input).perLanguageTotal);
+  return creditsForUsd(estimateTranslateCost(input).perLanguageTotal * TRANSLATE_CREDIT_FACTOR);
+}
+
+/** Credits for the real spend of a finished project: the same rule as its estimate (translations at the translation factor). */
+export function creditsForSpend(usd: number, workflow: "ad" | "translate") {
+  return creditsForUsd(workflow === "translate" ? usd * TRANSLATE_CREDIT_FACTOR : usd);
 }
 
 /** Included credits for a monthly price at the subscription margin, rounded down to tens. */
@@ -66,7 +84,7 @@ export type Plan = {
 };
 
 function plan(key: PlanKey, name: string, tagline: string, monthlyUsd: number, bullets: string[], extra: Partial<Plan> = {}): Plan {
-  const credits = monthlyUsd > 0 ? includedCreditsFor(monthlyUsd) : 0;
+  const credits = monthlyUsd > 0 ? includedCreditsFor(monthlyUsd, PLAN_MARGINS[key] ?? SUBSCRIPTION_MARGIN) : 0;
   return {
     key,
     name,
@@ -83,9 +101,9 @@ function plan(key: PlanKey, name: string, tagline: string, monthlyUsd: number, b
 
 export const PLANS: Plan[] = [
   plan("free", "Free", "Try it once", 0, ["One 10-second ad, Standard presenter", "After e-mail verification, no card", "Use it within 30 days"], { creditsNote: "One free 10-second ad" }),
-  plan("starter", "Starter", "For a shop testing its first ads", 19, ["About nine 30-second Standard ads a month", "Translations, all languages", "Credits never expire"]),
-  plan("pro", "Pro", "For a brand posting every week", 59, ["About twenty-eight 30-second Standard ads a month", "Premium presenter when you want it", "Credits never expire"], { recommended: true }),
-  plan("scale", "Scale", "For agencies and several brands", 159, ["About seventy-seven 30-second Standard ads a month", "Premium presenter and translations included", "Credits never expire"]),
+  plan("starter", "Starter", "For a shop testing its first ads", 19, ["Ten 30-second Standard ads a month", "Translations, all languages", "Credits never expire"]),
+  plan("pro", "Pro", "For a brand posting every week", 59, ["About thirty-four 30-second Standard ads a month", "Premium presenter when you want it", "Credits never expire"], { recommended: true }),
+  plan("scale", "Scale", "For agencies and several brands", 159, ["Over a hundred 30-second Standard ads a month", "Premium presenter and translations included", "Credits never expire"]),
   plan("enterprise", "Enterprise", "Custom volume and terms", 0, ["Custom credits and billing", "Onboarding and a direct line", "Book a demo to talk"], { creditsNote: "Custom", stripeLookup: undefined }),
 ];
 

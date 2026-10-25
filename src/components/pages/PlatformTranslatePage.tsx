@@ -14,7 +14,7 @@ import { SectionIntro } from "@/components/site/SectionIntro";
 import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { CtaBand } from "@/components/site/CtaBand";
 import { RealOutput } from "@/components/site/RealOutput";
-import { MidCta } from "@/components/site/HomeSections";
+import { LatestPosts, MidCta } from "@/components/site/HomeSections";
 
 export function PlatformTranslatePage({ locale }: { locale: Locale }) {
   const t = dict(locale);
@@ -61,6 +61,7 @@ export function PlatformTranslatePage({ locale }: { locale: Locale }) {
       </Reveal>
       <RealOutput data={realTranslation} kind="translation" locale={locale} />
       <MidCta locale={locale} />
+      <LatestPosts locale={locale} categories={["translation"]} />
       <Reveal as="section"><CtaBand locale={locale} variant="translate" /></Reveal>
     </div>
   );

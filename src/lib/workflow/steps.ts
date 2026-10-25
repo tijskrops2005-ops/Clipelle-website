@@ -5,7 +5,7 @@ import { assets, db, projects, steps, type AssetRow, type ProjectRow, type StepR
 import { copyFromUrl, objectPath, putObject, signedDownloadUrl } from "@/lib/storage";
 import { CostGuardError, getProjectSpend } from "@/lib/services/costGuard";
 import { settleCredits } from "@/lib/credits";
-import { creditsForUsd } from "@/lib/plans";
+import { creditsForSpend } from "@/lib/plans";
 import { TimeoutError, withTimeout } from "@/lib/timeout";
 import { inngest, providerJobFinished } from "@/lib/inngest/client";
 
@@ -266,7 +266,8 @@ export async function afterProjectEnd(projectId: string) {
 export async function settleProjectCredits(projectId: string) {
   try {
     const spend = await getProjectSpend(projectId);
-    const used = spend.totalUsd > 0 ? creditsForUsd(spend.totalUsd) : 0;
+    const [row] = await db().select({ workflow: projects.workflow }).from(projects).where(eq(projects.id, projectId)).limit(1);
+    const used = spend.totalUsd > 0 ? creditsForSpend(spend.totalUsd, row?.workflow === "translate" ? "translate" : "ad") : 0;
     await settleCredits(projectId, used, "Settled against the real cost");
   } catch (error) {
     console.error("[credits] settle failed", error);

@@ -7,11 +7,14 @@ import { footerColumnsFor } from "./siteNav";
 import { Year } from "./Year";
 import { CookieSettingsLink } from "./CookieBanner";
 import { LogoFull } from "@/components/Logo";
+import { company } from "@/content/company";
+import { supportEmail } from "@/lib/brand";
 
 /** Big footer: brand, five link columns, social icons only when src/content/social.ts lists them. Localized. */
 export function SiteFooter({ locale = "en" }: { locale?: Locale }) {
   const t = dict(locale);
   const columns = footerColumnsFor(locale);
+  const email = supportEmail();
   return (
     <footer className="mt-24 border-t border-divider px-4 py-14 sm:mt-32 sm:px-6">
       <div className="mx-auto grid max-w-6xl gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[1.3fr_repeat(5,1fr)]">
@@ -46,7 +49,14 @@ export function SiteFooter({ locale = "en" }: { locale?: Locale }) {
           </nav>
         ))}
       </div>
-      <p className="mx-auto mt-12 max-w-6xl border-t border-divider pt-6 text-[13px] text-muted">© <Year /> {config.productName}. {t.footer.copyright}</p>
+      <div className="mx-auto mt-12 flex max-w-6xl flex-col gap-1.5 border-t border-divider pt-6 text-[13px] text-muted sm:flex-row sm:justify-between sm:gap-6">
+        <p>© <Year /> {config.productName}. {t.footer.copyright}</p>
+        {/* The details Dutch law asks for, from src/content/company.ts. */}
+        <p>
+          {email && <><a href={`mailto:${email}`} className="focus-ring rounded-control underline decoration-border underline-offset-4 hover:text-ink hover:decoration-ink">{email}</a> · </>}
+          {company.operator} · {company.city} · KvK {company.kvk} · {locale === "nl" ? "btw" : "VAT"} {company.vat}
+        </p>
+      </div>
     </footer>
   );
 }

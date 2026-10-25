@@ -4,7 +4,11 @@ import { Email, authRateLimit, demoBlocked, friendly, safeNext, siteUrl } from "
 
 const Body = z.object({ email: Email, next: z.string().optional() });
 
-/** Sends a magic link (also creates the account when it does not exist yet). */
+/**
+ * Sends the sign-in e-mail (also creates the account when it does not exist yet). What it holds is
+ * set by the Supabase "Magic Link" template: with {{ .Token }} it is a one-time code that the form
+ * checks through /api/auth/code; the link stays as a fallback when the template still has it.
+ */
 export async function POST(request: Request) {
   const blocked = demoBlocked();
   if (blocked) return blocked;

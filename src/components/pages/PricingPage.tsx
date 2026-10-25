@@ -10,6 +10,7 @@ import { ServiceSection } from "@/components/site/ServiceSection";
 import { SavingsCalculator } from "@/components/site/SavingsCalculator";
 import { JsonLd } from "@/components/site/JsonLd";
 import { Reveal } from "@/components/site/Reveal";
+import { LatestPosts } from "@/components/site/HomeSections";
 
 export function PricingPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
@@ -28,6 +29,7 @@ export function PricingPage({ locale }: { locale: Locale }) {
         <SectionIntro eyebrow={t.common.faq} title={t.pricing.faqTitle} />
         <Accordion items={faq} className="mx-auto mt-10 max-w-3xl" />
       </section>
+      <LatestPosts locale={locale} categories={["costs-and-process"]} />
       <CtaBand locale={locale} />
     </div>
   );

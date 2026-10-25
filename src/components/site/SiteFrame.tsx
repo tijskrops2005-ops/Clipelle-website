@@ -1,7 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { HeaderAccount, SignedOutButtons } from "@/components/site/HeaderAccount";
+import { HeaderAccount, HeaderAuthButtons } from "@/components/site/HeaderAccount";
 import { CookieBanner } from "@/components/site/CookieBanner";
 import { ConsentScripts } from "@/components/site/ConsentScripts";
 import { HtmlLang } from "@/components/site/HtmlLang";
@@ -18,7 +18,7 @@ export function SiteFrame({ locale, children }: { locale: Locale; children: Reac
         <SiteHeader
           locale={locale}
           account={
-            <Suspense fallback={<SignedOutButtons locale={locale} />}>
+            <Suspense fallback={<HeaderAuthButtons locale={locale} />}>
               <HeaderAccount locale={locale} />
             </Suspense>
           }

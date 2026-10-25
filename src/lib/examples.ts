@@ -20,9 +20,13 @@ function remoteBase(): string | null {
 }
 
 function resolveFile(file: string): string | null {
+  const local = existsSync(path.join(process.cwd(), "public", "examples", file)) ? `/examples/${file}` : null;
+  // While building locally, play the copies on disk: every page reload would otherwise download the
+  // videos from storage again and use up its monthly transfer (24 Oct 2026, over quota from dev reloads).
+  if (local && process.env.NODE_ENV === "development") return local;
   const base = remoteBase();
   if (base) return `${base}/${encodeURIComponent(file)}`;
-  return existsSync(path.join(process.cwd(), "public", "examples", file)) ? `/examples/${file}` : null;
+  return local;
 }
 
 /** One file by name (video or photo), or null when it exists nowhere. */

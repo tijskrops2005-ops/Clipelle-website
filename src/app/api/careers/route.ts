@@ -28,6 +28,6 @@ export async function POST(request: Request) {
   if (!perEmail.ok) return Response.json({ error: "We already have your message. We reply by e-mail." }, { status: 429 });
   await db().insert(careerInterests).values({ name: b.name, email: b.email.toLowerCase(), area: b.area || null, link: b.link || null, message: b.message, ipHash: hashIp(ip) });
   const to = notifyAddress();
-  if (to) await sendEmail({ to, subject: `Open application from ${b.name}`, text: `${b.name} <${b.email}>${b.area ? ` · ${b.area}` : ""}${b.link ? `\n${b.link}` : ""}\n\n${b.message}` }).catch(() => null);
+  if (to) await sendEmail({ to, replyTo: b.email, subject: `Open application from ${b.name}`, text: `${b.name} <${b.email}>${b.area ? ` · ${b.area}` : ""}${b.link ? `\n${b.link}` : ""}\n\n${b.message}` }).catch(() => null);
   return Response.json({ ok: true, stored: true });
 }

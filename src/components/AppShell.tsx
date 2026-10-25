@@ -9,6 +9,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { DemoRunner } from "@/components/DemoRunner";
 import { StatusWatcher } from "@/components/StatusWatcher";
+import { ToolSearch } from "@/components/ToolSearch";
+import { TopBar } from "@/components/TopBar";
 import { isAdmin } from "@/lib/adminAccess";
 
 /**
@@ -29,12 +31,14 @@ export async function AppShell({ children }: { children: ReactNode }) {
     workspaces = await listWorkspacesFor(user.id).catch(() => []);
   }
   const credits = user && scope && !config.demoMode ? await getCreditBalance(scope.workspaceId).catch(() => null) : null;
-  const who = user && scope ? { email: user.email, name: user.name, credits, workspace: { id: scope.workspaceId, name: scope.workspaceName, kind: scope.workspaceKind, role: scope.role }, workspaces, isAdmin: !config.demoMode && isAdmin(user.email) } : null;
+  const who = user && scope ? { email: user.email, name: user.name, credits, planKey: scope.planKey, workspace: { id: scope.workspaceId, name: scope.workspaceName, kind: scope.workspaceKind, role: scope.role }, workspaces, isAdmin: !config.demoMode && isAdmin(user.email) } : null;
   return (
     <div className="flex min-h-screen">
       <DemoRunner />
       <StatusWatcher />
-      <div className="hidden lg:block">
+      <ToolSearch />
+      {/* The sidebar stays in view while the page scrolls; its middle scrolls on its own when the list is long. */}
+      <div className="sticky top-0 hidden h-screen lg:block">
         <Suspense fallback={<div className="w-66" aria-hidden />}>
           <Sidebar user={who} />
         </Suspense>
@@ -46,8 +50,13 @@ export async function AppShell({ children }: { children: ReactNode }) {
             <MobileNav user={who} />
           </Suspense>
         </div>
-        {/* desktop: the demo pill lives in the sidebar footer; the page starts after a quiet top margin */}
-        <div className="mx-auto w-full max-w-[1120px] px-4 pb-16 pt-5 sm:px-6 md:px-8 lg:px-12 lg:pb-20 lg:pt-14">
+        {/* desktop: section, tool search and updates */}
+        <div className="hidden lg:block">
+          <Suspense fallback={<div className="h-14" aria-hidden />}>
+            <TopBar />
+          </Suspense>
+        </div>
+        <div className="mx-auto w-full max-w-[1180px] px-4 pb-16 pt-5 sm:px-6 md:px-8 lg:px-10 lg:pb-20 lg:pt-10">
           {children}
         </div>
       </main>

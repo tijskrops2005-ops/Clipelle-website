@@ -33,9 +33,9 @@ export function ForgotPasswordForm() {
       setBusy(false);
     }
   }
-  if (done) return <p className="mx-auto max-w-md rounded-card bg-surface p-8 text-center text-[15px] text-muted shadow-card">If an account exists for {email}, a reset link is on its way. Open it to choose a new password.</p>;
+  if (done) return <p className="text-[15px] leading-relaxed text-muted">If an account exists for {email}, a reset link is on its way. Open it to choose a new password.</p>;
   return (
-    <form onSubmit={onSubmit} noValidate className="mx-auto max-w-md space-y-5 rounded-card bg-surface p-6 shadow-card sm:p-8">
+    <form onSubmit={onSubmit} noValidate className="space-y-5">
       <Field id="email" label="E-mail">
         <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
       </Field>
@@ -69,7 +69,7 @@ export function ResetPasswordForm() {
     }
   }
   return (
-    <form onSubmit={onSubmit} noValidate className="mx-auto max-w-md space-y-5 rounded-card bg-surface p-6 shadow-card sm:p-8">
+    <form onSubmit={onSubmit} noValidate className="space-y-5">
       <Field id="password" label="New password" hint="At least 8 characters.">
         <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required minLength={8} />
       </Field>

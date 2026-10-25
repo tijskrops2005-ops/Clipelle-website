@@ -22,15 +22,23 @@ export type RealOutput = {
   madeOn?: string;
 };
 
+// Values from the database records of the two runs (project "Gracewear London" and "Senvia",
+// both 19 October 2026): spoken script from the script step, cost from cost_entries, time from
+// the first step's start to the last step's finish. The product photo stays empty until we know
+// we may show it.
 export const realAd: RealOutput = {
   videoFile: "ad-dress-30s-standard.mp4",
+  script: "Opvallen op een diner, zonder overdreven te zijn? Je kent het: je kast hangt vol, maar niets voelt elegant genoeg voor een avond uit. Dit is Madison, een witte midi-jurk met lange mouwen. De asymmetrische hals valt meteen op. De plooien door het lijf geven vorm. En de pasvorm is gestructureerd, voor een verzorgde look. Perfect voor diners, feesten en speciale avonden. Tik op de link en bestel Madison vandaag.",
+  costUsd: 0.53,
+  durationSeconds: 356,
   settings: "30 s · Dutch · Standard presenter",
-  madeOn: "2026-10-20",
+  madeOn: "2026-10-19",
 };
 
 export const realTranslation: RealOutput = {
   videoFile: "translate-senvia-nl.mp4",
+  costUsd: 0.26,
   settings: "8 s · English to Dutch · Speed · captions",
-  durationSeconds: 300,
-  madeOn: "2026-10-20",
+  durationSeconds: 271,
+  madeOn: "2026-10-19",
 };

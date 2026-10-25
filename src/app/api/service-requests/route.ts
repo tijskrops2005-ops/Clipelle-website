@@ -29,6 +29,6 @@ export async function POST(request: Request) {
   if (!perEmail.ok) return Response.json({ error: "We already have your request. We reply by e-mail within two working days." }, { status: 429 });
   await db().insert(serviceRequests).values({ name: b.name, email: b.email.toLowerCase(), company: b.company || null, sells: b.sells || null, adsPerMonth: b.adsPerMonth || null, message: b.message || null, ipHash: hashIp(ip) });
   const to = notifyAddress();
-  if (to) await sendEmail({ to, subject: `Managed service request from ${b.name}`, text: `${b.name} <${b.email}>${b.company ? ` (${b.company})` : ""}\nSells: ${b.sells || "-"}\nAds per month: ${b.adsPerMonth || "-"}\n\n${b.message || ""}` }).catch(() => null);
+  if (to) await sendEmail({ to, replyTo: b.email, subject: `Managed service request from ${b.name}`, text: `${b.name} <${b.email}>${b.company ? ` (${b.company})` : ""}\nSells: ${b.sells || "-"}\nAds per month: ${b.adsPerMonth || "-"}\n\n${b.message || ""}` }).catch(() => null);
   return Response.json({ ok: true, stored: true });
 }

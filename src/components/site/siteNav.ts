@@ -111,6 +111,7 @@ export const menus: Menu[] = [
           { href: "/about", title: "About", text: "Why Clipelle exists and how it is built.", icon: Building2 },
           { href: "/careers", title: "Careers", text: "How we work and how to get in touch.", icon: Briefcase },
           { href: "/contact", title: "Contact", text: "Questions, feedback, press.", icon: Mail },
+          { href: "/press", title: "Press", text: "Brand information and press enquiries.", icon: Newspaper },
           { href: "/trust", title: "Trust", text: "Rights, data, files, costs: what we do and do not do.", icon: ShieldCheck },
         ],
       },
@@ -138,7 +139,7 @@ export function menusFor(locale: Locale): Menu[] {
     label: labels[m.key],
     columns: m.columns.map((c) => ({
       title: columnTitle(m.key, c.title),
-      items: c.items.map((i) => ({ ...i, href: localizePath(i.href, locale), title: t.nav.items[i.href]?.title ?? i.title, text: t.nav.items[i.href]?.text ?? i.text })),
+      items: c.items.map((i) => ({ ...i, href: siteHref(i.href, locale), title: t.nav.items[i.href]?.title ?? i.title, text: t.nav.items[i.href]?.text ?? i.text })),
     })),
   }));
 }
@@ -156,6 +157,19 @@ export function footerColumnsFor(locale: Locale) {
     { title: t.footer.columns.legal, links: [{ href: L("/legal/terms"), label: t.footer.links.terms }, { href: L("/legal/privacy"), label: t.footer.links.privacy }, { href: L("/legal/cookies"), label: t.footer.links.cookies }, { href: L("/legal/data"), label: t.footer.links.data }, { href: L("/legal/affiliate-terms"), label: t.footer.links.partnerTerms }] },
   ];
 }
+/**
+ * Links from the public site into the app (Studio, tools, settings) always go through the sign-in
+ * page with the destination as `next`: visitors log in or start for free first, someone already
+ * signed in is sent straight on by the proxy. Site pages keep their own (localized) path.
+ */
+const APP_PREFIXES = ["/dashboard", "/new", "/projects", "/settings", "/batches"];
+export function viaLogin(appPath: string) {
+  return `/login?next=${encodeURIComponent(appPath)}`;
+}
+export function siteHref(href: string, locale: Locale) {
+  return APP_PREFIXES.some((p) => href === p || href.startsWith(`${p}/`)) ? viaLogin(href) : localizePath(href, locale);
+}
+
 /** Flat lists kept for pages that show a menu's entries as cards. */
 export const platformMenu: MenuItem[] = menuByKey("platform").columns[0].items;
 export const integrationsMenu: MenuItem[] = menuByKey("platform").columns[1].items;

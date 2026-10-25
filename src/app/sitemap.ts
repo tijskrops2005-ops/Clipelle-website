@@ -9,7 +9,7 @@ import { isSitePath, localizePath, LOCALES } from "@/lib/i18n";
 /** Every public page. App pages, auth pages and dev tools are left out. */
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  const fixed = ["/", "/pricing", "/examples", "/about", "/demo", "/contact", "/blog", "/resources", "/resources/guides", "/resources/faq", "/resources/changelog", "/customers", "/partners", "/careers", "/trust", "/docs/api", "/docs/mcp", "/legal/terms", "/legal/privacy", "/legal/cookies", "/legal/affiliate-terms", "/legal/data", "/services/done-for-you"];
+  const fixed = ["/", "/pricing", "/examples", "/about", "/demo", "/contact", "/blog", "/resources", "/resources/guides", "/resources/faq", "/resources/changelog", "/customers", "/partners", "/careers", "/trust", "/press", "/docs/api", "/docs/mcp", "/legal/terms", "/legal/privacy", "/legal/cookies", "/legal/affiliate-terms", "/legal/data", "/services/done-for-you"];
   const menuPages = menus.flatMap((m) => m.columns.flatMap((c) => c.items.map((i) => i.href))).filter((h) => h.startsWith("/") && !h.startsWith("/new"));
   const pages = Array.from(new Set([...fixed, ...menuPages]));
   // Marketing pages exist in every language; each entry carries hreflang alternates.

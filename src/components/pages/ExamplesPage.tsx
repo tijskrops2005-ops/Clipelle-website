@@ -5,6 +5,7 @@ import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { Reveal } from "@/components/site/Reveal";
 import { CtaBand } from "@/components/site/CtaBand";
 import { FormatCards } from "@/components/site/FormatCards";
+import { LatestPosts } from "@/components/site/HomeSections";
 
 export function ExamplesPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
@@ -17,6 +18,7 @@ export function ExamplesPage({ locale }: { locale: Locale }) {
         <div className="max-w-2xl"><h2 className="text-title">{t.examples.formats}</h2><p className="mt-2 text-[15px] leading-relaxed text-muted">{t.examples.formatsText}</p></div>
         <FormatCards locale={locale} />
       </section>
+      <LatestPosts locale={locale} categories={["captions-and-formats", "scripts-and-hooks"]} />
       <Reveal as="section"><CtaBand locale={locale} /></Reveal>
     </div>
   );

@@ -256,6 +256,119 @@
 .fan > li:hover > * {
   transform: rotate(0deg) translateY(calc(var(--y, 0px) - 10px));
 }
+/*
+ * One orchestrated load moment for the dashboard and the hero cards (patterns from getvidforge.com,
+ * our own tokens): cards rise in with a stagger, rings draw, bars grow, numbers count up (CountUp).
+ * After that the page is still; only the hero cards float slowly.
+ */
+.rise {
+  animation: rise-in 700ms var(--ease-soft) both;
+  animation-delay: var(--rise-delay, 0ms);
+}
+@keyframes ring-draw {
+  from { stroke-dashoffset: var(--ring-len); }
+}
+.ring-draw {
+  animation: ring-draw 1200ms var(--ease-soft) both;
+  animation-delay: var(--rise-delay, 200ms);
+}
+@keyframes bar-grow {
+  from { transform: scaleY(0); }
+}
+.bar-grow {
+  transform-origin: bottom;
+  animation: bar-grow 700ms var(--ease-soft) both;
+  animation-delay: var(--bar-delay, 0ms);
+}
+@keyframes float-card {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -10px, 0); }
+}
+.float-card {
+  animation: float-card 7s ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+}
+/* The pipeline strip lights its steps up one after the other, like a run in progress. */
+@keyframes step-glow {
+  0%, 22%, 100% { background-color: var(--ink); box-shadow: 0 0 0 0 rgba(212, 63, 27, 0); }
+  8% { background-color: var(--accent); box-shadow: 0 0 0 6px rgba(212, 63, 27, 0.16); }
+}
+.step-glow {
+  animation: step-glow 4.8s var(--ease-soft) infinite;
+  animation-delay: var(--step-delay, 0s);
+}
+/* Frosted card on paper: the light version of a glass panel. */
+.glass {
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+/* ---------- 25 Oct 2026: motion patterns after reign.com, our own content ---------- */
+
+/* Headline words arrive one by one, sharpening from a blur. */
+@keyframes word-in {
+  from { opacity: 0; transform: translateY(0.35em); filter: blur(8px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+.word-in > span {
+  display: inline-block;
+  animation: word-in 750ms var(--ease-soft) both;
+  animation-delay: calc(var(--i, 0) * 70ms + 80ms);
+}
+/* A marquee row that runs the other way. */
+.marquee-track.reverse { animation-direction: reverse; }
+.marquee-track.slow { animation-duration: 70s; }
+
+/* Falling language codes behind the closing call to action. */
+@keyframes fall {
+  from { transform: translateY(-40px); opacity: 0; }
+  10% { opacity: var(--o, 0.35); }
+  90% { opacity: var(--o, 0.35); }
+  to { transform: translateY(420px); opacity: 0; }
+}
+.fall > span {
+  position: absolute;
+  top: 0;
+  animation: fall var(--dur, 9s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* The product demo: one 12-second loop. Cursor → photo → name typed → Generate → four steps → video. */
+.demo { --demo: 12s; }
+.demo * { animation-duration: var(--demo); animation-iteration-count: infinite; animation-timing-function: var(--ease-soft); }
+@keyframes demo-cursor {
+  0% { left: 70%; top: 85%; }
+  8%, 12% { left: 26%; top: 30%; }
+  20%, 36% { left: 30%; top: 56%; }
+  44%, 50% { left: 27%; top: 80%; }
+  58%, 100% { left: 78%; top: 90%; opacity: 0; }
+}
+@keyframes demo-click { 0%, 9% { transform: scale(1); } 10% { transform: scale(0.82); } 11%, 100% { transform: scale(1); } }
+@keyframes demo-photo { 0%, 11% { opacity: 0; transform: scale(0.9); } 14%, 95% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes demo-type { 0%, 22% { width: 0; } 36%, 95% { width: 12ch; } 100% { width: 0; } }
+@keyframes demo-btn { 0%, 46% { transform: scale(1); } 48% { transform: scale(0.94); } 50%, 100% { transform: scale(1); } }
+@keyframes demo-step-1 { 0%, 49% { background: var(--surface-muted); color: var(--muted); } 50%, 57% { background: var(--accent); color: #fff; } 58%, 95% { background: var(--success); color: #fff; } 100% { background: var(--surface-muted); color: var(--muted); } }
+@keyframes demo-step-2 { 0%, 57% { background: var(--surface-muted); color: var(--muted); } 58%, 65% { background: var(--accent); color: #fff; } 66%, 95% { background: var(--success); color: #fff; } 100% { background: var(--surface-muted); color: var(--muted); } }
+@keyframes demo-step-3 { 0%, 65% { background: var(--surface-muted); color: var(--muted); } 66%, 73% { background: var(--accent); color: #fff; } 74%, 95% { background: var(--success); color: #fff; } 100% { background: var(--surface-muted); color: var(--muted); } }
+@keyframes demo-step-4 { 0%, 73% { background: var(--surface-muted); color: var(--muted); } 74%, 81% { background: var(--accent); color: #fff; } 82%, 95% { background: var(--success); color: #fff; } 100% { background: var(--surface-muted); color: var(--muted); } }
+@keyframes demo-bar { 0%, 50% { transform: scaleX(0); } 82%, 95% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
+@keyframes demo-result { 0%, 82% { opacity: 0; transform: translateY(14px) scale(0.96); } 86%, 95% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes demo-placeholder { 0%, 82% { opacity: 1; } 86%, 95% { opacity: 0; } 100% { opacity: 1; } }
+.demo-cursor { animation-name: demo-cursor; }
+.demo-cursor > svg { animation-name: demo-click; }
+.demo-photo { animation-name: demo-photo; }
+.demo-type { animation-name: demo-type; animation-timing-function: steps(12, end) !important; }
+.demo-btn { animation-name: demo-btn; }
+.demo-s1 { animation-name: demo-step-1; }
+.demo-s2 { animation-name: demo-step-2; }
+.demo-s3 { animation-name: demo-step-3; }
+.demo-s4 { animation-name: demo-step-4; }
+.demo-bar { transform-origin: left; animation-name: demo-bar; }
+.demo-result { animation-name: demo-result; }
+.demo-placeholder { animation-name: demo-placeholder; }
+
 /* Soft colour field behind the showcase and the feature panels (tokens only). */
 .stage-glow {
   background:
@@ -402,7 +515,15 @@
     opacity: 1;
     transform: none;
   }
-  .fan > li {
+  .word-in > span,
+  .fall > span,
+  .demo *,
+  .fan > li,
+  .rise,
+  .ring-draw,
+  .bar-grow,
+  .float-card,
+  .step-glow {
     animation: none;
   }
   .fan > li > *,
@@ -425,6 +546,13 @@
   }
   .word-cycle > span:first-child { opacity: 1; }
   .wave > i { transform: none; }
+  .demo-photo, .demo-result { opacity: 1; transform: none; }
+  .demo-type { width: 12ch; }
+  .demo-placeholder, .demo-cursor { opacity: 0; }
+  .demo-s1, .demo-s2, .demo-s3, .demo-s4 { background: var(--success); color: #fff; }
+  .demo-bar { transform: none; }
+  .fall { display: none; }
+
 }
 
 /* ---------- rendered markdown (blog articles): own type scale, no plugin ---------- */

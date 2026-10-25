@@ -1,3 +1,4 @@
+import { companyLine } from "@/content/company";
 import type { LegalDoc } from "./types";
 
 /** Privacy statement, draft for review: what we really collect and why, from the code and docs. */
@@ -13,7 +14,7 @@ export const privacyDoc: LegalDoc = {
     { heading: "How long", paragraphs: ["Projects and files stay in your workspace until you delete them, the workspace or your account. Deleting your account removes projects, files and credits within 30 days. Site-form requests are kept for 12 months. Cost and credit records are kept as long as the law requires for bookkeeping. Backups follow the provider's retention and are overwritten in the normal cycle."] },
     { heading: "Your rights", paragraphs: ["You can see, change or export your data in Settings, delete projects yourself, and delete your account including everything in it. For anything else, or to object to processing, use the contact page. If you are in the EU you can also complain to your data protection authority."] },
     { heading: "Security", paragraphs: ["Keys to the services stay on the server and are never sent to the browser. Every table is protected by row-level security and the public database roles have no access; your data is only reachable through our server with your session or a workspace API key. Links to your files are signed and expire. The confirmation of rights for a translation is stored with the project."] },
-    { heading: "Changes and contact", paragraphs: ["We update this statement when the product changes; the date at the top tells you when. Questions: use the contact page. The legal entity behind Clipelle and its address will be listed here before launch."] },
+    { heading: "Changes and contact", paragraphs: ["We update this statement when the product changes; the date at the top tells you when. Questions: use the contact page. " + companyLine("en")] },
   ],
 };
 
@@ -29,6 +30,6 @@ export const privacyDocNl: LegalDoc = {
     { heading: "Hoe lang", paragraphs: ["Projecten en bestanden blijven in je workspace tot je ze, de workspace of je account verwijdert. Je account verwijderen verwijdert projecten, bestanden en credits binnen 30 dagen. Siteformulierverzoeken bewaren we 12 maanden. Kosten- en creditgegevens bewaren we zolang de wet dat voor de boekhouding vereist. Back-ups volgen de bewaartermijn van de provider en worden in de normale cyclus overschreven."] },
     { heading: "Je rechten", paragraphs: ["Je kunt je gegevens inzien, wijzigen of exporteren in Settings, zelf projecten verwijderen en je account inclusief alles erin verwijderen. Voor al het andere, of om bezwaar te maken tegen verwerking, gebruik je de contactpagina. In de EU kun je ook een klacht indienen bij je toezichthouder."] },
     { heading: "Beveiliging", paragraphs: ["Sleutels van de diensten blijven op de server en gaan nooit naar de browser. Elke tabel is beschermd met rijniveaubeveiliging en de openbare databaserollen hebben geen toegang; je gegevens zijn alleen bereikbaar via onze server met je sessie of een API-sleutel van de workspace. Links naar je bestanden zijn gesigneerd en verlopen. De rechtenbevestiging voor een vertaling wordt bij het project bewaard."] },
-    { heading: "Wijzigingen en contact", paragraphs: ["We werken deze verklaring bij als het product verandert; de datum bovenaan zegt wanneer. Vragen: gebruik de contactpagina. De rechtspersoon achter Clipelle en het adres worden hier vóór de lancering vermeld."] },
+    { heading: "Wijzigingen en contact", paragraphs: ["We werken deze verklaring bij als het product verandert; de datum bovenaan zegt wanneer. Vragen: gebruik de contactpagina. " + companyLine("nl")] },
   ],
 };

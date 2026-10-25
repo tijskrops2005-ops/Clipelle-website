@@ -1,5 +1,6 @@
 import "server-only";
 import { listAllLooks, type AvatarLook } from "@/lib/services/heygen";
+import { memoCached } from "@/lib/memoCache";
 import { isPortraitLook } from "@/lib/lookOrientation";
 import { workflowSettings } from "@/lib/workflow/settings";
 import type { Presenter, PresenterPage } from "@/lib/types";
@@ -7,7 +8,8 @@ import type { PresenterEngine } from "@/lib/pricing";
 
 /**
  * The presenter catalogue for the customer picker: portrait public looks (studio avatars and
- * digital twins), fetched with free listing calls and cached in memory for 15 minutes.
+ * digital twins), fetched with free listing calls and cached in memory (fresh for 15 minutes,
+ * then served stale while a background refresh runs; see memoCache.ts).
  * Customers see names and photos only; "HeyGen", engine and look ids never appear as text.
  */
 
@@ -23,7 +25,6 @@ export const FEATURED_LOOK_IDS = [
 
 const CACHE_MS = 15 * 60 * 1000;
 type Cache = { at: number; items: Presenter[] };
-const g = globalThis as unknown as { __clipellePresenters?: Cache | Promise<Cache> };
 
 function toPresenter(l: AvatarLook): Presenter {
   const gender = (l.gender ?? "").toLowerCase();
@@ -51,19 +52,7 @@ async function load(): Promise<Cache> {
 }
 
 export async function getPresenterCatalogue(): Promise<Presenter[]> {
-  const cached = g.__clipellePresenters;
-  if (cached && !(cached instanceof Promise) && Date.now() - cached.at < CACHE_MS) return cached.items;
-  if (cached instanceof Promise) return (await cached).items;
-  const pending = load();
-  g.__clipellePresenters = pending;
-  try {
-    const result = await pending;
-    g.__clipellePresenters = result;
-    return result.items;
-  } catch (error) {
-    g.__clipellePresenters = undefined;
-    throw error;
-  }
+  return (await memoCached("presenters", CACHE_MS, load)).items;
 }
 
 export function defaultPresenterId() {

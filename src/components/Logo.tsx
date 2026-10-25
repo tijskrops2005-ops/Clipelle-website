@@ -15,8 +15,9 @@ export function LogoFull({ tone = "dark", className, priority }: { tone?: "dark"
   return <Image src={FULL[tone]} alt={brand.name} width={FULL_SIZE.width} height={FULL_SIZE.height} priority={priority} className={cn("h-10 w-auto", className)} />;
 }
 
+/** Always eager: it sits top-left on every page, and on a loading app page it is the largest thing painted. */
 export function LogoMark({ className, size = 32 }: { className?: string; size?: number }) {
-  return <Image src="/brand/icon-192.png" alt="" aria-hidden width={size} height={size} className={cn("rounded-[9px]", className)} style={{ width: size, height: size }} />;
+  return <Image src="/brand/icon-192.png" alt="" aria-hidden width={size} height={size} loading="eager" className={cn("rounded-[9px]", className)} style={{ width: size, height: size }} />;
 }
 
 /** Icon + name: the sidebar, the mobile drawer and any place narrower than the full logo. */

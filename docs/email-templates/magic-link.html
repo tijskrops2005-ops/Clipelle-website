@@ -1,0 +1,13 @@
+<!-- Supabase → Authentication → Emails → Templates → "Magic Link".
+     Subject: Your Clipelle login code: {{ .Token }}
+     The code ({{ .Token }}) is what the login form asks for; no link is needed. -->
+<div style="margin:0;padding:32px 16px;background:#FAFAF7;font-family:Helvetica,Arial,sans-serif;color:#111114">
+  <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border:1px solid #ECEAE4;border-radius:20px;padding:32px">
+    <img src="https://www.clipelle.com/brand/clipelle-logo-dark-600.png" alt="Clipelle" width="140" style="display:block;width:140px;height:auto;margin:0 0 28px" />
+    <h1 style="margin:0 0 8px;font-size:22px;line-height:1.3;font-weight:600;letter-spacing:-0.02em">Your login code</h1>
+    <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#6B6B70">Enter this code on the Clipelle login page. It works once and expires after one hour.</p>
+    <div style="margin:0 0 24px;padding:18px;background:#F4F3EF;border-radius:14px;text-align:center;font-family:Menlo,Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:8px;color:#111114">{{ .Token }}</div>
+    <p style="margin:0;font-size:13px;line-height:1.6;color:#6B6B70">Did not try to log in? Then you can ignore this e-mail; nobody can use the code without access to your inbox.</p>
+  </div>
+  <p style="max-width:480px;margin:16px auto 0;font-size:12px;line-height:1.6;color:#6B6B70;text-align:center">Clipelle · video ads from one product photo</p>
+</div>

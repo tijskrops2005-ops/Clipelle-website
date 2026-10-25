@@ -14,6 +14,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import type { LanguageCode, Segment, TranslationQuality } from "@/lib/types";
 
 /**
@@ -545,7 +546,12 @@ export const workspaces = pgTable(
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
     ...timestamps,
   },
-  (t) => [index("workspaces_owner_idx").on(t.ownerUserId), index("workspaces_customer_idx").on(t.stripeCustomerId)],
+  (t) => [
+    index("workspaces_owner_idx").on(t.ownerUserId),
+    index("workspaces_customer_idx").on(t.stripeCustomerId),
+    // One personal workspace per user, even when several requests create it at the same moment (24 Oct 2026).
+    uniqueIndex("workspaces_personal_owner_uq").on(t.ownerUserId).where(sql`kind = 'personal'`),
+  ],
 ).enableRLS();
 
 export const workspaceMembers = pgTable(

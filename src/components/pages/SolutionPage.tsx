@@ -10,6 +10,7 @@ import { SectionIntro } from "@/components/site/SectionIntro";
 import { Accordion } from "@/components/site/Accordion";
 import { CtaBand } from "@/components/site/CtaBand";
 import { JsonLd } from "@/components/site/JsonLd";
+import { LatestPosts } from "@/components/site/HomeSections";
 
 export function SolutionPage({ s, locale }: { s: Solution; locale: Locale }) {
   const t = dict(locale);
@@ -47,6 +48,7 @@ export function SolutionPage({ s, locale }: { s: Solution; locale: Locale }) {
         <SectionIntro eyebrow={t.common.faq} title={p.faqTitle.replace("{who}", s.eyebrow.toLowerCase())} />
         <Accordion items={s.faq} className="mx-auto mt-10 max-w-3xl" />
       </Reveal>
+      <LatestPosts locale={locale} categories={["product-video", "costs-and-process"]} />
       <Reveal as="section"><CtaBand locale={locale} /></Reveal>
     </div>
   );

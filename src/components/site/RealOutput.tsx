@@ -16,6 +16,8 @@ export function RealOutput({ data, kind, locale = "en" }: { data: RealOutputData
   const r = t.realOutput;
   const missing = <Missing label={t.common.sampleComingSoon} />;
   const video = data.videoFile ? resolveExampleFile(data.videoFile) : null;
+  // A still of the same run, so the frame is never black before the video starts.
+  const poster = data.videoFile ? resolveExampleFile(data.videoFile.replace(/\.mp4$/i, ".jpg")) : null;
   const photo = data.photoFile ? resolveExampleFile(data.photoFile) : null;
   const cost = data.costUsd !== undefined ? `$${data.costUsd.toFixed(2)}${data.credits ? ` · ${data.credits} credits` : ""}` : null;
   const time = data.durationSeconds !== undefined ? `${Math.round(data.durationSeconds / 60)} min` : null;
@@ -51,7 +53,7 @@ export function RealOutput({ data, kind, locale = "en" }: { data: RealOutputData
             {data.madeOn && <span>· {r.madeOn} {formatDate(data.madeOn)}</span>}
           </div>
         </div>
-        <PhoneFrame src={video ?? undefined} float={false} className="w-[200px]" caption={t.common.unedited} placeholder={t.common.sampleComingSoon} />
+        <PhoneFrame src={video ?? undefined} poster={poster ?? undefined} float={false} className="w-[200px]" caption={t.common.unedited} placeholder={t.common.sampleComingSoon} />
       </div>
     </Reveal>
   );
