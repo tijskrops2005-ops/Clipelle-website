@@ -6,12 +6,9 @@ node_modules/
 out/
 
 # Environment variables — secrets stay local, only .env.example is committed
-.env
-.env.local
-.env.*.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Every .env file (also .env.production and .env.prod) stays out of git; only the example is committed.
+.env*
+!.env.example
 
 # Logs
 npm-debug.log*
