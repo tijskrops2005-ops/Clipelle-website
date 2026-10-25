@@ -14,7 +14,8 @@ import { SavingsCalculator } from "@/components/site/SavingsCalculator";
 import { ExampleMarquee, Outcomes, UseCaseCards } from "@/components/site/HomeSections";
 import { JsonLd } from "@/components/site/JsonLd";
 import { PipelineStrip, ProofChips } from "@/components/site/Sketches";
-import { AdsPanel, ChoicesChips, FeatureRows, HeroShowcase, StatsBand, UrlPanel } from "@/components/site/Showcase";
+import { ChoicesChips, FeatureRows, HeroShowcase, StatsBand } from "@/components/site/Showcase";
+import { AdsDemo, UrlDemo } from "@/components/site/FeatureDemos";
 import { TranslateShowcase } from "@/components/site/TranslateShowcase";
 import { ProductDemo } from "@/components/site/ProductDemo";
 import { BuiltFor, FactsTicker, FinalCta, TrustGrid } from "@/components/site/Persuasion";
@@ -71,8 +72,8 @@ export function HomePage({ locale }: { locale: Locale }) {
         <FeatureRows
           className="mt-14"
           rows={[
-            { key: "ads", label: h.tabs.ads.label, title: h.tabs.ads.title, text: h.tabs.ads.text, points: h.tabs.ads.points, link: { href: L("/platform/ads"), label: h.tabs.ads.link }, icon: ImageUp, panel: <AdsPanel label={t.common.illustration} words={[words[0], words[1], words[2]]} /> },
-            { key: "url", label: h.tabs.url.label, title: h.tabs.url.title, text: h.tabs.url.text, points: h.tabs.url.points, link: { href: L("/platform/url-to-video"), label: h.tabs.url.link }, icon: Link2, panel: <UrlPanel label={t.common.illustration} words={words[3]} /> },
+            { key: "ads", label: h.tabs.ads.label, title: h.tabs.ads.title, text: h.tabs.ads.text, points: h.tabs.ads.points, link: { href: L("/platform/ads"), label: h.tabs.ads.link }, icon: ImageUp, panel: <AdsDemo locale={locale} /> },
+            { key: "url", label: h.tabs.url.label, title: h.tabs.url.title, text: h.tabs.url.text, points: h.tabs.url.points, link: { href: L("/platform/url-to-video"), label: h.tabs.url.link }, icon: Link2, panel: <UrlDemo locale={locale} /> },
           ]}
         />
       </Reveal>

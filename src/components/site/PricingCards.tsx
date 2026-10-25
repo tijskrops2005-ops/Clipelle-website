@@ -25,7 +25,7 @@ const ICONS: Record<string, LucideIcon> = { free: Zap, starter: Sparkles, pro: R
 
 /** The interactive part of the homepage pricing block: the billing switch and the four cards. */
 export function PricingCards({ cards, labels }: { cards: PreviewCard[]; labels: Labels }) {
-  const [annual, setAnnual] = useState(false);
+  const [annual, setAnnual] = useState(true);
   const interval = annual ? "annual" : "monthly";
   return (
     <>

@@ -90,7 +90,8 @@ function plan(key: PlanKey, name: string, tagline: string, monthlyUsd: number, b
     name,
     tagline,
     monthlyUsd,
-    annualMonthlyUsd: Math.round((monthlyUsd * ANNUAL_MONTHS_CHARGED) / 12 * 100) / 100,
+    // Whole dollars (25 Oct 2026): ten months spread over twelve, rounded to the nearest dollar ($15.83 → $16).
+    annualMonthlyUsd: Math.round((monthlyUsd * ANNUAL_MONTHS_CHARGED) / 12),
     creditsPerMonth: credits,
     creditsNote: credits > 0 ? `${credits.toLocaleString("en-US")} credits per month` : "One free 10-second ad",
     bullets,

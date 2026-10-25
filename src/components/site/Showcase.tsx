@@ -135,28 +135,6 @@ export function FeatureRows({ rows, className }: { rows: FeatureRow[]; className
   );
 }
 
-/** Three drawn ads fanned out: the "ads from a photo" panel. */
-export function AdsPanel({ label, words }: { label: string; words: string[][] }) {
-  return (
-    <div className="fan px-4 py-10 sm:px-6" aria-hidden>
-      <div className="w-[96px] sm:w-[160px]" style={{ "--r": "-8deg", "--y": "22px" } as CSSProperties}><div><AdSketch compact label={label} words={words[0]} /></div></div>
-      <div className="w-[124px] sm:w-[190px]" style={{ "--r": "0deg", "--y": "0px" } as CSSProperties}><div><AdSketch compact label={label} words={words[1]} accent="var(--gold-light)" /></div></div>
-      <div className="w-[96px] sm:w-[160px]" style={{ "--r": "8deg", "--y": "22px" } as CSSProperties}><div><AdSketch compact label={label} words={words[2]} accent="var(--warning)" /></div></div>
-    </div>
-  );
-}
-
-/** A product page read into the form, then the ad: the "ads from a link" panel. */
-export function UrlPanel({ label, words }: { label: string; words: string[] }) {
-  return (
-    <div className="flex items-center gap-3 px-4 py-10 sm:gap-6 sm:px-6" aria-hidden>
-      <UrlSketch />
-      <ArrowRight className="size-6 shrink-0 text-ink/50" />
-      <div className="w-[116px] sm:w-[170px]"><AdSketch compact label={label} words={words} /></div>
-    </div>
-  );
-}
-
 /** One line in two languages behind the translated video: the "translate a video" panel. */
 export function TranslatePanel({ label, sampleLabel, placeholder, lines, from, to }: { label: string; sampleLabel: string; placeholder: string; lines: [string, string]; from: string; to: string }) {
   const sample = resolvedExamples("translate")[0];
@@ -166,18 +144,6 @@ export function TranslatePanel({ label, sampleLabel, placeholder, lines, from, t
       <div className="relative w-[170px] sm:w-[200px]">
         {sample ? <VideoTile sample={sample} label={sampleLabel} /> : <AdSketch compact label={placeholder} words={[lines[0], lines[1], lines[1]]} accent="var(--gold-light)" />}
       </div>
-    </div>
-  );
-}
-
-export function UrlSketch() {
-  return (
-    <div className="w-[160px] rounded-card bg-surface p-4 shadow-card sm:w-[220px]" aria-hidden>
-      <div className="rounded-control border border-border bg-bg px-3 py-2 text-[11px] text-muted">https://yourshop.com/…</div>
-      <div className="mt-3 h-2.5 w-3/4 rounded-full bg-ink/80" />
-      <div className="mt-2 h-2 w-full rounded-full bg-ink/15" />
-      <div className="mt-1.5 h-2 w-5/6 rounded-full bg-ink/15" />
-      <div className="mt-3 grid grid-cols-3 gap-1.5">{[0, 1, 2].map((i) => <div key={i} className={`aspect-square rounded-[6px] bg-surface-muted ${i < 2 ? "ring-2 ring-accent" : ""}`} />)}</div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 /**
  * Creates the products and prices in Stripe TEST mode from src/lib/plans.ts, with lookup keys the
- * app uses (reelay_<plan>_monthly, reelay_<plan>_annual, reelay_topup_<usd>). Idempotent: existing
- * lookup keys are left alone. Run with: `node --env-file=.env.local --import tsx scripts/stripe-setup.ts`
+ * app uses (reelay_<plan>_monthly, reelay_<plan>_annual, reelay_topup_<usd>). Idempotent: a lookup key
+ * with the right amount is left alone; one whose amount changed in plans.ts gets a new price. Run with: `node --env-file=.env.local --import tsx scripts/stripe-setup.ts`
  * (or `npx tsx` after installing tsx). Requires STRIPE_SECRET_KEY=sk_test_…
  */
 import Stripe from "stripe";
@@ -16,7 +16,14 @@ async function main() {
   /** `metadata` lands on the product AND the price: the partner platform excludes `commissions_disabled: "yes"` (credit packs). */
   async function ensurePrice(lookup: string, productName: string, unitAmount: number, recurring?: { interval: "month" | "year" }, metadata?: Record<string, string>) {
     const existing = await stripe.prices.list({ lookup_keys: [lookup], active: true, limit: 1 });
-    if (existing.data[0]) return console.log(`= ${lookup} exists (${existing.data[0].id})`);
+    const old = existing.data[0];
+    if (old && old.unit_amount === unitAmount) return console.log(`= ${lookup} exists (${old.id})`);
+    if (old) {
+      // The amount changed in plans.ts: a new price takes over the lookup key, the old one is archived.
+      const price = await stripe.prices.create({ product: typeof old.product === "string" ? old.product : old.product.id, currency: "usd", unit_amount: unitAmount, lookup_key: lookup, transfer_lookup_key: true, ...(recurring ? { recurring } : {}), ...(metadata ? { metadata } : {}) });
+      await stripe.prices.update(old.id, { active: false });
+      return console.log(`~ ${lookup}: ${old.unit_amount} → ${unitAmount} (${price.id}; ${old.id} archived)`);
+    }
     const products = await stripe.products.search({ query: `name:'${productName}'` });
     const product = products.data[0] ?? (await stripe.products.create({ name: productName, ...(metadata ? { metadata } : {}) }));
     if (metadata && products.data[0]) await stripe.products.update(product.id, { metadata });

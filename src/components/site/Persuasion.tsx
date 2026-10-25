@@ -1,7 +1,9 @@
 import type { CSSProperties } from "react";
-import { AppWindow, ArrowRight, BadgeCheck, Briefcase, Building2, CircleDollarSign, Clapperboard, Infinity as InfinityIcon, ListChecks, LockKeyhole, ShieldCheck, Shirt, Sofa, Sparkles, Store, Tag, Truck, type LucideIcon } from "lucide-react";
+import { AppWindow, ArrowRight, BadgeCheck, Check, Briefcase, Building2, CircleDollarSign, Clapperboard, Infinity as InfinityIcon, ListChecks, LockKeyhole, ShieldCheck, Shirt, Sofa, Sparkles, Store, Tag, Truck, type LucideIcon } from "lucide-react";
 import { TRANSLATE_LANGUAGES } from "@/lib/translateLanguages";
-import { company } from "@/content/company";
+import { resolveExampleFile } from "@/lib/examples";
+import { translationShowcase } from "@/content/translationShowcase";
+import { LazyVideo } from "@/components/site/LazyVideo";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/Button";
@@ -13,7 +15,7 @@ import { cn } from "@/lib/utils";
 /**
  * Persuasion blocks for the homepage (25 Oct 2026, motion after reign.com, content only ours and
  * true): a wall of the real 190 translation languages in rows running both ways, a ticker of
- * product facts, the trust grid and a closing band with falling language codes in gold.
+ * product facts, the trust grid (no personal details: those stay in the footer and legal pages) and a closing band with falling language codes in gold.
  */
 
 /* ---------- built for (25 Oct 2026: the kinds of sellers, instead of a wall of other companies' logos) ---------- */
@@ -117,7 +119,6 @@ export function TrustGrid({ locale }: { locale: Locale }) {
           );
         })}
       </ul>
-      <p className="mt-5 text-center text-[12.5px] text-muted">{company.operator} · {company.city}, {company.country[locale]} · KvK {company.kvk} · {locale === "nl" ? "btw" : "VAT"} {company.vat}</p>
     </Reveal>
   );
 }
@@ -128,23 +129,51 @@ const CODES = ["EN", "NL", "DE", "FR", "ES", "IT", "PT", "PL", "SV", "DA", "FI",
 
 export function FinalCta({ locale }: { locale: Locale }) {
   const t = dict(locale);
+  const h = t.home;
   // Fixed positions and timings (no randomness): the same on the server and in the browser.
   const drops = CODES.map((code, i) => ({ code, left: `${(i * 41) % 100}%`, dur: `${8 + (i % 5) * 1.6}s`, delay: `${-((i * 1.7) % 9)}s`, o: i % 4 === 0 ? 0.55 : 0.28, size: i % 3 === 0 ? 15 : 12 }));
+  const original = resolveExampleFile(translationShowcase.original.file);
+  const result = resolveExampleFile(translationShowcase.result.file);
   return (
-    <Reveal as="section" className="relative overflow-hidden rounded-card bg-ink px-6 py-16 text-center sm:py-20">
+    <Reveal as="section" className="relative overflow-hidden rounded-card bg-ink px-6 py-14 sm:px-12 sm:py-16">
       <div className="glow-field gold -left-16 -top-24 h-80 w-80" aria-hidden />
       <div className="glow-field gold-deep -bottom-28 -right-16 h-96 w-96" aria-hidden />
       {/* fainter on phones, where the codes fall behind the text */}
-      <div className="fall pointer-events-none absolute inset-0 opacity-40 sm:opacity-100" aria-hidden>
+      <div className="fall pointer-events-none absolute inset-0 opacity-40 sm:opacity-60" aria-hidden>
         {drops.map((d) => (
           <span key={d.code} className="font-mono font-semibold text-gold-light" style={{ left: d.left, fontSize: d.size, "--dur": d.dur, "--delay": d.delay, "--o": d.o } as CSSProperties}>{d.code}</span>
         ))}
       </div>
-      <h2 className="relative mx-auto max-w-2xl text-[clamp(1.9rem,4vw,3rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-champagne">{t.home.finalTitle}</h2>
-      <p className="relative mx-auto mt-4 max-w-md text-[15px] text-champagne/70">{t.home.finalText}</p>
-      <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-        <Button href="/signup" variant="accent" size="lg">{t.common.startFree}<ArrowRight className="size-5" aria-hidden /></Button>
-        <Button href={localizePath("/demo", locale)} variant="secondary" size="lg" className="border-champagne/20 bg-champagne/10 text-champagne hover:bg-champagne/20">{t.common.bookDemo}</Button>
+      <div className="relative grid items-center gap-10 lg:grid-cols-[1.15fr_1fr]">
+        <div className="text-center lg:text-left">
+          <h2 className="mx-auto max-w-xl text-[clamp(1.9rem,4vw,3rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-champagne lg:mx-0">{h.finalTitle}</h2>
+          <p className="mx-auto mt-4 max-w-md text-[15px] text-champagne/70 lg:mx-0">{h.finalText}</p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
+            <Button href="/signup" variant="accent" size="lg">{t.common.startFree}<ArrowRight className="size-5" aria-hidden /></Button>
+            <Button href={localizePath("/demo", locale)} variant="secondary" size="lg" className="border-champagne/20 bg-champagne/10 text-champagne hover:bg-champagne/20">{t.common.bookDemo}</Button>
+          </div>
+          <ul className="mt-7 flex flex-col items-center gap-2.5 text-[14px] text-champagne/85 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-5 lg:justify-start">
+            {h.finalPoints.map((p) => <li key={p} className="flex items-center gap-2"><Check className="size-4 text-gold-light" aria-hidden />{p}</li>)}
+          </ul>
+        </div>
+        {/* The real translation from the top of the page, small: the original and the Dutch result. */}
+        {original && result && (
+          <div className="relative mx-auto flex h-[300px] w-[300px] items-center justify-center sm:h-[340px] sm:w-[340px]" aria-hidden>
+            <div className="absolute left-0 top-6 w-[132px] -rotate-6 sm:w-[150px]">
+              <div className="relative aspect-[9/16] overflow-hidden rounded-[22px] border-[4px] border-champagne/20 bg-ink shadow-card-hover">
+                <LazyVideo src={original} poster={resolveExampleFile(translationShowcase.original.poster) ?? undefined} label="" />
+                <span className="absolute left-2 top-2 rounded-full bg-surface/90 px-2 py-0.5 text-[10px] font-semibold text-ink">{translationShowcase.original.code}</span>
+              </div>
+            </div>
+            <div className="absolute right-0 top-0 w-[150px] rotate-3 sm:w-[170px]">
+              <div className="relative aspect-[9/16] overflow-hidden rounded-[22px] border-[4px] border-gold-light/60 bg-ink shadow-card-hover">
+                <LazyVideo src={result} poster={resolveExampleFile(translationShowcase.result.poster) ?? undefined} label="" />
+                <span className="absolute left-2 top-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white">{translationShowcase.result.code}</span>
+              </div>
+            </div>
+            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-champagne px-3 py-1.5 text-[12px] font-semibold text-ink shadow-card">{translationShowcase.original.code} → {translationShowcase.result.code}</span>
+          </div>
+        )}
       </div>
     </Reveal>
   );

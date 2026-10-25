@@ -359,6 +359,38 @@
 .demo-result { animation-name: demo-result; }
 .demo-placeholder { animation-name: demo-placeholder; }
 
+/* Two smaller loops for the feature rows (25 Oct 2026), same idea as .demo, 10 seconds each.
+   "Ads from a photo": pick a presenter → 30 s → Generate → bar → the ad. */
+.loop { --loop: 10s; }
+.loop * { animation-duration: var(--loop); animation-iteration-count: infinite; animation-timing-function: var(--ease-soft); }
+@keyframes ad-pick { 0%, 12% { opacity: 0; transform: scale(0.6); } 16%, 95% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes ad-len { 0%, 27% { background: var(--surface); color: var(--muted); border-color: var(--border); } 30%, 95% { background: var(--ink); color: var(--surface); border-color: var(--ink); } 100% { background: var(--surface); color: var(--muted); border-color: var(--border); } }
+@keyframes loop-press { 0%, 42% { transform: scale(1); } 44% { transform: scale(0.94); } 46%, 100% { transform: scale(1); } }
+@keyframes ad-bar { 0%, 46% { transform: scaleX(0); } 74%, 95% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
+@keyframes loop-out { 0%, 74% { opacity: 0; transform: translateY(12px) scale(0.96); } 79%, 95% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes loop-wait { 0%, 74% { opacity: 1; } 79%, 95% { opacity: 0; } 100% { opacity: 1; } }
+.ad-pick { animation-name: ad-pick; }
+.ad-len { animation-name: ad-len; }
+.ad-go { animation-name: loop-press; }
+.ad-bar { transform-origin: left; animation-name: ad-bar; }
+.loop-out { animation-name: loop-out; }
+.loop-wait { animation-name: loop-wait; }
+/* "Ads from a link": the link types itself → Read → name, price, photos appear → Create → the ad. */
+@keyframes url-type { 0%, 4% { width: 0; } 24%, 95% { width: 21ch; } 100% { width: 0; } }
+@keyframes url-read { 0%, 26% { transform: scale(1); } 28% { transform: scale(0.92); } 30%, 100% { transform: scale(1); } }
+@keyframes url-f1 { 0%, 31% { opacity: 0; transform: translateY(6px); } 35%, 95% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes url-f2 { 0%, 37% { opacity: 0; transform: translateY(6px); } 41%, 95% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes url-f3 { 0%, 43% { opacity: 0; transform: translateY(6px); } 47%, 95% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes url-tick { 0%, 50% { opacity: 0; transform: scale(0.4); } 54%, 95% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes url-go { 0%, 60% { transform: scale(1); } 62% { transform: scale(0.94); } 64%, 100% { transform: scale(1); } }
+.url-type { animation-name: url-type; animation-timing-function: steps(21, end) !important; }
+.url-read { animation-name: url-read; }
+.url-f1 { animation-name: url-f1; }
+.url-f2 { animation-name: url-f2; }
+.url-f3 { animation-name: url-f3; }
+.url-tick { animation-name: url-tick; }
+.url-go { animation-name: url-go; }
+
 /* Soft colour field behind the showcase and the feature panels (tokens only). */
 .stage-glow {
   background:
@@ -507,6 +539,7 @@
   }
   .fall > span,
   .demo *,
+  .loop *,
   .fan > li,
   .rise,
   .ring-draw,
@@ -541,6 +574,11 @@
   .demo-s1, .demo-s2, .demo-s3, .demo-s4 { background: var(--success); color: #fff; }
   .demo-bar { transform: none; }
   .fall { display: none; }
+  .ad-pick, .loop-out, .url-f1, .url-f2, .url-f3, .url-tick { opacity: 1; transform: none; }
+  .ad-len { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  .ad-bar { transform: none; }
+  .loop-wait { opacity: 0; }
+  .url-type { width: 21ch; }
 
 }
 

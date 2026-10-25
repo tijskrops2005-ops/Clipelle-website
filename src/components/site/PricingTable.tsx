@@ -23,7 +23,7 @@ type Tab = "individual" | "business" | "api";
 export function PricingTable({ onChoose, busyKey, compact, locale = "en" }: { onChoose?: (plan: Plan, interval: Interval) => void; busyKey?: string | null; compact?: boolean; locale?: Locale }) {
   const t = dict(locale).pricing;
   const L = (p: string) => localizePath(p, locale);
-  const [interval, setInterval] = useState<Interval>("monthly");
+  const [interval, setInterval] = useState<Interval>("annual");
   const [tab, setTab] = useState<Tab>("individual");
   const [tier, setTier] = useState<string>(BUSINESS_TIERS[0].key);
   const base = useId();

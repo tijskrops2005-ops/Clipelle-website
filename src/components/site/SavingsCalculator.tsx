@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { measured } from "@/content/measured";
 import { AD_LENGTHS, type AdLength, type PresenterEngine } from "@/lib/pricing";
-import { adCredits, formatPrice, translateCredits } from "@/lib/plans";
-import { INDIVIDUAL_PAID, planFit } from "@/lib/pricingHelpers";
+import { formatPrice } from "@/lib/plans";
+import { HANDS_ON_MINUTES, INDIVIDUAL_PAID, compareMonth } from "@/lib/pricingHelpers";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
@@ -13,9 +13,11 @@ import { cn } from "@/lib/utils";
 /**
  * "Clipelle vs doing it yourself" (24 Oct 2026): the visitor sets what a video costs them now
  * (default $5, the middle of what AI ad tools come to per video), how many they make and how many
- * seconds they are. Next to that: the fitting plan from src/lib/plans.ts, the measured time, the
- * difference, and every plan side by side for that video, so the step from one plan to the next is
- * visible. No competitor names; the left column is the visitor's own input.
+ * seconds they are. Next to that: the cheapest way to cover that month with our plans and packs
+ * (src/lib/pricingHelpers.ts), the measured time, the difference, and every plan side by side.
+ * Since 25 Oct 2026 the visitor's own time counts too (minutes per video and what an hour is
+ * worth, both their input), against HANDS_ON_MINUTES with Clipelle; when Clipelle costs more at
+ * the chosen numbers the page says so plainly. No competitor names.
  */
 export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolean; locale?: Locale }) {
   const c = dict(locale).calculator;
@@ -24,20 +26,20 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
   const [seconds, setSeconds] = useState<AdLength>(30);
   const [engine, setEngine] = useState<PresenterEngine>("avatar_iii");
   const [translateMinutes, setTranslateMinutes] = useState(0);
+  const [minutesNow, setMinutesNow] = useState(60);
+  const [hourValue, setHourValue] = useState(25);
 
   const r = useMemo(() => {
-    const perAd = adCredits({ seconds, engine });
-    const perMinute = translateCredits({ seconds: 60, quality: "speed", enhance: false, languages: 1, hasSourceTranscript: true });
-    const credits = videos * perAd + translateMinutes * perMinute;
-    const fit = planFit(credits, videos);
-    const yourMonthly = currentCost * videos;
-    const ladder = INDIVIDUAL_PAID.map((p) => ({ plan: p, videos: Math.floor(p.creditsPerMonth / perAd), perVideo: (p.monthlyUsd / p.creditsPerMonth) * perAd }));
-    return { perAd, credits, fit, yourMonthly, ladder, savingUsd: yourMonthly - fit.monthlyUsd };
-  }, [currentCost, videos, seconds, engine, translateMinutes]);
+    const month = compareMonth({ costNow: currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue });
+    const ladder = INDIVIDUAL_PAID.map((p) => ({ plan: p, videos: Math.floor(p.creditsPerMonth / month.perAd), perVideo: (p.monthlyUsd / p.creditsPerMonth) * month.perAd }));
+    return { ...month, ladder };
+  }, [currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue]);
 
   const adTime = measured.adMinutes !== null ? c.adTimeMeasured.replace("{n}", String(measured.adMinutes)) : c.adTimeUnmeasured;
   const trTime = measured.translationMinutes !== null ? c.trTimeMeasured.replace("{n}", String(measured.translationMinutes)).replace("{note}", measured.translationNote) : c.trTimeUnmeasured;
-  const money = (v: number) => (v < 10 ? `$${v.toFixed(2)}` : formatPrice(Math.round(v)));
+  const money = (v: number) => (v < 10 ? `$${v.toFixed(2)}` : `$${Math.round(v).toLocaleString("en-US")}`);
+  const hours = (h: number) => `${h < 10 ? Math.round(h * 10) / 10 : Math.round(h)} h`;
+  const fitName = r.fit.plan ? (r.fit.withPacks ? `${r.fit.plan.name} ${c.plus} ${r.fit.packs} ${c.packs}` : r.fit.plan.name) : c.aPlan;
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[1fr_1.15fr]">
@@ -46,6 +48,8 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
         <p className="mt-1 text-[13px] leading-relaxed text-muted">{c.yourNumbersText}</p>
         <div className="mt-5 space-y-5">
           <Range id="cost" label={c.costNow} value={currentCost} min={1} max={20} step={0.5} onChange={setCurrentCost} format={(v) => `$${v.toFixed(2)}`} />
+          <Range id="time" label={c.timeNow} value={minutesNow} min={0} max={180} step={5} onChange={setMinutesNow} format={(v) => `${v} min`} />
+          <Range id="hour" label={c.hourValue} value={hourValue} min={0} max={100} step={5} onChange={setHourValue} format={(v) => `$${v}`} />
           <Range id="videos" label={c.videosPerMonth} value={videos} min={1} max={100} step={1} onChange={setVideos} format={(v) => String(v)} />
           {/* A slider over the lengths a video can have (AD_LENGTHS), with the stops marked underneath. */}
           <div>
@@ -68,22 +72,28 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
           <table className="w-full text-left text-[15px]">
             <thead className="text-[13px] text-muted"><tr><th className="py-2 pr-3 font-medium"> </th><th className="py-2 pr-3 font-medium">{c.diy}</th><th className="py-2 font-medium">{c.withClipelle}</th></tr></thead>
             <tbody className="divide-y divide-divider">
-              <tr><td className="py-3 pr-3 font-medium text-ink">{c.perVideo}</td><td className="py-3 pr-3">{money(currentCost)}</td><td className="py-3">{r.perAd} {c.credits} · {c.about} {money(r.fit.perVideoUsd)} {c.on} {r.fit.plan?.name ?? c.aPlan}</td></tr>
-              <tr><td className="py-3 pr-3 font-medium text-ink">{c.perMonth}</td><td className="py-3 pr-3">{money(r.yourMonthly)}</td><td className="py-3">{formatPrice(r.fit.monthlyUsd)}{r.fit.overScale ? ` (Scale ${c.plus} ${r.fit.packs} ${c.packs})` : ` (${r.fit.plan?.name}, ${r.fit.plan?.creditsPerMonth.toLocaleString("en-US")} ${c.credits})`}</td></tr>
+              <tr><td className="py-3 pr-3 font-medium text-ink">{c.perVideo}</td><td className="py-3 pr-3">{money(currentCost)}</td><td className="py-3">{r.perAd} {c.credits} · {c.about} {money(r.fit.perVideoUsd)} {c.on} {fitName}</td></tr>
+              <tr><td className="py-3 pr-3 font-medium text-ink">{c.moneyPerMonth}</td><td className="py-3 pr-3">{money(r.yourMoney)}</td><td className="py-3">{money(r.fit.monthlyUsd)} ({fitName})</td></tr>
+              <tr><td className="py-3 pr-3 font-medium text-ink">{c.yourTime}</td><td className="py-3 pr-3">{hours(r.yourHours)}</td><td className="py-3">{hours(r.ourHours)} <span className="text-muted">· {c.handsOn.replace("{n}", String(HANDS_ON_MINUTES))}</span></td></tr>
+              <tr><td className="py-3 pr-3 font-semibold text-ink">{c.totalPerMonth}</td><td className="py-3 pr-3 font-semibold">{money(r.yourTotal)}</td><td className="py-3 font-semibold">{money(r.ourTotal)}</td></tr>
               <tr><td className="py-3 pr-3 font-medium text-ink">{c.timeToReady}</td><td className="py-3 pr-3">—</td><td className="py-3">{adTime}{translateMinutes > 0 ? `; ${trTime}` : ""}</td></tr>
             </tbody>
           </table>
         </div>
-        <div className="mt-5 rounded-[14px] bg-surface-muted p-4">
-          <p className="text-[13px] text-muted">{c.difference}</p>
-          <p className="mt-1 text-[26px] font-semibold text-ink">{r.savingUsd >= 0 ? formatPrice(Math.round(r.savingUsd)) : `−${formatPrice(Math.round(-r.savingUsd))}`}</p>
+        {/* The difference, said plainly in both directions: a saving, or how much more Clipelle costs at these numbers. */}
+        <div className={cn("mt-5 rounded-[14px] p-4", r.savingUsd >= 0 ? "bg-success/10" : "bg-surface-muted")}>
+          <p className="text-[13px] text-muted">{r.savingUsd >= 0 ? c.savedLabel : c.moreLabel}</p>
+          <p className={cn("mt-1 text-[26px] font-semibold", r.savingUsd >= 0 ? "text-success" : "text-ink")}>
+            {r.savingUsd >= 0 ? money(r.savingUsd) : c.moreText.replace("{n}", money(-r.savingUsd))}
+          </p>
+          {r.hoursBack > 0 && <p className="mt-1 text-[13px] text-ink">{c.hoursBack.replace("{h}", String(Math.round(r.hoursBack)))}</p>}
         </div>
 
         {/* Every plan for the chosen video: price, how many such videos it covers, the price per video. */}
         <p className="mt-6 text-[13px] font-medium text-ink">{c.ladderTitle}</p>
         <ul className="mt-2 grid gap-2 sm:grid-cols-3">
           {r.ladder.map((l) => {
-            const fits = !r.fit.overScale && r.fit.plan?.key === l.plan.key;
+            const fits = r.fit.plan?.key === l.plan.key;
             return (
               <li key={l.plan.key} className={cn("rounded-[14px] border p-3 transition-[border-color,box-shadow] duration-200", fits ? "border-accent/50 bg-accent-soft/40 shadow-soft" : "border-border")}>
                 <p className="flex items-center justify-between gap-2 text-[14px] font-semibold text-ink">
@@ -97,7 +107,7 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
             );
           })}
         </ul>
-        <p className="mt-3 text-[12px] leading-relaxed text-muted">{c.ladderNote} {c.footnote.replace("{n}", r.credits.toLocaleString("en-US"))}</p>
+        <p className="mt-3 text-[12px] leading-relaxed text-muted">{c.ladderNote} {c.timeNote.replace("{n}", String(HANDS_ON_MINUTES))} {c.footnote.replace("{n}", r.credits.toLocaleString("en-US"))}</p>
       </div>
     </div>
   );
