@@ -58,3 +58,6 @@ Thumbs.db
 !/content-inbox/stories/_template/
 /content-inbox/stories/_template/*
 !/content-inbox/stories/_template/story.md
+
+# Throw-away helper files
+*.tmp.*
