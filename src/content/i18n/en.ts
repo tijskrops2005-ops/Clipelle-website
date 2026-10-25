@@ -362,7 +362,7 @@ export const en = {
     formats: "Eight formats to start from",
     formatsText: "Pick a format in the ad form and the script direction and tone are filled in. The presenter still speaks a script written from your product; captions are the only thing on screen.",
   },
-  pricingPreview: { details: "See details", compare: "Compare all plans and credit packs", creditsPerMonth: "credits per month", freeNote: "One free 10-second ad" },
+  pricingPreview: { details: "See details", compare: "Compare all plans and credit packs", creditsPerMonth: "credits per month", freeNote: "One free 10-second ad", monthly: "Monthly", annual: "Annual", save: "Save {n}%", billingLabel: "Bill annually", perMonth: "/mo", billedAnnually: "{year}/year billed annually", billedMonthly: "Billed monthly, cancel any time", freeForever: "No card, no subscription", api: "API and MCP access", packs: "Extra credit packs when you need them", choose: "Choose {name}", recommendation: "Our recommendation" },
 
   pricing: {
     metaTitle: "Pricing",

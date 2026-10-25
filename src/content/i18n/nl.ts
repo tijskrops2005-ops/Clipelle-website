@@ -357,7 +357,7 @@ export const nl: SiteDict = {
     formats: "Acht formats om mee te beginnen",
     formatsText: "Kies een format in het advertentieformulier en de scriptrichting en toon worden ingevuld. De presentator spreekt nog steeds een script dat uit jouw product is geschreven; ondertitels zijn het enige in beeld.",
   },
-  pricingPreview: { details: "Bekijk details", compare: "Vergelijk alle plannen en creditpakketten", creditsPerMonth: "credits per maand", freeNote: "Eén gratis advertentie van 10 seconden" },
+  pricingPreview: { details: "Bekijk details", compare: "Vergelijk alle plannen en creditpakketten", creditsPerMonth: "credits per maand", freeNote: "Eén gratis advertentie van 10 seconden", monthly: "Maandelijks", annual: "Jaarlijks", save: "Bespaar {n}%", billingLabel: "Jaarlijks betalen", perMonth: "/mnd", billedAnnually: "{year} per jaar, jaarlijks gefactureerd", billedMonthly: "Maandelijks gefactureerd, altijd opzegbaar", freeForever: "Geen creditcard, geen abonnement", api: "Toegang tot API en MCP", packs: "Extra creditpakketten wanneer je ze nodig hebt", choose: "Kies {name}", recommendation: "Onze aanbeveling" },
 
   pricing: {
     metaTitle: "Prijzen",
