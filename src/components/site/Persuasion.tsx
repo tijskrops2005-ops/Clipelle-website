@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { ArrowRight, BadgeCheck, Building2, CircleDollarSign, Infinity as InfinityIcon, ListChecks, LockKeyhole, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
+import { AppWindow, ArrowRight, BadgeCheck, Briefcase, Building2, CircleDollarSign, Clapperboard, Infinity as InfinityIcon, ListChecks, LockKeyhole, ShieldCheck, Shirt, Sofa, Sparkles, Store, Tag, Truck, type LucideIcon } from "lucide-react";
 import { TRANSLATE_LANGUAGES } from "@/lib/translateLanguages";
 import { company } from "@/content/company";
 import { dict } from "@/content/i18n";
@@ -15,6 +15,36 @@ import { cn } from "@/lib/utils";
  * true): a wall of the real 190 translation languages in rows running both ways, a ticker of
  * product facts, the trust grid and a closing band with falling language codes in gold.
  */
+
+/* ---------- built for (25 Oct 2026: the kinds of sellers, instead of a wall of other companies' logos) ---------- */
+
+const BUILT_FOR_ICONS: LucideIcon[] = [Store, Tag, Truck, Briefcase, Shirt, Sofa, AppWindow, Clapperboard];
+
+export function BuiltFor({ locale }: { locale: Locale }) {
+  const h = dict(locale).home;
+  return (
+    <Reveal as="section" className="text-center">
+      <SectionIntro eyebrow={h.builtForEyebrow} title={h.builtForTitle} text={h.builtForText} />
+      <ul className="mx-auto mt-9 flex max-w-4xl flex-wrap justify-center gap-2.5">
+        {h.builtFor.map((label, i) => {
+          const Icon = BUILT_FOR_ICONS[i] ?? Sparkles;
+          return (
+            <Reveal as="li" key={label} delay={i * 50} className="group flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-[14px] font-medium text-ink shadow-soft transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-card">
+              <Icon className="size-4 text-accent transition-transform duration-200 group-hover:scale-110" aria-hidden />
+              {label}
+            </Reveal>
+          );
+        })}
+      </ul>
+      <p className="mt-6 text-[14px] text-muted">
+        <span className="font-medium text-ink">{h.madeForLabel}</span>{" "}
+        {h.madeFor.map((f, i) => (
+          <span key={f}>{i > 0 && <span aria-hidden className="mx-2 text-border">/</span>}{f}</span>
+        ))}
+      </p>
+    </Reveal>
+  );
+}
 
 /* ---------- language wall ---------- */
 

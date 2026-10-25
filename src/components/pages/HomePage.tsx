@@ -17,7 +17,7 @@ import { PipelineStrip, ProofChips } from "@/components/site/Sketches";
 import { AdsPanel, ChoicesChips, FeatureRows, HeroShowcase, StatsBand, UrlPanel } from "@/components/site/Showcase";
 import { TranslateShowcase } from "@/components/site/TranslateShowcase";
 import { ProductDemo } from "@/components/site/ProductDemo";
-import { FactsTicker, FinalCta, TrustGrid } from "@/components/site/Persuasion";
+import { BuiltFor, FactsTicker, FinalCta, TrustGrid } from "@/components/site/Persuasion";
 import { HomeLogos, HomeReviews } from "@/components/site/HomeTrust";
 import { faqFor } from "@/content/faqI18n";
 
@@ -60,6 +60,7 @@ export function HomePage({ locale }: { locale: Locale }) {
         <PipelineStrip labels={h.translate.pipeline} className="mt-6" />
       </section>
 
+      <BuiltFor locale={locale} />
       <HomeLogos locale={locale} />
 
       <TranslateShowcase locale={locale} />
