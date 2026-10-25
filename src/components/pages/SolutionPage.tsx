@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { Accordion } from "@/components/site/Accordion";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { JsonLd } from "@/components/site/JsonLd";
 import { LatestPosts } from "@/components/site/HomeSections";
 
@@ -40,16 +40,16 @@ export function SolutionPage({ s, locale }: { s: Solution; locale: Locale }) {
         </div>
       </Reveal>
       <Reveal as="section">
-        <SectionIntro eyebrow={p.exampleEyebrow} title={s.example.title.split(" (")[0]} />
-        <p className="mx-auto mt-3 flex max-w-2xl justify-center"><Badge tone="warning">{p.exampleBadge}</Badge></p>
-        <StepList className="mt-10 [&>li]:bg-surface [&>li]:px-6 [&>li]:py-6 [&>li]:shadow-card" columns={4} items={s.example.steps.map((x, i) => ({ title: p.step.replace("{n}", String(i + 1)), text: x }))} />
+        <SectionIntro eyebrow={p.exampleEyebrow} title={s.example.title} />
+        <p className="mx-auto mt-3 flex max-w-2xl justify-center"><Badge>{p.exampleBadge}</Badge></p>
+        <StepList className="mt-10 [&>li]:bg-surface [&>li]:px-6 [&>li]:py-6 [&>li]:shadow-card" columns={4} items={s.example.steps.map((x, i) => ({ title: s.example.stepTitles[i] ?? p.step.replace("{n}", String(i + 1)), text: x }))} />
       </Reveal>
       <Reveal as="section">
         <SectionIntro eyebrow={t.common.faq} title={p.faqTitle.replace("{who}", s.eyebrow.toLowerCase())} />
         <Accordion items={s.faq} className="mx-auto mt-10 max-w-3xl" />
       </Reveal>
       <LatestPosts locale={locale} categories={["product-video", "costs-and-process"]} />
-      <Reveal as="section"><CtaBand locale={locale} /></Reveal>
+      <FinalCta locale={locale} />
     </div>
   );
 }

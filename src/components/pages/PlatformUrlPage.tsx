@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { StepList } from "@/components/ui/StepList";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { Accordion } from "@/components/site/Accordion";
 import { JsonLd } from "@/components/site/JsonLd";
 import { LatestPosts } from "@/components/site/HomeSections";
@@ -55,7 +55,7 @@ export function PlatformUrlPage({ locale }: { locale: Locale }) {
         <Accordion items={p.faq} className="mx-auto mt-10 max-w-3xl" />
       </Reveal>
       <LatestPosts locale={locale} categories={["product-video"]} />
-      <Reveal as="section"><CtaBand locale={locale} /></Reveal>
+      <FinalCta locale={locale} />
     </div>
   );
 }

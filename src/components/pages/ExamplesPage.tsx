@@ -2,8 +2,7 @@ import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { ExampleGallery } from "@/components/site/ExampleGallery";
-import { Reveal } from "@/components/site/Reveal";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { FormatCards } from "@/components/site/FormatCards";
 import { LatestPosts } from "@/components/site/HomeSections";
 
@@ -19,7 +18,7 @@ export function ExamplesPage({ locale }: { locale: Locale }) {
         <FormatCards locale={locale} />
       </section>
       <LatestPosts locale={locale} categories={["captions-and-formats", "scripts-and-hooks"]} />
-      <Reveal as="section"><CtaBand locale={locale} /></Reveal>
+      <FinalCta locale={locale} />
     </div>
   );
 }

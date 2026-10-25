@@ -13,7 +13,7 @@ export const solutionsNl: Record<string, Solution> = {
       { title: "Een productpagina-link", text: "Van link naar video leest naam, omschrijving en foto's van je productpagina, zodat het formulier ingevuld begint." },
       { title: "Vanuit je eigen code", text: "De API maakt dezelfde advertenties uit een productfeed of een synchronisatie, met dezelfde credits en limieten." },
     ],
-    example: { title: "Voorbeeldstroom", steps: ["Maandag: plak de productpagina van de nieuwe binnenkomer in van link naar video; controleer de omschrijving, vink twee foto's aan.", "Kies 30 seconden, Standard, de merkstem; vink Review script first aan.", "Kies een van de drie hooks, keur goed; de clip, de presentator en de montage lopen vanzelf.", "Download de 9:16-advertentie van de projectpagina; het werkelijke bedrag staat naast de schatting."] },
+    example: { title: "Een nieuw product, maandag de advertentie klaar", stepTitles: ["Plak de productpagina", "Kies lengte en stem", "Kies de hook", "Download"], steps: ["Maandag: plak de productpagina van de nieuwe binnenkomer in van link naar video; controleer de omschrijving, vink twee foto's aan.", "Kies 30 seconden, Standard, de merkstem; vink Review script first aan.", "Kies een van de drie hooks, keur goed; de clip, de presentator en de montage lopen vanzelf.", "Download de 9:16-advertentie van de projectpagina; het werkelijke bedrag staat naast de schatting."] },
     faq: [
       { q: "Kan ik één presentator voor elke advertentie houden?", a: "Ja. Kies op elk formulier dezelfde presentator en stem, of maak één keuze en hergebruik die via de API." },
       { q: "En meerdere producten in één advertentie?", a: "Een advertentie draait om één product en één productclip. Maak één advertentie per product; dat houdt elke advertentie helder." },
@@ -30,7 +30,7 @@ export const solutionsNl: Record<string, Solution> = {
       { title: "Hetzelfde advertentieformulier", text: "Lengte, presentator, stem, toon, aanbieding en merkstijl, precies zoals met een geüploade foto." },
       { title: "Automatiseren via de API", text: "Maak advertenties vanuit je eigen scripts of tools met een API-sleutel; een project per product, idempotent bij herhaling." },
     ],
-    example: { title: "Voorbeeldstroom", steps: ["Plak de link van de productpagina; het formulier toont de naam, omschrijving en zes foto's van de pagina.", "Kort de omschrijving in tot de feiten; vink de drie foto's aan die van jou zijn.", "Voeg de aanbiedingsregel van deze week toe; genereer.", "Download de afgeronde 9:16-advertentie; plaats hem op TikTok, Reels of Shorts."] },
+    example: { title: "Van productpagina naar advertentie in vier stappen", stepTitles: ["Plak de link", "Controleer de feiten", "Voeg de aanbieding toe", "Plaats hem"], steps: ["Plak de link van de productpagina; het formulier toont de naam, omschrijving en zes foto's van de pagina.", "Kort de omschrijving in tot de feiten; vink de drie foto's aan die van jou zijn.", "Voeg de aanbiedingsregel van deze week toe; genereer.", "Download de afgeronde 9:16-advertentie; plaats hem op TikTok, Reels of Shorts."] },
     faq: [
       { q: "Werkt het met elk winkelplatform?", a: "Het werkt met elke openbare productpagina met productgegevens, deeltags of ten minste een titel en foto's. Pagina's achter een login kunnen niet worden gelezen." },
       { q: "Is er een Shopify-app?", a: "Nog niet. Vandaag plak je een link, of gebruik je de API vanuit je eigen code." },
@@ -47,7 +47,7 @@ export const solutionsNl: Record<string, Solution> = {
       { title: "Kleine variaties", text: "Hetzelfde product, een andere hook of toon: bekijk het script, kies een andere hook, genereer opnieuw." },
       { title: "Kosten die je kunt plannen", text: "Credits per lengte staan vast en worden getoond voordat je begint; het werkelijke bedrag zie je achteraf." },
     ],
-    example: { title: "Voorbeeldstroom", steps: ["Upload de productfoto van de leverancier waarvan je de rechten hebt; schrijf drie feitelijke zinnen.", "Kies 20 seconden, Standard, een directe toon; vink Review script first aan.", "Keur een hook goed die het probleem benoemt dat het product oplost.", "Draai de advertentie; als hij de aandacht vasthoudt, maak je de versie van 30 seconden met de aanbiedingsregel."] },
+    example: { title: "Een producttest in vier stappen", stepTitles: ["Upload de foto", "Houd het kort", "Keur de hook goed", "Schaal op wat werkt"], steps: ["Upload de productfoto van de leverancier waarvan je de rechten hebt; schrijf drie feitelijke zinnen.", "Kies 20 seconden, Standard, een directe toon; vink Review script first aan.", "Keur een hook goed die het probleem benoemt dat het product oplost.", "Draai de advertentie; als hij de aandacht vasthoudt, maak je de versie van 30 seconden met de aanbiedingsregel."] },
     faq: [
       { q: "Kan ik foto's van de leverancier gebruiken?", a: "Alleen foto's waarvan je de rechten hebt. Het formulier vraagt je dat te bevestigen." },
       { q: "Hoe snel is een video klaar?", a: "Meestal binnen enkele minuten; je kunt de pagina verlaten en de afgeronde video verschijnt op je dashboard." },
@@ -65,7 +65,7 @@ export const solutionsNl: Record<string, Solution> = {
       { title: "De API voor volume", text: "Maak advertenties en vertalingen vanuit je eigen tooling met een API-sleutel; projecten blijven per workspace." },
       { title: "Vertalingen voor internationale klanten", text: "De video van een klant in meerdere talen met de eigen stem van de spreker, elke versie met ondertitels." },
     ],
-    example: { title: "Voorbeeldstroom", steps: ["Ontvang de productsheet van een klant; plak de productpagina in van link naar video.", "Pas de kleur, ondertitelstijl en het logo van de klant toe in het blok merkstijl.", "Vink Review script first aan; stuur de drie hooks naar de klant, keur de gekozen goed.", "Lever de 9:16-advertentie en de Duitse en Franse versies uit de vertaalstroom."] },
+    example: { title: "Eén klantadvertentie, drie talen", stepTitles: ["Begin bij de productpagina", "Pas het merk van de klant toe", "Laat de klant kiezen", "Lever in drie talen"], steps: ["Ontvang de productsheet van een klant; plak de productpagina in van link naar video.", "Pas de kleur, ondertitelstijl en het logo van de klant toe in het blok merkstijl.", "Vink Review script first aan; stuur de drie hooks naar de klant, keur de gekozen goed.", "Lever de 9:16-advertentie en de Duitse en Franse versies uit de vertaalstroom."] },
     faq: [
       { q: "Kunnen meerdere mensen in één account werken?", a: "Ja. Een teamworkspace deelt projecten en credits; de eigenaar beheert plan, credits en leden. Eén teamworkspace per klant of per bureau is de praktische opzet." },
       { q: "Kunnen we Clipelle white-labelen?", a: "Nee. De afgeronde video's dragen geen Clipelle-merk; de app zelf is Clipelle." },
@@ -82,7 +82,7 @@ export const solutionsNl: Record<string, Solution> = {
       { title: "Ondertitels voor kijken zonder geluid", text: "Alles wat de presentator zegt staat in beeld als ondertitel; je accentkleur markeert het gesproken woord." },
       { title: "Talen", text: "Maak de advertentie in een andere taal, of vertaal de afgeronde video met dezelfde stem." },
     ],
-    example: { title: "Voorbeeldstroom", steps: ["Upload één schermafbeelding van het nieuwe dashboard; omschrijf wat het doet en voor wie.", "Kies 30 seconden, een warme toon, de presentator die bij het merk past.", "Bekijk het script; houd de hook die het pijnpunt benoemt.", "Download de advertentie; vertaal hem naar het Spaans voor de Latijns-Amerikaanse lancering."] },
+    example: { title: "Een functielancering in vier stappen", stepTitles: ["Upload een schermafbeelding", "Kies toon en presentator", "Bekijk het script", "Download en vertaal"], steps: ["Upload één schermafbeelding van het nieuwe dashboard; omschrijf wat het doet en voor wie.", "Kies 30 seconden, een warme toon, de presentator die bij het merk past.", "Bekijk het script; houd de hook die het pijnpunt benoemt.", "Download de advertentie; vertaal hem naar het Spaans voor de Latijns-Amerikaanse lancering."] },
     faq: [
       { q: "Kan de productclip een schermopname tonen?", a: "De productclip wordt gegenereerd uit één stilstaand beeld. Gebruik een schone schermafbeelding; een opname is vandaag geen invoer." },
       { q: "Kan de presentator technische termen zeggen?", a: "Ja; zet ze in de omschrijving of je eigen script. Voeg ze bij vertalingen toe als te behouden termen." },
@@ -100,7 +100,7 @@ export const solutionsNl: Record<string, Solution> = {
       { title: "Termen om te behouden", text: "Je naam, je productnamen en je vaste uitspraken blijven zoals ze zijn." },
       { title: "Rechten eerst", text: "Je bevestigt dat de video van jou is en dat je de toestemming van de spreker hebt voordat er iets start." },
     ],
-    example: { title: "Voorbeeldstroom", steps: ["Upload de video van 60 seconden; laat de gesproken taal op Automatisch herkennen staan.", "Kies Duits, Frans en Portugees (Brazilië); houd Speed; voeg de kanaalnaam toe aan de te behouden termen.", "De kwaliteitscontrole toont twee gecorrigeerde regels en één waarschuwing over een getal; controleer ze.", "Download drie video's, elk met ondertitels, klaar voor de regionale kanalen."] },
+    example: { title: "Eén video naar drie talen", stepTitles: ["Upload de video", "Kies drie talen", "Controleer de correcties", "Download drie versies"], steps: ["Upload de video van 60 seconden; laat de gesproken taal op Automatisch herkennen staan.", "Kies Duits, Frans en Portugees (Brazilië); houd Speed; voeg de kanaalnaam toe aan de te behouden termen.", "De kwaliteitscontrole toont twee gecorrigeerde regels en één waarschuwing over een getal; controleer ze.", "Download drie video's, elk met ondertitels, klaar voor de regionale kanalen."] },
     faq: [
       { q: "Blijft mijn accent behouden?", a: "De stem blijft de jouwe; de uitspraak volgt de nieuwe taal. Beluister het resultaat en pas de te behouden termen aan als een naam vreemd wordt uitgesproken." },
       { q: "Hoe lang mag de video zijn?", a: "Vandaag tot 32 MB en drie minuten per upload." },

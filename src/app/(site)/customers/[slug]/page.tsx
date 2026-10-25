@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { caseStudyBySlug } from "@/content/case-studies";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 
 /**
  * Story pages are rendered on request (no generateStaticParams): the list of published stories can be
@@ -46,7 +46,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
           {(c.quote.name || c.quote.role) && <footer className="mt-3 text-[14px] text-muted">{[c.quote.name, c.quote.role].filter(Boolean).join(", ")}</footer>}
         </blockquote>
       )}
-      <CtaBand />
+      <FinalCta />
     </article>
   );
 }

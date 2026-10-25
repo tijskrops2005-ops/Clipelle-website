@@ -12,7 +12,7 @@ import { PhoneFrame } from "@/components/site/PhoneFrame";
 import { HeroStage, TranslateSketch } from "@/components/site/Sketches";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { ExampleGallery } from "@/components/site/ExampleGallery";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { RealOutput } from "@/components/site/RealOutput";
 import { LatestPosts, MidCta } from "@/components/site/HomeSections";
 
@@ -62,7 +62,7 @@ export function PlatformTranslatePage({ locale }: { locale: Locale }) {
       <RealOutput data={realTranslation} kind="translation" locale={locale} />
       <MidCta locale={locale} />
       <LatestPosts locale={locale} categories={["translation"]} />
-      <Reveal as="section"><CtaBand locale={locale} variant="translate" /></Reveal>
+      <FinalCta locale={locale} />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { pageMeta } from "@/lib/i18n";
 import { allPosts } from "@/lib/blog";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { BlogCard } from "@/components/site/BlogCard";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 
 const locale = "nl" as const;
 const t = dict(locale);
@@ -19,7 +19,7 @@ export default function DutchBlogPage() {
       <SectionIntro eyebrow="Blog" title={t.home.blogTitle} text={t.common.articlesEnglish} />
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{posts.map((p) => <BlogCard key={p.slug} post={p} />)}</div>
       <p className="text-center text-[15px] text-muted"><Link href="/blog" className="underline">{t.home.allArticles}</Link></p>
-      <CtaBand locale={locale} />
+      <FinalCta locale={locale} />
     </div>
   );
 }

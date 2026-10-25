@@ -11,7 +11,7 @@ import { menusFor } from "@/components/site/siteNav";
 import { Button } from "@/components/ui/Button";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { Accordion } from "@/components/site/Accordion";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { JsonLd } from "@/components/site/JsonLd";
 import { DemoRequestForm } from "@/components/site/DemoRequestForm";
 import { MenuCard } from "@/components/site/MenuCard";
@@ -28,7 +28,7 @@ export function FaqPage({ locale }: { locale: Locale }) {
       <JsonLd data={{ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: items.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) }} />
       <SectionIntro eyebrow={t.common.faq} title={t.faqPage.title} text={t.faqPage.text} />
       <Accordion items={items} className="mx-auto max-w-3xl" />
-      <CtaBand locale={locale} />
+      <FinalCta locale={locale} />
     </div>
   );
 }
@@ -107,7 +107,7 @@ export function AboutPage({ locale }: { locale: Locale }) {
         <p className="mx-auto mt-2 max-w-md text-[15px] text-muted">{a.talkText}</p>
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row"><Button href={L("/demo")} variant="primary">{t.common.bookDemo}</Button><Button href={L("/contact")} variant="secondary">{a.contact}</Button></div>
       </section>
-      <CtaBand locale={locale} />
+      <FinalCta locale={locale} />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { StepList } from "@/components/ui/StepList";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { SoonBadge } from "@/components/site/SiteHeader";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
@@ -56,7 +56,7 @@ export function IntegrationPage({ eyebrow, title, intro, soon, steps, does, does
           </div>
         </div>
       </Reveal>
-      <Reveal as="section"><CtaBand locale={locale} /></Reveal>
+      <FinalCta locale={locale} />
     </div>
   );
 }

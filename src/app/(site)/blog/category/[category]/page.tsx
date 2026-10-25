@@ -5,7 +5,7 @@ import { postsByCategory } from "@/lib/blog";
 import { absoluteUrl } from "@/lib/site";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { BlogCard } from "@/components/site/BlogCard";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { CategoryChips } from "../../page";
 
 export function generateStaticParams() {
@@ -32,7 +32,7 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
           {posts.map((p) => <BlogCard key={p.slug} post={p} />)}
         </div>
       )}
-      <CtaBand />
+      <FinalCta />
     </div>
   );
 }

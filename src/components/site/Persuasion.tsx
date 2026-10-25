@@ -127,7 +127,7 @@ export function TrustGrid({ locale }: { locale: Locale }) {
 
 const CODES = ["EN", "NL", "DE", "FR", "ES", "IT", "PT", "PL", "SV", "DA", "FI", "CS", "SK", "TR", "AR", "HI", "JA", "KO", "ZH", "EL", "RO", "HU", "NO", "UK"];
 
-export function FinalCta({ locale }: { locale: Locale }) {
+export function FinalCta({ locale = "en" }: { locale?: Locale }) {
   const t = dict(locale);
   const h = t.home;
   // Fixed positions and timings (no randomness): the same on the server and in the browser.

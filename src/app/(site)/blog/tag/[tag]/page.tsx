@@ -4,7 +4,7 @@ import { allTags, postsByTag } from "@/lib/blog";
 import { absoluteUrl } from "@/lib/site";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { BlogCard } from "@/components/site/BlogCard";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { CategoryChips } from "../../page";
 
 export function generateStaticParams() {
@@ -29,7 +29,7 @@ export default async function BlogTagPage({ params }: { params: Promise<{ tag: s
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map((p) => <BlogCard key={p.slug} post={p} />)}
       </div>
-      <CtaBand />
+      <FinalCta />
     </div>
   );
 }

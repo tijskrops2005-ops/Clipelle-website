@@ -5,7 +5,7 @@ import type { Locale } from "@/lib/i18n";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { PricingTable } from "@/components/site/PricingTable";
 import { Accordion } from "@/components/site/Accordion";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { ServiceSection } from "@/components/site/ServiceSection";
 import { SavingsCalculator } from "@/components/site/SavingsCalculator";
 import { JsonLd } from "@/components/site/JsonLd";
@@ -30,7 +30,7 @@ export function PricingPage({ locale }: { locale: Locale }) {
         <Accordion items={faq} className="mx-auto mt-10 max-w-3xl" />
       </section>
       <LatestPosts locale={locale} categories={["costs-and-process"]} />
-      <CtaBand locale={locale} />
+      <FinalCta locale={locale} />
     </div>
   );
 }

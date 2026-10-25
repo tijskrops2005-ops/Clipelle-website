@@ -1,6 +1,6 @@
 /**
  * Use-case pages (/solutions/[slug]). Every "how Clipelle helps" item names a real feature; the example
- * flow is an illustration of the steps, clearly labelled as an example, never a customer story.
+ * flow is an illustration of the steps (titled per step since 25 Oct 2026), labelled as an example, never a customer story.
  */
 export type Solution = {
   slug: string;
@@ -9,7 +9,7 @@ export type Solution = {
   intro: string;
   problem: { title: string; points: string[] };
   helps: { title: string; text: string }[];
-  example: { title: string; steps: string[] };
+  example: { title: string; stepTitles: string[]; steps: string[] };
   faq: { q: string; a: string }[];
 };
 
@@ -27,7 +27,7 @@ export const solutions: Solution[] = [
       { title: "A product page link", text: "URL to video reads name, description and photos from your product page so the form starts filled in." },
       { title: "From your own code", text: "The API creates the same ads from a product feed or a sync job, with the same credits and limits." },
     ],
-    example: { title: "Example flow (illustration, not a customer story)", steps: ["Monday: paste the product page of the new arrival into URL to video; check the description, tick two photos.", "Choose 30 seconds, Standard, the brand voice; tick Review script first.", "Pick one of three hooks, approve; the clip, the presenter and the edit run on their own.", "Download the 9:16 ad from the project page; the real amount sits next to the estimate."] },
+    example: { title: "A new arrival, its ad ready on Monday", stepTitles: ["Paste the product page", "Pick length and voice", "Choose the hook", "Download"], steps: ["Monday: paste the product page of the new arrival into URL to video; check the description, tick two photos.", "Choose 30 seconds, Standard, the brand voice; tick Review script first.", "Pick one of three hooks, approve; the clip, the presenter and the edit run on their own.", "Download the 9:16 ad from the project page; the real amount sits next to the estimate."] },
     faq: [
       { q: "Can I keep one presenter for every ad?", a: "Yes. Pick the same presenter and voice on each form, or make one choice and reuse it through the API." },
       { q: "What about several products in one ad?", a: "An ad is built around one product and one product clip. Make one ad per product; it keeps every ad clear." },
@@ -46,7 +46,7 @@ export const solutions: Solution[] = [
       { title: "The same ad form", text: "Length, presenter, voice, tone, offer and brand style, exactly as with an uploaded photo." },
       { title: "Automation through the API", text: "Create ads from your own scripts or tools with an API key; a project per product, idempotent on retries." },
     ],
-    example: { title: "Example flow (illustration, not a customer story)", steps: ["Paste the product page link; the form shows the name, description and six photos found on the page.", "Shorten the description to the facts; tick the three photos you own.", "Add the offer line from this week's promotion; generate.", "Download the finished 9:16 ad; post it to TikTok, Reels or Shorts."] },
+    example: { title: "From product page to ad in four steps", stepTitles: ["Paste the link", "Check the facts", "Add the offer", "Post it"], steps: ["Paste the product page link; the form shows the name, description and six photos found on the page.", "Shorten the description to the facts; tick the three photos you own.", "Add the offer line from this week's promotion; generate.", "Download the finished 9:16 ad; post it to TikTok, Reels or Shorts."] },
     faq: [
       { q: "Does it work with any shop platform?", a: "It works with any public product page that carries product data, sharing tags or at least a title and photos. Pages behind a login cannot be read." },
       { q: "Is there a Shopify app?", a: "Not yet. Today you paste a link, or use the API from your own code." },
@@ -65,7 +65,7 @@ export const solutions: Solution[] = [
       { title: "Small variations", text: "Same product, different hook or tone: review the script, pick another hook, generate again." },
       { title: "Costs you can plan", text: "Credits per length are fixed and shown before you start; the real amount is shown afterwards." },
     ],
-    example: { title: "Example flow (illustration, not a customer story)", steps: ["Upload the supplier's product photo you have the rights to use; write three factual sentences.", "Choose 20 seconds, Standard, a Direct tone; tick Review script first.", "Approve a hook that names the problem the product solves.", "Run the ad; if it holds attention, make the 30-second version with the Offer line."] },
+    example: { title: "A product test in four steps", stepTitles: ["Upload the photo", "Keep it short", "Approve the hook", "Scale what works"], steps: ["Upload the supplier's product photo you have the rights to use; write three factual sentences.", "Choose 20 seconds, Standard, a Direct tone; tick Review script first.", "Approve a hook that names the problem the product solves.", "Run the ad; if it holds attention, make the 30-second version with the Offer line."] },
     faq: [
       { q: "Can I use supplier photos?", a: "Only photos you own or have the rights to use. The form asks you to confirm that." },
       { q: "How fast is a video ready?", a: "Typically within minutes; you can leave the page and the finished video lands on your dashboard." },
@@ -85,7 +85,7 @@ export const solutions: Solution[] = [
       { title: "The API for volume", text: "Create ads and translations from your own tooling with an API key; projects stay per workspace." },
       { title: "Translations for international clients", text: "A client's video in several languages with the speaker's own voice, each version with captions." },
     ],
-    example: { title: "Example flow (illustration, not a customer story)", steps: ["Receive a client's product sheet; paste the product page into URL to video.", "Apply the client's colour, caption look and logo in the brand style block.", "Tick Review script first; send the three hooks to the client, approve the chosen one.", "Deliver the 9:16 ad and the German and French versions from the translate workflow."] },
+    example: { title: "One client ad, three languages", stepTitles: ["Start from the product page", "Apply the client's brand", "Let the client pick", "Deliver in three languages"], steps: ["Receive a client's product sheet; paste the product page into URL to video.", "Apply the client's colour, caption look and logo in the brand style block.", "Tick Review script first; send the three hooks to the client, approve the chosen one.", "Deliver the 9:16 ad and the German and French versions from the translate workflow."] },
     faq: [
       { q: "Can several people work in one account?", a: "Yes. A team workspace shares projects and credits; the owner manages the plan, credits and members. One team workspace per client or per agency is the practical setup." },
       { q: "Can we white-label Clipelle?", a: "No. The finished videos carry no Clipelle branding; the app itself is Clipelle." },
@@ -104,7 +104,7 @@ export const solutions: Solution[] = [
       { title: "Captions for silent viewing", text: "Everything the presenter says is on screen as captions; your accent colour highlights the spoken word." },
       { title: "Languages", text: "Make the ad in another language, or translate the finished video with the same voice." },
     ],
-    example: { title: "Example flow (illustration, not a customer story)", steps: ["Upload one screenshot of the new dashboard; describe what it does and for whom.", "Choose 30 seconds, a Warm tone, the presenter who matches the brand.", "Review the script; keep the hook that names the pain point.", "Download the ad; translate it into Spanish for the Latin American launch."] },
+    example: { title: "A feature launch in four steps", stepTitles: ["Upload a screenshot", "Set tone and presenter", "Review the script", "Download and translate"], steps: ["Upload one screenshot of the new dashboard; describe what it does and for whom.", "Choose 30 seconds, a Warm tone, the presenter who matches the brand.", "Review the script; keep the hook that names the pain point.", "Download the ad; translate it into Spanish for the Latin American launch."] },
     faq: [
       { q: "Can the product clip show a screen recording?", a: "The product clip is generated from one still image. Use a clean screenshot; a recording is not an input today." },
       { q: "Can the presenter say technical terms?", a: "Yes; write them in the description or your own script. For translations, add them as terms to keep." },
@@ -124,7 +124,7 @@ export const solutions: Solution[] = [
       { title: "Terms to keep", text: "Your name, your product names and your catchphrases stay as they are." },
       { title: "Rights first", text: "You confirm you own the video and have the speaker's permission before anything starts." },
     ],
-    example: { title: "Example flow (illustration, not a customer story)", steps: ["Upload the 60-second video; leave the spoken language on Detect automatically.", "Pick German, French and Portuguese (Brazil); keep Speed; add the channel name to Terms to keep.", "The quality check lists two corrected lines and one warning about a number; check them.", "Download three videos, each with captions, ready for the regional channels."] },
+    example: { title: "One video into three languages", stepTitles: ["Upload the video", "Pick three languages", "Check the corrections", "Download three versions"], steps: ["Upload the 60-second video; leave the spoken language on Detect automatically.", "Pick German, French and Portuguese (Brazil); keep Speed; add the channel name to Terms to keep.", "The quality check lists two corrected lines and one warning about a number; check them.", "Download three videos, each with captions, ready for the regional channels."] },
     faq: [
       { q: "Does my accent survive?", a: "The voice stays yours; the pronunciation follows the new language. Listen to the result and adjust terms to keep if a name is read oddly." },
       { q: "How long can the video be?", a: "Up to 32 MB and three minutes per upload today." },

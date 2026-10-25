@@ -86,7 +86,6 @@ export const en = {
     save: "Save choices",
     accept: "Accept all",
   },
-  cta: { title: "Make your first ad", text: "The estimate is shown before you start. Nothing is charged until you confirm.", translateTitle: "Translate your first video", translateText: "Upload, confirm the rights, pick the languages. The estimate is shown before you start." },
   midCta: { title: "Try it with your own product", text: "30 free credits after you verify your e-mail. The estimate is on the form before anything starts.", examplesFirst: "See the examples first" },
   home: {
     metaTitle: "Translate your videos into any language",
@@ -247,6 +246,35 @@ export const en = {
     choicesTitle: "Every choice, on one form",
     choicesText: "These are the things you set. Everything else runs on its own.",
     choices: ["Length", "Presenter", "Language", "Accent", "Voice", "Speed", "Tone", "Offer", "Direction", "Background", "Caption style", "Accent colour", "Logo", "9:16 or original", "Review the script first"],
+    /** The swipe block "Why Clipelle" (25 Oct 2026): replaces outcomes, choices and the trust grid. {t}/{a} = measured minutes, {price} = Pro price per translated minute. */
+    why: {
+      eyebrow: "Why Clipelle",
+      title: "What you get, what you decide, what we promise",
+      text: "Numbers from our own runs, the choices on the form and the rules we keep.",
+      swipeHint: "Swipe for more",
+      tabs: { get: "What you get", decide: "What you decide", promise: "What we promise" },
+      get: [
+        { value: "≈ {t} min", title: "From upload to a translated video", text: "Measured on our own run: an 8-second video into one language, lip sync and captions included." },
+        { value: "190", title: "Languages and regional variants", text: "Pick several in one upload. Every version gets its own lip sync and captions." },
+        { value: "{price}", title: "Per translated minute", text: "On the Pro plan, with the speaker's own voice and lip sync. Credits never expire." },
+        { value: "0", title: "Reshoots", text: "The speaker's own voice follows the new language and the lips match it. Nothing to film again." },
+        { value: "≈ {a} min", title: "From product photo to a finished ad", text: "Measured: a 30-second ad with script, presenter, product clip and captions." },
+        { value: "9:16", title: "1080p, ready to post", text: "Vertical by design for TikTok, Reels and Shorts. Download and post; nothing to crop." },
+      ],
+      decideTranslate: "When you translate",
+      decideTranslateItems: ["Several languages at once", "Speed or Precision", "Terms to keep as they are", "9:16 or the original size", "Caption position", "Silence trimmed at start and end", "Picture enhancement"],
+      decideAd: "When you make an ad",
+      decideAdItems: ["Length, 10 to 60 seconds", "Presenter", "Language and accent", "Voice and speed", "Tone", "Offer", "Direction", "Background", "Caption style", "Accent colour", "Logo", "Review the script first"],
+      decideNote: "Everything else runs on its own: script, translation check, lip sync, edit and captions.",
+      promise: [
+        { title: "The price before you click", text: "Every form shows credits and dollars. Nothing starts until you confirm, and the project page shows what it really cost." },
+        { title: "A failed video costs nothing", text: "If a video fails, its credits go back to your balance. With several languages you pay only for the versions delivered." },
+        { title: "Every line checked", text: "Before the final render each translated line is compared with the original: missing words, numbers, names. You see what was corrected." },
+        { title: "Credits never expire", text: "What you buy stays in your workspace, also after you cancel your plan." },
+        { title: "Rights first", text: "Nothing is translated before you confirm you own the video and have the speaker's permission." },
+        { title: "Your files stay private", text: "Uploads and results sit in private storage. Download links expire and share links can be revoked." },
+      ],
+    },
   },
   realOutput: {
     eyebrow: "Real output",
@@ -482,7 +510,7 @@ export const en = {
   },
   legal: { eyebrow: "Legal", draft: "Draft, to be reviewed", updated: "Last updated" },
 
-  solutionsPage: { problem: "The problem", helps: "How Clipelle helps", exampleEyebrow: "Example flow", exampleBadge: "Illustration of the steps, not a customer story", step: "Step {n}", faqTitle: "Questions from {who}" },
+  solutionsPage: { problem: "The problem", helps: "How Clipelle helps", exampleEyebrow: "How it goes", exampleBadge: "An example of the steps, not a customer story", step: "Step {n}", faqTitle: "Questions from {who}" },
   customers: {
     metaTitle: "Customer stories", metaDescription: "Real experiences and verified outcomes from teams that use Clipelle, published only with their permission.",
     eyebrow: "Customer stories", title: "Better creative workflows start with better tools.", text: "Discover how teams approach video creative, streamline their workflows, and explore new possibilities for advertising with Clipelle.",

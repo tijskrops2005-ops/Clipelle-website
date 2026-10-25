@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { guideBySlug, guides } from "@/content/guides";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 
 export function generateStaticParams() {
   return guides.map((g) => ({ slug: g.slug }));
@@ -35,7 +35,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
           ))}
         </section>
       ))}
-      <CtaBand />
+      <FinalCta />
     </article>
   );
 }

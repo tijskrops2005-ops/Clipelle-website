@@ -84,7 +84,6 @@ export const nl: SiteDict = {
     save: "Keuzes opslaan",
     accept: "Alles accepteren",
   },
-  cta: { title: "Maak je eerste advertentie", text: "De schatting staat op het formulier voordat je begint. Er wordt niets afgeschreven tot je bevestigt.", translateTitle: "Vertaal je eerste video", translateText: "Uploaden, rechten bevestigen, talen kiezen. De schatting zie je voordat je begint." },
   midCta: { title: "Probeer het met je eigen product", text: "30 gratis credits na bevestiging van je e-mailadres. De schatting staat op het formulier voordat er iets start.", examplesFirst: "Bekijk eerst de voorbeelden" },
   home: {
     metaTitle: "Vertaal je video's naar elke taal",
@@ -242,6 +241,34 @@ export const nl: SiteDict = {
     choicesTitle: "Elke keuze, op één formulier",
     choicesText: "Dit zijn de dingen die jij instelt. Al het andere loopt vanzelf.",
     choices: ["Lengte", "Presentator", "Taal", "Accent", "Stem", "Tempo", "Toon", "Aanbieding", "Richting", "Achtergrond", "Ondertitelstijl", "Accentkleur", "Logo", "9:16 of origineel", "Eerst het script bekijken"],
+    why: {
+      eyebrow: "Waarom Clipelle",
+      title: "Wat je krijgt, wat je kiest, wat we beloven",
+      text: "Cijfers uit onze eigen runs, de keuzes op het formulier en de regels waar we ons aan houden.",
+      swipeHint: "Swipe voor meer",
+      tabs: { get: "Wat je krijgt", decide: "Wat je kiest", promise: "Wat we beloven" },
+      get: [
+        { value: "≈ {t} min", title: "Van upload tot vertaalde video", text: "Gemeten in onze eigen run: een video van 8 seconden naar één taal, met lipsync en ondertitels." },
+        { value: "190", title: "Talen en regionale varianten", text: "Kies er meerdere in één upload. Elke versie krijgt een eigen lipsync en ondertitels." },
+        { value: "{price}", title: "Per vertaalde minuut", text: "Op het Pro-abonnement, met de eigen stem van de spreker en lipsync. Credits vervallen nooit." },
+        { value: "0", title: "Keer opnieuw filmen", text: "De eigen stem van de spreker volgt de nieuwe taal en de lippen bewegen mee. Niets opnieuw opnemen." },
+        { value: "≈ {a} min", title: "Van productfoto tot advertentie", text: "Gemeten: een advertentie van 30 seconden met script, presentator, productclip en ondertitels." },
+        { value: "9:16", title: "1080p, klaar om te posten", text: "Verticaal voor TikTok, Reels en Shorts. Downloaden en posten; niets bij te snijden." },
+      ],
+      decideTranslate: "Als je vertaalt",
+      decideTranslateItems: ["Meerdere talen tegelijk", "Speed of Precision", "Termen die blijven zoals ze zijn", "9:16 of het originele formaat", "Positie van de ondertitels", "Stilte aan begin en eind eraf", "Beeldverbetering"],
+      decideAd: "Als je een advertentie maakt",
+      decideAdItems: ["Lengte, 10 tot 60 seconden", "Presentator", "Taal en accent", "Stem en tempo", "Toon", "Aanbieding", "Richting", "Achtergrond", "Ondertitelstijl", "Accentkleur", "Logo", "Eerst het script bekijken"],
+      decideNote: "De rest gaat vanzelf: script, vertaalcontrole, lipsync, montage en ondertitels.",
+      promise: [
+        { title: "De prijs voordat je klikt", text: "Elk formulier toont credits en dollars. Er start niets tot je bevestigt, en de projectpagina laat zien wat het echt kostte." },
+        { title: "Mislukt kost niets", text: "Mislukt een video, dan gaan de credits terug naar je saldo. Bij meerdere talen betaal je alleen de versies die klaar zijn." },
+        { title: "Elke regel gecontroleerd", text: "Voor de eindrender wordt elke vertaalde regel vergeleken met het origineel: ontbrekende woorden, getallen, namen. Je ziet wat er is verbeterd." },
+        { title: "Credits vervallen nooit", text: "Wat je koopt blijft in je workspace, ook als je je abonnement opzegt." },
+        { title: "Eerst de rechten", text: "Er wordt niets vertaald voordat je bevestigt dat de video van jou is en de spreker toestemming gaf." },
+        { title: "Je bestanden blijven privé", text: "Uploads en resultaten staan in privéopslag. Downloadlinks verlopen en deellinks trek je in wanneer je wilt." },
+      ],
+    },
   },
   realOutput: {
     eyebrow: "Echt resultaat",
@@ -477,7 +504,7 @@ export const nl: SiteDict = {
   },
   legal: { eyebrow: "Juridisch", draft: "Concept, nog te beoordelen", updated: "Laatst bijgewerkt" },
 
-  solutionsPage: { problem: "Het probleem", helps: "Hoe Clipelle helpt", exampleEyebrow: "Voorbeeldstroom", exampleBadge: "Illustratie van de stappen, geen klantverhaal", step: "Stap {n}", faqTitle: "Vragen van {who}" },
+  solutionsPage: { problem: "Het probleem", helps: "Hoe Clipelle helpt", exampleEyebrow: "Zo gaat het", exampleBadge: "Een voorbeeld van de stappen, geen klantverhaal", step: "Stap {n}", faqTitle: "Vragen van {who}" },
   customers: {
     metaTitle: "Klantverhalen", metaDescription: "Echte ervaringen en gecontroleerde resultaten van teams die Clipelle gebruiken, alleen gepubliceerd met hun toestemming.",
     eyebrow: "Klantverhalen", title: "Betere creatieve workflows beginnen met betere tools.", text: "Ontdek hoe teams video's voor advertenties aanpakken, hun werkwijze stroomlijnen en nieuwe mogelijkheden voor adverteren verkennen met Clipelle.",

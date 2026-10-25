@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/utils";
 import { config } from "@/lib/config";
 import { BlogCard } from "@/components/site/BlogCard";
 import { BlogCover } from "@/components/site/BlogCover";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { InlineCta } from "@/components/site/InlineCta";
 import { JsonLd } from "@/components/site/JsonLd";
 import { ShareLinks } from "@/components/site/ShareLinks";
@@ -111,7 +111,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </div>
         </section>
       )}
-      <div className="mt-20"><CtaBand /></div>
+      <div className="mt-20"><FinalCta /></div>
     </article>
   );
 }

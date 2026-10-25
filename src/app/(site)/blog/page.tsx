@@ -5,7 +5,7 @@ import { allPosts, allTags } from "@/lib/blog";
 import { absoluteUrl } from "@/lib/site";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { BlogCard } from "@/components/site/BlogCard";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { JsonLd } from "@/components/site/JsonLd";
 
 export const metadata: Metadata = {
@@ -58,7 +58,7 @@ export default function BlogPage() {
           </ul>
         </section>
       )}
-      <CtaBand />
+      <FinalCta />
     </div>
   );
 }

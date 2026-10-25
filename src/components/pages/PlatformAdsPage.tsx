@@ -11,7 +11,7 @@ import { PhoneFrame } from "@/components/site/PhoneFrame";
 import { AdSketch, HeroStage } from "@/components/site/Sketches";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { ExampleGallery } from "@/components/site/ExampleGallery";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { RealOutput } from "@/components/site/RealOutput";
 import { LatestPosts, MidCta } from "@/components/site/HomeSections";
 
@@ -74,7 +74,7 @@ export async function PlatformAdsPage({ locale }: { locale: Locale }) {
       <RealOutput data={realAd} kind="ad" locale={locale} />
       <MidCta locale={locale} />
       <LatestPosts locale={locale} categories={["product-video", "scripts-and-hooks"]} />
-      <Reveal as="section"><CtaBand locale={locale} /></Reveal>
+      <FinalCta locale={locale} />
     </div>
   );
 }

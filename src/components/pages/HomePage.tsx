@@ -11,15 +11,15 @@ import { SectionIntro } from "@/components/site/SectionIntro";
 import { Accordion } from "@/components/site/Accordion";
 import { PricingPreview } from "@/components/site/PricingPreview";
 import { SavingsCalculator } from "@/components/site/SavingsCalculator";
-import { ExampleMarquee, Outcomes, UseCaseCards } from "@/components/site/HomeSections";
 import { JsonLd } from "@/components/site/JsonLd";
 import { PipelineStrip, ProofChips } from "@/components/site/Sketches";
-import { ChoicesChips, FeatureRows, HeroShowcase, StatsBand } from "@/components/site/Showcase";
+import { FeatureRows, HeroShowcase, StatsBand } from "@/components/site/Showcase";
 import { AdsDemo, UrlDemo } from "@/components/site/FeatureDemos";
 import { TranslateShowcase } from "@/components/site/TranslateShowcase";
 import { TranslateDemo } from "@/components/site/TranslateDemo";
 import { ProductDemo } from "@/components/site/ProductDemo";
-import { BuiltFor, FinalCta, TrustGrid } from "@/components/site/Persuasion";
+import { BuiltFor, FinalCta } from "@/components/site/Persuasion";
+import { WhyClipelle } from "@/components/site/WhyClipelle";
 import { HomeLogos, HomeReviews } from "@/components/site/HomeTrust";
 import { LiveStats } from "@/components/site/LiveStats";
 import { faqFor } from "@/content/faqI18n";
@@ -83,18 +83,10 @@ export function HomePage({ locale }: { locale: Locale }) {
         />
       </Reveal>
 
-      <Outcomes locale={locale} />
+      {/* 25 Oct 2026: outcomes, choices and the trust grid in one swipeable block; "Who it is for" and
+          "Made with Clipelle" are off the page (code kept, see docs/removed-blocks.md). */}
+      <WhyClipelle locale={locale} />
       <HomeReviews locale={locale} />
-      <ChoicesChips eyebrow={h.choicesEyebrow} title={h.choicesTitle} text={h.choicesText} items={h.choices} />
-      <UseCaseCards locale={locale} />
-
-      <Reveal as="section">
-        <SectionIntro eyebrow={h.examplesEyebrow} title={h.examplesTitle} text={h.examplesText} />
-        <ExampleMarquee locale={locale} />
-        <div className="mt-8 text-center"><Button href={L("/examples")} variant="secondary">{t.common.allExamples} <ArrowRight className="size-4" aria-hidden /></Button></div>
-      </Reveal>
-
-      <TrustGrid locale={locale} />
 
       <Reveal as="section">
         <SectionIntro eyebrow={h.compareEyebrow} title={h.compareTitle} text={h.compareText} />

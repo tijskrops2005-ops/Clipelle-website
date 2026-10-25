@@ -12,7 +12,7 @@ import { StepList } from "@/components/ui/StepList";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { Accordion } from "@/components/site/Accordion";
-import { CtaBand } from "@/components/site/CtaBand";
+import { FinalCta } from "@/components/site/Persuasion";
 import { JsonLd } from "@/components/site/JsonLd";
 import { TrustBlocks } from "@/components/site/TrustBlocks";
 import { CareersForm } from "@/components/site/CareersForm";
@@ -44,7 +44,7 @@ export function CustomersPage({ locale }: { locale: Locale }) {
       ) : (
         <ul className="grid gap-5 md:grid-cols-2">{stories.map((s) => <li key={s.slug}><Link href={`/customers/${s.slug}`} className="focus-ring block h-full rounded-card bg-surface p-6 shadow-card hover:shadow-card-hover"><p className="label-mono text-muted">{s.company}{s.industry ? ` · ${s.industry}` : ""}</p><p className="mt-2 text-[20px] font-semibold text-ink">{s.title}</p><p className="mt-2 text-[15px] text-muted">{s.summary}</p></Link></li>)}</ul>
       )}
-      <CtaBand locale={locale} />
+      <FinalCta locale={locale} />
     </div>
   );
 }
@@ -146,7 +146,7 @@ export function TrustPage({ locale }: { locale: Locale }) {
       <section className="mx-auto max-w-2xl text-center text-[15px] text-muted">
         <p>{r.footer} <Link href={L("/contact")} className="underline">{r.write}</Link>. {r.drafts} <Link href={L("/legal/terms")} className="underline">{r.terms}</Link>, <Link href={L("/legal/privacy")} className="underline">{r.privacy}</Link>, <Link href={L("/legal/data")} className="underline">{r.dataLink}</Link>, <Link href={L("/legal/cookies")} className="underline">{r.cookiesLink}</Link>.</p>
       </section>
-      <CtaBand locale={locale} />
+      <FinalCta locale={locale} />
     </div>
   );
 }
@@ -211,7 +211,7 @@ export function PressPage({ locale }: { locale: Locale }) {
         </div>
       </Reveal>
 
-      <CtaBand locale={locale} />
+      <FinalCta locale={locale} />
     </div>
   );
 }
