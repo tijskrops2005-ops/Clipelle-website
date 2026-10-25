@@ -1,6 +1,6 @@
 import { Star } from "lucide-react";
 import { config } from "@/lib/config";
-import { facts, hasTrustContent, trust, type TrustContent } from "@/content/trust";
+import { hasTrustContent, trust, type TrustContent } from "@/content/trust";
 import { trustExample } from "@/content/trust.example";
 import { Marquee } from "@/components/site/Marquee";
 import { Reveal } from "@/components/site/Reveal";
@@ -9,7 +9,7 @@ import { SectionIntro } from "@/components/site/SectionIntro";
 /**
  * Logo row, reviews, numbers and press. Rendered from src/content/trust.ts only. In production an
  * empty list hides its block; in development and demo mode the example layout is shown with a
- * clear label so the design can be judged. The product facts are always shown.
+ * clear label so the design can be judged. The product facts block was removed on 25 Oct 2026: it repeated the cards on /trust.
  */
 export function TrustBlocks() {
   const showExample = !hasTrustContent() && (process.env.NODE_ENV === "development" || config.demoMode);
@@ -72,17 +72,6 @@ export function TrustBlocks() {
         </Reveal>
       )}
 
-      <Reveal>
-        <SectionIntro eyebrow="Facts" title="What you can count on" text="These hold on every build, not just in marketing." />
-        <ul className="mt-10 grid gap-5 sm:grid-cols-2">
-          {facts.map((f) => (
-            <li key={f.title} className="rounded-card bg-surface p-6 shadow-card">
-              <p className="text-[17px] font-semibold text-ink">{f.title}</p>
-              <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{f.text}</p>
-            </li>
-          ))}
-        </ul>
-      </Reveal>
     </section>
   );
 }

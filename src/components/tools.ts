@@ -1,4 +1,4 @@
-import { ImageUp, Languages, Link2, MessageSquare, Palette, Rocket, Share2, ShoppingBag, type LucideIcon } from "lucide-react";
+import { ImageUp, Languages, Link2, Palette, Share2, ShoppingBag, type LucideIcon } from "lucide-react";
 
 /**
  * The tools of the app, in one list for the sidebar, the tool search (⌘K) and the dashboard's quick
@@ -19,8 +19,6 @@ export const SOON_TOOLS: Tool[] = [
   { key: "reels", href: "/settings/connections", label: "Publish to Reels", text: "Post a finished ad to Instagram Reels from the project page.", icon: Share2, soon: true },
   { key: "shorts", href: "/settings/connections", label: "Publish to Shorts", text: "Post a finished ad to YouTube Shorts from the project page.", icon: Share2, soon: true },
   { key: "shopify", href: "/settings/connections", label: "Import from Shopify", text: "Pick a product and let its name, description and photos fill the form.", icon: ShoppingBag, soon: true },
-  { key: "slack", href: "/integrations/slack", label: "Slack bot", text: "Start a video from a Slack message.", icon: MessageSquare, soon: true },
-  { key: "launcher", href: "/integrations/ad-launcher", label: "Ad Launcher", text: "Send a finished ad to an ad account.", icon: Rocket, soon: true },
 ];
 
 /** Opens the tool search from anywhere (sidebar, top bar, dashboard); the menu listens for it. */

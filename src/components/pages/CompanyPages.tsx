@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Handshake, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, BookOpen, Download, Handshake, Mail, ShieldCheck } from "lucide-react";
 import { config } from "@/lib/config";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
 import { publishedCaseStudies } from "@/content/case-studies";
 import { partners } from "@/content/partners";
-import { PLANS, formatPrice } from "@/lib/plans";
+import { FREE_CREDITS, PLANS, formatPrice } from "@/lib/plans";
+import { TRANSLATE_LANGUAGES } from "@/lib/translateLanguages";
+import { measured } from "@/content/measured";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { StepList } from "@/components/ui/StepList";
@@ -96,7 +98,7 @@ export function PartnersPage({ locale }: { locale: Locale }) {
       <Reveal as="section" className="rounded-card bg-surface px-6 py-14 text-center shadow-card">
         <h2 className="text-display">{p.readyTitle}</h2>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          {open ? <Button href={partners.signupUrl} variant="accent" size="lg">{p.join} <ArrowRight className="size-5" aria-hidden /></Button> : <><Badge tone="warning">{p.opensSoon}</Badge><Button href={L("/contact")} variant="secondary" size="lg">{p.contact}</Button></>}
+          {open ? <Button href={partners.signupUrl} variant="accent" size="lg">{p.join} <ArrowRight className="size-5" aria-hidden /></Button> : <Button href={L("/contact")} variant="secondary" size="lg">{p.contact}</Button>}
         </div>
       </Reveal>
     </div>
@@ -111,7 +113,7 @@ export function CareersPage({ locale }: { locale: Locale }) {
       <SectionIntro eyebrow={c.eyebrow} title={c.title} text={c.text} />
       <section><ul className="grid gap-5 sm:grid-cols-2">{c.values.map((v) => <li key={v.title} className="rounded-card bg-surface p-6 shadow-card"><p className="text-[17px] font-semibold text-ink">{v.title}</p><p className="mt-1.5 text-[15px] leading-relaxed text-muted">{v.text}</p></li>)}</ul></section>
       <section className="mx-auto max-w-2xl rounded-card bg-surface p-6 shadow-card sm:p-8">
-        <div className="flex flex-wrap items-center gap-3"><h2 className="text-title">{c.openTitle}</h2><Badge tone="warning">{c.noRoles}</Badge></div>
+        <h2 className="text-title">{c.openTitle}</h2>
         <p className="mb-6 mt-2 text-[15px] text-muted">{c.openText}</p>
         <CareersForm locale={locale} />
       </section>
@@ -168,6 +170,22 @@ export function PressPage({ locale }: { locale: Locale }) {
     [p.info.website, site.replace(/^https?:\/\//, "")],
     [p.info.company, `${company.operator} · ${company.city}, ${company.country[locale]} · KvK ${company.kvk}`],
   ];
+  const starter = PLANS.find((x) => x.key === "starter")!;
+  const num = (n: number | null) => (n == null ? "–" : locale === "nl" ? String(n).replace(".", ",") : String(n));
+  const fillFacts = (x: string) => x
+    .replace("{langs}", String(TRANSLATE_LANGUAGES.length))
+    .replace("{t}", num(measured.translationMinutes))
+    .replace("{a}", num(measured.adMinutes))
+    .replace("{price}", formatPrice(starter.monthlyUsd))
+    .replace("{free}", String(FREE_CREDITS))
+    .replace("{founder}", company.operator)
+    .replace("{city}", company.city)
+    .replace("{country}", company.country[locale]);
+  const kit = [
+    { file: "clipelle-logo-dark.png", label: p.kit.dark, dark: false },
+    { file: "clipelle-logo-light.png", label: p.kit.light, dark: true },
+    { file: "clipelle-icon-1024.png", label: p.kit.icon, dark: false },
+  ];
   return (
     <div className="space-y-24 pt-16 sm:pt-24 sm:space-y-32">
       <section className="text-center">
@@ -189,6 +207,37 @@ export function PressPage({ locale }: { locale: Locale }) {
         <SectionIntro eyebrow={p.forEyebrow} title={p.forTitle} />
         <ul className="mt-10 grid gap-5 sm:grid-cols-2">
           {p.audiences.map((x) => <li key={x.title} className="rounded-card bg-surface p-6 shadow-card"><p className="text-[17px] font-semibold text-ink">{x.title}</p><p className="mt-1.5 text-[15px] leading-relaxed text-muted">{x.text}</p></li>)}
+        </ul>
+      </Reveal>
+
+      {/* 25 Oct 2026: a fact sheet from real values and a press kit with the real logo files. */}
+      <Reveal as="section">
+        <SectionIntro eyebrow={p.factsEyebrow} title={p.factsTitle} text={p.factsText} />
+        <dl className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {p.facts.map((f) => (
+            <div key={f.title} className="rounded-card bg-surface p-6 shadow-card">
+              <dt className="label-mono text-muted">{f.title}</dt>
+              <dd className="mt-2 text-[15px] leading-relaxed text-ink">{fillFacts(f.text)}</dd>
+            </div>
+          ))}
+        </dl>
+      </Reveal>
+
+      <Reveal as="section">
+        <SectionIntro eyebrow={p.kitEyebrow} title={p.kitTitle} text={p.kitText} />
+        <ul className="mt-10 grid gap-5 sm:grid-cols-3">
+          {kit.map((k) => (
+            <li key={k.file} className="overflow-hidden rounded-card bg-surface shadow-card">
+              <div className={k.dark ? "grid h-40 place-items-center bg-ink p-8" : "grid h-40 place-items-center bg-surface-muted p-8"}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- our own logo file, shown as it downloads */}
+                <img src={`/brand/${k.file}`} alt={k.label} className="h-20 w-auto max-w-full object-contain" />
+              </div>
+              <div className="flex items-center justify-between gap-3 p-4">
+                <span className="text-[15px] font-semibold text-ink">{k.label}</span>
+                <a href={`/brand/${k.file}`} download className="focus-ring inline-flex items-center gap-1.5 rounded-control text-[14px] font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink"><Download className="size-4" aria-hidden />{p.kit.download}</a>
+              </div>
+            </li>
+          ))}
         </ul>
       </Reveal>
 

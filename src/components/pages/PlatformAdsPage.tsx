@@ -10,10 +10,9 @@ import { Reveal } from "@/components/site/Reveal";
 import { PhoneFrame } from "@/components/site/PhoneFrame";
 import { AdSketch, HeroStage } from "@/components/site/Sketches";
 import { SectionIntro } from "@/components/site/SectionIntro";
-import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { FinalCta } from "@/components/site/Persuasion";
 import { RealOutput } from "@/components/site/RealOutput";
-import { LatestPosts, MidCta } from "@/components/site/HomeSections";
+import { LatestPosts } from "@/components/site/HomeSections";
 
 export async function PlatformAdsPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
@@ -67,12 +66,7 @@ export async function PlatformAdsPage({ locale }: { locale: Locale }) {
           </table>
         </div>
       </Reveal>
-      <Reveal as="section">
-        <SectionIntro eyebrow={t.home.examplesEyebrow} title={p.examplesTitle} />
-        <ExampleGallery kind="ad" limit={6} className="mt-10" locale={locale} />
-      </Reveal>
       <RealOutput data={realAd} kind="ad" locale={locale} />
-      <MidCta locale={locale} />
       <LatestPosts locale={locale} categories={["product-video", "scripts-and-hooks"]} />
       <FinalCta locale={locale} />
     </div>

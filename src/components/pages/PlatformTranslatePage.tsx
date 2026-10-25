@@ -11,10 +11,9 @@ import { Reveal } from "@/components/site/Reveal";
 import { PhoneFrame } from "@/components/site/PhoneFrame";
 import { HeroStage, TranslateSketch } from "@/components/site/Sketches";
 import { SectionIntro } from "@/components/site/SectionIntro";
-import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { FinalCta } from "@/components/site/Persuasion";
 import { RealOutput } from "@/components/site/RealOutput";
-import { LatestPosts, MidCta } from "@/components/site/HomeSections";
+import { LatestPosts } from "@/components/site/HomeSections";
 
 export function PlatformTranslatePage({ locale }: { locale: Locale }) {
   const t = dict(locale);
@@ -55,12 +54,7 @@ export function PlatformTranslatePage({ locale }: { locale: Locale }) {
         </div>
         <ul className="mx-auto mt-8 grid max-w-3xl gap-3 text-[15px] text-ink/85 sm:grid-cols-2">{p.features.map((x) => <li key={x} className="flex items-center gap-2"><span className="size-1.5 rounded-full bg-accent" aria-hidden />{x}</li>)}</ul>
       </Reveal>
-      <Reveal as="section">
-        <SectionIntro eyebrow={t.home.examplesEyebrow} title={p.examplesTitle} />
-        <ExampleGallery kind="translate" limit={6} className="mt-10" locale={locale} />
-      </Reveal>
       <RealOutput data={realTranslation} kind="translation" locale={locale} />
-      <MidCta locale={locale} />
       <LatestPosts locale={locale} categories={["translation"]} />
       <FinalCta locale={locale} />
     </div>

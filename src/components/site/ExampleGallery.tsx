@@ -4,11 +4,11 @@ import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-/** Our own finished videos as 9:16 tiles; empty slots read "Sample coming soon". */
+/** Our own finished videos as 9:16 tiles. Only real videos: no placeholder tiles (25 Oct 2026); nothing when there are none. */
 export function ExampleGallery({ limit = GALLERY_SLOTS, kind, className, locale = "en" }: { limit?: number; kind?: Example["kind"]; className?: string; locale?: Locale }) {
   const t = dict(locale).common;
   const list = resolvedExamples(kind).slice(0, limit);
-  const placeholders = Math.max(0, limit - list.length);
+  if (list.length === 0) return null;
   return (
     <ul className={cn("grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6", className)}>
       {list.map((e) => (
@@ -19,15 +19,6 @@ export function ExampleGallery({ limit = GALLERY_SLOTS, kind, className, locale 
           </div>
           <p className="mt-2.5 truncate text-sm font-semibold text-ink">{e.title}</p>
           <p className="truncate text-[13px] text-muted">{e.note}</p>
-        </li>
-      ))}
-      {Array.from({ length: placeholders }, (_, i) => (
-        <li key={`ph-${i}`}>
-          <div className="relative aspect-[9/16] overflow-hidden rounded-tile border border-dashed border-border bg-surface-muted">
-            <div className="absolute inset-0 grid place-items-center p-4 text-center">
-              <span className="label-mono text-muted">{t.sampleComingSoon}</span>
-            </div>
-          </div>
         </li>
       ))}
     </ul>

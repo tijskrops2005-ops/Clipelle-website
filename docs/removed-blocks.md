@@ -18,3 +18,17 @@ Wat op verzoek van Tijs van de site is gehaald, waarom, en hoe het terug kan. De
 | **"Who it is for"** (zes oplossingskaarten) | Weg: "Built for brands that sell online" bovenaan zegt hetzelfde. De oplossingen blijven in het menu. | `UseCaseCards` in `HomeSections.tsx` | `<UseCaseCards locale={locale} />` na het swipe-blok. |
 | **"Made with Clipelle"** (voorbeeldenrij) | Voorlopig weg; mag later terug als er schone voorbeelden zijn. | `ExampleMarquee` in `HomeSections.tsx`, teksten `home.examples*` | Het blok met `ExampleMarquee` en de knop "All examples" terugzetten (zie git, commit van 25 okt). |
 | **Witte slotkaart "Make your first ad"** op alle pagina's | Vervangen door de donkere slotband van de homepage (`FinalCta`), overal hetzelfde. | `CtaBand.tsx` verwijderd, `cta`-teksten uit de woordenboeken | Uit git halen (`git show HEAD~1:src/components/site/CtaBand.tsx`). |
+
+## 25 oktober 2026 (avond): kale stukken op de andere pagina's, met toestemming van Tijs
+
+| Onderdeel | Wat er gebeurde | Terugzetten |
+|---|---|---|
+| "Sample coming soon"-tegels | `ExampleGallery` toont alleen echte video's, geen lege tegels meer; zonder video's rendert hij niets. | De placeholder-lus uit git terughalen (`ExampleGallery.tsx`). |
+| Voorbeeldengalerij op /platform/ads en /platform/translate | Weg: dezelfde video stond er drie keer. | Het blok met `ExampleGallery kind=…` terugzetten. |
+| Donkere middenband (`MidCta`) op de platformpagina's | Weg: onderaan staat nu de donkere slotband. | `<MidCta locale={locale} />` voor `LatestPosts`. |
+| Lege vakken in "Real output" | Het invoervak verschijnt alleen met echte inhoud; bij de vertaling staat nu de bronvideo en de gecontroleerde Nederlandse tekst. | — |
+| Blok "Facts" op /trust | Weg: herhaalde de kaarten erboven. | Uit git (`TrustBlocks.tsx`). |
+| Dubbele "No open roles" (/careers) en "Partner program opens soon" (/partners) | Eén keer laten staan. | — |
+| Slack-bot en Ad Launcher | Van de site (pagina's, menu, app-zijbalk). Concept bewaard: `docs/concepts/slack-bot-and-ad-launcher.md`. | Zie dat document. |
+| Grijs schetsje bovenaan /platform/url-to-video | Vervangen door de echte advertentie. | — |
+| /press | Toegevoegd: feitenblad uit echte waarden en een perskit met de logobestanden. | — |

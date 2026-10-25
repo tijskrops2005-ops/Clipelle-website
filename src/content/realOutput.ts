@@ -1,6 +1,6 @@
 /**
  * "Real output": one real, unedited result shown on the homepage and the platform pages. Every
- * field is filled from a real run or left empty; an empty field shows "Sample coming soon".
+ * field is filled from a real run or left empty; an empty input field is left out (25 Oct 2026).
  * Never a staged or edited example. Tijs fills this in from the project page of a real run.
  */
 export type RealOutput = {
@@ -8,6 +8,8 @@ export type RealOutput = {
   videoFile?: string;
   /** The product photo that went in (same places), if we may show it. */
   photoFile?: string;
+  /** For a translation: the uploaded source video (same places). */
+  sourceVideoFile?: string;
   /** The spoken script exactly as the presenter said it. */
   script?: string;
   /** The real amount the project page showed afterwards, in US dollars. */
@@ -37,6 +39,9 @@ export const realAd: RealOutput = {
 
 export const realTranslation: RealOutput = {
   videoFile: "translate-senvia-nl.mp4",
+  sourceVideoFile: "translate-senvia-original.mp4",
+  // The checked Dutch lines of that run, as spoken in the result.
+  script: "Mijn dokter zei al jaren: doe Kegels. Ik deed ze al die tijd verkeerd.",
   costUsd: 0.26,
   settings: "8 s · English to Dutch · Speed · captions",
   durationSeconds: 271,

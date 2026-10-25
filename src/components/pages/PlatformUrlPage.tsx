@@ -9,11 +9,15 @@ import { FinalCta } from "@/components/site/Persuasion";
 import { Accordion } from "@/components/site/Accordion";
 import { JsonLd } from "@/components/site/JsonLd";
 import { LatestPosts } from "@/components/site/HomeSections";
+import { firstExample } from "@/lib/examples";
+import { PhoneFrame } from "@/components/site/PhoneFrame";
+import { AdSketch, HeroStage } from "@/components/site/Sketches";
 
 export function PlatformUrlPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
   const p = t.platformUrl;
   const L = (x: string) => localizePath(x, locale);
+  const sample = firstExample("ad");
   return (
     <div className="space-y-24 sm:space-y-32">
       <JsonLd data={{ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: p.faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) }} />
@@ -28,16 +32,10 @@ export function PlatformUrlPage({ locale }: { locale: Locale }) {
           </div>
           <p className="mt-3 text-[13px] text-muted">{t.common.noCard}</p>
         </div>
-        <div className="rounded-card bg-surface p-6 shadow-card" aria-hidden>
-          <div className="rounded-control border border-border bg-bg px-4 py-3 text-[13px] text-muted">https://yourshop.com/products/…</div>
-          <div className="mt-4 space-y-3">
-            <div className="h-3 w-2/3 rounded-full bg-ink/80" />
-            <div className="h-2.5 w-full rounded-full bg-ink/15" />
-            <div className="h-2.5 w-5/6 rounded-full bg-ink/15" />
-            <div className="mt-2 grid grid-cols-4 gap-2">{[0, 1, 2, 3].map((i) => <div key={i} className={`aspect-square rounded-tile bg-surface-muted ${i < 2 ? "ring-2 ring-accent" : ""}`} />)}</div>
-          </div>
-          <div className="mt-5 inline-flex h-10 items-center rounded-full bg-accent px-4 text-sm font-medium text-white">{p.useDetails}</div>
-        </div>
+        {/* 25 Oct 2026: the real ad from our own run instead of a grey sketch of the form. */}
+        <HeroStage label={t.common.illustration}>
+          {sample ? <PhoneFrame src={sample.src} poster={sample.posterSrc} caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} /> : <div className="float-soft w-[240px] sm:w-[260px]"><AdSketch label={t.common.illustration} /></div>}
+        </HeroStage>
       </section>
       <Reveal as="section">
         <SectionIntro eyebrow={t.common.howItWorks} title={p.stepsTitle} />
