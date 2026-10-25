@@ -43,7 +43,7 @@ export default async function DashboardPage() {
     <div className="space-y-8 lg:space-y-10">
       <PageHeader
         title={first ? `Welcome back, ${first}` : "Welcome back"}
-        description="Add a product once and get a finished 9:16 ad, or translate a video you own into other languages. Every finished video lands here."
+        description="Translate a video you own into other languages, or turn a product photo into a finished 9:16 ad. Every finished video lands here."
         actions={
           <Button href="/new" variant="accent" size="lg">
             <Plus className="size-5" aria-hidden />

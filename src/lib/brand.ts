@@ -8,9 +8,9 @@
 export const brand = {
   name: "Clipelle",
   /** One line for metadata and the sidebar footer. */
-  tagline: "Turn product info into a finished video ad — automatically.",
+  tagline: "Your videos in every language, automatically.",
   /** Two sentences for descriptions and the organisation schema. */
-  description: "Clipelle turns one product photo and a short description into a finished 9:16 video ad with an AI presenter and captions, or translates a video you own into other languages.",
+  description: "Clipelle translates videos you own into other languages with the speaker's own voice, lip sync and checked captions, and turns one product photo into a finished 9:16 video ad.",
   /** How support signs. */
   supportName: "Clipelle support",
   /** Sender name on every outgoing e-mail; the address comes from EMAIL_FROM. */

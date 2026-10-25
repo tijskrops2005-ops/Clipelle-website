@@ -6,7 +6,7 @@ import { ArrowRight, Clock, Tag } from "lucide-react";
 import { useProjects, useProjectsReady } from "@/lib/data/client";
 import { projectDurationMs } from "@/lib/projectMeta";
 import { measured } from "@/content/measured";
-import { DEFAULTS, estimateAdCost, estimateTranslateCost, formatUsd } from "@/lib/pricing";
+import { CREDIT_RULES, adCredits } from "@/lib/plans";
 import type { Project, WorkflowKind } from "@/lib/types";
 import { PresenterIllustration, ProductVideoIllustration, TranslateIllustration } from "@/components/StepIllustrations";
 
@@ -34,8 +34,9 @@ function formatMinutes(min: number) {
 }
 
 /** Cheapest configuration of each workflow: the "from" price on the chooser, with the forms' own numbers. */
-const FROM_AD = estimateAdCost({ seconds: 10, clipModel: DEFAULTS.clipModel, engine: "avatar_iii" }).total;
-const FROM_TRANSLATE = estimateTranslateCost({ seconds: 60, quality: "speed", enhance: false, languages: 1, hasSourceTranscript: true }).perLanguageTotal;
+/** What the customer pays, in credits (plans.ts): the shortest Standard ad, and Speed translation per second. */
+const FROM_AD = adCredits({ seconds: 10, engine: "avatar_iii" });
+const TRANSLATE_PER_SECOND = CREDIT_RULES.translate.speed;
 
 const workflows: {
   /** Which wait and price to show; "URL to video" is the ad workflow with a different start. */
@@ -47,11 +48,19 @@ const workflows: {
   Preview: () => React.ReactNode;
 }[] = [
   {
+    kind: "translate",
+    href: "/new/translate",
+    title: "Translate an existing video",
+    text: "A video you own comes back in other languages, with the speaker's own voice, matching lips and captions.",
+    price: `${TRANSLATE_PER_SECOND} credit per second per language`,
+    Preview: TranslatePreview,
+  },
+  {
     kind: "ad",
     href: "/new/ad",
     title: "Make an ad from a product photo",
     text: "Photos and a short description become a finished 9:16 ad with a presenter, product footage and captions.",
-    price: `from ${formatUsd(FROM_AD)} per video`,
+    price: `from ${FROM_AD} credits per video`,
     Preview: AdPreview,
   },
   {
@@ -59,16 +68,8 @@ const workflows: {
     href: "/new/url",
     title: "Make an ad from a product link",
     text: "Paste a product page link. Name, description and photos are read from the page for you to check; then the same ad is made.",
-    price: `from ${formatUsd(FROM_AD)} per video`,
+    price: `from ${FROM_AD} credits per video`,
     Preview: UrlPreview,
-  },
-  {
-    kind: "translate",
-    href: "/new/translate",
-    title: "Translate an existing video",
-    text: "A video you own comes back in other languages, with the speaker's own voice, matching lips and captions.",
-    price: `from ${formatUsd(FROM_TRANSLATE)} per minute per language`,
-    Preview: TranslatePreview,
   },
 ];
 

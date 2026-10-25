@@ -41,9 +41,9 @@ export const menus: Menu[] = [
       {
         title: "Creation",
         items: [
+          { href: "/platform/translate", title: "Translate & lipsync", text: "A video you own, in other languages, with the speaker's own voice and matching lips.", icon: Languages },
           { href: "/platform/ads", title: "Image to video", text: "One product photo becomes a finished 9:16 ad with a presenter and captions.", icon: Clapperboard },
           { href: "/platform/url-to-video", title: "URL to video", text: "Paste a product link; name, description and photos are filled in for you.", icon: Link2 },
-          { href: "/platform/translate", title: "Translate & lipsync", text: "A video you own, in other languages, with the speaker's own voice and matching lips.", icon: Languages },
           { href: "/new", title: "Studio", text: "The app where your videos are made and kept.", icon: LayoutDashboard },
         ],
       },

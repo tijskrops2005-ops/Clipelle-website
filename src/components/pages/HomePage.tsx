@@ -1,4 +1,4 @@
-import { ArrowRight, ImageUp, Link2, Sparkles } from "lucide-react";
+import { ArrowRight, ImageUp, Languages, Link2 } from "lucide-react";
 import { Suspense } from "react";
 import { config } from "@/lib/config";
 import { faq } from "@/content/faq";
@@ -24,7 +24,8 @@ import { LiveStats } from "@/components/site/LiveStats";
 import { faqFor } from "@/content/faqI18n";
 
 /**
- * The homepage in one language (route files render it with "en" at / and "nl" at /nl). Order since
+ * The homepage in one language (route files render it with "en" at / and "nl" at /nl). 25 Oct 2026:
+ * translation-first hero, the real before-and-after directly under it. Order since
  * 24 Oct 2026, translation first because it is the strongest part: hero → translation pipeline →
  * the same video in two languages → translation stats → ads from a photo or a link → outcomes →
  * choices → who it is for → try it → our samples → trust → compare → pricing → FAQ → closing band (25 Oct: + facts ticker, product demo, trust grid, falling-codes closing band; the dark "Try it" band moved into that closing band). Articles sit on the platform, solution, pricing and examples pages.
@@ -46,7 +47,7 @@ export function HomePage({ locale }: { locale: Locale }) {
         <h1 className="mx-auto mt-5 max-w-4xl text-[clamp(2.6rem,6.4vw,4.5rem)] font-semibold leading-[1.02] tracking-[-0.035em]">{h.title}</h1>
         <p className="mx-auto mt-6 max-w-2xl text-subtitle text-muted">{h.intro}</p>
         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button href="/signup" variant="accent" size="lg"><Sparkles className="size-5" aria-hidden />{t.common.createFirstAd}</Button>
+          <Button href={`/signup?next=${encodeURIComponent("/new/translate")}`} variant="accent" size="lg"><Languages className="size-5" aria-hidden />{t.common.translateFirst}</Button>
           <Button href={L("/examples")} variant="secondary" size="lg">{t.common.seeExamples}<ArrowRight className="size-5" aria-hidden /></Button>
         </div>
         <p className="mt-4 text-[13px] text-muted">{t.common.noCardLong}</p>
@@ -55,13 +56,13 @@ export function HomePage({ locale }: { locale: Locale }) {
         <PipelineStrip labels={h.translate.pipeline} className="mt-6" />
       </section>
 
+      {/* Translation first (25 Oct 2026): the real before-and-after straight under the hero. */}
+      <TranslateShowcase locale={locale} />
+      <StatsBand items={h.translate.stats} className="-mt-10 sm:-mt-16" />
+
       <BuiltFor locale={locale} />
       <HomeLogos locale={locale} />
       <LiveStats locale={locale} />
-
-      <TranslateShowcase locale={locale} />
-
-      <StatsBand items={h.translate.stats} className="-mt-10 sm:-mt-16" />
 
       <FactsTicker items={h.ticker} />
 

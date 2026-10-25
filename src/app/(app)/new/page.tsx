@@ -23,7 +23,7 @@ export default async function NewVideoPage() {
   }
   return (
     <div className="mx-auto max-w-4xl space-y-12">
-      <PageHeader title="New video" description="What do you want to make? Both run on their own after you click start." />
+      <PageHeader title="New video" description="Translate a video you own, or make a new ad. Everything runs on its own after you click start." />
       <WorkflowChooser />
     </div>
   );

@@ -8,9 +8,9 @@ import { ImageUp, Languages, Link2, MessageSquare, Palette, Rocket, Share2, Shop
 export type Tool = { key: string; href: string; label: string; text: string; icon: LucideIcon; soon?: boolean };
 
 export const STUDIO_TOOLS: Tool[] = [
+  { key: "translate", href: "/new/translate", label: "Translate a video", text: "A video you own in other languages, with the speaker's own voice and matching lips.", icon: Languages },
   { key: "ad", href: "/new/ad", label: "Ad from a photo", text: "A product photo and a few sentences become a 9:16 ad with a presenter and captions.", icon: ImageUp },
   { key: "url", href: "/new/url", label: "Ad from a link", text: "Paste a product page; name, description and photos fill the ad form for you to check.", icon: Link2 },
-  { key: "translate", href: "/new/translate", label: "Translate a video", text: "A video you own in other languages, with the speaker's own voice and matching lips.", icon: Languages },
   { key: "brand", href: "/settings/brand", label: "Brand style", text: "Accent colour, caption look, font and logo, prefilled on every new ad.", icon: Palette },
 ];
 
