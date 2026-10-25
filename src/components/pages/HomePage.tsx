@@ -19,6 +19,7 @@ import { TranslateShowcase } from "@/components/site/TranslateShowcase";
 import { ProductDemo } from "@/components/site/ProductDemo";
 import { BuiltFor, FactsTicker, FinalCta, TrustGrid } from "@/components/site/Persuasion";
 import { HomeLogos, HomeReviews } from "@/components/site/HomeTrust";
+import { LiveStats } from "@/components/site/LiveStats";
 import { faqFor } from "@/content/faqI18n";
 
 /**
@@ -62,6 +63,7 @@ export function HomePage({ locale }: { locale: Locale }) {
 
       <BuiltFor locale={locale} />
       <HomeLogos locale={locale} />
+      <LiveStats locale={locale} />
 
       <TranslateShowcase locale={locale} />
 

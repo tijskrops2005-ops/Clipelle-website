@@ -205,6 +205,17 @@ export const en = {
     builtFor: ["Shopify stores", "DTC brands", "Dropshipping", "Agencies", "Fashion and beauty", "Home and living", "Apps and SaaS", "Creators"],
     madeForLabel: "Made for",
     madeFor: ["TikTok", "Instagram Reels", "YouTube Shorts"],
+    liveStats: {
+      label: "Clipelle in numbers",
+      numbers: { videos: "videos finished with Clipelle", languages: "languages videos were translated into", workspaces: "brands and teams with a finished video" },
+      facts: {
+        ready: { big: "≈ {n} min", small: "from product photo to a finished 30-second ad, measured" },
+        freeAd: { big: "Free", small: "one 10-second ad to try, no card" },
+        languages: { big: "{n}", small: "languages supported for translation" },
+        formats: { big: "9:16", small: "ready for TikTok, Reels and Shorts" },
+      },
+      footnote: "Live numbers from Clipelle, updated hourly",
+    },
     moreEyebrow: "More than translation",
     moreTitle: "Or make a new ad from a photo or a link",
     moreText: "The same presenter, voice and caption quality, starting from your product instead of a video.",

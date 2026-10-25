@@ -200,6 +200,17 @@ export const nl: SiteDict = {
     builtFor: ["Shopify-winkels", "DTC-merken", "Dropshipping", "Bureaus", "Mode en beauty", "Wonen", "Apps en SaaS", "Makers"],
     madeForLabel: "Klaar voor",
     madeFor: ["TikTok", "Instagram Reels", "YouTube Shorts"],
+    liveStats: {
+      label: "Clipelle in cijfers",
+      numbers: { videos: "video's afgerond met Clipelle", languages: "talen waarin video's zijn vertaald", workspaces: "merken en teams met een afgeronde video" },
+      facts: {
+        ready: { big: "≈ {n} min", small: "van productfoto tot afgeronde advertentie van 30 seconden, gemeten" },
+        freeAd: { big: "Gratis", small: "één advertentie van 10 seconden om te proberen, zonder creditcard" },
+        languages: { big: "{n}", small: "talen beschikbaar voor vertaling" },
+        formats: { big: "9:16", small: "klaar voor TikTok, Reels en Shorts" },
+      },
+      footnote: "Live cijfers van Clipelle, elk uur bijgewerkt",
+    },
     moreEyebrow: "Meer dan vertalen",
     moreTitle: "Of maak een nieuwe advertentie uit een foto of een link",
     moreText: "Dezelfde presentator, stem en ondertitels, maar vanuit je product in plaats van een video.",
