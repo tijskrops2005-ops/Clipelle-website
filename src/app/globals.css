@@ -218,9 +218,10 @@
  * support, search engines and the time before hydration all see the content at once: nothing is
  * ever hidden by default. Stagger with --reveal-delay on the element.
  */
+/* A calm fade and a small rise (25 Oct 2026: the blur that sharpened every block on scroll was removed). */
 @keyframes reveal-in {
-  from { opacity: 0; transform: translateY(22px) scale(0.985); filter: blur(10px); }
-  to { opacity: 1; transform: none; filter: blur(0); }
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
 }
 .reveal {
   opacity: 1;

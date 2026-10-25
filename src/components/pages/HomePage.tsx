@@ -17,15 +17,15 @@ import { PipelineStrip, ProofChips } from "@/components/site/Sketches";
 import { ChoicesChips, FeatureRows, HeroShowcase, StatsBand } from "@/components/site/Showcase";
 import { AdsDemo, UrlDemo } from "@/components/site/FeatureDemos";
 import { TranslateShowcase } from "@/components/site/TranslateShowcase";
-import { ProductDemo } from "@/components/site/ProductDemo";
-import { BuiltFor, FactsTicker, FinalCta, TrustGrid } from "@/components/site/Persuasion";
+import { BuiltFor, FinalCta, TrustGrid } from "@/components/site/Persuasion";
 import { HomeLogos, HomeReviews } from "@/components/site/HomeTrust";
 import { LiveStats } from "@/components/site/LiveStats";
 import { faqFor } from "@/content/faqI18n";
 
 /**
  * The homepage in one language (route files render it with "en" at / and "nl" at /nl). 25 Oct 2026:
- * translation-first hero, the real before-and-after directly under it. Order since
+ * translation-first hero, the real before-and-after directly under it. Taken off the page the same
+ * day (code kept, see docs/removed-blocks.md): the facts ticker and the ad product demo. Order since
  * 24 Oct 2026, translation first because it is the strongest part: hero → translation pipeline →
  * the same video in two languages → translation stats → ads from a photo or a link → outcomes →
  * choices → who it is for → try it → our samples → trust → compare → pricing → FAQ → closing band (25 Oct: + facts ticker, product demo, trust grid, falling-codes closing band; the dark "Try it" band moved into that closing band). Articles sit on the platform, solution, pricing and examples pages.
@@ -63,10 +63,6 @@ export function HomePage({ locale }: { locale: Locale }) {
       <BuiltFor locale={locale} />
       <HomeLogos locale={locale} />
       <LiveStats locale={locale} />
-
-      <FactsTicker items={h.ticker} />
-
-      <ProductDemo locale={locale} />
 
       <Reveal as="section">
         <SectionIntro eyebrow={h.moreEyebrow} title={h.moreTitle} text={h.moreText} />
