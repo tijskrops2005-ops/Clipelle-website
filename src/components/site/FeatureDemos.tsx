@@ -9,19 +9,26 @@ import { cn } from "@/lib/utils";
 /**
  * Self-playing illustrations for the two feature rows (25 Oct 2026), in the style of ProductDemo:
  * CSS loops of 10 seconds (`.loop` keyframes in globals.css), labelled as illustrations, the
- * finished state under "reduce motion". Drawn faces only, never photos of people.
+ * finished state under "reduce motion". Drawn faces only, never photos of people. Since 25 Oct 2026
+ * a cursor walks the clicks (`.ad-cursor`, `.url-cursor`).
  */
 
 const FACES = ["#e9c9a8", "#c58c5f", "#f1d4bc", "#8d5a3b"];
 
-function Frame({ label, children, illustration }: { label: string; children: React.ReactNode; illustration: string }) {
+function Frame({ label, children, illustration, cursor }: { label: string; children: React.ReactNode; illustration: string; cursor: "ad-cursor" | "url-cursor" }) {
   return (
     <div className="loop relative w-full max-w-[500px] overflow-hidden rounded-card border border-border bg-surface shadow-card-hover" role="img" aria-label={label}>
       <div className="flex items-center gap-1.5 border-b border-divider bg-bg px-4 py-2.5" aria-hidden>
         <span className="size-2 rounded-full bg-danger/60" /><span className="size-2 rounded-full bg-warning/60" /><span className="size-2 rounded-full bg-success/60" />
         <span className="label-mono ml-auto text-[10px] text-muted">{illustration}</span>
       </div>
-      <div className="grid grid-cols-[1fr_auto] items-center gap-4 p-4 sm:gap-6 sm:p-6" aria-hidden>{children}</div>
+      <div className="relative grid grid-cols-[1fr_auto] items-center gap-4 p-4 sm:gap-6 sm:p-6" aria-hidden>
+        {children}
+        {/* A cursor that walks the same clicks as the loop (wide screens; on phones the layout is too tight for a path). */}
+        <span className={`${cursor} pointer-events-none absolute z-10 hidden md:block`}>
+          <svg width="20" height="20" viewBox="0 0 24 24" className="drop-shadow-md"><path d="M4 2l16 9-7 2-3 7z" fill="#111114" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+        </span>
+      </div>
     </div>
   );
 }
@@ -40,7 +47,7 @@ export function AdsDemo({ locale }: { locale: Locale }) {
   const d = t.home.featureDemos;
   const sample = firstExample("ad");
   return (
-    <Frame label={d.adsLabel} illustration={t.common.illustration}>
+    <Frame label={d.adsLabel} illustration={t.common.illustration} cursor="ad-cursor">
       <div className="min-w-0 space-y-4">
         <div>
           <p className="text-[12px] font-medium text-ink">{d.presenter}</p>
@@ -82,7 +89,7 @@ export function UrlDemo({ locale }: { locale: Locale }) {
   const d = t.home.featureDemos;
   const facts: [string, string, string][] = [[d.name, d.nameValue, "url-f1"], [d.price, d.priceValue, "url-f2"], [d.photos, d.photosValue, "url-f3"]];
   return (
-    <Frame label={d.urlLabel} illustration={t.common.illustration}>
+    <Frame label={d.urlLabel} illustration={t.common.illustration} cursor="url-cursor">
       <div className="min-w-0 space-y-3">
         <p className="text-[12px] font-medium text-ink">{d.link}</p>
         <div className="flex items-center gap-2">

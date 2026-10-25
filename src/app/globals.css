@@ -360,6 +360,29 @@
 .demo-result { animation-name: demo-result; }
 .demo-placeholder { animation-name: demo-placeholder; }
 
+/* The translate demo (25 Oct 2026): same 12 s rhythm and step colours as .demo, its own cursor path.
+   Cursor → video in → Dutch, German, French picked → Start → four steps → the translated video. */
+@keyframes tdemo-cursor {
+  0% { left: 72%; top: 88%; opacity: 1; }
+  8%, 12% { left: 28%; top: 27%; }
+  20%, 23% { left: 5%; top: 57%; }
+  27%, 30% { left: 11.5%; top: 57%; }
+  33%, 37% { left: 18%; top: 57%; }
+  44%, 50% { left: 27%; top: 84%; opacity: 1; }
+  58%, 100% { left: 78%; top: 92%; opacity: 0; }
+}
+@keyframes tdemo-click { 0%, 9% { transform: scale(1); } 10% { transform: scale(0.82); } 11%, 21% { transform: scale(1); } 22% { transform: scale(0.82); } 23%, 28% { transform: scale(1); } 29% { transform: scale(0.82); } 30%, 35% { transform: scale(1); } 36% { transform: scale(0.82); } 37%, 47% { transform: scale(1); } 48% { transform: scale(0.82); } 49%, 100% { transform: scale(1); } }
+@keyframes tdemo-file { 0%, 11% { opacity: 0; transform: translateY(6px); } 14%, 95% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes tdemo-l1 { 0%, 22% { background: var(--surface); color: var(--muted); border-color: var(--border); } 23%, 95% { background: var(--ink); color: var(--surface); border-color: var(--ink); } 100% { background: var(--surface); color: var(--muted); border-color: var(--border); } }
+@keyframes tdemo-l2 { 0%, 29% { background: var(--surface); color: var(--muted); border-color: var(--border); } 30%, 95% { background: var(--ink); color: var(--surface); border-color: var(--ink); } 100% { background: var(--surface); color: var(--muted); border-color: var(--border); } }
+@keyframes tdemo-l3 { 0%, 36% { background: var(--surface); color: var(--muted); border-color: var(--border); } 37%, 95% { background: var(--ink); color: var(--surface); border-color: var(--ink); } 100% { background: var(--surface); color: var(--muted); border-color: var(--border); } }
+.tdemo-cursor { animation-name: tdemo-cursor; }
+.tdemo-cursor > svg { animation-name: tdemo-click; }
+.tdemo-file { animation-name: tdemo-file; }
+.tdemo-l1 { animation-name: tdemo-l1; }
+.tdemo-l2 { animation-name: tdemo-l2; }
+.tdemo-l3 { animation-name: tdemo-l3; }
+
 /* Two smaller loops for the feature rows (25 Oct 2026), same idea as .demo, 10 seconds each.
    "Ads from a photo": pick a presenter → 30 s → Generate → bar → the ad. */
 .loop { --loop: 10s; }
@@ -391,6 +414,27 @@
 .url-f3 { animation-name: url-f3; }
 .url-tick { animation-name: url-tick; }
 .url-go { animation-name: url-go; }
+/* Cursors for the two feature loops (25 Oct 2026), on the 10 s .loop rhythm. */
+@keyframes ad-cursor {
+  0% { left: 80%; top: 90%; opacity: 1; }
+  10%, 15% { left: 19%; top: 30%; }
+  24%, 29% { left: 28%; top: 55%; }
+  38%, 44% { left: 32%; top: 73%; opacity: 1; }
+  52%, 100% { left: 82%; top: 92%; opacity: 0; }
+}
+@keyframes ad-click { 0%, 13% { transform: scale(1); } 14% { transform: scale(0.82); } 15%, 28% { transform: scale(1); } 29% { transform: scale(0.82); } 30%, 42% { transform: scale(1); } 43% { transform: scale(0.82); } 44%, 100% { transform: scale(1); } }
+@keyframes url-cursor {
+  0% { left: 30%; top: 30%; opacity: 1; }
+  4%, 22% { left: 30%; top: 16%; }
+  26%, 28% { left: 53%; top: 16%; }
+  56%, 62% { left: 32%; top: 86%; opacity: 1; }
+  70%, 100% { left: 82%; top: 94%; opacity: 0; }
+}
+@keyframes url-click { 0%, 3% { transform: scale(1); } 4% { transform: scale(0.82); } 5%, 27% { transform: scale(1); } 28% { transform: scale(0.82); } 29%, 61% { transform: scale(1); } 62% { transform: scale(0.82); } 63%, 100% { transform: scale(1); } }
+.ad-cursor { animation-name: ad-cursor; }
+.ad-cursor > svg { animation-name: ad-click; }
+.url-cursor { animation-name: url-cursor; }
+.url-cursor > svg { animation-name: url-click; }
 
 /* Soft colour field behind the showcase and the feature panels (tokens only). */
 .stage-glow {
@@ -571,7 +615,9 @@
   .wave > i { transform: none; }
   .demo-photo, .demo-result { opacity: 1; transform: none; }
   .demo-type { width: 12ch; }
-  .demo-placeholder, .demo-cursor { opacity: 0; }
+  .demo-placeholder, .demo-cursor, .tdemo-cursor, .ad-cursor, .url-cursor { opacity: 0; }
+  .tdemo-file { opacity: 1; transform: none; }
+  .tdemo-l1, .tdemo-l2, .tdemo-l3 { background: var(--ink); color: var(--surface); border-color: var(--ink); }
   .demo-s1, .demo-s2, .demo-s3, .demo-s4 { background: var(--success); color: #fff; }
   .demo-bar { transform: none; }
   .fall { display: none; }
