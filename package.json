@@ -10,7 +10,7 @@
     "db:generate": "node --env-file=.env.local node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "node --env-file=.env.local node_modules/drizzle-kit/bin.cjs migrate",
     "db:check": "node --env-file=.env.local node_modules/drizzle-kit/bin.cjs check",
-    "dev:jobs": "inngest-cli dev -u http://localhost:3001/api/inngest --no-discovery",
+    "dev:jobs": "inngest-cli dev -u http://localhost:3001/api/inngest --no-discovery --poll-interval 300",
     "test": "vitest run",
     "check:secrets": "node scripts/check-secrets.mjs",
     "stripe:setup": "tsx --env-file=.env.local scripts/stripe-setup.ts",
