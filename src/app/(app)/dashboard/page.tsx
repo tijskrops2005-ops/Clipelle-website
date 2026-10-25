@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { HowItWorks } from "@/components/dashboard/HowItWorks";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { RecentProjects } from "@/components/dashboard/RecentProjects";
+import { NowCreating } from "@/components/dashboard/NowCreating";
 import { Overview } from "@/components/dashboard/Overview";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { FormatPicks } from "@/components/dashboard/FormatPicks";
@@ -52,6 +53,8 @@ export default async function DashboardPage() {
       />
 
       <Overview credits={credits} plan={planInfo} demo={config.demoMode} />
+
+      <NowCreating />
 
       <OnboardingChecklist />
 

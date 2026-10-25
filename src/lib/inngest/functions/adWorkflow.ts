@@ -373,7 +373,15 @@ async function pickVoice(look: AvatarLook, input: AdInput): Promise<string> {
 async function runFinalEdit(projectId: string, script: AdScript, clipAssetId: string, presenterAssetId: string, step: StepTools): Promise<string> {
   const key = "finalEdit";
   const existing = await step.run("final-check", () => loadStep(projectId, key));
-  if (existing.status === "completed" && typeof existing.output?.assetId === "string") return existing.output.assetId;
+  if (existing.status === "completed" && typeof existing.output?.assetId === "string") {
+    const assetId = existing.output.assetId;
+    // A run cut off between saving the video and finishing the project (25 Oct 2026: a server
+    // restart) left the project on "processing"; a retry finishes it here instead of skipping it.
+    await step.run("final-finish", async () => {
+      if ((await loadProject(projectId)).status !== "completed") await setProjectFinal(projectId, assetId);
+    });
+    return assetId;
+  }
 
   const job = await step.run("final-submit", () => withDeadline("Starting the final edit", 5, async () => {
     const row = await markProcessing(projectId, key);

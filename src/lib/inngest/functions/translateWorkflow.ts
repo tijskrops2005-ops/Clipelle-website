@@ -30,6 +30,7 @@ import { buildCaptionEdit, getRender, ingestFromUrl, shotstackEnv, startRender }
 import { reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { workflowSettings as cfg } from "@/lib/workflow/settings";
 import {
+  afterProjectEnd,
   downloadAsset,
   failStep,
   settleProjectCredits,
@@ -113,6 +114,8 @@ export const translateWorkflow = inngest.createFunction(
     await step.run("complete", async () => {
       await db().update(projects).set({ status: "completed", updatedAt: new Date() }).where(eq(projects.id, projectId));
       await settleProjectCredits(projectId);
+      // The "ready" e-mail, outgoing webhooks and the batch status, as for a finished ad (was missing until 25 Oct 2026).
+      await afterProjectEnd(projectId);
     });
     return { projectId, results };
   },

@@ -61,3 +61,6 @@ Thumbs.db
 
 # Throw-away helper files
 *.tmp.*
+
+# Local server logs
+/.logs/
