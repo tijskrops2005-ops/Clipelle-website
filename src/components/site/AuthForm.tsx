@@ -93,7 +93,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
   if (sent) {
     return (
-      <AuthCard title="Check your inbox" text={`We sent a verification link to ${email}. Open it to activate your account; your free ad is unlocked once the address is verified.`}>
+      <AuthCard title="Check your inbox" text={`We sent a verification link to ${email}. Open it to activate your account; your 30 free credits are added once the address is verified.`}>
         <span className="grid size-12 place-items-center rounded-full bg-accent-soft text-accent"><Mail className="size-6" aria-hidden /></span>
         <PartnerSignupConversion email={email} />
         <p className="mt-5 text-[13px] text-muted">Nothing arrived? Check spam, or <button type="button" className="focus-ring rounded-control underline decoration-border underline-offset-4 hover:decoration-ink" onClick={() => setSent(null)}>try again</button>.</p>
@@ -102,7 +102,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   }
 
   const title = mode === "signup" ? "Create your account" : "Log in";
-  const text = mode === "signup" ? "Start free: one 10-second ad after you verify your e-mail. No credit card needed." : "With Google, or with your e-mail address.";
+  const text = mode === "signup" ? "Start free: 30 credits after you verify your e-mail, half a minute of translation. No credit card needed." : "With Google, or with your e-mail address.";
 
   return (
     <AuthCard title={title} text={text}>

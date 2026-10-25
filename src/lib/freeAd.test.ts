@@ -3,7 +3,8 @@ import type { AdInput, TranslateInput } from "@/lib/db/schema";
 
 /**
  * Free-ad rules against the database (skipped without DATABASE_URL): the grant is idempotent,
- * the daily cap blocks new grants, and a free account can only start the free combination.
+ * the daily cap blocks new grants, a free account starts ads only as the free 10 s combination, and
+ * a translation only within the free credits (25 Oct 2026: translations are allowed on the free plan).
  */
 const hasDb = Boolean(process.env.DATABASE_URL);
 const userId = "00000000-0000-0000-0000-00000000000d";
@@ -39,7 +40,7 @@ describe.skipIf(!hasDb)("free ad rules", () => {
     expect(await getCreditBalance(scope.workspaceId)).toBe(FREE_AD_CREDITS);
   });
 
-  it("lets a free account start only a 10 s Standard ad", async () => {
+  it("keeps a free account to the 10 s Standard ad and to translations within its free credits", async () => {
     const data = await import("./data/server");
     const long = await data.createDraft(scope, { workflow: "ad", ad: { name: "Free rule 30 s", seconds: 30, engine: "avatar_iii", language: "en", speed: "normal", tone: "direct", reviewScript: false, productName: "X", description: "Twenty characters of description here." } });
     created.push(long.id);
@@ -48,9 +49,10 @@ describe.skipIf(!hasDb)("free ad rules", () => {
     // Pretend an image is attached so the only remaining rule is the free-plan one.
     await db().update(projects).set({ input: { ...(long.input as AdInput), imageAssetIds: ["00000000-0000-0000-0000-000000000099"] } }).where(eq(projects.id, long.id));
     await expect(data.startProject(scope, long.id)).rejects.toMatchObject({ code: "free_plan_limit" });
-    const translate = await data.createDraft(scope, { workflow: "translate", translate: { name: "Free rule translate", sourceFileName: "a.mp4", sourceSeconds: 8, sourceLanguage: "auto", targetLanguages: ["nl"], quality: "speed", format: "9:16", enhance: false, rightsConfirmed: true } });
+    // 60 s of Speed translation needs 60 credits; the free 30 do not cover it (a 30 s one would start a real run, so it is not started here).
+    const translate = await data.createDraft(scope, { workflow: "translate", translate: { name: "Free rule translate", sourceFileName: "a.mp4", sourceSeconds: 60, sourceLanguage: "auto", targetLanguages: ["nl"], quality: "speed", format: "9:16", enhance: false, rightsConfirmed: true } });
     created.push(translate.id);
     await db().update(projects).set({ input: { ...(translate.input as TranslateInput), sourceAssetId: "00000000-0000-0000-0000-000000000098" } }).where(eq(projects.id, translate.id));
-    await expect(data.startProject(scope, translate.id)).rejects.toMatchObject({ code: "free_plan_limit" });
+    await expect(data.startProject(scope, translate.id)).rejects.toMatchObject({ code: "insufficient_credits" });
   });
 });

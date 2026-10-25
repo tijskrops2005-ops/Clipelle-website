@@ -33,9 +33,9 @@ export function PricingPreview({ className, locale = "en" }: { className?: strin
       annualNote: paid ? p.billedAnnually.replace("{year}", yearPrice(totals.yearUsd)) : p.freeForever,
       monthlyNote: paid ? p.billedMonthly : p.freeForever,
       features: [
-        // Free's own bullets already describe the free ad.
+        // Free's own bullets already describe the free credits.
         ...(paid ? [`${plan.creditsPerMonth.toLocaleString("en-US")} ${p.creditsPerMonth}`] : []),
-        ...(words?.bullets ?? plan.bullets),
+        ...(words?.bullets ?? plan.bullets).map((b) => b.replaceAll("{m}", String(plan.creditsPerMonth / 60))),
         ...(paid ? [p.api, p.packs] : []),
       ],
       recommended: Boolean(plan.recommended),

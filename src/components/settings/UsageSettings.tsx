@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { DemoBadge } from "@/components/DemoModeBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 
-const kindLabel: Record<string, string> = { grant_free: "Free ad", grant_subscription: "Plan credits", grant_topup: "Credit pack", grant_manual: "Added", reserve: "Reserved for a project", settle: "Unused credits returned", refund: "Refunded (project failed)", expire: "Expired" };
+const kindLabel: Record<string, string> = { grant_free: "Free credits", grant_subscription: "Plan credits", grant_topup: "Credit pack", grant_manual: "Added", reserve: "Reserved for a project", settle: "Unused credits returned", refund: "Refunded (project failed)", expire: "Expired" };
 
 /** Usage per project (from the cost log) and the credit ledger, for the signed-in account. */
 export function UsageSettings() {
@@ -28,7 +28,7 @@ export function UsageSettings() {
         <div className="rounded-card bg-surface p-6 shadow-card">
           <p className="label-mono text-muted">Credits available</p>
           {usage ? <p className="text-display mt-2">{usage.balance.toLocaleString("en-US")}</p> : <Skeleton className="mt-3 h-10 w-24" />}
-          <p className="mt-1 text-[13px] text-muted">One credit is one second of Standard presenter video.</p>
+          <p className="mt-1 text-[13px] text-muted">One credit is one second of translated video; an ad uses 2 per second.</p>
         </div>
         <div className="rounded-card bg-surface p-6 shadow-card">
           <p className="label-mono text-muted">Projects this month</p>
@@ -58,7 +58,7 @@ export function UsageSettings() {
         {!usage ? (
           <Skeleton className="h-24" />
         ) : usage.ledger.length === 0 ? (
-          <p className="text-[15px] text-muted">No credits yet. Verify your e-mail for the free ad, or pick a plan in Billing.</p>
+          <p className="text-[15px] text-muted">No credits yet. Verify your e-mail for 30 free credits, or pick a plan in Billing.</p>
         ) : (
           <ul className="divide-y divide-divider">
             {usage.ledger.map((l) => (

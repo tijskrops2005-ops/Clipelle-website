@@ -115,341 +115,341 @@ exports[`estimates > ad estimates per length, quality and speed are unchanged 1`
       "captions": 0.03,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.08,
+      "presenter": 0.15,
       "script": 0.03,
     },
     "presenterSeconds": 9.1,
-    "total": 0.44,
+    "total": 0.51,
   },
   "10s avatar_iii normal": {
     "parts": {
       "captions": 0.03,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.08,
+      "presenter": 0.17,
       "script": 0.03,
     },
     "presenterSeconds": 10,
-    "total": 0.44,
+    "total": 0.53,
   },
   "10s avatar_iii slower": {
     "parts": {
       "captions": 0.04,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.09,
+      "presenter": 0.18,
       "script": 0.03,
     },
     "presenterSeconds": 11.1,
-    "total": 0.46,
+    "total": 0.55,
   },
   "10s avatar_iv faster": {
     "parts": {
       "captions": 0.03,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.46,
+      "presenter": 0.73,
       "script": 0.03,
     },
     "presenterSeconds": 9.1,
-    "total": 0.82,
+    "total": 1.09,
   },
   "10s avatar_iv normal": {
     "parts": {
       "captions": 0.03,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.5,
+      "presenter": 0.81,
       "script": 0.03,
     },
     "presenterSeconds": 10,
-    "total": 0.86,
+    "total": 1.17,
   },
   "10s avatar_iv slower": {
     "parts": {
       "captions": 0.04,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.56,
+      "presenter": 0.89,
       "script": 0.03,
     },
     "presenterSeconds": 11.1,
-    "total": 0.93,
+    "total": 1.26,
   },
   "20s avatar_iii faster": {
     "parts": {
       "captions": 0.06,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.15,
+      "presenter": 0.3,
       "script": 0.03,
     },
     "presenterSeconds": 18.2,
-    "total": 0.54,
+    "total": 0.69,
   },
   "20s avatar_iii normal": {
     "parts": {
       "captions": 0.07,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.17,
+      "presenter": 0.33,
       "script": 0.03,
     },
     "presenterSeconds": 20,
-    "total": 0.57,
+    "total": 0.73,
   },
   "20s avatar_iii slower": {
     "parts": {
       "captions": 0.07,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.18,
+      "presenter": 0.37,
       "script": 0.03,
     },
     "presenterSeconds": 22.2,
-    "total": 0.58,
+    "total": 0.77,
   },
   "20s avatar_iv faster": {
     "parts": {
       "captions": 0.06,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.91,
+      "presenter": 1.47,
       "script": 0.03,
     },
     "presenterSeconds": 18.2,
-    "total": 1.3,
+    "total": 1.86,
   },
   "20s avatar_iv normal": {
     "parts": {
       "captions": 0.07,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 1,
+      "presenter": 1.61,
       "script": 0.03,
     },
     "presenterSeconds": 20,
-    "total": 1.4,
+    "total": 2.01,
   },
   "20s avatar_iv slower": {
     "parts": {
       "captions": 0.07,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 1.11,
+      "presenter": 1.79,
       "script": 0.03,
     },
     "presenterSeconds": 22.2,
-    "total": 1.51,
+    "total": 2.19,
   },
   "30s avatar_iii faster": {
     "parts": {
       "captions": 0.09,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.23,
+      "presenter": 0.45,
       "script": 0.03,
     },
     "presenterSeconds": 27.3,
-    "total": 0.65,
+    "total": 0.87,
   },
   "30s avatar_iii kling_standard": {
     "parts": {
       "captions": 0.1,
       "clip": 0.42,
       "expand": 0.04,
-      "presenter": 0.25,
+      "presenter": 0.5,
       "script": 0.03,
     },
     "presenterSeconds": 30,
-    "total": 0.84,
+    "total": 1.09,
   },
   "30s avatar_iii normal": {
     "parts": {
       "captions": 0.1,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.25,
+      "presenter": 0.5,
       "script": 0.03,
     },
     "presenterSeconds": 30,
-    "total": 0.68,
+    "total": 0.93,
   },
   "30s avatar_iii slower": {
     "parts": {
       "captions": 0.11,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.28,
+      "presenter": 0.55,
       "script": 0.03,
     },
     "presenterSeconds": 33.3,
-    "total": 0.72,
+    "total": 0.99,
   },
   "30s avatar_iv faster": {
     "parts": {
       "captions": 0.09,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 1.37,
+      "presenter": 2.2,
       "script": 0.03,
     },
     "presenterSeconds": 27.3,
-    "total": 1.79,
+    "total": 2.62,
   },
   "30s avatar_iv normal": {
     "parts": {
       "captions": 0.1,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 1.5,
+      "presenter": 2.42,
       "script": 0.03,
     },
     "presenterSeconds": 30,
-    "total": 1.93,
+    "total": 2.85,
   },
   "30s avatar_iv slower": {
     "parts": {
       "captions": 0.11,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 1.67,
+      "presenter": 2.68,
       "script": 0.03,
     },
     "presenterSeconds": 33.3,
-    "total": 2.11,
+    "total": 3.12,
   },
   "45s avatar_iii faster": {
     "parts": {
       "captions": 0.14,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.34,
+      "presenter": 0.67,
       "script": 0.03,
     },
     "presenterSeconds": 40.9,
-    "total": 0.81,
+    "total": 1.14,
   },
   "45s avatar_iii normal": {
     "parts": {
       "captions": 0.15,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.37,
+      "presenter": 0.74,
       "script": 0.03,
     },
     "presenterSeconds": 45,
-    "total": 0.85,
+    "total": 1.22,
   },
   "45s avatar_iii slower": {
     "parts": {
       "captions": 0.17,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.42,
+      "presenter": 0.83,
       "script": 0.03,
     },
     "presenterSeconds": 50,
-    "total": 0.92,
+    "total": 1.33,
   },
   "45s avatar_iv faster": {
     "parts": {
       "captions": 0.14,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 2.05,
+      "presenter": 3.29,
       "script": 0.03,
     },
     "presenterSeconds": 40.9,
-    "total": 2.52,
+    "total": 3.76,
   },
   "45s avatar_iv normal": {
     "parts": {
       "captions": 0.15,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 2.25,
+      "presenter": 3.62,
       "script": 0.03,
     },
     "presenterSeconds": 45,
-    "total": 2.73,
+    "total": 4.1,
   },
   "45s avatar_iv slower": {
     "parts": {
       "captions": 0.17,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 2.5,
+      "presenter": 4.03,
       "script": 0.03,
     },
     "presenterSeconds": 50,
-    "total": 3,
+    "total": 4.53,
   },
   "60s avatar_iii faster": {
     "parts": {
       "captions": 0.18,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.45,
+      "presenter": 0.9,
       "script": 0.03,
     },
     "presenterSeconds": 54.5,
-    "total": 0.96,
+    "total": 1.41,
   },
   "60s avatar_iii normal": {
     "parts": {
       "captions": 0.2,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.5,
+      "presenter": 0.99,
       "script": 0.03,
     },
     "presenterSeconds": 60,
-    "total": 1.03,
+    "total": 1.52,
   },
   "60s avatar_iii slower": {
     "parts": {
       "captions": 0.22,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 0.55,
+      "presenter": 1.1,
       "script": 0.03,
     },
     "presenterSeconds": 66.7,
-    "total": 1.1,
+    "total": 1.65,
   },
   "60s avatar_iv faster": {
     "parts": {
       "captions": 0.18,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 2.73,
+      "presenter": 4.39,
       "script": 0.03,
     },
     "presenterSeconds": 54.5,
-    "total": 3.24,
+    "total": 4.9,
   },
   "60s avatar_iv normal": {
     "parts": {
       "captions": 0.2,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 3,
+      "presenter": 4.83,
       "script": 0.03,
     },
     "presenterSeconds": 60,
-    "total": 3.53,
+    "total": 5.36,
   },
   "60s avatar_iv slower": {
     "parts": {
       "captions": 0.22,
       "clip": 0.26,
       "expand": 0.04,
-      "presenter": 3.34,
+      "presenter": 5.37,
       "script": 0.03,
     },
     "presenterSeconds": 66.7,
-    "total": 3.89,
+    "total": 5.92,
   },
 }
 `;
@@ -462,144 +462,12 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
       "check": 0.01,
       "enhance": 3.6,
       "proofread": 0.75,
-      "render": 9,
-    },
-    "perLanguageTotal": 13.96,
-    "total": 13.96,
-  },
-  "180s precision 1l enh src": {
-    "perLanguage": {
-      "captions": 0.6,
-      "check": 0.01,
-      "enhance": 3.6,
-      "proofread": 1.5,
-      "render": 9,
-    },
-    "perLanguageTotal": 14.71,
-    "total": 14.71,
-  },
-  "180s precision 1l plain auto": {
-    "perLanguage": {
-      "captions": 0.6,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.75,
-      "render": 9,
-    },
-    "perLanguageTotal": 10.36,
-    "total": 10.36,
-  },
-  "180s precision 1l plain src": {
-    "perLanguage": {
-      "captions": 0.6,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 1.5,
-      "render": 9,
-    },
-    "perLanguageTotal": 11.11,
-    "total": 11.11,
-  },
-  "180s precision 2l enh auto": {
-    "perLanguage": {
-      "captions": 0.6,
-      "check": 0.01,
-      "enhance": 3.6,
-      "proofread": 0.75,
-      "render": 9,
-    },
-    "perLanguageTotal": 13.96,
-    "total": 27.92,
-  },
-  "180s precision 2l enh src": {
-    "perLanguage": {
-      "captions": 0.6,
-      "check": 0.01,
-      "enhance": 3.6,
-      "proofread": 1.12,
-      "render": 9,
-    },
-    "perLanguageTotal": 14.33,
-    "total": 28.66,
-  },
-  "180s precision 2l plain auto": {
-    "perLanguage": {
-      "captions": 0.6,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.75,
-      "render": 9,
-    },
-    "perLanguageTotal": 10.36,
-    "total": 20.72,
-  },
-  "180s precision 2l plain src": {
-    "perLanguage": {
-      "captions": 0.6,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 1.12,
-      "render": 9,
-    },
-    "perLanguageTotal": 10.73,
-    "total": 21.46,
-  },
-  "180s precision 5l enh auto": {
-    "perLanguage": {
-      "captions": 0.6,
-      "check": 0.01,
-      "enhance": 3.6,
-      "proofread": 0.75,
-      "render": 9,
-    },
-    "perLanguageTotal": 13.96,
-    "total": 69.8,
-  },
-  "180s precision 5l enh src": {
-    "perLanguage": {
-      "captions": 0.6,
-      "check": 0.01,
-      "enhance": 3.6,
-      "proofread": 0.9,
-      "render": 9,
-    },
-    "perLanguageTotal": 14.11,
-    "total": 70.55,
-  },
-  "180s precision 5l plain auto": {
-    "perLanguage": {
-      "captions": 0.6,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.75,
-      "render": 9,
-    },
-    "perLanguageTotal": 10.36,
-    "total": 51.8,
-  },
-  "180s precision 5l plain src": {
-    "perLanguage": {
-      "captions": 0.6,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.9,
-      "render": 9,
-    },
-    "perLanguageTotal": 10.51,
-    "total": 52.55,
-  },
-  "180s speed 1l enh auto": {
-    "perLanguage": {
-      "captions": 0.6,
-      "check": 0.01,
-      "enhance": 3.6,
-      "proofread": 0.75,
       "render": 4.5,
     },
     "perLanguageTotal": 9.46,
     "total": 9.46,
   },
-  "180s speed 1l enh src": {
+  "180s precision 1l enh src": {
     "perLanguage": {
       "captions": 0.6,
       "check": 0.01,
@@ -610,7 +478,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 10.21,
     "total": 10.21,
   },
-  "180s speed 1l plain auto": {
+  "180s precision 1l plain auto": {
     "perLanguage": {
       "captions": 0.6,
       "check": 0.01,
@@ -621,7 +489,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 5.86,
     "total": 5.86,
   },
-  "180s speed 1l plain src": {
+  "180s precision 1l plain src": {
     "perLanguage": {
       "captions": 0.6,
       "check": 0.01,
@@ -632,7 +500,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 6.61,
     "total": 6.61,
   },
-  "180s speed 2l enh auto": {
+  "180s precision 2l enh auto": {
     "perLanguage": {
       "captions": 0.6,
       "check": 0.01,
@@ -643,7 +511,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 9.46,
     "total": 18.92,
   },
-  "180s speed 2l enh src": {
+  "180s precision 2l enh src": {
     "perLanguage": {
       "captions": 0.6,
       "check": 0.01,
@@ -654,7 +522,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 9.83,
     "total": 19.66,
   },
-  "180s speed 2l plain auto": {
+  "180s precision 2l plain auto": {
     "perLanguage": {
       "captions": 0.6,
       "check": 0.01,
@@ -665,7 +533,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 5.86,
     "total": 11.72,
   },
-  "180s speed 2l plain src": {
+  "180s precision 2l plain src": {
     "perLanguage": {
       "captions": 0.6,
       "check": 0.01,
@@ -676,7 +544,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 6.23,
     "total": 12.46,
   },
-  "180s speed 5l enh auto": {
+  "180s precision 5l enh auto": {
     "perLanguage": {
       "captions": 0.6,
       "check": 0.01,
@@ -687,7 +555,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 9.46,
     "total": 47.3,
   },
-  "180s speed 5l enh src": {
+  "180s precision 5l enh src": {
     "perLanguage": {
       "captions": 0.6,
       "check": 0.01,
@@ -698,7 +566,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 9.61,
     "total": 48.05,
   },
-  "180s speed 5l plain auto": {
+  "180s precision 5l plain auto": {
     "perLanguage": {
       "captions": 0.6,
       "check": 0.01,
@@ -709,7 +577,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 5.86,
     "total": 29.3,
   },
-  "180s speed 5l plain src": {
+  "180s precision 5l plain src": {
     "perLanguage": {
       "captions": 0.6,
       "check": 0.01,
@@ -720,139 +588,139 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 6.01,
     "total": 30.05,
   },
+  "180s speed 1l enh auto": {
+    "perLanguage": {
+      "captions": 0.6,
+      "check": 0.01,
+      "enhance": 3.6,
+      "proofread": 0.75,
+      "render": 2.43,
+    },
+    "perLanguageTotal": 7.39,
+    "total": 7.39,
+  },
+  "180s speed 1l enh src": {
+    "perLanguage": {
+      "captions": 0.6,
+      "check": 0.01,
+      "enhance": 3.6,
+      "proofread": 1.5,
+      "render": 2.43,
+    },
+    "perLanguageTotal": 8.14,
+    "total": 8.14,
+  },
+  "180s speed 1l plain auto": {
+    "perLanguage": {
+      "captions": 0.6,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.75,
+      "render": 2.43,
+    },
+    "perLanguageTotal": 3.79,
+    "total": 3.79,
+  },
+  "180s speed 1l plain src": {
+    "perLanguage": {
+      "captions": 0.6,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 1.5,
+      "render": 2.43,
+    },
+    "perLanguageTotal": 4.54,
+    "total": 4.54,
+  },
+  "180s speed 2l enh auto": {
+    "perLanguage": {
+      "captions": 0.6,
+      "check": 0.01,
+      "enhance": 3.6,
+      "proofread": 0.75,
+      "render": 2.43,
+    },
+    "perLanguageTotal": 7.39,
+    "total": 14.78,
+  },
+  "180s speed 2l enh src": {
+    "perLanguage": {
+      "captions": 0.6,
+      "check": 0.01,
+      "enhance": 3.6,
+      "proofread": 1.12,
+      "render": 2.43,
+    },
+    "perLanguageTotal": 7.76,
+    "total": 15.52,
+  },
+  "180s speed 2l plain auto": {
+    "perLanguage": {
+      "captions": 0.6,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.75,
+      "render": 2.43,
+    },
+    "perLanguageTotal": 3.79,
+    "total": 7.58,
+  },
+  "180s speed 2l plain src": {
+    "perLanguage": {
+      "captions": 0.6,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 1.12,
+      "render": 2.43,
+    },
+    "perLanguageTotal": 4.16,
+    "total": 8.32,
+  },
+  "180s speed 5l enh auto": {
+    "perLanguage": {
+      "captions": 0.6,
+      "check": 0.01,
+      "enhance": 3.6,
+      "proofread": 0.75,
+      "render": 2.43,
+    },
+    "perLanguageTotal": 7.39,
+    "total": 36.95,
+  },
+  "180s speed 5l enh src": {
+    "perLanguage": {
+      "captions": 0.6,
+      "check": 0.01,
+      "enhance": 3.6,
+      "proofread": 0.9,
+      "render": 2.43,
+    },
+    "perLanguageTotal": 7.54,
+    "total": 37.7,
+  },
+  "180s speed 5l plain auto": {
+    "perLanguage": {
+      "captions": 0.6,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.75,
+      "render": 2.43,
+    },
+    "perLanguageTotal": 3.79,
+    "total": 18.95,
+  },
+  "180s speed 5l plain src": {
+    "perLanguage": {
+      "captions": 0.6,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.9,
+      "render": 2.43,
+    },
+    "perLanguageTotal": 3.94,
+    "total": 19.7,
+  },
   "30s precision 1l enh auto": {
-    "perLanguage": {
-      "captions": 0.1,
-      "check": 0.01,
-      "enhance": 0.6,
-      "proofread": 0.12,
-      "render": 1.5,
-    },
-    "perLanguageTotal": 2.33,
-    "total": 2.33,
-  },
-  "30s precision 1l enh src": {
-    "perLanguage": {
-      "captions": 0.1,
-      "check": 0.01,
-      "enhance": 0.6,
-      "proofread": 0.24,
-      "render": 1.5,
-    },
-    "perLanguageTotal": 2.45,
-    "total": 2.45,
-  },
-  "30s precision 1l plain auto": {
-    "perLanguage": {
-      "captions": 0.1,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.12,
-      "render": 1.5,
-    },
-    "perLanguageTotal": 1.73,
-    "total": 1.73,
-  },
-  "30s precision 1l plain src": {
-    "perLanguage": {
-      "captions": 0.1,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.24,
-      "render": 1.5,
-    },
-    "perLanguageTotal": 1.85,
-    "total": 1.85,
-  },
-  "30s precision 2l enh auto": {
-    "perLanguage": {
-      "captions": 0.1,
-      "check": 0.01,
-      "enhance": 0.6,
-      "proofread": 0.12,
-      "render": 1.5,
-    },
-    "perLanguageTotal": 2.33,
-    "total": 4.66,
-  },
-  "30s precision 2l enh src": {
-    "perLanguage": {
-      "captions": 0.1,
-      "check": 0.01,
-      "enhance": 0.6,
-      "proofread": 0.18,
-      "render": 1.5,
-    },
-    "perLanguageTotal": 2.39,
-    "total": 4.78,
-  },
-  "30s precision 2l plain auto": {
-    "perLanguage": {
-      "captions": 0.1,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.12,
-      "render": 1.5,
-    },
-    "perLanguageTotal": 1.73,
-    "total": 3.46,
-  },
-  "30s precision 2l plain src": {
-    "perLanguage": {
-      "captions": 0.1,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.18,
-      "render": 1.5,
-    },
-    "perLanguageTotal": 1.79,
-    "total": 3.58,
-  },
-  "30s precision 5l enh auto": {
-    "perLanguage": {
-      "captions": 0.1,
-      "check": 0.01,
-      "enhance": 0.6,
-      "proofread": 0.12,
-      "render": 1.5,
-    },
-    "perLanguageTotal": 2.33,
-    "total": 11.65,
-  },
-  "30s precision 5l enh src": {
-    "perLanguage": {
-      "captions": 0.1,
-      "check": 0.01,
-      "enhance": 0.6,
-      "proofread": 0.14,
-      "render": 1.5,
-    },
-    "perLanguageTotal": 2.35,
-    "total": 11.75,
-  },
-  "30s precision 5l plain auto": {
-    "perLanguage": {
-      "captions": 0.1,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.12,
-      "render": 1.5,
-    },
-    "perLanguageTotal": 1.73,
-    "total": 8.65,
-  },
-  "30s precision 5l plain src": {
-    "perLanguage": {
-      "captions": 0.1,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.14,
-      "render": 1.5,
-    },
-    "perLanguageTotal": 1.75,
-    "total": 8.75,
-  },
-  "30s speed 1l enh auto": {
     "perLanguage": {
       "captions": 0.1,
       "check": 0.01,
@@ -863,7 +731,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 1.58,
     "total": 1.58,
   },
-  "30s speed 1l enh src": {
+  "30s precision 1l enh src": {
     "perLanguage": {
       "captions": 0.1,
       "check": 0.01,
@@ -874,7 +742,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 1.7,
     "total": 1.7,
   },
-  "30s speed 1l plain auto": {
+  "30s precision 1l plain auto": {
     "perLanguage": {
       "captions": 0.1,
       "check": 0.01,
@@ -885,7 +753,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.98,
     "total": 0.98,
   },
-  "30s speed 1l plain src": {
+  "30s precision 1l plain src": {
     "perLanguage": {
       "captions": 0.1,
       "check": 0.01,
@@ -896,7 +764,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 1.1,
     "total": 1.1,
   },
-  "30s speed 2l enh auto": {
+  "30s precision 2l enh auto": {
     "perLanguage": {
       "captions": 0.1,
       "check": 0.01,
@@ -907,7 +775,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 1.58,
     "total": 3.16,
   },
-  "30s speed 2l enh src": {
+  "30s precision 2l enh src": {
     "perLanguage": {
       "captions": 0.1,
       "check": 0.01,
@@ -918,7 +786,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 1.64,
     "total": 3.28,
   },
-  "30s speed 2l plain auto": {
+  "30s precision 2l plain auto": {
     "perLanguage": {
       "captions": 0.1,
       "check": 0.01,
@@ -929,7 +797,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.98,
     "total": 1.96,
   },
-  "30s speed 2l plain src": {
+  "30s precision 2l plain src": {
     "perLanguage": {
       "captions": 0.1,
       "check": 0.01,
@@ -940,7 +808,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 1.04,
     "total": 2.08,
   },
-  "30s speed 5l enh auto": {
+  "30s precision 5l enh auto": {
     "perLanguage": {
       "captions": 0.1,
       "check": 0.01,
@@ -951,7 +819,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 1.58,
     "total": 7.9,
   },
-  "30s speed 5l enh src": {
+  "30s precision 5l enh src": {
     "perLanguage": {
       "captions": 0.1,
       "check": 0.01,
@@ -962,7 +830,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 1.6,
     "total": 8,
   },
-  "30s speed 5l plain auto": {
+  "30s precision 5l plain auto": {
     "perLanguage": {
       "captions": 0.1,
       "check": 0.01,
@@ -973,7 +841,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.98,
     "total": 4.9,
   },
-  "30s speed 5l plain src": {
+  "30s precision 5l plain src": {
     "perLanguage": {
       "captions": 0.1,
       "check": 0.01,
@@ -984,139 +852,139 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 1,
     "total": 5,
   },
+  "30s speed 1l enh auto": {
+    "perLanguage": {
+      "captions": 0.1,
+      "check": 0.01,
+      "enhance": 0.6,
+      "proofread": 0.12,
+      "render": 0.41,
+    },
+    "perLanguageTotal": 1.24,
+    "total": 1.24,
+  },
+  "30s speed 1l enh src": {
+    "perLanguage": {
+      "captions": 0.1,
+      "check": 0.01,
+      "enhance": 0.6,
+      "proofread": 0.24,
+      "render": 0.41,
+    },
+    "perLanguageTotal": 1.36,
+    "total": 1.36,
+  },
+  "30s speed 1l plain auto": {
+    "perLanguage": {
+      "captions": 0.1,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.12,
+      "render": 0.41,
+    },
+    "perLanguageTotal": 0.64,
+    "total": 0.64,
+  },
+  "30s speed 1l plain src": {
+    "perLanguage": {
+      "captions": 0.1,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.24,
+      "render": 0.41,
+    },
+    "perLanguageTotal": 0.76,
+    "total": 0.76,
+  },
+  "30s speed 2l enh auto": {
+    "perLanguage": {
+      "captions": 0.1,
+      "check": 0.01,
+      "enhance": 0.6,
+      "proofread": 0.12,
+      "render": 0.41,
+    },
+    "perLanguageTotal": 1.24,
+    "total": 2.48,
+  },
+  "30s speed 2l enh src": {
+    "perLanguage": {
+      "captions": 0.1,
+      "check": 0.01,
+      "enhance": 0.6,
+      "proofread": 0.18,
+      "render": 0.41,
+    },
+    "perLanguageTotal": 1.3,
+    "total": 2.6,
+  },
+  "30s speed 2l plain auto": {
+    "perLanguage": {
+      "captions": 0.1,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.12,
+      "render": 0.41,
+    },
+    "perLanguageTotal": 0.64,
+    "total": 1.28,
+  },
+  "30s speed 2l plain src": {
+    "perLanguage": {
+      "captions": 0.1,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.18,
+      "render": 0.41,
+    },
+    "perLanguageTotal": 0.7,
+    "total": 1.4,
+  },
+  "30s speed 5l enh auto": {
+    "perLanguage": {
+      "captions": 0.1,
+      "check": 0.01,
+      "enhance": 0.6,
+      "proofread": 0.12,
+      "render": 0.41,
+    },
+    "perLanguageTotal": 1.24,
+    "total": 6.2,
+  },
+  "30s speed 5l enh src": {
+    "perLanguage": {
+      "captions": 0.1,
+      "check": 0.01,
+      "enhance": 0.6,
+      "proofread": 0.14,
+      "render": 0.41,
+    },
+    "perLanguageTotal": 1.26,
+    "total": 6.3,
+  },
+  "30s speed 5l plain auto": {
+    "perLanguage": {
+      "captions": 0.1,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.12,
+      "render": 0.41,
+    },
+    "perLanguageTotal": 0.64,
+    "total": 3.2,
+  },
+  "30s speed 5l plain src": {
+    "perLanguage": {
+      "captions": 0.1,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.14,
+      "render": 0.41,
+    },
+    "perLanguageTotal": 0.66,
+    "total": 3.3,
+  },
   "60s precision 1l enh auto": {
-    "perLanguage": {
-      "captions": 0.2,
-      "check": 0.01,
-      "enhance": 1.2,
-      "proofread": 0.25,
-      "render": 3,
-    },
-    "perLanguageTotal": 4.66,
-    "total": 4.66,
-  },
-  "60s precision 1l enh src": {
-    "perLanguage": {
-      "captions": 0.2,
-      "check": 0.01,
-      "enhance": 1.2,
-      "proofread": 0.5,
-      "render": 3,
-    },
-    "perLanguageTotal": 4.91,
-    "total": 4.91,
-  },
-  "60s precision 1l plain auto": {
-    "perLanguage": {
-      "captions": 0.2,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.25,
-      "render": 3,
-    },
-    "perLanguageTotal": 3.46,
-    "total": 3.46,
-  },
-  "60s precision 1l plain src": {
-    "perLanguage": {
-      "captions": 0.2,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.5,
-      "render": 3,
-    },
-    "perLanguageTotal": 3.71,
-    "total": 3.71,
-  },
-  "60s precision 2l enh auto": {
-    "perLanguage": {
-      "captions": 0.2,
-      "check": 0.01,
-      "enhance": 1.2,
-      "proofread": 0.25,
-      "render": 3,
-    },
-    "perLanguageTotal": 4.66,
-    "total": 9.32,
-  },
-  "60s precision 2l enh src": {
-    "perLanguage": {
-      "captions": 0.2,
-      "check": 0.01,
-      "enhance": 1.2,
-      "proofread": 0.37,
-      "render": 3,
-    },
-    "perLanguageTotal": 4.78,
-    "total": 9.56,
-  },
-  "60s precision 2l plain auto": {
-    "perLanguage": {
-      "captions": 0.2,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.25,
-      "render": 3,
-    },
-    "perLanguageTotal": 3.46,
-    "total": 6.92,
-  },
-  "60s precision 2l plain src": {
-    "perLanguage": {
-      "captions": 0.2,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.37,
-      "render": 3,
-    },
-    "perLanguageTotal": 3.58,
-    "total": 7.16,
-  },
-  "60s precision 5l enh auto": {
-    "perLanguage": {
-      "captions": 0.2,
-      "check": 0.01,
-      "enhance": 1.2,
-      "proofread": 0.25,
-      "render": 3,
-    },
-    "perLanguageTotal": 4.66,
-    "total": 23.3,
-  },
-  "60s precision 5l enh src": {
-    "perLanguage": {
-      "captions": 0.2,
-      "check": 0.01,
-      "enhance": 1.2,
-      "proofread": 0.3,
-      "render": 3,
-    },
-    "perLanguageTotal": 4.71,
-    "total": 23.55,
-  },
-  "60s precision 5l plain auto": {
-    "perLanguage": {
-      "captions": 0.2,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.25,
-      "render": 3,
-    },
-    "perLanguageTotal": 3.46,
-    "total": 17.3,
-  },
-  "60s precision 5l plain src": {
-    "perLanguage": {
-      "captions": 0.2,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.3,
-      "render": 3,
-    },
-    "perLanguageTotal": 3.51,
-    "total": 17.55,
-  },
-  "60s speed 1l enh auto": {
     "perLanguage": {
       "captions": 0.2,
       "check": 0.01,
@@ -1127,7 +995,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 3.16,
     "total": 3.16,
   },
-  "60s speed 1l enh src": {
+  "60s precision 1l enh src": {
     "perLanguage": {
       "captions": 0.2,
       "check": 0.01,
@@ -1138,7 +1006,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 3.41,
     "total": 3.41,
   },
-  "60s speed 1l plain auto": {
+  "60s precision 1l plain auto": {
     "perLanguage": {
       "captions": 0.2,
       "check": 0.01,
@@ -1149,7 +1017,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 1.96,
     "total": 1.96,
   },
-  "60s speed 1l plain src": {
+  "60s precision 1l plain src": {
     "perLanguage": {
       "captions": 0.2,
       "check": 0.01,
@@ -1160,7 +1028,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 2.21,
     "total": 2.21,
   },
-  "60s speed 2l enh auto": {
+  "60s precision 2l enh auto": {
     "perLanguage": {
       "captions": 0.2,
       "check": 0.01,
@@ -1171,7 +1039,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 3.16,
     "total": 6.32,
   },
-  "60s speed 2l enh src": {
+  "60s precision 2l enh src": {
     "perLanguage": {
       "captions": 0.2,
       "check": 0.01,
@@ -1182,7 +1050,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 3.28,
     "total": 6.56,
   },
-  "60s speed 2l plain auto": {
+  "60s precision 2l plain auto": {
     "perLanguage": {
       "captions": 0.2,
       "check": 0.01,
@@ -1193,7 +1061,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 1.96,
     "total": 3.92,
   },
-  "60s speed 2l plain src": {
+  "60s precision 2l plain src": {
     "perLanguage": {
       "captions": 0.2,
       "check": 0.01,
@@ -1204,7 +1072,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 2.08,
     "total": 4.16,
   },
-  "60s speed 5l enh auto": {
+  "60s precision 5l enh auto": {
     "perLanguage": {
       "captions": 0.2,
       "check": 0.01,
@@ -1215,7 +1083,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 3.16,
     "total": 15.8,
   },
-  "60s speed 5l enh src": {
+  "60s precision 5l enh src": {
     "perLanguage": {
       "captions": 0.2,
       "check": 0.01,
@@ -1226,7 +1094,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 3.21,
     "total": 16.05,
   },
-  "60s speed 5l plain auto": {
+  "60s precision 5l plain auto": {
     "perLanguage": {
       "captions": 0.2,
       "check": 0.01,
@@ -1237,7 +1105,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 1.96,
     "total": 9.8,
   },
-  "60s speed 5l plain src": {
+  "60s precision 5l plain src": {
     "perLanguage": {
       "captions": 0.2,
       "check": 0.01,
@@ -1248,139 +1116,139 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 2.01,
     "total": 10.05,
   },
+  "60s speed 1l enh auto": {
+    "perLanguage": {
+      "captions": 0.2,
+      "check": 0.01,
+      "enhance": 1.2,
+      "proofread": 0.25,
+      "render": 0.81,
+    },
+    "perLanguageTotal": 2.47,
+    "total": 2.47,
+  },
+  "60s speed 1l enh src": {
+    "perLanguage": {
+      "captions": 0.2,
+      "check": 0.01,
+      "enhance": 1.2,
+      "proofread": 0.5,
+      "render": 0.81,
+    },
+    "perLanguageTotal": 2.72,
+    "total": 2.72,
+  },
+  "60s speed 1l plain auto": {
+    "perLanguage": {
+      "captions": 0.2,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.25,
+      "render": 0.81,
+    },
+    "perLanguageTotal": 1.27,
+    "total": 1.27,
+  },
+  "60s speed 1l plain src": {
+    "perLanguage": {
+      "captions": 0.2,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.5,
+      "render": 0.81,
+    },
+    "perLanguageTotal": 1.52,
+    "total": 1.52,
+  },
+  "60s speed 2l enh auto": {
+    "perLanguage": {
+      "captions": 0.2,
+      "check": 0.01,
+      "enhance": 1.2,
+      "proofread": 0.25,
+      "render": 0.81,
+    },
+    "perLanguageTotal": 2.47,
+    "total": 4.94,
+  },
+  "60s speed 2l enh src": {
+    "perLanguage": {
+      "captions": 0.2,
+      "check": 0.01,
+      "enhance": 1.2,
+      "proofread": 0.37,
+      "render": 0.81,
+    },
+    "perLanguageTotal": 2.59,
+    "total": 5.18,
+  },
+  "60s speed 2l plain auto": {
+    "perLanguage": {
+      "captions": 0.2,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.25,
+      "render": 0.81,
+    },
+    "perLanguageTotal": 1.27,
+    "total": 2.54,
+  },
+  "60s speed 2l plain src": {
+    "perLanguage": {
+      "captions": 0.2,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.37,
+      "render": 0.81,
+    },
+    "perLanguageTotal": 1.39,
+    "total": 2.78,
+  },
+  "60s speed 5l enh auto": {
+    "perLanguage": {
+      "captions": 0.2,
+      "check": 0.01,
+      "enhance": 1.2,
+      "proofread": 0.25,
+      "render": 0.81,
+    },
+    "perLanguageTotal": 2.47,
+    "total": 12.35,
+  },
+  "60s speed 5l enh src": {
+    "perLanguage": {
+      "captions": 0.2,
+      "check": 0.01,
+      "enhance": 1.2,
+      "proofread": 0.3,
+      "render": 0.81,
+    },
+    "perLanguageTotal": 2.52,
+    "total": 12.6,
+  },
+  "60s speed 5l plain auto": {
+    "perLanguage": {
+      "captions": 0.2,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.25,
+      "render": 0.81,
+    },
+    "perLanguageTotal": 1.27,
+    "total": 6.35,
+  },
+  "60s speed 5l plain src": {
+    "perLanguage": {
+      "captions": 0.2,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.3,
+      "render": 0.81,
+    },
+    "perLanguageTotal": 1.32,
+    "total": 6.6,
+  },
   "8s precision 1l enh auto": {
-    "perLanguage": {
-      "captions": 0.03,
-      "check": 0.01,
-      "enhance": 0.16,
-      "proofread": 0.03,
-      "render": 0.4,
-    },
-    "perLanguageTotal": 0.63,
-    "total": 0.63,
-  },
-  "8s precision 1l enh src": {
-    "perLanguage": {
-      "captions": 0.03,
-      "check": 0.01,
-      "enhance": 0.16,
-      "proofread": 0.06,
-      "render": 0.4,
-    },
-    "perLanguageTotal": 0.66,
-    "total": 0.66,
-  },
-  "8s precision 1l plain auto": {
-    "perLanguage": {
-      "captions": 0.03,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.03,
-      "render": 0.4,
-    },
-    "perLanguageTotal": 0.47,
-    "total": 0.47,
-  },
-  "8s precision 1l plain src": {
-    "perLanguage": {
-      "captions": 0.03,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.06,
-      "render": 0.4,
-    },
-    "perLanguageTotal": 0.5,
-    "total": 0.5,
-  },
-  "8s precision 2l enh auto": {
-    "perLanguage": {
-      "captions": 0.03,
-      "check": 0.01,
-      "enhance": 0.16,
-      "proofread": 0.03,
-      "render": 0.4,
-    },
-    "perLanguageTotal": 0.63,
-    "total": 1.26,
-  },
-  "8s precision 2l enh src": {
-    "perLanguage": {
-      "captions": 0.03,
-      "check": 0.01,
-      "enhance": 0.16,
-      "proofread": 0.05,
-      "render": 0.4,
-    },
-    "perLanguageTotal": 0.65,
-    "total": 1.3,
-  },
-  "8s precision 2l plain auto": {
-    "perLanguage": {
-      "captions": 0.03,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.03,
-      "render": 0.4,
-    },
-    "perLanguageTotal": 0.47,
-    "total": 0.94,
-  },
-  "8s precision 2l plain src": {
-    "perLanguage": {
-      "captions": 0.03,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.05,
-      "render": 0.4,
-    },
-    "perLanguageTotal": 0.49,
-    "total": 0.98,
-  },
-  "8s precision 5l enh auto": {
-    "perLanguage": {
-      "captions": 0.03,
-      "check": 0.01,
-      "enhance": 0.16,
-      "proofread": 0.03,
-      "render": 0.4,
-    },
-    "perLanguageTotal": 0.63,
-    "total": 3.15,
-  },
-  "8s precision 5l enh src": {
-    "perLanguage": {
-      "captions": 0.03,
-      "check": 0.01,
-      "enhance": 0.16,
-      "proofread": 0.04,
-      "render": 0.4,
-    },
-    "perLanguageTotal": 0.64,
-    "total": 3.2,
-  },
-  "8s precision 5l plain auto": {
-    "perLanguage": {
-      "captions": 0.03,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.03,
-      "render": 0.4,
-    },
-    "perLanguageTotal": 0.47,
-    "total": 2.35,
-  },
-  "8s precision 5l plain src": {
-    "perLanguage": {
-      "captions": 0.03,
-      "check": 0.01,
-      "enhance": 0,
-      "proofread": 0.04,
-      "render": 0.4,
-    },
-    "perLanguageTotal": 0.48,
-    "total": 2.4,
-  },
-  "8s speed 1l enh auto": {
     "perLanguage": {
       "captions": 0.03,
       "check": 0.01,
@@ -1391,7 +1259,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.43,
     "total": 0.43,
   },
-  "8s speed 1l enh src": {
+  "8s precision 1l enh src": {
     "perLanguage": {
       "captions": 0.03,
       "check": 0.01,
@@ -1402,7 +1270,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.46,
     "total": 0.46,
   },
-  "8s speed 1l plain auto": {
+  "8s precision 1l plain auto": {
     "perLanguage": {
       "captions": 0.03,
       "check": 0.01,
@@ -1413,7 +1281,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.27,
     "total": 0.27,
   },
-  "8s speed 1l plain src": {
+  "8s precision 1l plain src": {
     "perLanguage": {
       "captions": 0.03,
       "check": 0.01,
@@ -1424,7 +1292,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.3,
     "total": 0.3,
   },
-  "8s speed 2l enh auto": {
+  "8s precision 2l enh auto": {
     "perLanguage": {
       "captions": 0.03,
       "check": 0.01,
@@ -1435,7 +1303,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.43,
     "total": 0.86,
   },
-  "8s speed 2l enh src": {
+  "8s precision 2l enh src": {
     "perLanguage": {
       "captions": 0.03,
       "check": 0.01,
@@ -1446,7 +1314,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.45,
     "total": 0.9,
   },
-  "8s speed 2l plain auto": {
+  "8s precision 2l plain auto": {
     "perLanguage": {
       "captions": 0.03,
       "check": 0.01,
@@ -1457,7 +1325,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.27,
     "total": 0.54,
   },
-  "8s speed 2l plain src": {
+  "8s precision 2l plain src": {
     "perLanguage": {
       "captions": 0.03,
       "check": 0.01,
@@ -1468,7 +1336,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.29,
     "total": 0.58,
   },
-  "8s speed 5l enh auto": {
+  "8s precision 5l enh auto": {
     "perLanguage": {
       "captions": 0.03,
       "check": 0.01,
@@ -1479,7 +1347,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.43,
     "total": 2.15,
   },
-  "8s speed 5l enh src": {
+  "8s precision 5l enh src": {
     "perLanguage": {
       "captions": 0.03,
       "check": 0.01,
@@ -1490,7 +1358,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.44,
     "total": 2.2,
   },
-  "8s speed 5l plain auto": {
+  "8s precision 5l plain auto": {
     "perLanguage": {
       "captions": 0.03,
       "check": 0.01,
@@ -1501,7 +1369,7 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     "perLanguageTotal": 0.27,
     "total": 1.35,
   },
-  "8s speed 5l plain src": {
+  "8s precision 5l plain src": {
     "perLanguage": {
       "captions": 0.03,
       "check": 0.01,
@@ -1511,6 +1379,138 @@ exports[`estimates > translate estimates per quality, languages and enhancement 
     },
     "perLanguageTotal": 0.28,
     "total": 1.4,
+  },
+  "8s speed 1l enh auto": {
+    "perLanguage": {
+      "captions": 0.03,
+      "check": 0.01,
+      "enhance": 0.16,
+      "proofread": 0.03,
+      "render": 0.11,
+    },
+    "perLanguageTotal": 0.34,
+    "total": 0.34,
+  },
+  "8s speed 1l enh src": {
+    "perLanguage": {
+      "captions": 0.03,
+      "check": 0.01,
+      "enhance": 0.16,
+      "proofread": 0.06,
+      "render": 0.11,
+    },
+    "perLanguageTotal": 0.37,
+    "total": 0.37,
+  },
+  "8s speed 1l plain auto": {
+    "perLanguage": {
+      "captions": 0.03,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.03,
+      "render": 0.11,
+    },
+    "perLanguageTotal": 0.18,
+    "total": 0.18,
+  },
+  "8s speed 1l plain src": {
+    "perLanguage": {
+      "captions": 0.03,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.06,
+      "render": 0.11,
+    },
+    "perLanguageTotal": 0.21,
+    "total": 0.21,
+  },
+  "8s speed 2l enh auto": {
+    "perLanguage": {
+      "captions": 0.03,
+      "check": 0.01,
+      "enhance": 0.16,
+      "proofread": 0.03,
+      "render": 0.11,
+    },
+    "perLanguageTotal": 0.34,
+    "total": 0.68,
+  },
+  "8s speed 2l enh src": {
+    "perLanguage": {
+      "captions": 0.03,
+      "check": 0.01,
+      "enhance": 0.16,
+      "proofread": 0.05,
+      "render": 0.11,
+    },
+    "perLanguageTotal": 0.36,
+    "total": 0.72,
+  },
+  "8s speed 2l plain auto": {
+    "perLanguage": {
+      "captions": 0.03,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.03,
+      "render": 0.11,
+    },
+    "perLanguageTotal": 0.18,
+    "total": 0.36,
+  },
+  "8s speed 2l plain src": {
+    "perLanguage": {
+      "captions": 0.03,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.05,
+      "render": 0.11,
+    },
+    "perLanguageTotal": 0.2,
+    "total": 0.4,
+  },
+  "8s speed 5l enh auto": {
+    "perLanguage": {
+      "captions": 0.03,
+      "check": 0.01,
+      "enhance": 0.16,
+      "proofread": 0.03,
+      "render": 0.11,
+    },
+    "perLanguageTotal": 0.34,
+    "total": 1.7,
+  },
+  "8s speed 5l enh src": {
+    "perLanguage": {
+      "captions": 0.03,
+      "check": 0.01,
+      "enhance": 0.16,
+      "proofread": 0.04,
+      "render": 0.11,
+    },
+    "perLanguageTotal": 0.35,
+    "total": 1.75,
+  },
+  "8s speed 5l plain auto": {
+    "perLanguage": {
+      "captions": 0.03,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.03,
+      "render": 0.11,
+    },
+    "perLanguageTotal": 0.18,
+    "total": 0.9,
+  },
+  "8s speed 5l plain src": {
+    "perLanguage": {
+      "captions": 0.03,
+      "check": 0.01,
+      "enhance": 0,
+      "proofread": 0.04,
+      "render": 0.11,
+    },
+    "perLanguageTotal": 0.19,
+    "total": 0.95,
   },
 }
 `;

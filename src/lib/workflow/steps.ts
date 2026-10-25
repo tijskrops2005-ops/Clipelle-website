@@ -1,11 +1,13 @@
 import "server-only";
 import { and, eq } from "drizzle-orm";
 import { NonRetriableError } from "inngest";
-import { assets, db, projects, steps, type AssetRow, type ProjectRow, type StepRow } from "@/lib/db";
+import { assets, db, projects, steps, translations, type AdInput, type AssetRow, type ProjectRow, type StepRow, type TranslateInput } from "@/lib/db";
 import { copyFromUrl, objectPath, putObject, signedDownloadUrl } from "@/lib/storage";
-import { CostGuardError, getProjectSpend } from "@/lib/services/costGuard";
+import { CostGuardError } from "@/lib/services/costGuard";
 import { settleCredits } from "@/lib/credits";
-import { creditsForSpend } from "@/lib/plans";
+import { adCredits, translateCredits } from "@/lib/plans";
+import { speedValue } from "@/lib/voiceOptions";
+import { workflowSettings } from "@/lib/workflow/settings";
 import { TimeoutError, withTimeout } from "@/lib/timeout";
 import { inngest, providerJobFinished } from "@/lib/inngest/client";
 
@@ -265,10 +267,20 @@ export async function afterProjectEnd(projectId: string) {
 /** On completion: the reservation is settled against the real spend converted to credits; the rest comes back. */
 export async function settleProjectCredits(projectId: string) {
   try {
-    const spend = await getProjectSpend(projectId);
-    const [row] = await db().select({ workflow: projects.workflow }).from(projects).where(eq(projects.id, projectId)).limit(1);
-    const used = spend.totalUsd > 0 ? creditsForSpend(spend.totalUsd, row?.workflow === "translate" ? "translate" : "ad") : 0;
-    await settleCredits(projectId, used, "Settled against the real cost");
+    const [row] = await db().select({ workflow: projects.workflow, input: projects.input }).from(projects).where(eq(projects.id, projectId)).limit(1);
+    if (!row) return;
+    // The price is the rule (plans.ts), not the provider bill: a finished ad costs its full credits,
+    // a translation the credits of the language versions that were delivered (25 Oct 2026).
+    let used: number;
+    if (row.workflow === "ad") {
+      const input = row.input as AdInput;
+      used = adCredits({ seconds: input.seconds ?? workflowSettings.adSeconds, engine: input.engine ?? workflowSettings.heygenEngine, speed: speedValue(input.speed) });
+    } else {
+      const input = row.input as TranslateInput;
+      const done = await db().select({ id: translations.id }).from(translations).where(and(eq(translations.projectId, projectId), eq(translations.status, "completed")));
+      used = translateCredits({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance }) * done.length;
+    }
+    await settleCredits(projectId, used, used > 0 ? "Delivered" : "Nothing delivered");
   } catch (error) {
     console.error("[credits] settle failed", error);
   }

@@ -204,7 +204,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
   // nothing saved): the visible buttons are type="button" and call requestSubmit(), and a hidden disabled
   // submit button first in the form blocks implicit submission on Enter. So the button can stay readable.
   const formRef = useRef<HTMLFormElement>(null);
-  const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 1.5;
+  const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 2;
   // Estimate per combination of length and presenter quality; the budget applies to the combination.
   const estimateFor = (len: AdLength, eng: PresenterEngine = engine) => estimateAdCost({ seconds: len, clipModel: DEFAULTS.clipModel, engine: eng, speed: SPEEDS.find((s) => s.key === speed)?.value ?? 1 });
   const estimate = estimateFor(seconds);

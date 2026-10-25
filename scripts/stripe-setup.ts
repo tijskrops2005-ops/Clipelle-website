@@ -17,7 +17,16 @@ async function main() {
   async function ensurePrice(lookup: string, productName: string, unitAmount: number, recurring?: { interval: "month" | "year" }, metadata?: Record<string, string>) {
     const existing = await stripe.prices.list({ lookup_keys: [lookup], active: true, limit: 1 });
     const old = existing.data[0];
-    if (old && old.unit_amount === unitAmount) return console.log(`= ${lookup} exists (${old.id})`);
+    if (old && old.unit_amount === unitAmount) {
+      // Same amount: keep the price, but keep the product name current (a pack's name carries its credits).
+      const productId = typeof old.product === "string" ? old.product : old.product.id;
+      const product = await stripe.products.retrieve(productId);
+      if (product.name !== productName) {
+        await stripe.products.update(productId, { name: productName });
+        return console.log(`~ ${lookup}: product renamed "${product.name}" → "${productName}"`);
+      }
+      return console.log(`= ${lookup} exists (${old.id})`);
+    }
     if (old) {
       // The amount changed in plans.ts: a new price takes over the lookup key, the old one is archived.
       const price = await stripe.prices.create({ product: typeof old.product === "string" ? old.product : old.product.id, currency: "usd", unit_amount: unitAmount, lookup_key: lookup, transfer_lookup_key: true, ...(recurring ? { recurring } : {}), ...(metadata ? { metadata } : {}) });

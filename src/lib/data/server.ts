@@ -410,12 +410,10 @@ export async function startProject(scope: DataScope, projectId: string) {
   if ((profile?.planKey ?? "free") === "free" && row.workflow === "ad") {
     const input = row.input as AdInput;
     if ((input.seconds ?? workflowSettings.adSeconds) !== FREE_AD.seconds || (input.engine ?? workflowSettings.heygenEngine) !== FREE_AD.engine) {
-      throw new DataError(`The free ad is ${FREE_AD.seconds} seconds in Standard quality. Pick a plan in Billing for other lengths and Premium.`, 402, "free_plan_limit");
+      throw new DataError(`On the free plan an ad is ${FREE_AD.seconds} seconds in Standard quality (your free credits cover exactly that). Pick a plan in Billing for other lengths and Premium.`, 402, "free_plan_limit");
     }
   }
-  if ((profile?.planKey ?? "free") === "free" && row.workflow === "translate") {
-    throw new DataError("Translations need a plan or a credit pack. Pick one in Billing.", 402, "free_plan_limit");
-  }
+  // Translations on the free plan (25 Oct 2026): the 30 free credits cover half a minute of Speed translation; the balance check below decides.
   try {
     await reserveCredits(workspaceId, userId, projectId, credits, `${row.workflow === "ad" ? "Ad" : "Translation"}: ${row.name}`);
   } catch (error) {

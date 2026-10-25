@@ -47,9 +47,9 @@ The form takes a few minutes: a photo or a product page link, the product name, 
 
 ### Money paid out
 
-Clipelle counts in credits. One credit is one second of Standard presenter video, so a 30-second Standard ad is 30 credits and a 60-second one is 60. Premium presenter quality, with more natural head and hand movement and the best lip-sync, costs more per second. Before you start, the form shows the estimate in credits and in dollars for the exact combination you picked. After the run, the project page shows the real amount spent next to that estimate. Plans include a monthly amount of credits; the current numbers are on the [pricing page](/pricing) and they are not repeated here so this article does not go stale.
+Clipelle counts in credits. A Standard ad uses 2 credits per second of video, so a 30-second Standard ad is 60 credits and a 60-second one is 120. Premium presenter quality, with more natural head and hand movement and the best lip-sync, costs more per second. Before you start, the form shows the estimate in credits and in dollars for the exact combination you picked. After the run, the project page shows the real amount spent next to that estimate. Plans include a monthly amount of credits; the current numbers are on the [pricing page](/pricing) and they are not repeated here so this article does not go stale.
 
-One more fact for the money line: after you verify your e-mail you can make one free 10-second Standard ad, with no card. It is a fair way to put a real number on the "people's time" line before you decide anything.
+One more fact for the money line: after you verify your e-mail you get 30 free credits, with no card: enough for one 10-second Standard ad. It is a fair way to put a real number on the "people's time" line before you decide anything.
 
 ### Waiting
 
@@ -92,4 +92,4 @@ Use this checklist when you put Clipelle, or anything else, next to your baselin
 
 ## A sensible first step
 
-Use the free 10-second ad to measure your own time line. Ten seconds is about 25 words of script, which is enough to see the hook, the product clip, the presenter and the captions working together, and short enough to judge in a minute. Then make your first real decision with the [first-ad checklist](/blog/the-first-ad-checklist) open, knowing exactly what each line will cost you.
+Use your free credits on a 10-second ad to measure your own time line. Ten seconds is about 25 words of script, which is enough to see the hook, the product clip, the presenter and the captions working together, and short enough to judge in a minute. Then make your first real decision with the [first-ad checklist](/blog/the-first-ad-checklist) open, knowing exactly what each line will cost you.

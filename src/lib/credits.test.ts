@@ -49,7 +49,8 @@ describe.skipIf(!hasDb)("credit expiry rules", () => {
     const { eq } = await import("drizzle-orm");
     await grantTopupCredits(wsId, userId, "topup_10", "cs_test_pack");
     const [row] = await db().select().from(creditLedger).where(eq(creditLedger.reference, "checkout:cs_test_pack"));
-    expect(row.credits).toBe(110);
+    const { TOPUPS } = await import("./plans");
+    expect(row.credits).toBe(TOPUPS.find((t) => t.key === "topup_10")!.credits);
     expect(row.expiresAt).toBeNull();
   });
 

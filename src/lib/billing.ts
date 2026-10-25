@@ -47,7 +47,7 @@ export async function ensureFreeAd(user: AppUser, personalWorkspaceId: string): 
     return { granted: true as const, capLeft: cap - n - 1 };
   });
   if (!outcome.granted) return { granted: false, reason: "cap", capLeft: outcome.capLeft };
-  await grantCredits({ workspaceId: personalWorkspaceId, userId: user.id, credits: FREE_AD_CREDITS, kind: "grant_free", note: `Free first ad (${FREE_AD.seconds} s, Standard)`, expiresAt: freeAdExpiry(now), reference: `free:${user.id}` });
+  await grantCredits({ workspaceId: personalWorkspaceId, userId: user.id, credits: FREE_AD_CREDITS, kind: "grant_free", note: `Free credits (${FREE_AD_CREDITS}): half a minute of translation or one ${FREE_AD.seconds}-second ad`, expiresAt: freeAdExpiry(now), reference: `free:${user.id}` });
   return { granted: true, capLeft: outcome.capLeft };
 }
 

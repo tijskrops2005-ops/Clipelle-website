@@ -181,7 +181,7 @@ function Examples({ plan, t }: { plan: Plan; t: T }) {
 function planWords(plan: Plan, t: T) {
   const key = (plan.key.startsWith("business") ? "business" : plan.key) as keyof T["plans"];
   const w = t.plans[key];
-  return { tagline: w?.tagline ?? plan.tagline, bullets: w?.bullets ?? plan.bullets, creditsNote: plan.creditsPerMonth > 0 ? t.creditsPerMonth.replace("{n}", plan.creditsPerMonth.toLocaleString("en-US")) : (w && "creditsNote" in w ? w.creditsNote : plan.creditsNote) };
+  return { tagline: w?.tagline ?? plan.tagline, bullets: (w?.bullets ?? plan.bullets).map((b) => b.replaceAll("{m}", String(plan.creditsPerMonth / 60))), creditsNote: plan.creditsPerMonth > 0 ? t.creditsPerMonth.replace("{n}", plan.creditsPerMonth.toLocaleString("en-US")) : (w && "creditsNote" in w ? w.creditsNote : plan.creditsNote) };
 }
 
 function PlanCard({ plan, previous, interval, cta, t }: { plan: Plan; previous?: Plan; interval: Interval; cta: React.ReactNode; t: T }) {

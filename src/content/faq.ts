@@ -13,7 +13,7 @@ export const faq: FaqItem[] = [
   { q: "Can I delete my data?", a: "Deleting a project removes its files. Deleting your account in Settings removes your projects, files, credits and profile; it cannot be undone." },
   { q: "Which languages can an ad be spoken in?", a: "The languages that have presenter voices, listed on the form. Translations of an existing video support 190 languages and regional variants." },
   { q: "Who owns the videos?", a: "You do. Clipelle makes them for you from your product and your inputs; use them wherever you like. For translations you confirm first that you own the source video and have the speaker's permission." },
-  { q: "What is a credit?", a: "One credit is one second of presenter video in Standard quality. Premium quality, product footage and translation are expressed in the same unit, so one number tells you what a video costs." },
+  { q: "What is a credit?", a: "One credit is one second of translated video in Speed quality. Precision uses 2 credits per second, an ad 2 per second (at least 30) and a Premium ad 6. Every form shows the credits for your choices before you start." },
   { q: "Do unused credits carry over?", a: "Yes. Credits never expire: credits from a subscription or a credit pack stay on your account for as long as it exists, also after you cancel a subscription. Deleting your account forfeits them. The free first ad is the one exception: it expires 30 days after it is granted." },
   { q: "Can I cancel?", a: "Yes, any time from Billing. Your plan stays active until the end of the period you paid for." },
   { q: "Where are my files stored?", a: "In our private storage. Links to your videos are signed per request and expire; nothing is public unless you share the file yourself." },

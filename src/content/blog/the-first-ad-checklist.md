@@ -37,7 +37,7 @@ There is a short guide on writing a [product description that makes a good scrip
 
 Lengths are 10, 20, 30, 45 or 60 seconds. The script has a word limit of about 2.5 words per second, so 10 seconds is 25 words, 30 is 75 and 60 is 150. Shorter is cheaper and harder to write; longer is easier to write and harder to keep interesting.
 
-The form shows the estimate for each length in credits and dollars before you start. One credit is one second of Standard presenter video, so the arithmetic is visible.
+The form shows the estimate for each length in credits and dollars before you start. A Standard ad uses 2 credits per second of video, so the arithmetic is visible.
 
 **Default:** 30 seconds. Enough for a hook, a problem, the product, two benefits and a call to action. See [a spoken ad script in 75 words](/blog/a-spoken-ad-script-in-75-words).
 

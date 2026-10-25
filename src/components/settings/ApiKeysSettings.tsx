@@ -89,7 +89,7 @@ export function ApiKeysSettings() {
           <p className="text-[15px] text-muted">Loading…</p>
         ) : !allowed ? (
           <div className="rounded-[14px] bg-surface-muted p-4 text-[15px] text-ink">
-            <p>API keys come with a plan that includes credits. The free plan can make its one free ad on the form, not through the API.</p>
+            <p>API keys come with a plan that includes credits. The free plan uses its free credits on the forms, not through the API.</p>
             <Button href="/settings/billing" variant="primary" className="mt-3">Choose a plan</Button>
           </div>
         ) : (

@@ -2,6 +2,46 @@
 
 Datum: 21 oktober 2026. Bron van alle getallen: `src/lib/plans.ts` (plannen, credits, marges) en `src/lib/pricing.ts` (leverancierskosten). Dit document is uit die code gegenereerd met `npx tsx scripts/pricing-table.ts`; verander getallen alleen in de code en draai het script opnieuw.
 
+## 00. Nieuwe creditregel van 25 oktober 2026 (vervangt §0 tot en met §4)
+
+Vertalen is het hoofdproduct. Eén credit is daarom één seconde afgeronde video, zodat een klant het zelf kan narekenen. De regel staat in `src/lib/plans.ts` (`CREDIT_RULES`).
+
+| Wat | Credits |
+|---|---|
+| Vertalen, Speed | 1 per seconde per taal (minimaal 10) |
+| Vertalen, Precision | 2 per seconde per taal |
+| Verbetering (enhance) | +1 per seconde |
+| Advertentie, Standard | 2 per seconde (minimaal 30) |
+| Advertentie, Premium | 6 per seconde (minimaal 60) |
+
+Een advertentie van 30 seconden (Standard) kost dus precies evenveel als een minuut vertalen: 60 credits.
+
+**Plannen in minuten vertaling** (prijzen ongewijzigd):
+
+| Plan | Prijs | Minuten | Credits | Per minuut |
+|---|---|---|---|---|
+| Starter | $19 | 7 | 420 | $2,71 |
+| Pro | $59 | 22 | 1.320 | $2,68 |
+| Scale | $159 | 60 | 3.600 | $2,65 |
+| Business 249 | $249 | 96 | 5.760 | $2,59 |
+| Business 499 | $499 | 193 | 11.580 | $2,59 |
+| Business 999 | $999 | 386 | 23.160 | $2,59 |
+
+- **Pakketten:** $0,05 per credit ($10 = 200, $25 = 500, $50 = 1.000).
+- **Gratis:** 30 credits na e-mailbevestiging, 30 dagen geldig: een halve minuut vertalen of één advertentie van 10 seconden. Op het gratis plan mag nu ook vertaald worden; advertenties blijven 10 s Standard.
+
+**Marge.** `CREDIT_COST_USD` is de hoogste inkoopprijs per credit over alle producten. Dat is een korte Speed-vertaling met proofreading en ondertitels: ≈ $0,0253. Elk plan en elk pakket haalt daarop minstens `MIN_MARGIN` = 1,7× (`plans.test.ts`). Advertenties halen 2,2× tot 3,4×.
+
+**Marktvergelijking (25 oktober 2026, per minuut vertaling met lipsync):** Rask ≈ $2,40 (lipsync telt 3×), Synthesia ≈ $2,90, Perso $1–2,20. Clipelle zit met $2,59–2,71 in dezelfde band, met een gecontroleerde vertaling, ondertitels en 9:16 erbij.
+
+**Inkoop (`src/lib/pricing.ts`, 25 oktober 2026):**
+- HeyGen self-serve: Avatar III $0,0165/s, Avatar IV $0,0805/s, vertalen Speed $0,0135/s, Precision $0,025/s.
+- Bevestigd met de betaalde test: HeyGen schreef ≈ $0,71 af, de oude tarieven voorspelden $0,47.
+
+**Afrekenen:** een project betaalt de regel, niet de rekening van de leverancier. Een afgeronde advertentie betaalt haar volle credits. Een vertaling betaalt per afgeronde taalversie; mislukte talen worden terugbetaald.
+
+**Budget per video:** `MAX_COST_PER_CREATIVE_USD` staat nu standaard op $2,00. Met de echte tarieven kost een advertentie van 60 s Standard ongeveer $1,52; Premium past alleen bij 10 s.
+
 ## 0. Wijziging van 24 oktober 2026: volumekorting en goedkoper vertalen
 
 Besluit van Tijs: een groter abonnement moet per video voordeliger zijn, met goede marges, en vertalen klonk te duur. De maandprijzen ($19 / $59 / $159 en Business $249 / $499 / $999) en de Stripe-producten blijven gelijk; alleen het aantal credits per abonnement steeg.

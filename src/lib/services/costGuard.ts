@@ -4,7 +4,7 @@
  *
  * Two limits from .env.local:
  * - MAX_COST_PER_ACTION_USD (default 1.50): no single paid call may cost more.
- * - MAX_COST_PER_CREATIVE_USD (default 1.50): what one click on "Generate video" may cost in total.
+ * - MAX_COST_PER_CREATIVE_USD (default 2.00, raised from 1.50 on 25 Oct 2026 with the real HeyGen rates: a 60 s Standard ad is about $1.52): what one click on "Generate video" may cost in total.
  *   Workflow A: the whole project. Workflow B: per language version (shared costs such as the
  *   source transcript are split evenly over the languages). Every paid call counts, including
  *   failed attempts and retries.
@@ -62,7 +62,7 @@ function envNumber(name: string, fallback: number) {
 export function costLimits() {
   return {
     maxPerActionUsd: envNumber("MAX_COST_PER_ACTION_USD", 1.5),
-    maxPerCreativeUsd: envNumber("MAX_COST_PER_CREATIVE_USD", 1.5),
+    maxPerCreativeUsd: envNumber("MAX_COST_PER_CREATIVE_USD", 2),
     /** Per account: what one user may spend in a calendar day / month (added 2026-10-21; safe defaults). */
     maxPerUserPerDayUsd: envNumber("MAX_COST_PER_USER_PER_DAY_USD", 10),
     maxPerUserPerMonthUsd: envNumber("MAX_COST_PER_USER_PER_MONTH_USD", 100),

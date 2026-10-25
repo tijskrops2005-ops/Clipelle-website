@@ -13,7 +13,7 @@ export default async function NewVideoPage() {
   if (!user) {
     return (
       <div className="mx-auto max-w-2xl space-y-8 py-10 text-center">
-        <PageHeader title="Sign in to make a video" description="Your projects, credits and brand style belong to your account. Sign in, or create an account and get one 10-second ad free after you verify your e-mail." />
+        <PageHeader title="Sign in to make a video" description="Your projects, credits and brand style belong to your account. Sign in, or create an account and get 30 free credits after you verify your e-mail." />
         <div className="flex flex-col justify-center gap-3 sm:flex-row">
           <Button href="/login?next=/new" variant="accent" size="lg"><LogIn className="size-5" aria-hidden /> Sign in</Button>
           <Button href="/signup?next=/new" variant="secondary" size="lg">Create an account</Button>

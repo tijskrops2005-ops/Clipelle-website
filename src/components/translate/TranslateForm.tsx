@@ -90,7 +90,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
   const formRef = useRef<HTMLFormElement>(null);
 
   const seconds = sourceAd?.seconds ?? video?.seconds ?? 30;
-  const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 1.5;
+  const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 2;
   const estimateFor = (q: TranslationQuality, enh = enhance) =>
     estimateTranslateCost({ seconds, quality: q, enhance: enh, languages: Math.max(1, targets.length), hasSourceTranscript: source !== "auto" });
   const estimate = estimateFor(quality);

@@ -10,7 +10,7 @@ import { ProgressRing } from "@/components/motion/ProgressRing";
 import { DemoBadge } from "@/components/DemoModeBadge";
 import { cn } from "@/lib/utils";
 
-/** One credit is one second of Standard presenter video (src/lib/plans.ts). A 30-second ad is the reference size. */
+/** One credit is one second of translated video; an ad uses 2 per second (src/lib/plans.ts). */
 const REFERENCE_AD_SECONDS = 30;
 
 type Props = { credits: number | null; plan: Pick<Plan, "key" | "name" | "monthlyUsd" | "creditsPerMonth" | "creditsNote"> | null; demo: boolean };
@@ -94,7 +94,7 @@ export function Overview({ credits, plan, demo }: Props) {
         <StatCard delay={240} label="Plan">
           <p className="text-[34px] font-semibold leading-none tracking-[-0.02em] text-ink">{plan?.name ?? "Free"}</p>
           <p className="mt-2 flex items-center justify-between gap-3 text-[12.5px] text-muted">
-            <span>{plan?.creditsNote ?? "One free 10-second ad"}</span>
+            <span>{plan?.creditsNote ?? "30 free credits"}</span>
             <Link href="/settings/billing" className="focus-ring shrink-0 rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Compare plans</Link>
           </p>
         </StatCard>

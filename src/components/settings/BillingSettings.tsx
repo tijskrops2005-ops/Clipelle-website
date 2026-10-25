@@ -81,7 +81,7 @@ export function BillingSettings() {
       {checkout === "cancelled" && <p role="status" className="rounded-chip bg-surface-muted px-4 py-2.5 text-sm text-muted">Checkout cancelled. Nothing was charged.</p>}
       {error && <p role="alert" className="rounded-chip bg-danger/10 px-4 py-2.5 text-sm text-danger">{error}</p>}
 
-      <SectionCard title="Your plan" description="What you are on, your credits and the free ad." aside={<DemoBadge>Demo numbers</DemoBadge>}>
+      <SectionCard title="Your plan" description="What you are on, your credits and the free credits." aside={<DemoBadge>Demo numbers</DemoBadge>}>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="panel p-4">
             <p className="label-mono text-muted">Plan</p>
@@ -91,12 +91,12 @@ export function BillingSettings() {
           <div className="panel p-4">
             <p className="label-mono text-muted">Credits</p>
             <p className="mt-1 text-[17px] font-semibold text-ink">{status ? status.balance.toLocaleString("en-US") : "…"}</p>
-            <p className="text-[13px] text-muted">One credit = one second of Standard video. Credits never expire.</p>
+            <p className="text-[13px] text-muted">One credit = one second of translated video. Credits never expire.</p>
           </div>
           <div className="panel p-4">
-            <p className="label-mono text-muted">Free ad</p>
+            <p className="label-mono text-muted">Free credits</p>
             <p className="mt-1 flex items-center gap-2 text-[17px] font-semibold text-ink"><Gift className="size-4 text-accent" aria-hidden />{status?.freeAd.granted ? "Granted" : status?.freeAd.reason === "unverified" ? "After verification" : status?.freeAd.reason === "cap" ? "Daily cap reached" : "…"}</p>
-            <p className="text-[13px] text-muted">{status?.freeAd.reason === "cap" ? "All free ads for today are taken; you are on the list for tomorrow." : "One 10-second Standard ad per verified e-mail address."}</p>
+            <p className="text-[13px] text-muted">{status?.freeAd.reason === "cap" ? "All free credits for today are given out; you are on the list for tomorrow." : "One 10-second Standard ad per verified e-mail address."}</p>
           </div>
         </div>
         {enabled && status?.planKey !== "free" && (
@@ -113,7 +113,7 @@ export function BillingSettings() {
         </SectionCard>
       )}
 
-      <SectionCard title="Credit packs" description={status?.planKey === "free" ? "One-off credits on top of a paid plan. Choose a plan first: the free plan only runs the free ad." : "One-off credits on top of your plan."}>
+      <SectionCard title="Credit packs" description={status?.planKey === "free" ? "One-off credits on top of a paid plan. Choose a plan first: the free plan runs on its free credits." : "One-off credits on top of your plan."}>
         <div className="grid gap-3 sm:grid-cols-3">
           {TOPUPS.map((t) => (
             <Button key={t.key} type="button" variant="secondary" onClick={() => topup(t.key)} disabled={!enabled || busy !== null || status?.planKey === "free"} className="justify-between">

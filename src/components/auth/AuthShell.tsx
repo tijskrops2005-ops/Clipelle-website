@@ -17,7 +17,7 @@ const PANELS = {
   },
   signup: {
     title: "From one product photo to a finished 9:16 ad.",
-    points: ["One free 10-second ad after you verify your e-mail", "No credit card required", "Captions are the only text on screen"],
+    points: ["30 free credits after you verify your e-mail", "No credit card required", "Captions are the only text on screen"],
   },
 } as const;
 

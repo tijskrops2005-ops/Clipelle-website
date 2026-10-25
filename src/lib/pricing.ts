@@ -71,17 +71,15 @@ export const PRICING = {
   clipSeconds: 5,
   /**
    * HeyGen presenter, USD per second of video; the presenter talks the whole ad. The one place to change.
-   * Source: enterprise rate card (1 credit = $0.50; Avatar IV 0.1 credit/s, Avatar III 0.0167 credit/s).
-   * Measured on /dev/heygen on 2026-10-19 with one 3.6 s video per engine (wallet difference, rounded to
-   * cents): Avatar IV $0.12 ≈ $0.033/s, Avatar III $0.06 ≈ $0.017/s. That is only ~2× apart, not 6×, and
-   * may include a minimum charge per video; 3.6 s at cent precision is too coarse to rely on. Kept
-   * conservative until the ~10 s confirmation test (docs/roadmap.md). Avatar IV is "Premium", III "Standard".
+   * Source (25 Oct 2026): the self-serve API rates on platform.heygen.com/pricing (Avatar III $0.0165/s,
+   * Avatar IV $0.0805/s), confirmed by the paid end-to-end test of 25 Oct 2026: the wallet dropped more
+   * than the old enterprise-card rates (0.0083 / 0.05) predicted. Avatar IV is "Premium", III "Standard".
    */
-  presenterUsdPerSecond: { avatar_iv: 0.05, avatar_iii: 0.0083 },
+  presenterUsdPerSecond: { avatar_iv: 0.0805, avatar_iii: 0.0165 },
   /** Shotstack: $10 per 50 minutes ⇒ $0.10 per 30 s video. Always counted, sandbox or not. */
   captionsUsdPer30s: 0.1,
-  /** HeyGen video translation, per second of source per target language. */
-  translateUsdPerSecond: { speed: 0.025, precision: 0.05 },
+  /** HeyGen video translation, per second of source per target language: self-serve API rates (platform.heygen.com/pricing, read 24 Oct 2026; Speed with lip sync $0.0135/s ≈ $0.81/min). */
+  translateUsdPerSecond: { speed: 0.0135, precision: 0.025 },
   /** HeyGen proofread session, per second of source per language. */
   proofreadUsdPerSecond: 0.00416,
   /** Topaz enhancement on fal.ai, per second at up to 1080p. */
