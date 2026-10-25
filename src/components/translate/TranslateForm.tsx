@@ -266,11 +266,10 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
             </p>
           </fieldset>
 
-          <Disclosure title="Advanced" summary={keepTerms.trim() ? "Words kept untranslated" : "Brand and product names to keep untranslated"}>
-            <Field id="keepTerms" label="Keep these words untranslated" optional hint="Brand and product names, separated by commas. The translation and the check leave them exactly as written. Max 20.">
-              <Input id="keepTerms" value={keepTerms} maxLength={600} onChange={(e) => setKeepTerms(e.target.value)} placeholder="e.g. Senvia, FlexLid" disabled={submitting} />
-            </Field>
-          </Disclosure>
+          {/* Visible since 25 Oct 2026 (was under Advanced): names and special terms are where machine translation slips most. */}
+          <Field id="keepTerms" label="Words to keep as they are" optional hint="Brand and product names, and special terms such as an exercise or ingredient name, separated by commas. The translation and the check leave them exactly as written. Max 20.">
+            <Input id="keepTerms" value={keepTerms} maxLength={600} onChange={(e) => setKeepTerms(e.target.value)} placeholder="e.g. Senvia, FlexLid, Kegel" disabled={submitting} />
+          </Field>
         </SectionCard>
 
         {/* 3. Captions and format */}

@@ -6,6 +6,7 @@ import { workflowSettings } from "@/lib/workflow/settings";
 import { languageOf } from "@/lib/languages";
 import type { LanguageCode, Segment } from "@/lib/types";
 import { maxCharsForSegment } from "@/lib/translatePricing";
+import { applyCorrections } from "@/lib/translationCorrections";
 import { claudeTokensToUsd, isScriptModel } from "@/lib/pricing";
 
 /**
@@ -61,11 +62,12 @@ const SYSTEM = `You are a meticulous subtitle translator doing a final quality c
 For every fragment you get the source text (when known) and the translation. Compare them and fix:
 - missing or added words, wrong or reversed meaning, lost negations;
 - wrong numbers, prices, dates, units, product and brand names (keep names and terms exactly as in the source);
-- sentences that do not read naturally in the target language, broken grammar, a verb without its object (e.g. "doe …" with the noun missing).
+- sentences that do not read naturally in the target language, broken grammar, a verb without its object (e.g. "doe …" with the noun missing);
+- words that do not exist in the target language or are left garbled (e.g. a filler like "Dude" rendered as a nonsense word): translate them or leave them out.
 Rules:
 - Keep the meaning of the source. Never add claims, numbers or calls to action that are not in the source.
 - Keep brand and product names and any listed "keep" terms exactly as written.
-- Each fragment has a strict character limit; stay within it, shorten rather than cut mid-sentence.
+- Each fragment has a strict character limit; stay within it, shorten rather than cut mid-sentence. Drop fillers and interjections first ("Dude", "So", "Honestly") before anything with meaning, and never drop a product name, a number or a keep term.
 - Return exactly one entry per fragment, same index, same order. Never merge or split fragments.
 - When the source text is missing, judge only the target text: natural, complete sentences; flag anything that looks truncated.
 - Do not rewrite fragments that are fine: mark them ok with corrected null.`;
@@ -100,24 +102,6 @@ export async function checkTranslation(input: { segments: Segment[]; sourceLangu
     throw new TranslationCheckError(`The quality check returned ${parsed.fragments.length} fragments for ${input.segments.length}.`, "count_mismatch", 502);
   }
 
-  const byIndex = new Map(parsed.fragments.map((f) => [f.index, f]));
-  const changes: TranslationCheckResult["changes"] = [];
-  const warnings: string[] = [];
-  const segments = input.segments.map((s) => {
-    const f = byIndex.get(s.index);
-    if (!f || f.ok || !f.corrected) {
-      if (f && !f.ok && f.issue) warnings.push(`Line ${s.index}: ${f.issue}`);
-      return s;
-    }
-    const corrected = f.corrected.replace(/\s+/g, " ").trim();
-    const max = maxCharsForSegment(s.start, s.end);
-    if (!corrected || corrected === s.text) return s;
-    if (corrected.length > max) {
-      warnings.push(`Line ${s.index}: ${f.issue ?? "needs a longer sentence than the timing allows"}; kept the original translation.`);
-      return s;
-    }
-    changes.push({ index: s.index, before: s.text, after: corrected, reason: f.issue ?? "corrected" });
-    return { ...s, text: corrected };
-  });
+  const { segments, changes, warnings } = applyCorrections(input.segments, parsed.fragments);
   return { segments, changes, warnings, summary: parsed.summary, usage, costUsd };
 }

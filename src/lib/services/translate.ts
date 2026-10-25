@@ -138,6 +138,37 @@ export async function createProofread(input: CreateProofreadInput) {
   return data;
 }
 
+/**
+ * Direct translation without a proofread session (fallback of 25 Oct 2026, used when the account may
+ * not use proofreading): POST /v3/video-translations, one video_translation_id per output language in
+ * the order sent. Checked against developers.heygen.com/reference/create-video-translation on 25 Oct 2026.
+ */
+export async function createDirectTranslation(input: { video: { assetId: string } | { url: string }; outputLanguages: string[]; mode: TranslationQuality; title: string; inputLanguage?: string; brandGlossaryId?: string; callbackUrl?: string; idempotencyKey?: string }) {
+  return heygenFetch<{ video_translation_ids: string[] }>("/v3/video-translations", {
+    method: "POST",
+    headers: { "Idempotency-Key": input.idempotencyKey ?? crypto.randomUUID() },
+    body: JSON.stringify({
+      video: "assetId" in input.video ? { type: "asset_id", asset_id: input.video.assetId } : { type: "url", url: input.video.url },
+      output_languages: input.outputLanguages,
+      mode: input.mode,
+      title: input.title,
+      ...(input.inputLanguage ? { input_language: input.inputLanguage } : {}),
+      ...(input.brandGlossaryId ? { brand_glossary_id: input.brandGlossaryId } : {}),
+      ...(input.callbackUrl ? { callback_url: input.callbackUrl } : {}),
+    }),
+  });
+}
+
+/** Session ids in the workflow: a proofread id, or "direct:<translationId>:<costEntryId>:<estimate>" for the fallback. */
+export function directSession(translationId: string, entryId: string, estimate: number) {
+  return `direct:${translationId}:${entryId}:${estimate}`;
+}
+export function parseDirectSession(session: string): { translationId: string; entryId: string; estimate: number } | null {
+  if (!session.startsWith("direct:")) return null;
+  const [, translationId, entryId, estimate] = session.split(":");
+  return translationId ? { translationId, entryId: entryId ?? "", estimate: Number(estimate) || 0 } : null;
+}
+
 export async function getProofread(id: string) {
   return heygenFetch<Proofread>(`/v3/video-translations/proofreads/${encodeURIComponent(id)}`);
 }

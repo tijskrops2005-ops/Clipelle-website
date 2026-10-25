@@ -24,6 +24,9 @@ import {
   uploadProofreadSrt,
   createBrandGlossary,
   type SrtCue,
+  createDirectTranslation,
+  directSession,
+  parseDirectSession,
 } from "@/lib/services/translate";
 import { estimateEnhanceUsd, getEnhanceStatus, submitEnhance } from "@/lib/services/enhance";
 import { buildCaptionEdit, getRender, ingestFromUrl, shotstackEnv, startRender } from "@/lib/services/finalEdit";
@@ -190,15 +193,53 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
         for (const code of input.targetLanguages) {
           if (sessions[code]) await db().update(translations).set({ proofreadId: sessions[code], status: "processing", updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, code)));
         }
-        return { sessions, entryIds, estimate: perLanguage * outputs.length, perLanguage, stepId: row.id, glossaryWarning: glossaryWarning ?? null };
+        return { direct: false, sessions, entryIds, estimate: perLanguage * outputs.length, perLanguage, stepId: row.id, glossaryWarning: glossaryWarning ?? null };
       } catch (error) {
         for (const id of entryIds) await settleSpend(id, { status: "failed", actualUsd: 0 });
+        if (!isPlanRestriction(error)) throw error;
+      }
+
+      // Fallback (25 Oct 2026): the account may not use proofreading. Translate directly, one paid
+      // render per language now; the quality check runs on the returned subtitles after the render.
+      const targets = outputs.filter((o) => o.code !== "transcript");
+      const generateEstimate = estimateGenerateUsd(input.sourceSeconds, input.quality);
+      const reservedDirect: string[] = [];
+      for (const o of targets) {
+        const reserved = await reserveSpend({ service: "heygen", action: "translate_generate", estimatedUsd: generateEstimate, fingerprintInput: { projectId, attempt: row.attempt, output: o.code, direct: true }, projectId, stepId: row.id, language: o.code, languageCount, meta: { language: o.code, mode: input.quality, direct: true } }).catch(async (error) => {
+          for (const id of reservedDirect) await settleSpend(id, { status: "failed", actualUsd: 0 });
+          throw error;
+        });
+        reservedDirect.push(reserved.entryId);
+      }
+      try {
+        const created = await withRetries("Starting the translation", () =>
+          createDirectTranslation({ video: { assetId: upload.heygenAssetId }, outputLanguages: targets.map((o) => o.heygen), mode: input.quality, title: `Clipelle ${projectId.slice(0, 8)}`, inputLanguage: source ? (matched[source] ?? undefined) : undefined, brandGlossaryId, callbackUrl: callbackUrlFor("heygen"), idempotencyKey: `${projectId}:direct:${row.attempt}` }),
+        );
+        const sessions: SessionMap = {};
+        targets.forEach((o, i) => {
+          const id = created.video_translation_ids[i];
+          if (id) sessions[o.code] = directSession(id, reservedDirect[i], generateEstimate);
+        });
+        if (Object.keys(sessions).length !== targets.length) throw new StepFailure("The translation service returned fewer translations than languages.");
+        for (const o of targets) {
+          const parsed = parseDirectSession(sessions[o.code])!;
+          await db().update(translations).set({ translationId: parsed.translationId, status: "processing", updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, o.code)));
+        }
+        return { direct: true, sessions, entryIds: [], estimate: 0, perLanguage: 0, stepId: row.id, glossaryWarning: glossaryWarning ?? null };
+      } catch (error) {
+        for (const id of reservedDirect) await settleSpend(id, { status: "failed", actualUsd: 0 });
         throw error;
       }
     } catch (error) {
       return failStep(projectId, key, error);
     }
   }));
+
+  // Direct fallback: no proofread sessions to wait for; the render and the check happen per language.
+  if (started.direct) {
+    await step.run("translate-direct", () => markCompleted(projectId, key, { output: { sessions: started.sessions, mode: "direct", warning: DIRECT_WARNING }, costUsd: 0 }));
+    return started.sessions as SessionMap;
+  }
 
   // Poll every session until all are completed.
   const sessionMap = started.sessions as SessionMap;
@@ -256,6 +297,17 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
     await step.sleep(`translate-wait-${i}`, `${cfg.pollSeconds}s`);
   }
   return step.run("translate-timeout", () => failStep(projectId, key, new StepFailure(`The translation took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
+}
+
+/** Shown on a language version made without proofreading (the fallback of 25 Oct 2026). */
+const DIRECT_WARNING = "Proofreading was not available for this account, so the voice follows the translation service's own text. The captions on screen were checked line by line.";
+
+/** Adds a warning to a language version's quality report. */
+async function addLanguageWarning(translationId: string, warning: string) {
+  const [t] = await db().select({ qa: translations.qa }).from(translations).where(eq(translations.id, translationId)).limit(1);
+  const qa = t?.qa ?? { changes: [], warnings: [] };
+  if (qa.warnings.includes(warning)) return;
+  await db().update(translations).set({ qa: { ...qa, warnings: [...qa.warnings, warning] }, updatedAt: new Date() }).where(eq(translations.id, translationId));
 }
 
 /* ---------- quality check (replaces the manual review, 2026-10-20) ---------- */
@@ -338,11 +390,13 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
   };
 
   // a. Approved subtitles back to HeyGen and the paid render.
-  const gen = await step.run(`${code}-generate`, () => withDeadline("Starting the video render", 5, async (): Promise<{ translationId: string; entryId: string; estimate: number; done: boolean } | { error: string }> => {
+  const gen = await step.run(`${code}-generate`, () => withDeadline("Starting the video render", 5, async (): Promise<{ translationId: string; entryId: string; estimate: number; done: boolean; direct?: boolean } | { error: string }> => {
     try {
       const [t] = await db().select().from(translations).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).limit(1);
       if (!t) throw new LanguageFailure(`No translation row for ${lang}.`);
       if (t.translationId && t.captionedAssetId) return { translationId: t.translationId, entryId: "", estimate: 0, done: true };
+      const direct = parseDirectSession(proofreadId);
+      if (direct) return { translationId: direct.translationId, entryId: direct.entryId, estimate: direct.estimate, done: false, direct: true };
       const stepRow = await loadStep(projectId, "captions");
       if (!t.translationId) {
         const srt = buildSrt(t.segments.map((s) => ({ index: s.index, start: s.start, end: s.end, text: s.text })));
@@ -350,8 +404,9 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
           const srtAsset = await withRetries("Uploading the subtitles", () => uploadHeygenAsset({ file: new Blob([srt], { type: "application/x-subrip" }), filename: `${projectId.slice(0, 8)}-${code}.srt` }));
           await withRetries("Saving the subtitles", () => uploadProofreadSrt(proofreadId, { assetId: srtAsset.asset_id }));
         } catch (error) {
-          if (isPlanRestriction(error)) throw new LanguageFailure("The translation service refused the edited subtitles for this account (editing before the render seems to need a higher plan).");
-          throw error;
+          // Fallback (25 Oct 2026): render with the service's own text; the captions still use the checked lines.
+          if (!isPlanRestriction(error)) throw error;
+          await addLanguageWarning(t.id, "The translation service did not accept the checked subtitles for this account, so the voice follows its own translation. The captions on screen are the checked lines.");
         }
       }
       const estimate = estimateGenerateUsd(input.sourceSeconds, input.quality);
@@ -397,6 +452,21 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         translatedAssetId = stored.videoAssetId;
         srtAssetId = stored.srtAssetId;
         finished = true;
+        if (gen.direct) {
+          // No proofread before the render: check the service's subtitles now; the captions use the checked lines.
+          await step.run(`${code}-direct-check`, () => withDeadline("Checking the translation", 5, async () => {
+            const [t] = await db().select().from(translations).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).limit(1);
+            if (!t || t.segments.length > 0) return;
+            const srt = stored.srtAssetId ? await loadAsset(stored.srtAssetId) : null;
+            if (!srt) return addLanguageWarning(t.id, DIRECT_WARNING);
+            const cues = parseSrt(await fetchSrtText(await providerUrl(srt)));
+            const segments: Segment[] = cues.map((c) => ({ index: c.index, start: c.start, end: c.end, original: "", translated: c.text, text: c.text }));
+            const [row] = await db().update(translations).set({ segments, updatedAt: new Date() }).where(eq(translations.id, t.id)).returning();
+            const stepRow = await loadStep(projectId, "captions");
+            const checked = await checkLanguage(projectId, stepRow.id, row, input, null, languageCount);
+            await db().update(translations).set({ segments: checked.segments, qa: { ...checked.qa, warnings: [DIRECT_WARNING, ...checked.qa.warnings] }, updatedAt: new Date() }).where(eq(translations.id, t.id));
+          }));
+        }
         break;
       }
       if (tr.status === "failed") {
@@ -485,12 +555,13 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         const last = Math.max(...cues.map((c) => c.end));
         if (first > 0.6) trimStart = Math.round((first - 0.3) * 10) / 10;
         if (seconds - last > 0.6) trimEnd = Math.round((seconds - last - 0.3) * 10) / 10;
-        if (trimStart > 0) {
-          // The captions must shift with the picture: a new SRT from the checked lines, minus the cut.
-          const shifted = buildSrt(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })));
-          const asset = await storeBytes({ projectId, stepId: stepRow.id, kind: "srt", data: new TextEncoder().encode(shifted), mime: "application/x-subrip", fileName: `captions-${code}-trimmed.srt`, language: code });
-          srtUrl = await providerUrl(asset);
-        }
+      }
+      if (cues.length > 0) {
+        // The captions are always the checked lines (25 Oct 2026; before, only when trimming), shifted
+        // with the picture when silence is cut. The service's own SRT is the fallback without lines.
+        const shifted = buildSrt(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })));
+        const asset = await storeBytes({ projectId, stepId: stepRow.id, kind: "srt", data: new TextEncoder().encode(shifted), mime: "application/x-subrip", fileName: `captions-${code}${trimStart > 0 ? "-trimmed" : "-checked"}.srt`, language: code });
+        srtUrl = await providerUrl(asset);
       }
       const edit = buildCaptionEdit({
         videoUrl: await providerUrl(video),
