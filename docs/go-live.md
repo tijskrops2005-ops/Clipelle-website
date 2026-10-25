@@ -25,7 +25,7 @@ Vink af wat klaar is: ☐ wordt ☑.
 | Fase | Wat | Wie | Stand |
 |---|---|---|---|
 | 1 | Domein | Tijs | ☑ clipelle.com bij GoDaddy, wijst naar Vercel |
-| 2 | Echte tests (≈ $1) | Claude | zie fase 2 |
+| 2 | Echte tests (≈ $1) | Claude | ☑ beide gelukt, zie het verslag onderaan |
 | 3 | Inhoud verzamelen | Tijs | ☐ |
 | 4 | Supabase productie | Tijs + Claude | ☐ |
 | 5 | Resend (e-mail) | Tijs | ◐ DNS-records staan er al |
@@ -45,9 +45,9 @@ Vink af wat klaar is: ☐ wordt ☑.
 
 ## Fase 2. Echte tests (Claude)
 
-- ☑ Je dev-account "Tester A" (`tester-a@reelay.local`) staat in de ontwikkeldatabase op het plan Starter en heeft 300 testcredits (referentie `dev-test-credits-2026-10-25`). Er is geen code veranderd. Het gratis plan laat geen vertalingen toe, vandaar Starter.
-- Test A: vertaling van de video van 8 s, Engels → Nederlands, Speed, 9:16. Uitkomst: zie het verslag onderaan.
-- Test B: advertentie van 30 s met de Madison-jurk, Nederlands, Standard, presentator Olivia, stem Sharon. Uitkomst: zie het verslag onderaan.
+- ☑ Testcredits: je eigen account (tijskrops2005@gmail.com) staat in de ontwikkeldatabase op het plan Starter en heeft 300 testcredits (referentie `dev-test-credits-2026-10-25`). Er is geen code veranderd. Het gratis plan laat geen vertalingen toe, vandaar Starter.
+- ☑ Test A: vertaling van de video van 8 s, Engels → Nederlands, Speed, 9:16.
+- ☑ Test B: advertentie van 30 s met de Madison-jurk, Nederlands, Standard, presentator Olivia, stem Sharon.
 - ☐ **Tijs:** bekijk beide video's en zeg wat je van beeld, ondertitels en timing vindt.
 - ☐ **Claude, na jouw akkoord:** de tarieven in `src/lib/pricing.ts` gelijktrekken met wat HeyGen echt rekende. Dat gebeurt met de echte bedragen uit `/dev/costs`.
 
@@ -190,4 +190,24 @@ Het project `clipelle-website` (team tijs-krops) bestaat al en is gekoppeld aan 
 
 ## Verslag van de tests (25 oktober 2026)
 
-Wordt ingevuld zodra test A en test B klaar zijn.
+Beide tests zijn gelukt en staan op het account tijskrops2005@gmail.com. Je vindt ze onder Projects; de video's lopen ook langs in "Now creating" op het dashboard zolang ze gemaakt worden.
+
+| | Test A: vertaling 8 s EN → NL | Test B: advertentie 30 s NL |
+|---|---|---|
+| Resultaat | 1080×1920, 6,7 s (stilte weggeknipt), ondertitels | 1080×1920, 25,6 s, Olivia met de stem Sharon, de jurk twee keer in beeld, ondertitels |
+| Schatting in de app | $0,30 | $0,68 |
+| Kosten volgens de kostenbewaking | $0,27 | $0,51 (+ $0 Shotstack-sandbox) |
+| Echt afgeschreven | HeyGen samen ≈ $0,71 (saldo $4,18 → $3,47), plus fal $0,26 en Claude ≈ $0,04: totaal ≈ $1,01 voor beide tests | |
+| Tijd | Vertaalstap 1,5 min. De ondertitels duurden lang: de Shotstack-sandbox was ruim 15 minuten bezig. | Script, clip en presentator 1,5 min. De eindmontage duurde 19 min, ook door de sandbox. |
+
+Bevindingen:
+
+1. **De presentator is duurder dan de app rekent.** HeyGen schreef ≈ $0,71 af, terwijl onze kostenbewaking $0,47 aan HeyGen-kosten registreerde. De tarieven in `src/lib/pricing.ts` moeten omhoog voor Avatar III en IV; vertalen mag omlaag. Dit wacht op het akkoord van Tijs.
+2. **Shotstack-sandbox:** het omzetten van de ondertitels naar een video ("preprocessing") duurde ruim 15 minuten. Zonder ondertitels was dezelfde render in 30 seconden klaar. In productie (`SHOTSTACK_ENV=v1`, betaald) is dat naar verwachting veel sneller; dat controleren we in fase 12.
+3. **Vertaalkwaliteit:** de Nederlandse tekst begint met "Kamo, mijn dokter zegt al jaren…". Het woord "Kegels" uit het origineel is verkeerd verstaan, en de automatische controle heeft dat niet opgemerkt. Te onderzoeken: de controle beter laten letten op ontbrekende vakwoorden, en het veld "Woorden om niet te vertalen" aanraden bij merk- en vaktermen.
+4. **Testlogo:** in test B staat rechtsboven een oranje vierkantje. Dat is het testlogo uit de merkinstellingen van het testaccount. Geen fout in de app.
+5. **Twee fouten gevonden en hersteld:**
+   - Een advertentie die werd afgebroken tussen het opslaan van de video en het afronden van het project, bleef voor altijd op "processing" staan. Een herstart rondt hem nu af.
+   - Bij een afgeronde vertaling gingen de klaar-e-mail en de webhook `project.completed` niet uit. Dat gebeurt nu wel.
+
+Accounts samengevoegd: alle projecten van het oude ontwikkelaccount en van Tester A staan nu op tijskrops2005@gmail.com. Zichtbaar zijn Gracewear London, Senvia, test A en test B; de 13 technische testprojecten zijn gearchiveerd (terug te halen op Projects via "Archived"). Je werkruimte staat in de ontwikkeldatabase op Starter, met 279 testcredits.
