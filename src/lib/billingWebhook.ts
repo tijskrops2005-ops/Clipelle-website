@@ -1,12 +1,12 @@
 import "server-only";
 import type Stripe from "stripe";
-import { grantPlanCredits, grantTopupCredits, setPlan, workspaceByCustomer } from "@/lib/billing";
+import { grantPlanCredits, grantTopupCredits, grantTrialCredits, setPlan, workspaceByCustomer } from "@/lib/billing";
 import { PLAN_KEYS } from "@/lib/billing";
 import { planByLookupKey } from "@/lib/plans";
 import { notifyAddress, sendEmail } from "@/lib/email";
 
 /** Looks up a price's lookup key at Stripe (an invoice line carries only the price id). */
-export type BillingDeps = { lookupKeyOfPrice: (priceId: string) => Promise<string | null> };
+export type BillingDeps = { lookupKeyOfPrice: (priceId: string) => Promise<string | null>; subscriptionStatus?: (subscriptionId: string) => Promise<string | null> };
 
 const defaultDeps: BillingDeps = {
   lookupKeyOfPrice: async (priceId) => {
@@ -15,6 +15,14 @@ const defaultDeps: BillingDeps = {
       return (await stripe().prices.retrieve(priceId)).lookup_key ?? null;
     } catch {
       return null; // falls back to metadata
+    }
+  },
+  subscriptionStatus: async (subscriptionId) => {
+    try {
+      const { stripe } = await import("@/lib/stripe");
+      return (await stripe().subscriptions.retrieve(subscriptionId)).status;
+    } catch {
+      return null;
     }
   },
 };
@@ -65,6 +73,13 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
       const ws = await workspaceByCustomer(customerId);
       if (!ws) return { handled: false, note: "unknown customer" };
       if (!PERIOD_INVOICES.has(invoice.billing_reason ?? "")) return { handled: true, note: `no plan credits for a ${invoice.billing_reason ?? "unknown"} invoice` };
+      // The €0 invoice that opens a free trial: the trial credits come with the subscription event,
+      // the plan's credits with the first real payment after the trial.
+      const subId = invoice.parent?.subscription_details?.subscription;
+      const subscriptionId = typeof subId === "string" ? subId : subId?.id;
+      if (invoice.billing_reason === "subscription_create" && (invoice.amount_paid ?? 0) === 0 && subscriptionId && (await deps.subscriptionStatus?.(subscriptionId)) === "trialing") {
+        return { handled: true, note: "trial started; plan credits come with the first payment" };
+      }
       const line = invoice.lines?.data?.[0];
       const price = line?.pricing?.price_details?.price;
       const lookup = typeof price === "string" ? await deps.lookupKeyOfPrice(price) : price?.lookup_key ?? null;
@@ -84,6 +99,11 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
       if (!ws) return { handled: false, note: "unknown customer" };
       const planKey = planByLookupKey(sub.items.data[0]?.price?.lookup_key)?.key ?? (sub.metadata?.planKey as string | undefined) ?? ws.planKey;
       const periodEnd = sub.items.data[0]?.current_period_end;
+      // The free trial: 30 credits now (once per subscription), and the workspace has used its trial.
+      if (sub.status === "trialing") {
+        await grantTrialCredits(ws.id, ws.ownerUserId, sub.id);
+        if (!ws.trialStartedAt) await setPlan(ws.id, { trialStartedAt: new Date() });
+      }
       // Cancelled in the portal for the end of the period: still active until then, shown as "ends on".
       const status = sub.status === "active" && (sub.cancel_at_period_end || sub.cancel_at) ? "canceling" : sub.status;
       await setPlan(ws.id, { planKey: sub.status === "active" || sub.status === "trialing" ? planKey : ws.planKey, stripeSubscriptionId: sub.id, subscriptionStatus: status, currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null });

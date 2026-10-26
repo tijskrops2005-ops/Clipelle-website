@@ -1,4 +1,4 @@
-import type { Currency, Plan, TopupPack } from "@/lib/plans";
+import { TRIAL, type Currency, type Plan, type TopupPack } from "@/lib/plans";
 import { companyLine } from "@/content/company";
 
 /**
@@ -28,6 +28,8 @@ export type CheckoutInput = {
   automaticTax?: boolean;
   /** The terms checkbox (needs the terms URL in the Stripe Dashboard). */
   requireTerms?: boolean;
+  /** Start with the free trial (TRIAL.days, card required): only for a workspace that never had one. */
+  trial?: boolean;
   /** Which amount of the price to charge: dollars, or the price's euro option. Default dollars. */
   currency?: Currency;
 };
@@ -128,8 +130,14 @@ export function subscriptionSessionParams(plan: Plan, input: CheckoutInput) {
     line_items: [{ price: input.priceId, quantity: 1 }],
     success_url: `${input.origin}/settings/billing?checkout=success`,
     cancel_url: `${input.origin}/settings/billing?checkout=cancelled`,
-    subscription_data: { metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key } },
-    metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key, kind: "plan" },
+    subscription_data: {
+      metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key },
+      // The free trial (26 Oct 2026): nothing is charged for TRIAL.days; a card is required, and
+      // without one at the end the subscription is cancelled instead of left unpaid.
+      ...(input.trial ? { trial_period_days: TRIAL.days, trial_settings: { end_behavior: { missing_payment_method: "cancel" as const } } } : {}),
+    },
+    ...(input.trial ? { payment_method_collection: "always" as const } : {}),
+    metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key, kind: "plan", ...(input.trial ? { trial: "yes" } : {}) },
     allow_promotion_codes: true,
     integration_identifier: CHECKOUT_INTEGRATION_ID,
     ...taxParams(input.automaticTax),

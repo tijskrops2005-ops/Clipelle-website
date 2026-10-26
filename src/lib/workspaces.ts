@@ -199,6 +199,6 @@ export async function workspaceByCustomer(customerId: string) {
   return row ?? null;
 }
 
-export async function updateWorkspaceBilling(workspaceId: string, patch: Partial<Pick<WorkspaceRow, "planKey" | "stripeCustomerId" | "stripeSubscriptionId" | "subscriptionStatus" | "currentPeriodEnd">>) {
+export async function updateWorkspaceBilling(workspaceId: string, patch: Partial<Pick<WorkspaceRow, "planKey" | "stripeCustomerId" | "stripeSubscriptionId" | "subscriptionStatus" | "currentPeriodEnd" | "trialStartedAt">>) {
   await db().update(workspaces).set({ ...patch, updatedAt: new Date() }).where(eq(workspaces.id, workspaceId));
 }

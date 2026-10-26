@@ -4,7 +4,7 @@ import { dataErrorResponse } from "@/lib/data/server";
 import { getOrCreateProfile } from "@/lib/data/profile";
 import { getCreditBalance } from "@/lib/credits";
 import { stripeEnabled } from "@/lib/stripe";
-import { ensureFreeAd, freeAdsPerDay } from "@/lib/billing";
+import { ensureFreeAd, freeAdsPerDay, trialAvailable } from "@/lib/billing";
 import { ensurePersonalWorkspace, getWorkspace } from "@/lib/workspaces";
 import { databaseModeOnly } from "@/app/api/projects/_guard";
 
@@ -22,6 +22,8 @@ export async function GET() {
     return Response.json({
       enabled: stripeEnabled(),
       planKey: ws.planKey,
+      // The free trial (26 Oct 2026): offered once, before the first subscription.
+      trialAvailable: trialAvailable(ws),
       subscriptionStatus: ws.subscriptionStatus,
       currentPeriodEnd: ws.currentPeriodEnd,
       balance: await getCreditBalance(ws.id),

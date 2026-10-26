@@ -6,7 +6,7 @@ import { getOrCreateProfile } from "@/lib/data/profile";
 import { getWorkspace } from "@/lib/workspaces";
 import { planByKey, TOPUPS } from "@/lib/plans";
 import { priceByLookupKey, stripe, stripeEnabled } from "@/lib/stripe";
-import { setPlan } from "@/lib/billing";
+import { setPlan, trialAvailable } from "@/lib/billing";
 import { databaseModeOnly, readJson } from "@/app/api/projects/_guard";
 
 const Currency = z.enum(["usd", "eur"]).optional();
@@ -52,9 +52,15 @@ export async function POST(request: Request) {
       if (!plan?.stripeLookup) return Response.json({ error: "Unknown plan." }, { status: 400 });
       if (plan.team && workspace.kind !== "team") return Response.json({ error: "The Business plan is for a team workspace. Create one under Settings → Team first." }, { status: 400 });
       if (!plan.team && workspace.kind === "team") return Response.json({ error: "A team workspace uses the Business plan." }, { status: 400 });
+      // One subscription per workspace: a plan change for a current subscriber goes through the portal.
+      if (workspace.stripeSubscriptionId && ["active", "trialing", "past_due", "canceling"].includes(workspace.subscriptionStatus ?? "")) {
+        return Response.json({ error: "You already have a plan. Change it in the billing portal.", code: "has_subscription" }, { status: 409 });
+      }
       const price = await priceByLookupKey(b.interval === "annual" ? plan.stripeLookup.annual : plan.stripeLookup.monthly);
       if (!price) return Response.json({ error: "The price is not set up in Stripe yet. Run the setup script." }, { status: 503 });
-      const session = await s.checkout.sessions.create(subscriptionSessionParams(plan, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax, requireTerms, currency }));
+      // The free trial, once per workspace (26 Oct 2026).
+      const trial = trialAvailable(workspace);
+      const session = await s.checkout.sessions.create(subscriptionSessionParams(plan, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax, requireTerms, currency, trial }));
       return Response.json({ url: session.url });
     }
     const pack = TOPUPS.find((t) => t.key === b.topupKey);

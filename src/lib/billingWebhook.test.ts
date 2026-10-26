@@ -107,6 +107,35 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     vi.unstubAllEnvs();
   });
 
+  it("runs the free trial: 30 credits once at the start, no plan credits on the €0 invoice, plan credits at the first payment", async () => {
+    const { applyStripeEvent } = await import("./billingWebhook");
+    const { getCreditBalance } = await import("./credits");
+    const { trialAvailable } = await import("./billing");
+    const { PLANS, TRIAL } = await import("./plans");
+    const { db, workspaces } = await import("@/lib/db");
+    const { eq } = await import("drizzle-orm");
+    const pro = PLANS.find((p) => p.key === "pro")!;
+    await db().update(workspaces).set({ stripeCustomerId: "cus_test_trial", planKey: "free", trialStartedAt: null, stripeSubscriptionId: null }).where(eq(workspaces.id, wsId));
+    let [w] = await db().select().from(workspaces).where(eq(workspaces.id, wsId));
+    expect(trialAvailable(w)).toBe(true);
+    const before = await getCreditBalance(wsId);
+    const sub = { id: "sub_trial", customer: "cus_test_trial", status: "trialing", metadata: { planKey: "pro" }, items: { data: [{ current_period_end: 1893456000, price: { id: "p", lookup_key: "reelay_pro_monthly" } }] } };
+    const created = { id: "evt_test_trial_1", type: "customer.subscription.created", data: { object: sub } } as unknown as import("stripe").Stripe.Event;
+    await applyStripeEvent(created);
+    await applyStripeEvent({ ...created, id: "evt_test_trial_2", type: "customer.subscription.updated" } as unknown as import("stripe").Stripe.Event);
+    expect(await getCreditBalance(wsId)).toBe(before + TRIAL.credits);
+    [w] = await db().select().from(workspaces).where(eq(workspaces.id, wsId));
+    expect(w.planKey).toBe("pro");
+    expect(w.trialStartedAt).not.toBeNull();
+    expect(trialAvailable(w)).toBe(false);
+    const deps = { lookupKeyOfPrice: async () => "reelay_pro_monthly", subscriptionStatus: async () => "trialing" };
+    const invoice = (id: string, reason: string, paid: number) => ({ id, type: "invoice.paid", data: { object: { id: `in_${id}`, billing_reason: reason, amount_paid: paid, customer: "cus_test_trial", parent: { subscription_details: { subscription: "sub_trial", metadata: {} } }, lines: { data: [{ metadata: {}, pricing: { price_details: { price: "price_x", product: "prod_x" } } }] } } } }) as unknown as import("stripe").Stripe.Event;
+    expect((await applyStripeEvent(invoice("evt_test_trial_inv0", "subscription_create", 0), deps)).note).toMatch(/trial started/);
+    expect(await getCreditBalance(wsId)).toBe(before + TRIAL.credits);
+    await applyStripeEvent(invoice("evt_test_trial_inv1", "subscription_cycle", 5900), { ...deps, subscriptionStatus: async () => "active" });
+    expect(await getCreditBalance(wsId)).toBe(before + TRIAL.credits + pro.creditsPerMonth);
+  });
+
   it("moves a cancelled subscription back to free on the workspace", async () => {
     const { applyStripeEvent } = await import("./billingWebhook");
     const { db, workspaces } = await import("@/lib/db");

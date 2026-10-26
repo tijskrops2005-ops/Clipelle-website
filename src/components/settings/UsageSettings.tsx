@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { DemoBadge } from "@/components/DemoModeBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 
-const kindLabel: Record<string, string> = { grant_free: "Free credits", grant_subscription: "Plan credits", grant_topup: "Credit pack", grant_manual: "Added", reserve: "Reserved for a project", settle: "Unused credits returned", refund: "Refunded (project failed)", expire: "Expired" };
+const kindLabel: Record<string, string> = { grant_free: "Free credits", grant_trial: "Free trial credits", grant_subscription: "Plan credits", grant_topup: "Credit pack", grant_manual: "Added", reserve: "Reserved for a project", settle: "Unused credits returned", refund: "Refunded (project failed)", expire: "Expired" };
 
 /** Usage per project in credits and the credit ledger, for the current workspace. */
 export function UsageSettings() {

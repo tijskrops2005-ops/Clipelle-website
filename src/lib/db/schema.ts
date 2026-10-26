@@ -395,7 +395,7 @@ export const creditLedger = pgTable(
     projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
     /** Positive = added, negative = taken. */
     credits: integer("credits").notNull(),
-    kind: text("kind").notNull(), // grant_free | grant_subscription | grant_topup | grant_manual | reserve | settle | refund | expire
+    kind: text("kind").notNull(), // grant_free | grant_trial | grant_subscription | grant_topup | grant_manual | reserve | settle | refund | expire
     note: text("note"),
     /** Idempotency key for grants from webhooks (e.g. a Stripe event or invoice id). */
     reference: text("reference"),
@@ -544,6 +544,8 @@ export const workspaces = pgTable(
     stripeSubscriptionId: text("stripe_subscription_id"),
     subscriptionStatus: text("subscription_status"),
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    /** When this workspace started its one free trial (26 Oct 2026); null = a trial is still possible. */
+    trialStartedAt: timestamp("trial_started_at", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [

@@ -9,7 +9,7 @@ import { creditLedger, db } from "@/lib/db";
  * credits before it starts (startProject), settles when it completes and is refunded when it fails.
  * reserveSpend/settleSpend (the cost guard) are untouched.
  */
-export type LedgerKind = "grant_free" | "grant_subscription" | "grant_topup" | "grant_manual" | "reserve" | "settle" | "refund" | "expire";
+export type LedgerKind = "grant_free" | "grant_trial" | "grant_subscription" | "grant_topup" | "grant_manual" | "reserve" | "settle" | "refund" | "expire";
 
 export async function getCreditBalance(workspaceId: string): Promise<number> {
   const [row] = await db()

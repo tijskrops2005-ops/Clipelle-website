@@ -1,7 +1,7 @@
 import "server-only";
 import { count, eq, gte, sql } from "drizzle-orm";
 import { db, profiles } from "@/lib/db";
-import { ALL_PLANS, CREDIT_EXPIRY, FREE_AD, FREE_AD_CREDITS, TOPUPS, planByKey } from "@/lib/plans";
+import { ALL_PLANS, CREDIT_EXPIRY, FREE_AD, FREE_AD_CREDITS, TOPUPS, TRIAL, planByKey } from "@/lib/plans";
 import { grantCredits } from "@/lib/credits";
 import { updateWorkspaceBilling, workspaceByCustomer } from "@/lib/workspaces";
 import type { AppUser } from "@/lib/auth";
@@ -55,6 +55,16 @@ export function isFreeOnlyCombination(seconds: number, engine: string) {
   return seconds === FREE_AD.seconds && engine === FREE_AD.engine;
 }
 
+/** A workspace may start one free trial: never had one, no subscription yet. */
+export function trialAvailable(w: { trialStartedAt: Date | null; stripeSubscriptionId: string | null; planKey: string }) {
+  return !w.trialStartedAt && !w.stripeSubscriptionId && w.planKey === "free";
+}
+
+/** The trial's credits (TRIAL.credits), once per subscription; they expire like the free credits. */
+export async function grantTrialCredits(workspaceId: string, userId: string, subscriptionId: string) {
+  await grantCredits({ workspaceId, userId, credits: TRIAL.credits, kind: "grant_trial", note: `Free trial (${TRIAL.credits} credits)`, expiresAt: freeAdExpiry(new Date()), reference: `trial:${subscriptionId}` });
+}
+
 /** Credits for a plan period, on an invoice paid event. Idempotent on the invoice id. They never expire. */
 export async function grantPlanCredits(workspaceId: string, userId: string, planKey: string, invoiceId: string) {
   const plan = planByKey(planKey);
@@ -68,7 +78,7 @@ export async function grantTopupCredits(workspaceId: string, userId: string, top
   await grantCredits({ workspaceId, userId, credits: pack.credits, kind: "grant_topup", note: `${pack.credits} credits pack`, expiresAt: null, reference: `checkout:${sessionId}` });
 }
 
-export async function setPlan(workspaceId: string, patch: { planKey?: string; stripeCustomerId?: string | null; stripeSubscriptionId?: string | null; subscriptionStatus?: string | null; currentPeriodEnd?: Date | null }) {
+export async function setPlan(workspaceId: string, patch: { planKey?: string; stripeCustomerId?: string | null; stripeSubscriptionId?: string | null; subscriptionStatus?: string | null; currentPeriodEnd?: Date | null; trialStartedAt?: Date }) {
   await updateWorkspaceBilling(workspaceId, patch);
 }
 

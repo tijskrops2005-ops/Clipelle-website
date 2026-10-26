@@ -155,3 +155,18 @@ describe("dollars or euros (26 Oct 2026)", () => {
     expect(checkoutCurrency("eur", "gbp")).toBe("eur");
   });
 });
+
+describe("free trial on the checkout", () => {
+  const pro = PLANS.find((p) => p.key === "pro")!;
+  it("adds 7 days, a required card and cancel-without-card only when the trial is offered", () => {
+    const withTrial = subscriptionSessionParams(pro, { ...input, trial: true });
+    expect(withTrial.subscription_data).toMatchObject({ trial_period_days: 7, trial_settings: { end_behavior: { missing_payment_method: "cancel" } } });
+    expect(withTrial.payment_method_collection).toBe("always");
+    expect(withTrial.metadata).toMatchObject({ trial: "yes" });
+    const without = subscriptionSessionParams(pro, input);
+    expect(without.subscription_data).not.toHaveProperty("trial_period_days");
+    expect(without).not.toHaveProperty("payment_method_collection");
+    // Managed Payments keeps the trial (Stripe sends the trial e-mails then).
+    expect(subscriptionSessionParams(pro, { ...input, trial: true, managed: true }).subscription_data).toMatchObject({ trial_period_days: 7 });
+  });
+});
