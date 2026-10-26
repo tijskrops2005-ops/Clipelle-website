@@ -10,7 +10,7 @@ import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { PresenterPicker } from "@/components/PresenterPicker";
 import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, type AdLength, type PresenterEngine } from "@/lib/pricing";
 import { buildAdDraft, effectiveAccentOf, validateAdForm, type AdFormErrors, type AdFormValues } from "@/lib/forms/adDraft";
-import { adCredits } from "@/lib/plans";
+import { adCredits, FEATURE_PLAN, hasFeature, type PlanFeature } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import type { Presenter } from "@/lib/types";
 import { VoicePicker } from "@/components/VoicePicker";
@@ -42,6 +42,7 @@ import { controlClass, controlStateClass } from "@/components/ui/Field";
 import { FormatPicker } from "@/components/FormatPicker";
 import { formatByKey, type FormatKey } from "@/content/formats";
 import { VariationsPicker } from "@/components/VariationsPicker";
+import { PlanHint } from "@/components/PlanHint";
 import { MAX_BATCH_VARIANTS, MIN_BATCH_VARIANTS, variantLabel, type Variant } from "@/content/formats";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -148,13 +149,17 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
         if (!alive) return;
         setPlanKey(a.planKey);
         setBalance(a.balance);
+        // A version or preset may carry Premium from before: back to Standard when this plan does not include it.
+        if (!hasFeature(a.planKey, "premium")) setEngine((e) => (e === "avatar_iv" ? DEFAULT_PRESENTER_ENGINE : e));
       })
       .catch(() => alive && setPlanKey("free"));
     return () => {
       alive = false;
     };
   }, []);
-  const variationsAllowed = planKey !== "free";
+  // What the plan unlocks (26 Oct 2026); demo mode and the moment before the plan is known lock nothing.
+  const can = (feature: PlanFeature) => config.demoMode || planKey === null || hasFeature(planKey, feature);
+  const variationsAllowed = can("variations");
   const batchOn = variations && variationsAllowed;
 
   /** A format writes its direction into the Direction field and picks the tone; both stay visible and editable. */
@@ -422,6 +427,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
             <p className="mb-3 text-[13px] text-muted">How the presenter looks and moves. Credits are for the whole video at the chosen length.</p>
             <OptionGrid columns={2}>
               {PRESENTER_QUALITIES.map((q) => {
+                const locked = q.key === "avatar_iv" && !can("premium");
                 const over = estimateFor(seconds, q.key).total > budget;
                 const maxLen = [...AD_LENGTHS].reverse().find((len) => estimateFor(len, q.key).total <= budget);
                 return (
@@ -430,6 +436,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
                     selected={engine === q.key}
                     onSelect={() => setEngine(q.key)}
                     disabled={submitting}
+                    lockedTo={locked ? FEATURE_PLAN.premium : undefined}
                     title={q.label}
                     badge={q.key === DEFAULT_PRESENTER_ENGINE ? <Badge tone="success">Recommended</Badge> : undefined}
                     meta={
@@ -442,6 +449,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
                 );
               })}
             </OptionGrid>
+            {!can("premium") && <PlanHint feature="premium" text="The Premium presenter comes with Pro and up." />}
           </fieldset>
 
           <div>

@@ -1,4 +1,5 @@
 import "server-only";
+import { FEATURE_PLAN, hasFeature } from "@/lib/plans";
 import { createHash, randomBytes } from "node:crypto";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { apiKeys, db, workspaces } from "@/lib/db";
@@ -20,13 +21,14 @@ export function looksLikeApiKey(value: string) {
   return /^rl_[A-Za-z0-9_-]{43}$/.test(value);
 }
 
+/** API keys, MCP and webhooks come with Pro and up (26 Oct 2026). */
 export async function planAllowsApiKeys(workspaceId: string) {
   const [w] = await db().select({ planKey: workspaces.planKey }).from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1);
-  return (w?.planKey ?? "free") !== "free";
+  return hasFeature(w?.planKey, "api");
 }
 
 export async function createApiKey(scope: { userId: string; workspaceId: string }, name: string) {
-  if (!(await planAllowsApiKeys(scope.workspaceId))) throw new DataError("API keys are available on plans with credits. Pick a plan in Billing first.", 403, "plan_required");
+  if (!(await planAllowsApiKeys(scope.workspaceId))) throw new DataError(`API keys come with the ${FEATURE_PLAN.api} plan. Upgrade in Billing first.`, 403, "plan_required");
   const existing = await db().select({ id: apiKeys.id }).from(apiKeys).where(and(eq(apiKeys.workspaceId, scope.workspaceId), isNull(apiKeys.revokedAt)));
   if (existing.length >= MAX_KEYS_PER_USER) throw new DataError(`A workspace can have ${MAX_KEYS_PER_USER} active keys. Revoke one first.`, 409, "too_many_keys");
   const key = KEY_PREFIX + randomBytes(32).toString("base64url");

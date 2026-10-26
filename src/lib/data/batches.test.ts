@@ -60,7 +60,7 @@ describe.skipIf(!hasDb)("batches", () => {
   }
 
   it("refuses the free plan, fewer than 2 or more than 5 variations, and duplicates", async () => {
-    await expect(batches.createBatch(scopeB, { ad, variants: [{ format: "unboxing" }, { format: "offer" }] })).rejects.toMatchObject({ code: "free_plan_limit" });
+    await expect(batches.createBatch(scopeB, { ad, variants: [{ format: "unboxing" }, { format: "offer" }] })).rejects.toMatchObject({ code: "plan_feature" });
     await expect(batches.createBatch(scopeA, { ad, variants: [{ format: "unboxing" }] })).rejects.toMatchObject({ code: "bad_variants" });
     await expect(batches.createBatch(scopeA, { ad, variants: [{ format: "unboxing" }, { format: "offer" }, { format: "testimonial" }, { format: "before-after" }, { format: "problem-fix" }, { format: "three-reasons" }] })).rejects.toMatchObject({ code: "bad_variants" });
     await expect(batches.createBatch(scopeA, { ad, variants: [{ format: "unboxing" }, { format: "unboxing" }] })).rejects.toMatchObject({ code: "bad_variants" });

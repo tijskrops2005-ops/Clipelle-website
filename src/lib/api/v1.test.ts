@@ -31,7 +31,7 @@ describe.skipIf(!hasDb)("public API v1", () => {
     const { ensurePersonalWorkspace } = await import("@/lib/workspaces");
     wsA = (await ensurePersonalWorkspace({ id: userA, email: "api-a@clipelle.local" })).id;
     wsB = (await ensurePersonalWorkspace({ id: userB, email: "api-b@clipelle.local" })).id;
-    await db().update(workspaces).set({ planKey: "starter" }).where(eq(workspaces.id, wsA));
+    await db().update(workspaces).set({ planKey: "pro" }).where(eq(workspaces.id, wsA));
     const { createApiKey } = await import("@/lib/apiKeys");
     const k = await createApiKey(scopeA(), "test");
     keyA = k.key;
@@ -89,7 +89,7 @@ describe.skipIf(!hasDb)("public API v1", () => {
     const { createDraft } = await import("@/lib/data/server");
     const { db, workspaces } = await import("@/lib/db");
     const { eq } = await import("drizzle-orm");
-    await db().update(workspaces).set({ planKey: "starter" }).where(eq(workspaces.id, wsB));
+    await db().update(workspaces).set({ planKey: "pro" }).where(eq(workspaces.id, wsB));
     const { createApiKey } = await import("@/lib/apiKeys");
     const kB = await createApiKey(scopeB(), "b");
     const rowA = await createDraft(scopeA(), { workflow: "ad", ad: { name: "Isolation A", seconds: 10, engine: "avatar_iii", language: "en", speed: "normal", tone: "direct", reviewScript: false, productName: "X", description: "Twenty characters of description here." } });

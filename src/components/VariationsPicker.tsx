@@ -39,7 +39,7 @@ export function VariationsPicker({ on, allowed, planLoaded, variants, onToggle, 
           <span className="font-medium">Make variations</span>
           <span className="block text-[13px] leading-relaxed text-muted">
             {MIN_BATCH_VARIANTS} to {MAX_BATCH_VARIANTS} videos of this product, each with a different format or a different hook. Every variation is its own video with its own credits ({creditsEach} credits each); all credits are reserved before the first one starts.
-            {!allowed && planLoaded ? " Variations come with every paid plan: pick one in Billing." : ""}
+            {!allowed && planLoaded ? " Variations come with Pro and up: see the plans in Billing." : ""}
           </span>
         </span>
       </label>

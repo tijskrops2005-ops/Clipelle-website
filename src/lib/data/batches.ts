@@ -1,3 +1,4 @@
+import { FEATURE_PLAN, hasFeature } from "@/lib/plans";
 import "server-only";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db, projectBatches, projects, workspaces, type AdInput } from "@/lib/db";
@@ -23,7 +24,7 @@ export async function createBatch(scope: DataScope, input: { ad: NewAdProject; v
     throw new DataError(`A batch has ${MIN_BATCH_VARIANTS} to ${MAX_BATCH_VARIANTS} variations.`, 400, "bad_variants");
   }
   const [ws] = await db().select({ planKey: workspaces.planKey }).from(workspaces).where(eq(workspaces.id, scope.workspaceId)).limit(1);
-  if ((ws?.planKey ?? "free") === "free") throw new DataError("Variations need a plan. Pick one in Billing; the free plan makes one ad at a time.", 402, "free_plan_limit");
+  if (!hasFeature(ws?.planKey, "variations")) throw new DataError(`Variations come with the ${FEATURE_PLAN.variations} plan. Upgrade in Billing to make 2 to 5 versions at once.`, 402, "plan_feature");
   const seen = new Set(input.variants.map((v) => JSON.stringify(v)));
   if (seen.size !== input.variants.length) throw new DataError("Every variation must be different.", 400, "bad_variants");
 

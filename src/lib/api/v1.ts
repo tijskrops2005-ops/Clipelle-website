@@ -1,3 +1,4 @@
+import { FEATURE_PLAN, apiRateMultiplier, hasFeature } from "@/lib/plans";
 import "server-only";
 import { unstable_rethrow } from "next/navigation";
 import { createHash } from "node:crypto";
@@ -41,12 +42,13 @@ export async function authenticateApi(request: Request): Promise<ApiCaller> {
   if (!m) throw new ApiError("unauthorized", "Send your API key as `Authorization: Bearer rl_…`.", 401);
   const key = await findActiveKey(m[1]);
   if (!key) throw new ApiError("unauthorized", "This API key is unknown or revoked.", 401);
-  const limited = await rateLimit(`api:key:${key.id}`, apiRateLimitPerMinute(), 60_000);
-  if (!limited.ok) throw new ApiError("rate_limited", `Too many requests. Try again in ${limited.retryAfterSeconds} seconds.`, 429, { retryAfterSeconds: limited.retryAfterSeconds });
   if (!key.workspaceId) throw new ApiError("unauthorized", "This API key belongs to no workspace. Create a new key.", 401);
   const [w] = await db().select({ planKey: workspaces.planKey }).from(workspaces).where(eq(workspaces.id, key.workspaceId)).limit(1);
   const planKey = w?.planKey ?? "free";
-  if (planKey === "free") throw new ApiError("plan_required", "The API needs a plan with credits. Pick a plan in Billing.", 403);
+  // The limit per minute doubles on Scale, Business and Enterprise (26 Oct 2026).
+  const limited = await rateLimit(`api:key:${key.id}`, apiRateLimitPerMinute() * apiRateMultiplier(planKey), 60_000);
+  if (!limited.ok) throw new ApiError("rate_limited", `Too many requests. Try again in ${limited.retryAfterSeconds} seconds.`, 429, { retryAfterSeconds: limited.retryAfterSeconds });
+  if (!hasFeature(planKey, "api")) throw new ApiError("plan_required", `The API comes with the ${FEATURE_PLAN.api} plan. Upgrade in Billing.`, 403);
   await touchApiKey(key.id, key.lastUsedAt);
   return { userId: key.userId, workspaceId: key.workspaceId, keyId: key.id, planKey };
 }
@@ -61,7 +63,7 @@ export function apiErrorResponse(error: unknown): Response {
   if (error instanceof CostGuardError) return json({ error: { code: "budget_exceeded", message: error.message } }, 409);
   if (error instanceof UrlError) return json({ error: { code: `file_${error.code}`, message: error.message } }, error.status);
   if (error instanceof DataError) {
-    const code = error.code === "free_plan_limit" ? "plan_required" : error.code === "creative_budget" ? "budget_exceeded" : error.code === "user_limit" ? "rate_limited" : (error.code ?? "request_failed");
+    const code = error.code === "free_plan_limit" || error.code === "plan_feature" ? "plan_required" : error.code === "creative_budget" ? "budget_exceeded" : error.code === "user_limit" ? "rate_limited" : (error.code ?? "request_failed");
     return json({ error: { code, message: error.message } }, error.status);
   }
   console.error("[api/v1]", error);

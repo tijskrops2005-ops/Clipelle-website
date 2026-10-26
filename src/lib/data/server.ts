@@ -15,7 +15,7 @@ import { DEFAULT_SPEED, isSpeedKey, speedValue, type AdLanguageCode, type SpeedK
 import type { UploadKind } from "@/lib/data/uploads";
 import { authErrorResponse } from "@/lib/auth";
 import { CreditError, projectCreditsUsed, reserveCredits } from "@/lib/credits";
-import { adCredits, FREE_AD, translateCredits } from "@/lib/plans";
+import { adCredits, FEATURE_PLAN, FREE_AD, hasFeature, translateCredits } from "@/lib/plans";
 import { DataError } from "@/lib/data/errors";
 import { workspaces } from "@/lib/db";
 
@@ -64,6 +64,22 @@ async function urlFor(asset: AssetRow | undefined) {
   } catch {
     return undefined;
   }
+}
+
+/**
+ * A choice the workspace's plan does not include, as a plain message; null when everything is
+ * allowed. The forms lock these options already; this is the server-side guard (API included).
+ */
+export function lockedFeature(row: Pick<ProjectRow, "workflow" | "input">, planKey: string): string | null {
+  if (row.workflow === "ad") {
+    const input = row.input as AdInput;
+    if ((input.engine ?? workflowSettings.heygenEngine) === "avatar_iv" && !hasFeature(planKey, "premium")) return `The Premium presenter comes with the ${FEATURE_PLAN.premium} plan. Pick Standard, or upgrade in Billing.`;
+    return null;
+  }
+  const input = row.input as TranslateInput;
+  if (input.quality === "precision" && !hasFeature(planKey, "precision")) return `Precision translation comes with the ${FEATURE_PLAN.precision} plan. Pick Speed, or upgrade in Billing.`;
+  if (input.enhance && !hasFeature(planKey, "enhance")) return `Picture enhancement comes with the ${FEATURE_PLAN.enhance} plan. Turn it off, or upgrade in Billing.`;
+  return null;
 }
 
 /** Credits one project costs, from the same estimates (A: whole ad; B: per language × languages). */
@@ -418,6 +434,10 @@ export async function startProject(scope: DataScope, projectId: string) {
       throw new DataError(`On the free plan an ad is ${FREE_AD.seconds} seconds in Standard quality (your free credits cover exactly that). Pick a plan in Billing for other lengths and Premium.`, 402, "free_plan_limit");
     }
   }
+  // What the plan unlocks (26 Oct 2026): Premium and Precision from Pro, enhancement from Scale.
+  const planKey = profile?.planKey ?? "free";
+  const locked = lockedFeature(row, planKey);
+  if (locked) throw new DataError(locked, 402, "plan_feature");
   // Translations on the free plan (25 Oct 2026): the 30 free credits cover half a minute of Speed translation; the balance check below decides.
   try {
     await reserveCredits(workspaceId, userId, projectId, credits, `${row.workflow === "ad" ? "Ad" : "Translation"}: ${row.name}`);

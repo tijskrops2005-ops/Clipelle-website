@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Check } from "lucide-react";
+import { Check, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type OptionCardProps = {
@@ -19,6 +19,8 @@ type OptionCardProps = {
   /** A badge such as "Recommended", on its own line above the title so it never collides with the price. */
   badge?: ReactNode;
   disabled?: boolean;
+  /** The plan that unlocks this option ("Pro"): shown as a lock badge, the card cannot be picked. */
+  lockedTo?: string;
   /** "card" (default) is a bordered panel; "chip" is a compact pill for short labels. */
   size?: "card" | "chip";
   className?: string;
@@ -28,7 +30,16 @@ type OptionCardProps = {
  * One choice in a group of options (quality, tone, format, length). Behaves like a radio:
  * aria-pressed, keyboard focusable, selected state with an ink border and a check mark.
  */
-export function OptionCard({ selected, onSelect, title, description, meta, footnote, leading, badge, disabled, size = "card", className }: OptionCardProps) {
+export function OptionCard({ selected, onSelect, title, description, meta, footnote, leading, badge, disabled, lockedTo, size = "card", className }: OptionCardProps) {
+  if (lockedTo) {
+    disabled = true;
+    meta = (
+      <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-surface">
+        <Lock className="size-3" aria-hidden />
+        {lockedTo}
+      </span>
+    );
+  }
   if (size === "chip") {
     return (
       <button
@@ -58,9 +69,10 @@ export function OptionCard({ selected, onSelect, title, description, meta, footn
       className={cn(
         "focus-ring relative flex w-full flex-col gap-1.5 rounded-panel border p-4 text-left transition-[background-color,border-color,box-shadow,transform] duration-150",
         selected ? "border-ink bg-surface shadow-[0_0_0_1px_var(--ink)]" : "border-border bg-surface hover:border-ink/30 hover:shadow-soft",
-        disabled && "pointer-events-none opacity-50",
+        disabled && (lockedTo ? "cursor-not-allowed opacity-70" : "pointer-events-none opacity-50"),
         className,
       )}
+      aria-disabled={lockedTo ? true : undefined}
     >
       {badge && <span className="mb-0.5 block">{badge}</span>}
       <span className="flex items-start justify-between gap-3">

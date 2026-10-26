@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Languages, Loader2 } from "lucide-react";
+import { Languages, Loader2, Lock } from "lucide-react";
 import { config } from "@/lib/config";
 import type { AdProject, LanguageCode, TranslationQuality } from "@/lib/types";
 import { isTranslateLanguage } from "@/lib/translateLanguages";
@@ -27,7 +27,8 @@ import { OptionCard, OptionGrid } from "@/components/ui/OptionCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Disclosure } from "@/components/ui/Disclosure";
 import { SummaryPanel } from "@/components/ui/SummaryPanel";
-import { CREDIT_RULES, translateCredits } from "@/lib/plans";
+import { CREDIT_RULES, FEATURE_PLAN, hasFeature, translateCredits, type PlanFeature } from "@/lib/plans";
+import { PlanHint } from "@/components/PlanHint";
 import { getAccountStatus } from "@/lib/data/settingsClient";
 
 type Errors = TranslateFormErrors;
@@ -96,10 +97,23 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
   const estimate = estimateFor(quality);
   const overBudget = estimate.perLanguageTotal > budget;
   const [balance, setBalance] = useState<number | null>(null);
+  const [planKey, setPlanKey] = useState<string | null>(null);
+  // What the plan unlocks (26 Oct 2026): Precision from Pro, enhancement from Scale. Demo mode and the
+  // moment before the plan is known lock nothing; the server checks again.
+  const can = (feature: PlanFeature) => config.demoMode || planKey === null || hasFeature(planKey, feature);
   useEffect(() => {
     if (config.demoMode) return;
     let alive = true;
-    getAccountStatus().then((a) => alive && setBalance(a.balance)).catch(() => {});
+    getAccountStatus()
+      .then((a) => {
+        if (!alive) return;
+        setBalance(a.balance);
+        setPlanKey(a.planKey);
+        // Choices this plan does not include fall back to what it does.
+        if (!hasFeature(a.planKey, "precision")) setQuality("speed");
+        if (!hasFeature(a.planKey, "enhance")) setEnhance(false);
+      })
+      .catch(() => {});
     return () => {
       alive = false;
     };
@@ -257,6 +271,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
                     selected={quality === q.key}
                     onSelect={() => setQuality(q.key)}
                     disabled={submitting}
+                    lockedTo={q.key === "precision" && !can("precision") ? FEATURE_PLAN.precision : undefined}
                     title={q.title}
                     badge={q.key === "speed" ? <Badge tone="success">Recommended</Badge> : undefined}
                     meta={<span className="label-mono text-muted">{perLanguage} credits / language</span>}
@@ -271,6 +286,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
                 );
               })}
             </OptionGrid>
+            {!can("precision") && <PlanHint feature="precision" text="Precision comes with Pro and up." />}
             <p className="text-[13px] text-muted">
               {knownLength ? `For your ${Math.round(seconds)}-second video` : "Shown for a 30-second video until you add yours"}: the translation, the check of every line, lip sync and captions are all included. A short video uses at least {CREDIT_RULES.translateMinimum} credits per language.
             </p>
@@ -330,10 +346,10 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
                 <span className="block text-[13px] leading-relaxed text-muted">Cuts quiet stretches longer than about 0.3 s before the first and after the last spoken line. The speech itself and the lip-sync are untouched.</span>
               </span>
             </label>
-            <label htmlFor="enhance" className={cn("flex cursor-pointer items-start gap-3 rounded-panel border p-4 transition-colors duration-150", enhance ? "border-ink bg-surface" : "border-border bg-surface hover:border-ink/30")}>
-              <input id="enhance" type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 shrink-0" />
+            <label htmlFor="enhance" className={cn("flex items-start gap-3 rounded-panel border p-4 transition-colors duration-150", can("enhance") ? "cursor-pointer" : "cursor-not-allowed opacity-70", enhance ? "border-ink bg-surface" : "border-border bg-surface hover:border-ink/30")}>
+              <input id="enhance" type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} disabled={submitting || !can("enhance")} className="mt-0.5 size-4 shrink-0" />
               <span>
-                <span className="block text-sm font-medium text-ink">Enhance picture quality</span>
+                <span className="flex items-center gap-2 text-sm font-medium text-ink">Enhance picture quality{!can("enhance") && <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-surface"><Lock className="size-3" aria-hidden />{FEATURE_PLAN.enhance}</span>}</span>
                 <span className="block text-[13px] leading-relaxed text-muted">Sharper, cleaner picture before the captions go on. Adds {CREDIT_RULES.translate.enhance} credit per second per language, and a few minutes.</span>
               </span>
             </label>
