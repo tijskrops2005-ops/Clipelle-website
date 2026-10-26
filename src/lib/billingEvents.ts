@@ -10,4 +10,10 @@ export const WEBHOOK_EVENTS = [
   "customer.subscription.created",
   "customer.subscription.updated",
   "customer.subscription.deleted",
+  // Failed renewals (Smart Retries keep retrying; the app shows the state) and the risk side of
+  // subscription charges: Stripe advises acting on disputes, refunds and early fraud warnings.
+  "invoice.payment_failed",
+  "charge.dispute.created",
+  "charge.refunded",
+  "radar.early_fraud_warning.created",
 ] as const;

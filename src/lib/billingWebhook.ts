@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { grantPlanCredits, grantTopupCredits, setPlan, workspaceByCustomer } from "@/lib/billing";
 import { PLAN_KEYS } from "@/lib/billing";
 import { planByLookupKey } from "@/lib/plans";
+import { notifyAddress, sendEmail } from "@/lib/email";
 
 /** Looks up a price's lookup key at Stripe (an invoice line carries only the price id). */
 export type BillingDeps = { lookupKeyOfPrice: (priceId: string) => Promise<string | null> };
@@ -83,8 +84,10 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
       if (!ws) return { handled: false, note: "unknown customer" };
       const planKey = planByLookupKey(sub.items.data[0]?.price?.lookup_key)?.key ?? (sub.metadata?.planKey as string | undefined) ?? ws.planKey;
       const periodEnd = sub.items.data[0]?.current_period_end;
-      await setPlan(ws.id, { planKey: sub.status === "active" || sub.status === "trialing" ? planKey : ws.planKey, stripeSubscriptionId: sub.id, subscriptionStatus: sub.status, currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null });
-      return { handled: true, note: `subscription ${sub.status}` };
+      // Cancelled in the portal for the end of the period: still active until then, shown as "ends on".
+      const status = sub.status === "active" && (sub.cancel_at_period_end || sub.cancel_at) ? "canceling" : sub.status;
+      await setPlan(ws.id, { planKey: sub.status === "active" || sub.status === "trialing" ? planKey : ws.planKey, stripeSubscriptionId: sub.id, subscriptionStatus: status, currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null });
+      return { handled: true, note: `subscription ${status}` };
     }
     case "customer.subscription.deleted": {
       const sub = event.data.object as Stripe.Subscription;
@@ -93,6 +96,31 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
       if (!ws) return { handled: false, note: "unknown customer" };
       await setPlan(ws.id, { planKey: "free", stripeSubscriptionId: null, subscriptionStatus: "canceled", currentPeriodEnd: null });
       return { handled: true, note: "back to free" };
+    }
+    case "invoice.payment_failed": {
+      // A renewal failed. The plan stays (Smart Retries and Stripe's e-mails take over, set in the
+      // Dashboard); the Billing page shows the state and the way to update the card. No credits move.
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+      const ws = customerId ? await workspaceByCustomer(customerId) : null;
+      if (!ws) return { handled: false, note: "unknown customer" };
+      await setPlan(ws.id, { subscriptionStatus: "past_due" });
+      return { handled: true, note: `payment failed (attempt ${invoice.attempt_count ?? 1})` };
+    }
+    case "charge.dispute.created":
+    case "charge.refunded":
+    case "radar.early_fraud_warning.created": {
+      // Money at risk or returned: tell the operator at once. Credits are not touched automatically;
+      // what to do is a decision per case (with Managed Payments, Stripe handles the dispute itself).
+      const o = event.data.object as { id: string; amount?: number; currency?: string; charge?: string | { id: string }; customer?: string | { id: string } | null };
+      const charge = typeof o.charge === "string" ? o.charge : o.charge?.id ?? (event.type === "charge.refunded" ? o.id : undefined);
+      const customer = typeof o.customer === "string" ? o.customer : o.customer?.id;
+      const to = notifyAddress();
+      if (to) {
+        const amount = typeof o.amount === "number" ? `${(o.amount / 100).toFixed(2)} ${(o.currency ?? "").toUpperCase()}` : "unknown amount";
+        await sendEmail({ to, subject: `Stripe: ${event.type}`, text: `Stripe sent ${event.type} (${event.id}).\nCharge: ${charge ?? "unknown"}\nCustomer: ${customer ?? "unknown"}\nAmount: ${amount}\n\nCredits were not changed. Look it up in the Stripe Dashboard and decide what to do.` }).catch(() => undefined);
+      }
+      return { handled: true, note: `${event.type} reported` };
     }
     default:
       return { handled: false, note: `ignored ${event.type}` };

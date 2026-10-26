@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 /**
  * The Stripe event applier with constructed events (no HTTP, no Stripe account). Needs the
@@ -80,6 +80,31 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     expect((await applyStripeEvent(invoice("evt_test_inv_2", "subscription_cycle"), deps)).note).toMatch(/pro/);
     await applyStripeEvent(invoice("evt_test_inv_2", "subscription_cycle"), deps);
     expect(await getCreditBalance(wsId)).toBe(before + pro.creditsPerMonth);
+  });
+
+  it("marks a failed renewal and a cancellation at period end, without touching credits", async () => {
+    const { applyStripeEvent } = await import("./billingWebhook");
+    const { getCreditBalance } = await import("./credits");
+    const { db, workspaces } = await import("@/lib/db");
+    const { eq } = await import("drizzle-orm");
+    await db().update(workspaces).set({ stripeCustomerId: "cus_test_dunning", planKey: "pro", subscriptionStatus: "active" }).where(eq(workspaces.id, wsId));
+    const before = await getCreditBalance(wsId);
+    const failed = { id: "evt_test_fail_1", type: "invoice.payment_failed", data: { object: { id: "in_failed", customer: "cus_test_dunning", attempt_count: 1 } } } as unknown as import("stripe").Stripe.Event;
+    expect((await applyStripeEvent(failed)).handled).toBe(true);
+    let [w] = await db().select().from(workspaces).where(eq(workspaces.id, wsId));
+    expect(w.subscriptionStatus).toBe("past_due");
+    expect(w.planKey).toBe("pro");
+    const canceling = { id: "evt_test_cancel_1", type: "customer.subscription.updated", data: { object: { id: "sub_c", customer: "cus_test_dunning", status: "active", cancel_at_period_end: true, metadata: {}, items: { data: [{ current_period_end: 1893456000, price: { id: "p", lookup_key: "reelay_pro_monthly" } }] } } } } as unknown as import("stripe").Stripe.Event;
+    await applyStripeEvent(canceling);
+    [w] = await db().select().from(workspaces).where(eq(workspaces.id, wsId));
+    expect(w.subscriptionStatus).toBe("canceling");
+    expect(w.planKey).toBe("pro");
+    // Never a real e-mail from a test: the mail helper only logs without a provider key.
+    vi.stubEnv("RESEND_API_KEY", "");
+    const dispute = { id: "evt_test_dispute_1", type: "charge.dispute.created", data: { object: { id: "dp_1", amount: 1900, currency: "usd", charge: "ch_1" } } } as unknown as import("stripe").Stripe.Event;
+    expect((await applyStripeEvent(dispute)).note).toMatch(/reported/);
+    expect(await getCreditBalance(wsId)).toBe(before);
+    vi.unstubAllEnvs();
   });
 
   it("moves a cancelled subscription back to free on the workspace", async () => {

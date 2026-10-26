@@ -81,12 +81,19 @@ export function BillingSettings() {
       {checkout === "cancelled" && <p role="status" className="rounded-chip bg-surface-muted px-4 py-2.5 text-sm text-muted">Checkout cancelled. Nothing was charged.</p>}
       {error && <p role="alert" className="rounded-chip bg-danger/10 px-4 py-2.5 text-sm text-danger">{error}</p>}
 
+      {(status?.subscriptionStatus === "past_due" || status?.subscriptionStatus === "unpaid") && (
+        <div role="alert" className="flex flex-col gap-3 rounded-chip bg-danger/10 px-4 py-3 text-sm text-ink sm:flex-row sm:items-center sm:justify-between">
+          <span>{status.subscriptionStatus === "unpaid" ? "Your plan payment did not go through after several tries. Update your card to keep your plan; your credits stay." : "Your last plan payment did not go through. We try again automatically; update your card to fix it now. Your credits stay."}</span>
+          <Button type="button" variant="primary" size="sm" onClick={portal} disabled={busy !== null}><CreditCard className="size-4" aria-hidden />Update card</Button>
+        </div>
+      )}
+
       <SectionCard title="Your plan" description="What you are on, your credits and the free credits." aside={<DemoBadge>Demo numbers</DemoBadge>}>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="panel p-4">
             <p className="label-mono text-muted">Plan</p>
             <p className="mt-1 text-[17px] font-semibold text-ink">{plan.name}</p>
-            <p className="text-[13px] text-muted">{status?.subscriptionStatus ? `Status: ${status.subscriptionStatus}` : plan.key === "free" ? "No subscription" : ""}{status?.currentPeriodEnd ? ` · renews ${new Date(status.currentPeriodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""}</p>
+            <p className="text-[13px] text-muted">{subscriptionLine(status?.subscriptionStatus ?? null, status?.currentPeriodEnd ?? null, plan.key === "free")}</p>
           </div>
           <div className="panel p-4">
             <p className="label-mono text-muted">Credits</p>
@@ -96,7 +103,7 @@ export function BillingSettings() {
           <div className="panel p-4">
             <p className="label-mono text-muted">Free credits</p>
             <p className="mt-1 flex items-center gap-2 text-[17px] font-semibold text-ink"><Gift className="size-4 text-accent" aria-hidden />{status?.freeAd.granted ? "Granted" : status?.freeAd.reason === "unverified" ? "After verification" : status?.freeAd.reason === "cap" ? "Daily cap reached" : "…"}</p>
-            <p className="text-[13px] text-muted">{status?.freeAd.reason === "cap" ? "All free credits for today are given out; you are on the list for tomorrow." : "One 10-second Standard ad per verified e-mail address."}</p>
+            <p className="text-[13px] text-muted">{status?.freeAd.reason === "cap" ? "All free credits for today are given out; you are on the list for tomorrow." : "30 credits per verified e-mail address: half a minute of translation or one 10-second ad."}</p>
           </div>
         </div>
         {enabled && status?.planKey !== "free" && (
@@ -130,3 +137,24 @@ export function BillingSettings() {
     </>
   );
 }
+
+/** The subscription state in words (26 Oct 2026): never a raw Stripe status on screen. */
+function subscriptionLine(subscriptionStatus: string | null, periodEnd: string | null, free: boolean) {
+  const date = periodEnd ? new Date(periodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : null;
+  switch (subscriptionStatus) {
+    case "active":
+    case "trialing":
+      return date ? `Renews ${date}` : "Active";
+    case "canceling":
+      return date ? `Cancelled: active until ${date}; your credits stay` : "Cancelled at the end of the period";
+    case "past_due":
+      return "Payment failed: we retry automatically";
+    case "unpaid":
+      return "Payment failed: update your card";
+    case "canceled":
+      return "Cancelled";
+    default:
+      return free ? "No subscription" : subscriptionStatus ?? "";
+  }
+}
+
