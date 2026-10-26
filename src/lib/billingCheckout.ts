@@ -26,7 +26,13 @@ export type CheckoutInput = {
   managed?: boolean;
   /** Stripe Tax on this session (only without Managed Payments; needs an active tax registration). */
   automaticTax?: boolean;
+  /** The terms checkbox (needs the terms URL in the Stripe Dashboard). */
+  requireTerms?: boolean;
 };
+
+function termsParams(on: boolean | undefined) {
+  return on ? { consent_collection: { terms_of_service: "required" as const } } : {};
+}
 
 /**
  * Stripe Tax for our own sales, when Managed Payments is off. Off unless STRIPE_AUTOMATIC_TAX is
@@ -37,6 +43,15 @@ export type CheckoutInput = {
  */
 export function automaticTaxEnabled(env: Record<string, string | undefined> = process.env) {
   return ["true", "1", "on", "yes"].includes((env.STRIPE_AUTOMATIC_TAX ?? "").trim().toLowerCase());
+}
+
+/**
+ * The "I agree to the Terms of Service and Privacy Policy" checkbox on the Checkout page. Off unless
+ * STRIPE_REQUIRE_TERMS is "true": Stripe refuses the session until the terms URL is set in the
+ * Dashboard (Settings → Public details → Terms of service), so switch it on after that.
+ */
+export function termsConsentEnabled(env: Record<string, string | undefined> = process.env) {
+  return ["true", "1", "on", "yes"].includes((env.STRIPE_REQUIRE_TERMS ?? "").trim().toLowerCase());
 }
 
 /** Our company line (name, address, KvK, VAT) on every invoice: Dutch invoice rules. */
@@ -105,6 +120,7 @@ export function subscriptionSessionParams(plan: Plan, input: CheckoutInput) {
     allow_promotion_codes: true,
     integration_identifier: CHECKOUT_INTEGRATION_ID,
     ...taxParams(input.automaticTax),
+    ...termsParams(input.requireTerms),
   }, input.managed);
 }
 
@@ -120,7 +136,10 @@ export function topupSessionParams(pack: TopupPack, input: CheckoutInput) {
     // A real invoice (PDF, our company details) for a credit pack, not only a receipt. Managed
     // Payments issues its own invoices and strips this.
     invoice_creation: { enabled: true, invoice_data: { footer: INVOICE_FOOTER, metadata: { workspaceId: input.workspaceId, kind: "topup" } } },
+    // "Add promotion code" on packs too (26 Oct 2026), as on plans.
+    allow_promotion_codes: true,
     ...taxParams(input.automaticTax),
+    ...termsParams(input.requireTerms),
   }, input.managed);
 }
 

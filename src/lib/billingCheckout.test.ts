@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PLANS, TOPUPS } from "./plans";
-import { CHECKOUT_INTEGRATION_ID, INVOICE_FOOTER, MANAGED_PAYMENTS_UNSUPPORTED, automaticTaxEnabled, managedPaymentsEnabled, REFERRAL_KEYS, STRIPE_PRODUCT_TAX_CODE, subscriptionSessionParams, topupSessionParams, TOPUP_METADATA, withManagedPayments } from "./billingCheckout";
+import { CHECKOUT_INTEGRATION_ID, INVOICE_FOOTER, termsConsentEnabled, MANAGED_PAYMENTS_UNSUPPORTED, automaticTaxEnabled, managedPaymentsEnabled, REFERRAL_KEYS, STRIPE_PRODUCT_TAX_CODE, subscriptionSessionParams, topupSessionParams, TOPUP_METADATA, withManagedPayments } from "./billingCheckout";
 
 const input = { customerId: "cus_test", userId: "user-1", workspaceId: "ws-1", priceId: "price_test", origin: "https://clipelle.test" };
 
@@ -124,3 +124,18 @@ describe("tax and invoices", () => {
     expect(pack).not.toHaveProperty("invoice_creation");
   });
 });
+
+describe("checkout page like the reference: promotion codes, terms checkbox", () => {
+  const pro = PLANS.find((p) => p.key === "pro")!;
+  it("offers 'Add promotion code' on plans and packs", () => {
+    expect(subscriptionSessionParams(pro, input).allow_promotion_codes).toBe(true);
+    expect(topupSessionParams(TOPUPS[0], input).allow_promotion_codes).toBe(true);
+  });
+  it("asks to accept the terms only when switched on", () => {
+    expect(termsConsentEnabled({})).toBe(false);
+    expect(topupSessionParams(TOPUPS[0], input)).not.toHaveProperty("consent_collection");
+    expect(topupSessionParams(TOPUPS[0], { ...input, requireTerms: true }).consent_collection).toEqual({ terms_of_service: "required" });
+    expect(subscriptionSessionParams(pro, { ...input, requireTerms: true, managed: true }).consent_collection).toEqual({ terms_of_service: "required" });
+  });
+});
+

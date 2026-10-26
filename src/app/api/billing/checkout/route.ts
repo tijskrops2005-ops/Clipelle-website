@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { INVOICE_FOOTER, automaticTaxEnabled, managedPaymentsEnabled, subscriptionSessionParams, topupSessionParams } from "@/lib/billingCheckout";
+import { INVOICE_FOOTER, automaticTaxEnabled, managedPaymentsEnabled, termsConsentEnabled, subscriptionSessionParams, topupSessionParams } from "@/lib/billingCheckout";
 import { requireOwner } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
 import { getOrCreateProfile } from "@/lib/data/profile";
@@ -38,6 +38,7 @@ export async function POST(request: Request) {
     const managed = managedPaymentsEnabled();
     // Stripe Tax only for our own sales; with Managed Payments Stripe handles tax itself.
     const automaticTax = !managed && automaticTaxEnabled();
+    const requireTerms = termsConsentEnabled();
     const b = parsed.data;
     if (b.kind === "plan") {
       const plan = planByKey(b.planKey);
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
       if (!plan.team && workspace.kind === "team") return Response.json({ error: "A team workspace uses the Business plan." }, { status: 400 });
       const price = await priceByLookupKey(b.interval === "annual" ? plan.stripeLookup.annual : plan.stripeLookup.monthly);
       if (!price) return Response.json({ error: "The price is not set up in Stripe yet. Run the setup script." }, { status: 503 });
-      const session = await s.checkout.sessions.create(subscriptionSessionParams(plan, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax }));
+      const session = await s.checkout.sessions.create(subscriptionSessionParams(plan, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax, requireTerms }));
       return Response.json({ url: session.url });
     }
     const pack = TOPUPS.find((t) => t.key === b.topupKey);
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
     if (workspace.planKey === "free") return Response.json({ error: "Credit packs come on top of a paid plan. Choose a plan first." }, { status: 400 });
     const price = await priceByLookupKey(pack.stripeLookup);
     if (!price) return Response.json({ error: "The price is not set up in Stripe yet. Run the setup script." }, { status: 503 });
-    const session = await s.checkout.sessions.create(topupSessionParams(pack, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax }));
+    const session = await s.checkout.sessions.create(topupSessionParams(pack, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax, requireTerms }));
     return Response.json({ url: session.url });
   } catch (error) {
     return dataErrorResponse(error);
