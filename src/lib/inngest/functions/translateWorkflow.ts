@@ -391,7 +391,8 @@ async function runTextRemoval(projectId: string, input: TranslateInput, step: St
     }
     if (st.status === "failed") {
       await step.run("clean-settle-failed", () => settleSpend(job.entryId, { status: "failed", actualUsd: st.gpuSeconds !== null ? Math.round(st.gpuSeconds * TEXT_REMOVAL_USD_PER_GPU_SECOND * 1000) / 1000 : 0 }));
-      return failClean(`Removing the on-screen text failed: ${st.error} Retry, or start again without this option.`);
+      console.error(`[text removal] prediction failed: ${st.error}`);
+      return failClean("The on-screen text could not be removed from this video. Retry, or start again without this option.");
     }
     await step.sleep(`clean-wait-${i}`, `${cfg.pollSeconds}s`);
   }

@@ -47,8 +47,17 @@ async function replicate<T>(path: string, init: RequestInit = {}): Promise<T> {
     signal: AbortSignal.timeout(30_000),
   });
   const body = (await res.json().catch(() => ({}))) as T & { detail?: string; title?: string };
-  // Never echo the token; the provider's own message is enough.
-  if (!res.ok) throw new TextRemovalError(`The text remover answered ${res.status}: ${body.detail ?? body.title ?? "unknown error"}`, "provider_error", res.status >= 500 ? 502 : 400);
+  if (!res.ok) {
+    // The provider's own words (and its name, billing links) stay in the server log; customers get a plain message.
+    console.error(`[text removal] ${res.status}: ${body.detail ?? body.title ?? "unknown error"}`);
+    const message =
+      res.status === 402 || res.status === 401 || res.status === 403
+        ? "Removing on-screen text is not available right now. Retry later, or start again without this option."
+        : res.status === 429 || res.status >= 500
+          ? "The text removal is busy. Retry in a few minutes."
+          : "The on-screen text could not be removed from this video. Retry, or start again without this option.";
+    throw new TextRemovalError(message, res.status === 402 ? "provider_billing" : "provider_error", res.status >= 500 ? 502 : 400);
+  }
   return body;
 }
 
