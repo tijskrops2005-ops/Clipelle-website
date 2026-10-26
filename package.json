@@ -14,6 +14,7 @@
     "test": "vitest run",
     "check:secrets": "node scripts/check-secrets.mjs",
     "stripe:setup": "tsx --env-file=.env.local scripts/stripe-setup.ts",
+    "stripe:tax": "tsx --env-file=.env.local scripts/stripe-tax.ts",
     "examples:upload": "node --env-file=.env.local scripts/upload-examples.mjs",
     "db:migrate:prod": "node --env-file=.env.prod node_modules/drizzle-kit/bin.cjs migrate",
     "examples:upload:prod": "node --env-file=.env.prod scripts/upload-examples.mjs",
