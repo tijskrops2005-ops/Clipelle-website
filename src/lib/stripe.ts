@@ -16,7 +16,9 @@ export function stripe(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
   if (!key) throw new Error("STRIPE_SECRET_KEY is not set in .env.local.");
   if (!key.startsWith("sk_test_")) throw new Error("Only a Stripe test key (sk_test_…) is accepted at this stage.");
-  if (!client) client = new Stripe(key, { apiVersion: "2026-09-30.clover" as Stripe.LatestApiVersion });
+  // The SDK's own pinned version (stripe 23.x: 2026-09-30.endive), which includes managed_payments on
+  // Checkout Sessions (added in 2026-04-22.dahlia). The old string here mixed a date and a release name.
+  if (!client) client = new Stripe(key, { apiVersion: Stripe.API_VERSION });
   return client;
 }
 
