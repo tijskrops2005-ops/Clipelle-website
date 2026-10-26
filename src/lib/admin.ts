@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { requireUser, type AppUser } from "@/lib/auth";
 import { careerInterests, costEntries, creditLedger, db, demoRequests, profiles, projects, rateLimits, serviceRequests, steps, waitlist, workspaces } from "@/lib/db";
 import { chargeOf } from "@/lib/services/costGuard";
-import { CREDIT_COST_USD, PLANS, BUSINESS_TIERS } from "@/lib/plans";
+import { ALL_PLANS, CREDIT_COST_USD } from "@/lib/plans";
 import { settleCredits } from "@/lib/credits";
 import { config } from "@/lib/config";
 
@@ -68,7 +68,7 @@ export async function getAdminStats(period: Period) {
   const [settled] = await d.select({ credits: sum(creditLedger.credits) }).from(creditLedger).where(and(gte(creditLedger.createdAt, since), inArray(creditLedger.kind, ["reserve", "settle", "refund"])));
   const creditsSold = Number(granted?.credits ?? 0);
   const creditsUsed = -Number(settled?.credits ?? 0);
-  const plansByKey = new Map<string, { monthlyUsd: number }>([...PLANS, ...BUSINESS_TIERS].map((p) => [p.key as string, p]));
+  const plansByKey = new Map<string, { monthlyUsd: number }>(ALL_PLANS.map((p) => [p.key as string, p]));
   const wsByPlan = await d.select({ planKey: workspaces.planKey, n: count() }).from(workspaces).groupBy(workspaces.planKey);
   const costByPlan = await d
     .select({ planKey: workspaces.planKey, usd: sql<number>`coalesce(sum(case when ${costEntries.status} = 'completed' then coalesce(${costEntries.actualUsd}, ${costEntries.estimatedUsd}) when ${costEntries.status} = 'started' then ${costEntries.estimatedUsd} else 0 end), 0)` })

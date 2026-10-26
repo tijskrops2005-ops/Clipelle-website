@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { ArrowRight, Coins } from "lucide-react";
 import { useProjects, useProjectsReady } from "@/lib/data/client";
-import { adCredits, type Plan } from "@/lib/plans";
+import { adCredits, planLabel, type Plan } from "@/lib/plans";
 import { CountUp } from "@/components/motion/CountUp";
 import { ProgressRing } from "@/components/motion/ProgressRing";
 import { DemoBadge } from "@/components/DemoModeBadge";
@@ -21,7 +21,7 @@ function translationMinutes(credits: number) {
   return `${min < 10 ? Math.round(min * 10) / 10 : Math.round(min)} minutes`;
 }
 
-type Props = { credits: number | null; plan: Pick<Plan, "key" | "name" | "monthlyUsd" | "creditsPerMonth" | "creditsNote"> | null; demo: boolean };
+type Props = { credits: number | null; plan: Plan | null; demo: boolean };
 
 /**
  * Top of the dashboard (layout after getvidforge.com, our own data): a credit strip and three stat
@@ -102,7 +102,7 @@ export function Overview({ credits, plan, demo }: Props) {
         </StatCard>
 
         <StatCard delay={240} label="Plan">
-          <p className="text-[34px] font-semibold leading-none tracking-[-0.02em] text-ink">{plan?.name ?? "Free"}</p>
+          <p className="text-[34px] font-semibold leading-none tracking-[-0.02em] text-ink">{plan ? planLabel(plan) : "Free"}</p>
           <p className="mt-2 flex items-center justify-between gap-3 text-[12.5px] text-muted">
             <span>{plan?.creditsNote ?? "30 free credits"}</span>
             <Link href="/settings/billing" className="focus-ring shrink-0 rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Compare plans</Link>

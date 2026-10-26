@@ -52,7 +52,7 @@ export default async function DashboardPage() {
         }
       />
 
-      <Overview credits={credits} plan={planInfo} demo={config.demoMode} />
+      <Overview credits={credits} plan={plan} demo={config.demoMode} />
 
       <NowCreating />
 

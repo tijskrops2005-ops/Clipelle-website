@@ -1,5 +1,5 @@
 import { AD_LENGTHS, type AdLength, type PresenterEngine } from "@/lib/pricing";
-import { ALL_PLANS, BUSINESS_TIERS, PLANS, TOPUPS, adCredits, annualSaving, packPrice, planPrice, translateCredits, type Currency, type Plan } from "@/lib/plans";
+import { ALL_PLANS, BUSINESS_TIERS, PLANS, PLAN_LEVELS, TOPUPS, adCredits, annualSaving, packPrice, planPrice, translateCredits, type Currency, type Plan } from "@/lib/plans";
 
 /**
  * Pure helpers for the pricing page and the calculators. Every number comes from plans.ts and
@@ -20,7 +20,8 @@ export type PlanFit = {
 
 export const INDIVIDUAL_PAID = PLANS.filter((p) => p.monthlyUsd > 0 && p.creditsPerMonth > 0);
 /** Every subscription a customer can buy: the three individual plans and the Business levels. */
-export const ALL_SUBSCRIPTIONS = [...INDIVIDUAL_PAID, ...BUSINESS_TIERS];
+/** Every plan and level a calculator may suggest (levels since 26 Oct 2026). */
+export const ALL_SUBSCRIPTIONS = [...INDIVIDUAL_PAID, ...PLAN_LEVELS, ...BUSINESS_TIERS];
 
 /** The cheapest mix of credit packs that adds at least `credits` (every pack size is tried). */
 export function cheapestPacks(credits: number, currency: Currency = "usd"): { count: number; usd: number; credits: number } {

@@ -9,7 +9,7 @@
  * Every product gets STRIPE_PRODUCT_TAX_CODE (needed for Stripe Managed Payments, see billingCheckout.ts).
  */
 import Stripe from "stripe";
-import { ALL_PLANS as PLANS, BUSINESS_TIERS, TOPUPS, stripeAmounts } from "../src/lib/plans";
+import { ALL_PLANS as PLANS, BUSINESS_TIERS, TOPUPS, planLabel, stripeAmounts } from "../src/lib/plans";
 import { portalConfigurationParams, type PortalKind, type PortalProduct } from "../src/lib/billingPortal";
 import { STRIPE_PRODUCT_TAX_CODE, TOPUP_METADATA } from "../src/lib/billingCheckout";
 import { WEBHOOK_EVENTS } from "../src/lib/billingEvents";
@@ -30,6 +30,19 @@ async function main() {
     const existing = await stripe.prices.list({ lookup_keys: [lookup], active: true, limit: 1, expand: ["data.currency_options"] });
     const old = existing.data[0];
     // A tax behaviour can be set once (from unspecified), never changed; a price that has the other one is replaced.
+    // One product per plan level (26 Oct 2026): a price that sits on a product with another name (the
+    // Business levels used to share one product) moves to its own product; the lookup key goes along.
+    if (old) {
+      const oldProductId = typeof old.product === "string" ? old.product : old.product.id;
+      const oldProduct = await stripe.products.retrieve(oldProductId);
+      if (oldProduct.name !== productName) {
+        const found = await stripe.products.search({ query: `name:'${productName}' AND active:'true'` });
+        const product = found.data[0] ?? (await stripe.products.create({ name: productName, tax_code: STRIPE_PRODUCT_TAX_CODE, ...(description ? { description } : {}), ...(metadata ? { metadata } : {}) }));
+        const price = await stripe.prices.create({ product: product.id, currency: "usd", unit_amount: unitAmount, tax_behavior: TAX_BEHAVIOR, currency_options: currencyOptions, lookup_key: lookup, transfer_lookup_key: true, ...(recurring ? { recurring } : {}), ...(metadata ? { metadata } : {}) });
+        await stripe.prices.update(old.id, { active: false });
+        return console.log(`~ ${lookup}: moved to its own product "${productName}" (${price.id}; ${old.id} archived)`);
+      }
+    }
     if (old && old.unit_amount === unitAmount && old.tax_behavior !== "inclusive") {
       if (old.currency_options?.eur?.unit_amount !== amounts.eur || old.currency_options?.eur?.tax_behavior !== TAX_BEHAVIOR || old.tax_behavior !== TAX_BEHAVIOR) {
         await stripe.prices.update(old.id, { tax_behavior: TAX_BEHAVIOR, currency_options: currencyOptions });
@@ -64,8 +77,8 @@ async function main() {
   for (const p of PLANS) {
     if (!p.stripeLookup) continue;
     const amounts = stripeAmounts(p);
-    await ensurePrice(p.stripeLookup.monthly, `Clipelle ${p.name}`, amounts.monthly, { interval: "month" }, undefined, planDescription(p));
-    await ensurePrice(p.stripeLookup.annual, `Clipelle ${p.name}`, amounts.annual, { interval: "year" }, undefined, planDescription(p));
+    await ensurePrice(p.stripeLookup.monthly, `Clipelle ${planLabel(p)}`, amounts.monthly, { interval: "month" }, undefined, planDescription(p));
+    await ensurePrice(p.stripeLookup.annual, `Clipelle ${planLabel(p)}`, amounts.annual, { interval: "year" }, undefined, planDescription(p));
   }
   for (const t of TOPUPS) await ensurePrice(t.stripeLookup, `Clipelle credits (${t.credits})`, { usd: Math.round(t.usd * 100), eur: Math.round(t.eur * 100) }, undefined, TOPUP_METADATA, packDescription(t));
 

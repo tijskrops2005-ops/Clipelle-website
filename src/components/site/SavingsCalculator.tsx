@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { measured } from "@/content/measured";
 import { AD_LENGTHS, type AdLength, type PresenterEngine } from "@/lib/pricing";
-import { currencyFor, formatMoney, planPrice, translateCredits } from "@/lib/plans";
+import { currencyFor, formatMoney, planPrice, planLabel, translateCredits } from "@/lib/plans";
 import { HANDS_ON_MINUTES, INDIVIDUAL_PAID, compareCredits, compareMonth } from "@/lib/pricingHelpers";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { dict } from "@/content/i18n";
@@ -53,7 +53,7 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
   const cents = (v: number) => `${sym}${v.toLocaleString(locale === "nl" ? "nl-NL" : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const money = (v: number) => (v < 10 ? cents(v) : formatMoney(Math.round(v), currency, locale));
   const hours = (h: number) => `${h < 10 ? Math.round(h * 10) / 10 : Math.round(h)} h`;
-  const fitName = r.fit.plan ? (r.fit.withPacks ? `${r.fit.plan.name} ${c.plus} ${r.fit.packs} ${r.fit.packs === 1 ? c.pack : c.packs}` : r.fit.plan.name) : c.aPlan;
+  const fitName = r.fit.plan ? (r.fit.withPacks ? `${planLabel(r.fit.plan)} ${c.plus} ${r.fit.packs} ${r.fit.packs === 1 ? c.pack : c.packs}` : planLabel(r.fit.plan)) : c.aPlan;
   const translating = mode === "translate";
 
   return (

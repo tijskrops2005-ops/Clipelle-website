@@ -57,8 +57,18 @@ export const CREDIT_COST_USD = Math.round(
   ) * 10_000,
 ) / 10_000;
 
-/** Minutes of Speed translation (60 credits each) per plan, a bigger plan a little cheaper per minute. */
-export const PLAN_MINUTES: Partial<Record<PlanKey, number>> = { starter: 7, pro: 22, scale: 60, business_249: 96, business_499: 193, business_999: 386 };
+/**
+ * Minutes of Speed translation (60 credits each) per plan and level (26 Oct 2026, Tijs: "more credits
+ * in the same plan"). Every plan has three levels; a higher level of the same plan is a little cheaper
+ * per minute, and a plan's top level stays below the next plan's first level, so the features (C)
+ * are what an upgrade buys. Every level keeps MIN_MARGIN (tested).
+ */
+export const PLAN_MINUTES: Partial<Record<PlanKey, number>> = {
+  starter: 7, starter_2: 12, starter_3: 17,
+  pro: 22, pro_2: 33, pro_3: 44,
+  scale: 60, scale_2: 90, scale_3: 120,
+  business_249: 96, business_499: 193, business_999: 386,
+};
 /** One-off packs: $0.05 a credit (3 minutes 20 seconds of Speed translation for $10). */
 export const TOPUP_USD_PER_CREDIT = 0.05;
 
@@ -69,9 +79,24 @@ export type Currency = "usd" | "eur";
  * annual = exactly ten months (€190 a year, not twelve rounded months like the dollar price).
  * Stripe holds them as `currency_options.eur` on the same prices (scripts/stripe-setup.ts).
  */
-export const EUR_MONTHLY: Partial<Record<PlanKey, number>> = { starter: 19, pro: 59, scale: 159, business_249: 249, business_499: 499, business_999: 999 };
+export const EUR_MONTHLY: Partial<Record<PlanKey, number>> = {
+  starter: 19, starter_2: 32, starter_3: 45,
+  pro: 59, pro_2: 87, pro_3: 115,
+  scale: 159, scale_2: 236, scale_3: 312,
+  business_249: 249, business_499: 499, business_999: 999,
+};
+/** Dollar prices per month for the higher levels (the same numbers as the euro prices, like the base plans). */
+const LEVEL_USD: Partial<Record<PlanKey, number>> = { starter_2: 32, starter_3: 45, pro_2: 87, pro_3: 115, scale_2: 236, scale_3: 312 };
 
-export type PlanKey = "free" | "starter" | "pro" | "scale" | "enterprise" | "business_249" | "business_499" | "business_999";
+export type PlanKey =
+  | "free" | "enterprise"
+  | "starter" | "starter_2" | "starter_3"
+  | "pro" | "pro_2" | "pro_3"
+  | "scale" | "scale_2" | "scale_3"
+  | "business_249" | "business_499" | "business_999";
+
+/** The plan a key belongs to, whatever its level: what a workspace may do depends on the family. */
+export type PlanFamily = "free" | "starter" | "pro" | "scale" | "business" | "enterprise";
 
 export type Plan = {
   key: PlanKey;
@@ -99,6 +124,9 @@ export type Plan = {
   listPrice?: { monthlyUsd: number; endDate: string };
   /** Team workspace plan: shared credits, members, no cost per seat. */
   team?: boolean;
+  /** Which plan this is, and which of its credit levels (1 = the base level). */
+  family: PlanFamily;
+  level: 1 | 2 | 3;
 };
 
 function plan(key: PlanKey, name: string, tagline: string, monthlyUsd: number, bullets: string[], extra: Partial<Plan> = {}): Plan {
@@ -116,6 +144,8 @@ function plan(key: PlanKey, name: string, tagline: string, monthlyUsd: number, b
     creditsNote: credits > 0 ? `${credits.toLocaleString("en-US")} credits per month` : `${FREE_CREDITS} free credits`,
     bullets,
     stripeLookup: monthlyUsd > 0 ? { monthly: `reelay_${key}_monthly`, annual: `reelay_${key}_annual` } : undefined,
+    family: (key.startsWith("business") ? "business" : key.replace(/_\d$/, "")) as PlanFamily,
+    level: Number(key.match(/^(?:starter|pro|scale)_(\d)$/)?.[1] ?? 1) as 1 | 2 | 3,
     ...extra,
   };
 }
@@ -138,12 +168,67 @@ export const PLANS: Plan[] = [
  * Business: one plan with three credit levels for a team workspace (shared credits, members, no cost
  * per seat). Credits follow PLAN_MINUTES like every subscription.
  */
-export const BUSINESS_TIERS: Plan[] = [249, 499, 999].map((usd) =>
-  plan(`business_${usd}` as PlanKey, "Business", "For teams sharing one credit pool", usd, ["Shared credits for the whole team", "Members with their own sign-in, no cost per seat", "Per-member usage for the owner", "API keys for the workspace", "Credits never expire"], { team: true }),
+export const BUSINESS_TIERS: Plan[] = [249, 499, 999].map((usd, i) =>
+  plan(`business_${usd}` as PlanKey, "Business", "For teams sharing one credit pool", usd, ["Shared credits for the whole team", "Members with their own sign-in, no cost per seat", "Per-member usage for the owner", "API keys for the workspace", "Credits never expire"], { team: true, level: (i + 1) as 1 | 2 | 3 }),
 );
-export const ALL_PLANS: Plan[] = [...PLANS, ...BUSINESS_TIERS];
 
-export const isTeamPlan = (key: string | null | undefined) => BUSINESS_TIERS.some((t) => t.key === key);
+/** Levels 2 and 3 of Starter, Pro and Scale: the same plan with more credits a month. */
+export const PLAN_LEVELS: Plan[] = (["starter", "pro", "scale"] as const).flatMap((family) =>
+  ([2, 3] as const).map((level) => {
+    const base = PLANS.find((p) => p.key === family)!;
+    const key = `${family}_${level}` as PlanKey;
+    return plan(key, base.name, base.tagline, LEVEL_USD[key]!, minutesBullets(key, base.bullets[2]));
+  }),
+);
+export const ALL_PLANS: Plan[] = [...PLANS, ...PLAN_LEVELS, ...BUSINESS_TIERS];
+
+/** "Pro", "Pro · 33 min", "Business · 96 min": a level beyond the first (and every Business level) names its minutes. */
+export function planLabel(p: Plan) {
+  return p.level > 1 || p.family === "business" ? `${p.name} · ${p.creditsPerMonth / 60} min` : p.name;
+}
+
+/** All levels of one plan, lowest first (a single entry for Free and Enterprise). */
+export function planLevels(family: PlanFamily): Plan[] {
+  return ALL_PLANS.filter((p) => p.family === family).sort((a, b) => a.level - b.level);
+}
+
+export function planFamily(key: string | null | undefined): PlanFamily {
+  return ALL_PLANS.find((p) => p.key === key)?.family ?? "free";
+}
+
+/**
+ * Free trial (26 Oct 2026, Tijs): 7 days on every paid plan, card required, once per workspace.
+ * During the trial the workspace gets TRIAL.credits; the plan's monthly credits come with the first
+ * real payment. Nothing is charged before the trial ends; the customer can cancel any time before.
+ */
+export const TRIAL = { days: 7, credits: 30 } as const;
+
+/**
+ * What each plan unlocks (26 Oct 2026, Tijs approved). The family decides, the level only adds credits.
+ * Enforced on the server (data layer, API) and shown with a lock in the forms and on the pricing page.
+ */
+export type PlanFeature = "precision" | "premium" | "variations" | "api" | "enhance" | "team";
+const FEATURES: Record<PlanFamily, PlanFeature[]> = {
+  free: [],
+  starter: [],
+  pro: ["precision", "premium", "variations", "api"],
+  scale: ["precision", "premium", "variations", "api", "enhance"],
+  business: ["precision", "premium", "variations", "api", "enhance", "team"],
+  enterprise: ["precision", "premium", "variations", "api", "enhance", "team"],
+};
+/** The cheapest plan that unlocks a feature, for "Available in Pro" labels. */
+export const FEATURE_PLAN: Record<PlanFeature, "Pro" | "Scale" | "Business"> = { precision: "Pro", premium: "Pro", variations: "Pro", api: "Pro", enhance: "Scale", team: "Business" };
+
+export function hasFeature(planKey: string | null | undefined, feature: PlanFeature) {
+  return FEATURES[planFamily(planKey)].includes(feature);
+}
+
+/** API requests per minute: the base limit, doubled on Scale, Business and Enterprise. */
+export function apiRateMultiplier(planKey: string | null | undefined) {
+  return ["scale", "business", "enterprise"].includes(planFamily(planKey)) ? 2 : 1;
+}
+
+export const isTeamPlan = (key: string | null | undefined) => planFamily(key) === "business";
 export const isPaidPlan = (key: string | null | undefined) => ALL_PLANS.some((p) => p.key === key && p.monthlyUsd > 0);
 
 /** The crossed-out launch price, only while its end date has not passed. */

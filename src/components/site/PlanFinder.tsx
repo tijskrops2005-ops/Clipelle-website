@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AD_LENGTHS, type AdLength, type PresenterEngine } from "@/lib/pricing";
-import { currencyFor, formatMoney } from "@/lib/plans";
+import { currencyFor, formatMoney, planLabel } from "@/lib/plans";
 import { ALL_SUBSCRIPTIONS, creditsNeeded, planFit } from "@/lib/pricingHelpers";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Button } from "@/components/ui/Button";
@@ -45,7 +45,7 @@ export function PlanFinder({ locale = "en" }: { locale?: Locale }) {
         <p className="mt-1 text-[13px] text-muted">{f.breakdown.replace("{ads}", String(ads)).replace("{perAd}", String(r.need.perAd))}{minutes > 0 ? f.breakdownMinutes.replace("{minutes}", String(minutes)).replace("{perMinute}", String(r.need.perMinute)) : ""}.</p>
         <div className="mt-5 rounded-[14px] bg-surface-muted p-4">
           <p className="text-[13px] text-muted">{f.best}</p>
-          <p className="mt-1 text-[22px] font-semibold text-ink">{r.fit.plan ? (r.fit.withPacks ? `${r.fit.plan.name} ${c.plus} ${r.fit.packs} ${c.packs}` : r.fit.plan.name) : f.free}</p>
+          <p className="mt-1 text-[22px] font-semibold text-ink">{r.fit.plan ? (r.fit.withPacks ? `${planLabel(r.fit.plan)} ${c.plus} ${r.fit.packs} ${c.packs}` : planLabel(r.fit.plan)) : f.free}</p>
           <p className="mt-1 text-[15px] text-ink">{f.perMonthCost.replace("{price}", formatPrice(r.fit.monthlyUsd))}{ads > 0 ? f.perAd.replace("{price}", formatPrice(Math.round(r.fit.perVideoUsd * 100) / 100)) : ""}</p>
           {current > 0 && ads > 0 && (
             <p className="mt-2 text-[13px] text-muted">{f.yourNumber.replace("{per}", formatPrice(current)).replace("{month}", formatPrice(current * ads)).replace("{diff}", r.fit.monthlyUsd <= current * ads ? f.less.replace("{n}", formatPrice(current * ads - r.fit.monthlyUsd)) : f.more.replace("{n}", formatPrice(r.fit.monthlyUsd - current * ads)))}</p>

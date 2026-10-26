@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALL_PLANS, BUSINESS_TIERS, CREDIT_COST_USD, FREE_CREDITS, MIN_MARGIN, PLANS, TOPUPS, adCredits, currencyFor, formatMoney, planByLookupKey, planPrice, stripeAmounts, translateCredits, usdPerTranslateMinute } from "./plans";
+import { ALL_PLANS, BUSINESS_TIERS, TRIAL, hasFeature, isTeamPlan, planFamily, planLevels, CREDIT_COST_USD, FREE_CREDITS, MIN_MARGIN, PLANS, TOPUPS, adCredits, currencyFor, formatMoney, planByLookupKey, planPrice, stripeAmounts, translateCredits, usdPerTranslateMinute } from "./plans";
 import { AD_LENGTHS, DEFAULTS, estimateAdCost, estimateTranslateCost } from "./pricing";
 
 const paid = ALL_PLANS.filter((p) => p.monthlyUsd > 0 && p.creditsPerMonth > 0);
@@ -114,5 +114,53 @@ describe("euro prices (26 Oct 2026)", () => {
     expect(formatMoney(15.83, "eur", "nl")).toBe("€15,83");
     expect(formatMoney(1590, "eur", "nl")).toBe("€1.590");
     expect(formatMoney(1590, "usd", "en")).toBe("$1,590");
+  });
+});
+
+describe("plan levels, features and the trial (26 Oct 2026)", () => {
+  it("gives every plan three levels: more credits, a little cheaper per minute, below the next plan", () => {
+    const families = ["starter", "pro", "scale", "business"] as const;
+    for (const f of families) {
+      const levels = planLevels(f);
+      expect(levels.map((l) => l.level)).toEqual([1, 2, 3]);
+      for (let i = 1; i < levels.length; i++) {
+        expect(levels[i].creditsPerMonth).toBeGreaterThan(levels[i - 1].creditsPerMonth);
+        expect(levels[i].monthlyUsd).toBeGreaterThan(levels[i - 1].monthlyUsd);
+        expect(usdPerTranslateMinute(levels[i])).toBeLessThanOrEqual(usdPerTranslateMinute(levels[i - 1]));
+        expect(levels[i].monthlyEur).toBe(levels[i].monthlyUsd);
+      }
+    }
+    // A plan's top level stays below the next plan's first level in credits.
+    expect(planLevels("starter")[2].creditsPerMonth).toBeLessThan(planLevels("pro")[0].creditsPerMonth);
+    expect(planLevels("pro")[2].creditsPerMonth).toBeLessThan(planLevels("scale")[0].creditsPerMonth);
+  });
+
+  it("has the agreed level prices and minutes", () => {
+    const table = ALL_PLANS.filter((p) => ["starter", "pro", "scale"].includes(p.family)).map((p) => [p.key, p.monthlyUsd, p.creditsPerMonth / 60]);
+    expect(table).toEqual([
+      ["starter", 19, 7], ["pro", 59, 22], ["scale", 159, 60],
+      ["starter_2", 32, 12], ["starter_3", 45, 17],
+      ["pro_2", 87, 33], ["pro_3", 115, 44],
+      ["scale_2", 236, 90], ["scale_3", 312, 120],
+    ]);
+    expect(planByLookupKey("reelay_pro_2_annual")?.key).toBe("pro_2");
+    expect(planFamily("scale_3")).toBe("scale");
+  });
+
+  it("unlocks features per plan, whatever the level", () => {
+    expect(hasFeature("starter_3", "precision")).toBe(false);
+    expect(hasFeature("starter_3", "api")).toBe(false);
+    expect(hasFeature("pro", "premium")).toBe(true);
+    expect(hasFeature("pro_3", "enhance")).toBe(false);
+    expect(hasFeature("scale", "enhance")).toBe(true);
+    expect(hasFeature("business_249", "team")).toBe(true);
+    expect(hasFeature("free", "variations")).toBe(false);
+    expect(hasFeature(null, "api")).toBe(false);
+    expect(isTeamPlan("business_499")).toBe(true);
+    expect(isTeamPlan("pro_2")).toBe(false);
+  });
+
+  it("offers a 7-day trial with 30 credits", () => {
+    expect(TRIAL).toEqual({ days: 7, credits: 30 });
   });
 });
