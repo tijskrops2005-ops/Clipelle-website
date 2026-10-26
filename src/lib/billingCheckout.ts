@@ -1,4 +1,4 @@
-import type { Plan, TopupPack } from "@/lib/plans";
+import type { Currency, Plan, TopupPack } from "@/lib/plans";
 import { companyLine } from "@/content/company";
 
 /**
@@ -28,7 +28,19 @@ export type CheckoutInput = {
   automaticTax?: boolean;
   /** The terms checkbox (needs the terms URL in the Stripe Dashboard). */
   requireTerms?: boolean;
+  /** Which amount of the price to charge: dollars, or the price's euro option. Default dollars. */
+  currency?: Currency;
 };
+
+/**
+ * The currency of a checkout: a Stripe customer that already paid in one currency keeps it (Stripe
+ * does not mix currencies on one customer's subscriptions and invoices); otherwise what the
+ * customer picked on Billing, and dollars when nothing was picked.
+ */
+export function checkoutCurrency(requested: Currency | undefined, customerCurrency: string | null | undefined): Currency {
+  if (customerCurrency === "eur" || customerCurrency === "usd") return customerCurrency;
+  return requested ?? "usd";
+}
 
 function termsParams(on: boolean | undefined) {
   return on ? { consent_collection: { terms_of_service: "required" as const } } : {};
@@ -112,6 +124,7 @@ export function subscriptionSessionParams(plan: Plan, input: CheckoutInput) {
   return withManagedPayments({
     mode: "subscription" as const,
     customer: input.customerId,
+    currency: input.currency ?? "usd",
     line_items: [{ price: input.priceId, quantity: 1 }],
     success_url: `${input.origin}/settings/billing?checkout=success`,
     cancel_url: `${input.origin}/settings/billing?checkout=cancelled`,
@@ -128,6 +141,7 @@ export function topupSessionParams(pack: TopupPack, input: CheckoutInput) {
   return withManagedPayments({
     mode: "payment" as const,
     customer: input.customerId,
+    currency: input.currency ?? "usd",
     line_items: [{ price: input.priceId, quantity: 1 }],
     success_url: `${input.origin}/settings/billing?checkout=success`,
     cancel_url: `${input.origin}/settings/billing?checkout=cancelled`,

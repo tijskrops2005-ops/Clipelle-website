@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PLANS, TOPUPS } from "./plans";
-import { CHECKOUT_INTEGRATION_ID, INVOICE_FOOTER, termsConsentEnabled, MANAGED_PAYMENTS_UNSUPPORTED, automaticTaxEnabled, managedPaymentsEnabled, REFERRAL_KEYS, STRIPE_PRODUCT_TAX_CODE, subscriptionSessionParams, topupSessionParams, TOPUP_METADATA, withManagedPayments } from "./billingCheckout";
+import { CHECKOUT_INTEGRATION_ID, INVOICE_FOOTER, checkoutCurrency, termsConsentEnabled, MANAGED_PAYMENTS_UNSUPPORTED, automaticTaxEnabled, managedPaymentsEnabled, REFERRAL_KEYS, STRIPE_PRODUCT_TAX_CODE, subscriptionSessionParams, topupSessionParams, TOPUP_METADATA, withManagedPayments } from "./billingCheckout";
 
 const input = { customerId: "cus_test", userId: "user-1", workspaceId: "ws-1", priceId: "price_test", origin: "https://clipelle.test" };
 
@@ -139,3 +139,19 @@ describe("checkout page like the reference: promotion codes, terms checkbox", ()
   });
 });
 
+describe("dollars or euros (26 Oct 2026)", () => {
+  const pro = PLANS.find((p) => p.key === "pro")!;
+  it("charges dollars unless euros are asked for, on plans and packs, with or without Managed Payments", () => {
+    expect(subscriptionSessionParams(pro, input).currency).toBe("usd");
+    expect(topupSessionParams(TOPUPS[0], input).currency).toBe("usd");
+    expect(subscriptionSessionParams(pro, { ...input, currency: "eur" }).currency).toBe("eur");
+    expect(topupSessionParams(TOPUPS[0], { ...input, currency: "eur", managed: true }).currency).toBe("eur");
+  });
+  it("keeps a customer on the currency they already pay in", () => {
+    expect(checkoutCurrency(undefined, null)).toBe("usd");
+    expect(checkoutCurrency("eur", null)).toBe("eur");
+    expect(checkoutCurrency("eur", "usd")).toBe("usd");
+    expect(checkoutCurrency("usd", "eur")).toBe("eur");
+    expect(checkoutCurrency("eur", "gbp")).toBe("eur");
+  });
+});

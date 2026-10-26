@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { INVOICE_FOOTER, automaticTaxEnabled, managedPaymentsEnabled, termsConsentEnabled, subscriptionSessionParams, topupSessionParams } from "@/lib/billingCheckout";
+import { INVOICE_FOOTER, automaticTaxEnabled, checkoutCurrency, managedPaymentsEnabled, termsConsentEnabled, subscriptionSessionParams, topupSessionParams } from "@/lib/billingCheckout";
 import { requireOwner } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
 import { getOrCreateProfile } from "@/lib/data/profile";
@@ -9,7 +9,8 @@ import { priceByLookupKey, stripe, stripeEnabled } from "@/lib/stripe";
 import { setPlan } from "@/lib/billing";
 import { databaseModeOnly, readJson } from "@/app/api/projects/_guard";
 
-const Body = z.union([z.object({ kind: z.literal("plan"), planKey: z.string(), interval: z.enum(["monthly", "annual"]) }), z.object({ kind: z.literal("topup"), topupKey: z.string() })]);
+const Currency = z.enum(["usd", "eur"]).optional();
+const Body = z.union([z.object({ kind: z.literal("plan"), planKey: z.string(), interval: z.enum(["monthly", "annual"]), currency: Currency }), z.object({ kind: z.literal("topup"), topupKey: z.string(), currency: Currency })]);
 
 /** Creates a Stripe Checkout session (test mode) for a plan or a credit pack; with Managed Payments when switched on. */
 export async function POST(request: Request) {
@@ -25,7 +26,11 @@ export async function POST(request: Request) {
     const workspace = (await getWorkspace(scope.workspaceId))!;
     const s = stripe();
     let customerId = workspace.stripeCustomerId;
-    if (!customerId) {
+    let customerCurrency: string | null = null;
+    if (customerId) {
+      const existing = await s.customers.retrieve(customerId);
+      customerCurrency = existing.deleted ? null : (existing.currency ?? null);
+    } else {
       // One Stripe customer per workspace; the e-mail is the owner's (the partner platform matches on it).
       // Idempotency key per workspace: two quick clicks (or a retry) give one customer, not two.
       // The invoice footer carries our company details on every invoice of this customer (subscriptions too).
@@ -40,6 +45,8 @@ export async function POST(request: Request) {
     const automaticTax = !managed && automaticTaxEnabled();
     const requireTerms = termsConsentEnabled();
     const b = parsed.data;
+    // Dollars or euros: the same Stripe price carries both amounts (currency_options.eur).
+    const currency = checkoutCurrency(b.currency, customerCurrency);
     if (b.kind === "plan") {
       const plan = planByKey(b.planKey);
       if (!plan?.stripeLookup) return Response.json({ error: "Unknown plan." }, { status: 400 });
@@ -47,7 +54,7 @@ export async function POST(request: Request) {
       if (!plan.team && workspace.kind === "team") return Response.json({ error: "A team workspace uses the Business plan." }, { status: 400 });
       const price = await priceByLookupKey(b.interval === "annual" ? plan.stripeLookup.annual : plan.stripeLookup.monthly);
       if (!price) return Response.json({ error: "The price is not set up in Stripe yet. Run the setup script." }, { status: 503 });
-      const session = await s.checkout.sessions.create(subscriptionSessionParams(plan, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax, requireTerms }));
+      const session = await s.checkout.sessions.create(subscriptionSessionParams(plan, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax, requireTerms, currency }));
       return Response.json({ url: session.url });
     }
     const pack = TOPUPS.find((t) => t.key === b.topupKey);
@@ -56,7 +63,7 @@ export async function POST(request: Request) {
     if (workspace.planKey === "free") return Response.json({ error: "Credit packs come on top of a paid plan. Choose a plan first." }, { status: 400 });
     const price = await priceByLookupKey(pack.stripeLookup);
     if (!price) return Response.json({ error: "The price is not set up in Stripe yet. Run the setup script." }, { status: 503 });
-    const session = await s.checkout.sessions.create(topupSessionParams(pack, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax, requireTerms }));
+    const session = await s.checkout.sessions.create(topupSessionParams(pack, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax, requireTerms, currency }));
     return Response.json({ url: session.url });
   } catch (error) {
     return dataErrorResponse(error);

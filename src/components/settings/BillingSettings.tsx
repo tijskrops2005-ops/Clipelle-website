@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { CreditCard, Gift, Loader2 } from "lucide-react";
 import { config } from "@/lib/config";
-import { PLANS, planByKey, TOPUPS, formatPrice, type Plan } from "@/lib/plans";
+import { PLANS, planByKey, TOPUPS, formatMoney, packPrice, type Currency, type Plan } from "@/lib/plans";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { PricingTable } from "@/components/site/PricingTable";
 import { DemoBadge } from "@/components/DemoModeBadge";
 
@@ -20,6 +21,10 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+const noSubscribe = () => () => {};
+/** True when the visitor chose the Dutch site (the language cookie); false on the server. */
+const readDutchSite = () => /(?:^|;\s*)clipelle_lang=nl(?:;|$)/.test(document.cookie);
+
 /** Plan, credits, free ad, checkout and the customer portal. Without payment keys a disabled state. */
 export function BillingSettings() {
   const params = useSearchParams();
@@ -28,6 +33,12 @@ export function BillingSettings() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const checkout = params.get("checkout");
+  // Dollars or euros for plans and packs; a customer who already pays keeps their currency (server side).
+  // Default: euros when the site link says so (`?currency=eur` from /nl) or the visitor chose the Dutch site.
+  const dutchSite = useSyncExternalStore(noSubscribe, readDutchSite, () => false);
+  const [picked, setCurrency] = useState<Currency | null>(null);
+  const param = params.get("currency");
+  const currency: Currency = picked ?? (param === "eur" || param === "usd" ? param : dutchSite ? "eur" : "usd");
 
   useEffect(() => {
     if (config.demoMode) return;
@@ -42,7 +53,7 @@ export function BillingSettings() {
     setBusy(plan.key);
     setError(null);
     try {
-      const { url } = await api<{ url: string }>("/api/billing/checkout", { method: "POST", body: JSON.stringify({ kind: "plan", planKey: plan.key, interval }) });
+      const { url } = await api<{ url: string }>("/api/billing/checkout", { method: "POST", body: JSON.stringify({ kind: "plan", planKey: plan.key, interval, currency }) });
       window.location.assign(url);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not open checkout.");
@@ -53,7 +64,7 @@ export function BillingSettings() {
     setBusy(key);
     setError(null);
     try {
-      const { url } = await api<{ url: string }>("/api/billing/checkout", { method: "POST", body: JSON.stringify({ kind: "topup", topupKey: key }) });
+      const { url } = await api<{ url: string }>("/api/billing/checkout", { method: "POST", body: JSON.stringify({ kind: "topup", topupKey: key, currency }) });
       window.location.assign(url);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not open checkout.");
@@ -120,19 +131,24 @@ export function BillingSettings() {
         </SectionCard>
       )}
 
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <span className="text-sm text-muted">Prices excluding VAT, in</span>
+        <SegmentedControl label="Currency" size="sm" options={[{ key: "usd", label: "USD $" }, { key: "eur", label: "EUR €" }]} value={currency} onChange={(k) => setCurrency(k as Currency)} />
+      </div>
+
       <SectionCard title="Credit packs" description={status?.planKey === "free" ? "One-off credits on top of a paid plan. Choose a plan first: the free plan runs on its free credits." : "One-off credits on top of your plan."}>
         <div className="grid gap-3 sm:grid-cols-3">
           {TOPUPS.map((t) => (
             <Button key={t.key} type="button" variant="secondary" onClick={() => topup(t.key)} disabled={!enabled || busy !== null || status?.planKey === "free"} className="justify-between">
               <span>{t.credits.toLocaleString("en-US")} credits</span>
-              <span className="text-muted">{formatPrice(t.usd)}</span>
+              <span className="text-muted">{formatMoney(packPrice(t, currency), currency)}</span>
             </Button>
           ))}
         </div>
       </SectionCard>
 
       <SectionCard title="Plans" description="Monthly credits, cancel any time from the portal.">
-        <PricingTable compact onChoose={enabled ? choose : undefined} busyKey={busy} />
+        <PricingTable compact onChoose={enabled ? choose : undefined} busyKey={busy} currency={currency} />
       </SectionCard>
     </>
   );
