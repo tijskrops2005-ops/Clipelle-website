@@ -111,7 +111,7 @@ Het huidige project is al ingesteld; het nieuwe project moet hetzelfde krijgen.
 ## Fase 7. Stripe (testmodus)
 
 1. ☐ **Tijs:** maak een Stripe-account en start meteen de bedrijfsverificatie; dat kan dagen duren.
-2. ☐ **Tijs:** zet de testsleutel (`sk_test_…`, onder Developers → API keys) in `.env.local` én `.env.prod` als `STRIPE_SECRET_KEY`.
+2. ☐ **Tijs:** zet een beperkte testsleutel (`rk_test_…`, aanbevolen; rechten in `docs/stage8-plan.md` punt 32) of de geheime testsleutel (`sk_test_…`, onder Developers → API keys) in `.env.local` én `.env.prod` als `STRIPE_SECRET_KEY`.
 3. ☐ **Claude:** `npm run stripe:setup`. Dat maakt Starter, Pro, Scale, Business en de creditpakketten aan, met de jaarprijzen $16, $49 en $133 per maand. Gewijzigde bedragen worden vervangen.
 4. ☐ **Claude, na jouw ja:** de Stripe CLI installeren (`brew install stripe/stripe-cli/stripe`). Daarna doe jij `stripe login` en draai jij `stripe listen --forward-to localhost:3001/api/billing/webhook`. Zet het getoonde `whsec_…` in `.env.local` als `STRIPE_WEBHOOK_SECRET`.
 5. ☐ **Tijs:** Settings → Billing → Customer portal aanzetten.
