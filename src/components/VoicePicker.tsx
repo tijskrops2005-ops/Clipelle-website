@@ -118,7 +118,7 @@ export function VoicePicker({
                 onClick={() => toggle(v.id, v.previewUrl)}
                 disabled={disabled || !v.previewUrl}
                 aria-label={playing === v.id ? `Pause preview of ${v.name}` : `Play preview of ${v.name}`}
-                title={v.previewUrl ? "Listen" : "No preview in demo mode"}
+                title={v.previewUrl ? "Listen" : "No preview for this voice"}
                 className="grid size-9 shrink-0 place-items-center rounded-full bg-ink text-white disabled:opacity-30"
               >
                 {playing === v.id ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}

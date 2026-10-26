@@ -25,7 +25,7 @@ export function isAdLanguage(value: unknown): value is AdLanguageCode {
 export type AccentDef = { key: string; label: string; pattern: RegExp; /** Spelling/variant hint for the script. */ spelling?: string };
 export const ACCENTS: Record<AdLanguageCode, AccentDef[]> = {
   en: [
-    { key: "us", label: "US", pattern: /\bus\b|american/i, spelling: "American English spelling" },
+    { key: "us", label: "US", pattern: /\bus\b|american|brooklyn/i, spelling: "American English spelling" },
     { key: "uk", label: "UK", pattern: /\buk\b|british|england/i, spelling: "British English spelling" },
     { key: "au", label: "Australian", pattern: /australia/i, spelling: "Australian English spelling" },
     { key: "in", label: "Indian", pattern: /\bindia/i },

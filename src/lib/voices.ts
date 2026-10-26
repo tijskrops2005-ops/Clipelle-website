@@ -39,7 +39,10 @@ function catalogue(): Promise<Cache> {
 
 function toOption(v: Voice, language: AdLanguageCode): VoiceOption {
   const gender = (v.gender ?? "").toLowerCase();
-  return { id: v.voice_id, name: v.name.trim(), gender: gender === "female" || gender === "male" ? gender : "other", previewUrl: v.preview_audio_url ?? undefined, accent: accentOf(v.name, language) };
+  // A few designed voices return a relative preview path (/v1/voice/voice_design/preview.stream…) that a
+  // browser cannot play; only full https links count as a preview (checked 26 Oct 2026: 8 per language).
+  const preview = v.preview_audio_url && /^https:\/\//.test(v.preview_audio_url) ? v.preview_audio_url : undefined;
+  return { id: v.voice_id, name: v.name.trim(), gender: gender === "female" || gender === "male" ? gender : "other", previewUrl: preview, accent: accentOf(v.name, language) };
 }
 
 export async function listVoiceOptions(params: { language: AdLanguageCode; accent?: string; gender?: "female" | "male"; lookVoiceId?: string; limit?: number }): Promise<VoiceOptions> {
@@ -50,6 +53,8 @@ export async function listVoiceOptions(params: { language: AdLanguageCode; accen
   for (const v of all) if (v.accent) accentCounts.set(v.accent, (accentCounts.get(v.accent) ?? 0) + 1);
   const accents = [...accentCounts.entries()].map(([key, n]) => ({ key, label: ACCENTS[params.language].find((a) => a.key === key)?.label ?? key, voices: n }));
   let voices = all.filter((v) => !params.accent || v.accent === params.accent);
+  // Voices you can listen to first, then those without a preview.
+  voices = [...voices.filter((v) => v.previewUrl), ...voices.filter((v) => !v.previewUrl)];
   // Same gender as the look first, then the rest; keep the list short.
   if (params.gender) voices = [...voices.filter((v) => v.gender === params.gender), ...voices.filter((v) => v.gender !== params.gender)];
   const limit = params.limit ?? 24;
