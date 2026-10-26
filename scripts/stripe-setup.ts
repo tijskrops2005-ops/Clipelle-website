@@ -23,55 +23,74 @@ async function main() {
   /** Prices exclude VAT: Stripe Tax adds it on top. */
   const TAX_BEHAVIOR = "exclusive" as const;
 
+  /**
+   * One product per name (26 Oct 2026). Stripe's product search is fuzzy ("Clipelle credits" also
+   * finds "Clipelle credits (1000)") and lags behind new products by up to a minute, which once gave
+   * every plan two products with the same name (one for the monthly, one for the annual price) and
+   * put the per-credit price on a pack's product. So: list every product once, match names exactly,
+   * and remember what this run creates.
+   */
+  const products = new Map<string, Stripe.Product>();
+  /** Products this run put a price on; every other "Clipelle …" product without prices is archived. */
+  const used = new Set<string>();
+  for await (const product of stripe.products.list({ active: true, limit: 100 })) {
+    // Keep the oldest product per name; the newer twin is archived at the end once it has no prices.
+    const seen = products.get(product.name);
+    if (!seen || product.created < seen.created) products.set(product.name, product);
+  }
+  async function productFor(name: string, description?: string, metadata?: Record<string, string>) {
+    const found = products.get(name);
+    if (found) {
+      const taxCode = typeof found.tax_code === "string" ? found.tax_code : found.tax_code?.id;
+      const metaOff = metadata && Object.entries(metadata).some(([k, v]) => found.metadata?.[k] !== v);
+      if (taxCode !== STRIPE_PRODUCT_TAX_CODE || (description && found.description !== description) || metaOff) {
+        const updated = await stripe.products.update(found.id, { tax_code: STRIPE_PRODUCT_TAX_CODE, ...(description ? { description } : {}), ...(metadata ? { metadata } : {}) });
+        products.set(name, updated);
+        console.log(`~ product "${name}" updated (tax code, description, metadata)`);
+        return updated;
+      }
+      return found;
+    }
+    const created = await stripe.products.create({ name, tax_code: STRIPE_PRODUCT_TAX_CODE, ...(description ? { description } : {}), ...(metadata ? { metadata } : {}) });
+    products.set(name, created);
+    console.log(`+ product "${name}" (${created.id})`);
+    return created;
+  }
+
   /** `metadata` lands on the product AND the price: the partner platform excludes `commissions_disabled: "yes"` (credit packs). */
   async function ensurePrice(lookup: string, productName: string, amounts: { usd: number; eur: number }, recurring?: { interval: "month" | "year" }, metadata?: Record<string, string>, description?: string) {
     const unitAmount = amounts.usd;
     const currencyOptions = { eur: { unit_amount: amounts.eur, tax_behavior: TAX_BEHAVIOR } };
+    const product = await productFor(productName, description, metadata);
+    used.add(product.id);
     const existing = await stripe.prices.list({ lookup_keys: [lookup], active: true, limit: 1, expand: ["data.currency_options"] });
     const old = existing.data[0];
-    // A tax behaviour can be set once (from unspecified), never changed; a price that has the other one is replaced.
-    // One product per plan level (26 Oct 2026): a price that sits on a product with another name (the
-    // Business levels used to share one product) moves to its own product; the lookup key goes along.
-    if (old) {
-      const oldProductId = typeof old.product === "string" ? old.product : old.product.id;
-      const oldProduct = await stripe.products.retrieve(oldProductId);
-      if (oldProduct.name !== productName) {
-        const found = await stripe.products.search({ query: `name:'${productName}' AND active:'true'` });
-        const product = found.data[0] ?? (await stripe.products.create({ name: productName, tax_code: STRIPE_PRODUCT_TAX_CODE, ...(description ? { description } : {}), ...(metadata ? { metadata } : {}) }));
-        const price = await stripe.prices.create({ product: product.id, currency: "usd", unit_amount: unitAmount, tax_behavior: TAX_BEHAVIOR, currency_options: currencyOptions, lookup_key: lookup, transfer_lookup_key: true, ...(recurring ? { recurring } : {}), ...(metadata ? { metadata } : {}) });
-        await stripe.prices.update(old.id, { active: false });
-        return console.log(`~ ${lookup}: moved to its own product "${productName}" (${price.id}; ${old.id} archived)`);
-      }
+    const create = () => stripe.prices.create({ product: product.id, currency: "usd", unit_amount: unitAmount, tax_behavior: TAX_BEHAVIOR, currency_options: currencyOptions, lookup_key: lookup, transfer_lookup_key: Boolean(old), ...(recurring ? { recurring } : {}), ...(metadata ? { metadata } : {}) });
+    if (!old) {
+      const price = await create();
+      return console.log(`+ ${lookup} → ${price.id}`);
     }
-    if (old && old.unit_amount === unitAmount && old.tax_behavior !== "inclusive") {
-      if (old.currency_options?.eur?.unit_amount !== amounts.eur || old.currency_options?.eur?.tax_behavior !== TAX_BEHAVIOR || old.tax_behavior !== TAX_BEHAVIOR) {
-        await stripe.prices.update(old.id, { tax_behavior: TAX_BEHAVIOR, currency_options: currencyOptions });
-        console.log(`~ ${lookup}: euro amount ${amounts.eur} set, excluding VAT (${old.id})`);
-      }
-      // Same amount: keep the price, but keep the product name current (a pack's name carries its credits).
-      const productId = typeof old.product === "string" ? old.product : old.product.id;
-      const product = await stripe.products.retrieve(productId);
-      // Every product carries the tax code Managed Payments needs (26 Oct 2026); harmless without it.
-      const productTaxCode = typeof product.tax_code === "string" ? product.tax_code : product.tax_code?.id;
-      // The description is the line under the product on the Checkout page.
-      if (product.name !== productName || productTaxCode !== STRIPE_PRODUCT_TAX_CODE || (description && product.description !== description)) {
-        await stripe.products.update(productId, { name: productName, tax_code: STRIPE_PRODUCT_TAX_CODE, ...(description ? { description } : {}) });
-        return console.log(`~ ${lookup}: product "${productName}" updated (tax code, description)`);
-      }
-      return console.log(`= ${lookup} exists (${old.id})`);
+    const oldProduct = typeof old.product === "string" ? old.product : old.product.id;
+    // A price sits on the wrong product (a twin with the same name, another pack, an old name): a new
+    // price on the right product takes over the lookup key and the old one is archived. Running
+    // subscriptions keep their old price until they change plan.
+    if (oldProduct !== product.id) {
+      const price = await create();
+      await stripe.prices.update(old.id, { active: false });
+      return console.log(`~ ${lookup}: moved to product "${productName}" (${price.id}; ${old.id} archived)`);
     }
-    if (old) {
-      // The amount changed in plans.ts (or the old price includes VAT): a new price takes over the lookup key, the old one is archived.
-      await stripe.products.update(typeof old.product === "string" ? old.product : old.product.id, { tax_code: STRIPE_PRODUCT_TAX_CODE, ...(description ? { description } : {}) });
-      const price = await stripe.prices.create({ product: typeof old.product === "string" ? old.product : old.product.id, currency: "usd", unit_amount: unitAmount, tax_behavior: TAX_BEHAVIOR, currency_options: currencyOptions, lookup_key: lookup, transfer_lookup_key: true, ...(recurring ? { recurring } : {}), ...(metadata ? { metadata } : {}) });
+    // The amount changed in plans.ts (or the old price includes VAT): a new price, the old one archived.
+    // A tax behaviour can be set once (from unspecified), never changed.
+    if (old.unit_amount !== unitAmount || old.tax_behavior === "inclusive") {
+      const price = await create();
       await stripe.prices.update(old.id, { active: false });
       return console.log(`~ ${lookup}: ${old.unit_amount} → ${unitAmount} (${price.id}; ${old.id} archived)`);
     }
-    const products = await stripe.products.search({ query: `name:'${productName}'` });
-    const product = products.data[0] ?? (await stripe.products.create({ name: productName, tax_code: STRIPE_PRODUCT_TAX_CODE, ...(description ? { description } : {}), ...(metadata ? { metadata } : {}) }));
-    if (products.data[0]) await stripe.products.update(product.id, { tax_code: STRIPE_PRODUCT_TAX_CODE, ...(description ? { description } : {}), ...(metadata ? { metadata } : {}) });
-    const price = await stripe.prices.create({ product: product.id, currency: "usd", unit_amount: unitAmount, tax_behavior: TAX_BEHAVIOR, currency_options: currencyOptions, lookup_key: lookup, ...(recurring ? { recurring } : {}), ...(metadata ? { metadata } : {}) });
-    console.log(`+ ${lookup} → ${price.id}`);
+    if (old.currency_options?.eur?.unit_amount !== amounts.eur || old.currency_options?.eur?.tax_behavior !== TAX_BEHAVIOR || old.tax_behavior !== TAX_BEHAVIOR) {
+      await stripe.prices.update(old.id, { tax_behavior: TAX_BEHAVIOR, currency_options: currencyOptions });
+      return console.log(`~ ${lookup}: euro amount ${amounts.eur} set, excluding VAT (${old.id})`);
+    }
+    console.log(`= ${lookup} exists (${old.id})`);
   }
 
   for (const p of PLANS) {
@@ -83,6 +102,16 @@ async function main() {
   for (const t of TOPUPS) await ensurePrice(t.stripeLookup, `Clipelle credits (${t.credits})`, { usd: Math.round(t.usd * 100), eur: Math.round(t.eur * 100) }, undefined, TOPUP_METADATA, packDescription(t));
   // Any amount of credits (26 Oct 2026): one price per credit, bought with a quantity; no commission either.
   await ensurePrice(CUSTOM_CREDITS.stripeLookup, "Clipelle credits", { usd: CUSTOM_CREDITS.unitCents, eur: CUSTOM_CREDITS.unitCents }, undefined, TOPUP_METADATA, creditUnitDescription());
+
+  // Archive our products that no longer carry an active price (the twins and old names left behind above).
+  for await (const product of stripe.products.list({ active: true, limit: 100 })) {
+    if (!product.name.startsWith("Clipelle") || used.has(product.id)) continue;
+    const prices = await stripe.prices.list({ product: product.id, active: true, limit: 1 });
+    if (prices.data.length === 0) {
+      await stripe.products.update(product.id, { active: false });
+      console.log(`- product "${product.name}" archived (${product.id}, no active prices)`);
+    }
+  }
 
   // Customer portal: one configuration for personal plans, one for team (Business) plans.
   async function portalProducts(keys: string[]): Promise<PortalProduct[]> {
