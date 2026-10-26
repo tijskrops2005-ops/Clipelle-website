@@ -1,4 +1,5 @@
 import "server-only";
+import type { CaptionStyleChoice } from "@/lib/captionOptions";
 import { config } from "@/lib/config";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { AdProject, LanguageCode, Project, Step, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
@@ -238,6 +239,30 @@ export async function getProject(id: string, scope: DataScope): Promise<Project 
   return toProject(row, stepRows, translationRows, assetRows);
 }
 
+/**
+ * The finished file of a project for "Download" (26 Oct 2026): a signed link that makes the storage
+ * send it as an attachment with a clean file name, so the browser saves it and stays on the page
+ * (a plain link to the storage domain opened the raw URL instead). Null when not ready or not yours.
+ */
+export async function resultDownloadUrl(id: string, scope: DataScope, language?: string | null) {
+  const row = await getProjectRow(id, scope);
+  if (!row) return null;
+  let assetId: string | null = null;
+  let suffix = "";
+  if (row.workflow === "ad") assetId = row.finalAssetId;
+  else {
+    const rows = await db().select().from(translations).where(eq(translations.projectId, row.id));
+    const t = rows.find((x) => (language ? x.language === language : true) && (x.captionedAssetId || x.enhancedAssetId || x.videoAssetId));
+    assetId = t ? (t.captionedAssetId ?? t.enhancedAssetId ?? t.videoAssetId) : null;
+    suffix = t ? ` (${t.language})` : "";
+  }
+  if (!assetId) return null;
+  const [asset] = await db().select().from(assets).where(and(eq(assets.id, assetId), eq(assets.projectId, row.id))).limit(1);
+  if (!asset) return null;
+  const safeName = `${row.name}${suffix}`.replace(/[^\p{L}\p{N} ()._-]+/gu, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "video";
+  return signedDownloadUrl(asset.storagePath, 300, `${safeName}.mp4`);
+}
+
 export async function getProjectRow(id: string, scope: DataScope) {
   const [row] = await db().select().from(projects).where(and(eq(projects.id, id), eq(projects.workspaceId, scope.workspaceId))).limit(1);
   return row ?? null;
@@ -264,6 +289,9 @@ export type NewTranslateProject = {
   keepTerms?: string[];
   trimSilence?: boolean;
   captionPosition?: "low" | "middle";
+  captionStyle?: Partial<CaptionStyleChoice>;
+  removeMusic?: boolean;
+  cleanVoice?: boolean;
   format: "original" | "9:16";
   enhance: boolean;
   rightsConfirmed: boolean;
@@ -317,6 +345,9 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
         keepTerms: t.keepTerms,
         trimSilence: t.trimSilence ?? true,
         captionPosition: t.captionPosition ?? "low",
+        ...(t.captionStyle ? { captionStyle: t.captionStyle } : {}),
+        ...(t.removeMusic ? { removeMusic: true } : {}),
+        ...(t.cleanVoice ? { cleanVoice: true } : {}),
         format: t.format,
         enhance: t.enhance,
       } satisfies TranslateInput,

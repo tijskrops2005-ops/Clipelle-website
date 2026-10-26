@@ -119,6 +119,9 @@ export type CreateProofreadInput = {
   speakerNum?: number;
   /** Brand glossary with the customer's do-not-translate terms (createBrandGlossary). */
   brandGlossaryId?: string;
+  /** Strip the background music (`disable_music_track`) / clean up the speech (`enable_speech_enhancement`). */
+  removeMusic?: boolean;
+  cleanVoice?: boolean;
   idempotencyKey?: string;
 };
 
@@ -133,6 +136,9 @@ export async function createProofread(input: CreateProofreadInput) {
       title: input.title,
       ...(input.speakerNum ? { speaker_num: input.speakerNum } : {}),
       ...(input.brandGlossaryId ? { brand_glossary_id: input.brandGlossaryId } : {}),
+      // Sent only when chosen, so a default request is unchanged (checked against the reference on 26 Oct 2026).
+      ...(input.removeMusic ? { disable_music_track: true } : {}),
+      ...(input.cleanVoice ? { enable_speech_enhancement: true } : {}),
     }),
   });
   return data;
@@ -143,7 +149,7 @@ export async function createProofread(input: CreateProofreadInput) {
  * not use proofreading): POST /v3/video-translations, one video_translation_id per output language in
  * the order sent. Checked against developers.heygen.com/reference/create-video-translation on 25 Oct 2026.
  */
-export async function createDirectTranslation(input: { video: { assetId: string } | { url: string }; outputLanguages: string[]; mode: TranslationQuality; title: string; inputLanguage?: string; brandGlossaryId?: string; callbackUrl?: string; idempotencyKey?: string }) {
+export async function createDirectTranslation(input: { video: { assetId: string } | { url: string }; outputLanguages: string[]; mode: TranslationQuality; title: string; inputLanguage?: string; brandGlossaryId?: string; removeMusic?: boolean; cleanVoice?: boolean; callbackUrl?: string; idempotencyKey?: string }) {
   return heygenFetch<{ video_translation_ids: string[] }>("/v3/video-translations", {
     method: "POST",
     headers: { "Idempotency-Key": input.idempotencyKey ?? crypto.randomUUID() },
@@ -154,6 +160,8 @@ export async function createDirectTranslation(input: { video: { assetId: string 
       title: input.title,
       ...(input.inputLanguage ? { input_language: input.inputLanguage } : {}),
       ...(input.brandGlossaryId ? { brand_glossary_id: input.brandGlossaryId } : {}),
+      ...(input.removeMusic ? { disable_music_track: true } : {}),
+      ...(input.cleanVoice ? { enable_speech_enhancement: true } : {}),
       ...(input.callbackUrl ? { callback_url: input.callbackUrl } : {}),
     }),
   });

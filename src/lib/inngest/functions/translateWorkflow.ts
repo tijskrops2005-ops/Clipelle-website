@@ -183,7 +183,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       }
       try {
         const created = await withRetries("Starting the translation", () =>
-          createProofread({ video: { assetId: upload.heygenAssetId }, outputLanguages: outputs.map((o) => o.heygen), mode: input.quality, title: `Clipelle ${projectId.slice(0, 8)}`, brandGlossaryId, idempotencyKey: `${projectId}:proofread:${row.attempt}` }),
+          createProofread({ video: { assetId: upload.heygenAssetId }, outputLanguages: outputs.map((o) => o.heygen), mode: input.quality, title: `Clipelle ${projectId.slice(0, 8)}`, brandGlossaryId, removeMusic: input.removeMusic, cleanVoice: input.cleanVoice, idempotencyKey: `${projectId}:proofread:${row.attempt}` }),
         );
         const sessions: SessionMap = {};
         outputs.forEach((o, i) => {
@@ -213,7 +213,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       }
       try {
         const created = await withRetries("Starting the translation", () =>
-          createDirectTranslation({ video: { assetId: upload.heygenAssetId }, outputLanguages: targets.map((o) => o.heygen), mode: input.quality, title: `Clipelle ${projectId.slice(0, 8)}`, inputLanguage: source ? (matched[source] ?? undefined) : undefined, brandGlossaryId, callbackUrl: callbackUrlFor("heygen"), idempotencyKey: `${projectId}:direct:${row.attempt}` }),
+          createDirectTranslation({ video: { assetId: upload.heygenAssetId }, outputLanguages: targets.map((o) => o.heygen), mode: input.quality, title: `Clipelle ${projectId.slice(0, 8)}`, inputLanguage: source ? (matched[source] ?? undefined) : undefined, brandGlossaryId, removeMusic: input.removeMusic, cleanVoice: input.cleanVoice, callbackUrl: callbackUrlFor("heygen"), idempotencyKey: `${projectId}:direct:${row.attempt}` }),
         );
         const sessions: SessionMap = {};
         targets.forEach((o, i) => {
@@ -575,6 +575,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         trimStart,
         trimEnd,
         captionPosition: input.captionPosition ?? "low",
+        captionStyle: input.captionStyle,
       });
       // Counted as $0.10 per 30 s even in the sandbox, so budgets match production.
       const estimate = Math.round(edit.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000;

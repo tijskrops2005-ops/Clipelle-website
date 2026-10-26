@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import type { CaptionStyleChoice } from "@/lib/captionOptions";
 import { config } from "@/lib/config";
 import type { AdProject, Batch, LanguageCode, PresenterPage, Project, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { variantFields, variantLabel, type Variant } from "@/content/formats";
@@ -292,6 +293,10 @@ export type TranslateProjectDraft = {
   keepTerms?: string[];
   trimSilence?: boolean;
   captionPosition?: "low" | "middle";
+  /** Only sent when it differs from the original look (src/lib/captionOptions.ts). */
+  captionStyle?: CaptionStyleChoice;
+  removeMusic?: boolean;
+  cleanVoice?: boolean;
   format: "original" | "9:16";
   enhance: boolean;
   rightsConfirmed: boolean;
@@ -451,3 +456,13 @@ export async function retryStep(projectId: string, key: StepKey | TranslateStepK
   await refresh();
 }
 
+
+/**
+ * Where "Download" points (26 Oct 2026): our own route, which checks the project and makes the storage
+ * send the file as an attachment, so the browser saves it instead of opening the storage address.
+ * Demo mode keeps the direct (same-origin) file.
+ */
+export function downloadHref(projectId: string, directUrl: string, language?: string) {
+  if (config.demoMode) return directUrl;
+  return `/api/projects/${projectId}/download${language ? `?language=${encodeURIComponent(language)}` : ""}`;
+}

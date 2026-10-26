@@ -1,4 +1,5 @@
 import "server-only";
+import { CAPTION_SIZE_PX, captionStyleOf, type CaptionHighlight, type CaptionStyleChoice } from "@/lib/captionOptions";
 import { adLayout } from "@/lib/adLayout";
 import { DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, type CaptionStyle } from "@/lib/adOptions";
 
@@ -264,7 +265,24 @@ export type CaptionEditInput = {
   trimEnd?: number;
   /** "low" = above the bottom 15% of the frame (default); "middle" = centre. */
   captionPosition?: "low" | "middle";
+  /** The customer's caption choices (26 Oct 2026); missing = the original look (box, red, medium, capitals). */
+  captionStyle?: Partial<CaptionStyleChoice>;
 };
+
+/** The active-word styling per highlight choice (Shotstack RichCaptionActive, checked 26 Oct 2026). */
+function activeWord(highlight: CaptionHighlight, color: string, light: string, ink: string) {
+  const stroke = { width: 7, color: ink, opacity: 1 };
+  switch (highlight) {
+    case "box":
+      return { font: { color: light, background: color }, stroke };
+    case "color":
+      return { font: { color }, stroke };
+    case "underline":
+      return { font: { color, textDecoration: "underline" }, stroke };
+    case "none":
+      return undefined;
+  }
+}
 
 /** One video track plus TikTok-style captions, output 1080×1920. Same caption style as the ad. */
 export function buildCaptionEdit(input: CaptionEditInput) {
@@ -274,6 +292,8 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const trimStart = Math.max(0, Math.round((input.trimStart ?? 0) * 10) / 10);
   const trimEnd = Math.max(0, Math.round((input.trimEnd ?? 0) * 10) / 10);
   const total = Math.max(1, Math.round((input.seconds - trimStart - trimEnd) * 10) / 10);
+  const look = captionStyleOf({ color: accent as CaptionStyleChoice["color"], ...input.captionStyle });
+  const active = activeWord(look.highlight, look.color, light, ink);
 
   const captions = {
     clips: [
@@ -281,11 +301,11 @@ export function buildCaptionEdit(input: CaptionEditInput) {
         asset: {
           type: "rich-caption",
           src: input.srtUrl ?? "alias://source",
-          font: { family: "Roboto", size: 62, color: light, opacity: 1, weight: 900 },
-          style: { textTransform: "uppercase" },
+          font: { family: "Roboto", size: CAPTION_SIZE_PX[look.size], color: light, opacity: 1, weight: 900 },
+          style: { textTransform: look.uppercase ? "uppercase" : "none" },
           stroke: { width: 7, color: ink, opacity: 1 },
           animation: { style: "pop" },
-          active: { font: { color: light, background: accent }, stroke: { width: 7, color: ink, opacity: 1 } },
+          ...(active ? { active } : {}),
           border: { width: 0, color: ink, opacity: 1, radius: 16 },
           padding: { top: 6, right: 10, bottom: 6, left: 10 },
           align: { vertical: "middle" },
@@ -317,7 +337,8 @@ export function buildCaptionEdit(input: CaptionEditInput) {
     ? { format: "mp4", size: fitSize(input.size), fps: 25 }
     : { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 };
   return {
-    timeline: { background: ink, tracks: [captions, video] },
+    // Captions off: only the video track (still cropped or resized, silence still trimmed).
+    timeline: { background: ink, tracks: look.show ? [captions, video] : [video] },
     output,
     meta: { totalSeconds: total, trimStart, trimEnd },
   };

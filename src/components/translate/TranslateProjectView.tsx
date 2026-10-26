@@ -19,7 +19,7 @@ import { Collapsible } from "@/components/ui/Collapsible";
 import { projectDurationMs } from "@/lib/projectMeta";
 import { chargedCredits, creditsPerLanguage, projectCredits } from "@/lib/projectCredits";
 import { plainQa } from "@/lib/plainQa";
-import { useProjects } from "@/lib/data/client";
+import { downloadHref, useProjects } from "@/lib/data/client";
 import { sourceAdOf } from "@/lib/versions";
 import { ProjectActions } from "@/components/ProjectActions";
 import { formatTook } from "@/components/pipeline/PipelineStep";
@@ -163,7 +163,7 @@ function ResultSection({ project, sourceLanguage }: { project: TranslateProject;
                 )}
                 {t.error && <p role="alert" className="mt-2 rounded-[10px] bg-danger/10 p-2.5 text-[12.5px] leading-relaxed text-ink">{t.error}</p>}
                 {t.videoUrl && (
-                  <Button href={t.videoUrl} variant={single ? "accent" : "primary"} size={single ? "lg" : "md"} download className="mt-3 w-full">
+                  <Button href={downloadHref(project.id, t.videoUrl, t.language)} prefetch={false} variant={single ? "accent" : "primary"} size={single ? "lg" : "md"} download className="mt-3 w-full">
                     <Download className="size-4" aria-hidden />
                     Download {languageOf(t.language).tag}
                   </Button>

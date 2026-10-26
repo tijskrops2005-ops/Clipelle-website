@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ArrowLeft, Download, FolderOpen, LayoutGrid, Rows3 } from "lucide-react";
 import { config } from "@/lib/config";
 import type { AdProject, BatchStatus } from "@/lib/types";
-import { useBatch } from "@/lib/data/client";
+import { downloadHref, useBatch } from "@/lib/data/client";
 import { useStatusTitle } from "@/lib/useStatusTitle";
 import { formatByKey, hookByKey } from "@/content/formats";
 import { projectDurationMs } from "@/lib/projectMeta";
@@ -63,7 +63,7 @@ export function BatchView({ id }: { id: string }) {
     done.forEach((p, i) => {
       window.setTimeout(() => {
         const a = document.createElement("a");
-        a.href = p.finalVideoUrl!;
+        a.href = downloadHref(p.id, p.finalVideoUrl!);
         a.download = `${p.name}.mp4`;
         a.rel = "noreferrer";
         document.body.append(a);
@@ -157,7 +157,7 @@ export function BatchView({ id }: { id: string }) {
                         {p.status === "failed" ? "Open and retry" : "Open"}
                       </Button>
                       {p.status === "completed" && p.finalVideoUrl && (
-                        <Button href={p.finalVideoUrl} variant="primary" size="sm" download>
+                        <Button href={downloadHref(p.id, p.finalVideoUrl)} prefetch={false} variant="primary" size="sm" download>
                           <Download className="size-4" aria-hidden />
                           Download
                         </Button>

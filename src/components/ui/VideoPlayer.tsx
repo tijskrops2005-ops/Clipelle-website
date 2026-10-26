@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { DemoBadge } from "@/components/DemoModeBadge";
+import { CleanVideo } from "@/components/ui/CleanVideo";
 
 type VideoPlayerProps = {
   src: string;
@@ -39,21 +40,19 @@ function fileKey(src: string) {
   return i === -1 ? src : src.slice(0, i);
 }
 
-/** Native player inside a soft frame. Controls, play/pause and scrubbing come from the browser. */
+/** The player inside a soft frame: only play/pause and sound (CleanVideo, 26 Oct 2026). */
 export function VideoPlayer({ src, poster, simulated, className, fit = "cover", muted, aspect = "9:16" }: VideoPlayerProps) {
   const stableSrc = useStableSrc(src);
   return (
     <div className={cn("relative overflow-hidden rounded-tile bg-ink shadow-card", aspect === "9:16" ? "aspect-[9/16]" : "aspect-video", className)}>
-      <video
+      <CleanVideo
         key={fileKey(stableSrc)}
         src={stableSrc}
         poster={poster}
-        controls
         muted={muted}
-        playsInline
         preload="metadata"
         aria-label="Preview of your video"
-        className={cn("size-full", fit === "cover" ? "object-cover" : "object-contain")}
+        videoClassName={fit === "cover" ? "object-cover" : "object-contain"}
       />
       {simulated && (
         <DemoBadge className="absolute left-3 top-3 bg-surface shadow-card">

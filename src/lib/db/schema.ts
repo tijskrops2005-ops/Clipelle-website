@@ -1,3 +1,4 @@
+import type { CaptionStyleChoice } from "@/lib/captionOptions";
 import {
   bigint,
   boolean,
@@ -110,6 +111,11 @@ export type TranslateInput = {
   trimSilence?: boolean;
   /** Where the captions sit: "low" (above the bottom 15%) or "middle". */
   captionPosition?: "low" | "middle";
+  /** Caption choices (26 Oct 2026); missing = the original look (src/lib/captionOptions.ts). */
+  captionStyle?: Partial<CaptionStyleChoice>;
+  /** Strip the background music / clean up the speech in the translation (HeyGen options). */
+  removeMusic?: boolean;
+  cleanVoice?: boolean;
   /** Keep the source format or make it vertical. */
   format: "original" | "9:16";
   /** Optional picture enhancement before captions. */

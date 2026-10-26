@@ -9,7 +9,7 @@ import { adProjectCredits, chargedCredits } from "@/lib/projectCredits";
 import { config } from "@/lib/config";
 import type { AdProject } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
-import { useProject, useProjects, useProjectsReady } from "@/lib/data/client";
+import { downloadHref, useProject, useProjects, useProjectsReady } from "@/lib/data/client";
 import { useStatusTitle } from "@/lib/useStatusTitle";
 import { otherVersionsOf, translationsOf } from "@/lib/versions";
 import { languageOf } from "@/lib/languages";
@@ -153,7 +153,7 @@ function ResultHero({ project }: { project: AdProject }) {
             </div>
             {/* One row (26 Oct 2026): the download is the one accent button, the next steps sit beside it. */}
             <div className="space-y-3">
-              <Button href={project.finalVideoUrl!} variant="accent" size="lg" download className="w-full sm:w-auto">
+              <Button href={downloadHref(project.id, project.finalVideoUrl!)} prefetch={false} variant="accent" size="lg" download className="w-full sm:w-auto">
                 <Download className="size-[18px]" aria-hidden />
                 Download video
               </Button>
@@ -305,7 +305,7 @@ function ResultCard({ project }: { project: AdProject }) {
           )}
           <SpentLine project={project} />
           <div className="grid gap-3">
-            <Button href={project.finalVideoUrl} variant="accent" size="lg" download>
+            <Button href={downloadHref(project.id, project.finalVideoUrl)} prefetch={false} variant="accent" size="lg" download>
               <Download className="size-[18px]" aria-hidden />
               Download video
             </Button>

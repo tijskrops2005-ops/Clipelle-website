@@ -24,9 +24,10 @@ import { VideoDropzone, formatDuration, type UploadedVideo } from "@/components/
 import { buildTranslateDraft, validateTranslateForm, type TranslateFormErrors } from "@/lib/forms/translateDraft";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { OptionCard, OptionGrid } from "@/components/ui/OptionCard";
-import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Disclosure } from "@/components/ui/Disclosure";
 import { SummaryPanel } from "@/components/ui/SummaryPanel";
+import { CaptionStylePicker } from "@/components/translate/CaptionStylePicker";
+import { DEFAULT_CAPTION_STYLE, describeCaptionStyle, type CaptionStyleChoice } from "@/lib/captionOptions";
 import { CREDIT_RULES, FEATURE_PLAN, hasFeature, translateCredits, type PlanFeature } from "@/lib/plans";
 import { PlanHint } from "@/components/PlanHint";
 import { getAccountStatus } from "@/lib/data/settingsClient";
@@ -79,6 +80,9 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
   const [enhance, setEnhance] = useState(false);
   const [trimSilence, setTrimSilence] = useState(true);
   const [captionPosition, setCaptionPosition] = useState<"low" | "middle">("low");
+  const [captionStyle, setCaptionStyle] = useState<CaptionStyleChoice>(DEFAULT_CAPTION_STYLE);
+  const [removeMusic, setRemoveMusic] = useState(false);
+  const [cleanVoice, setCleanVoice] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   /** Second step of the submit: the form is valid and the customer sees the cost once more before anything starts. */
@@ -138,7 +142,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
   }));
   const sourceOptions: SelectOption[] = [{ value: "auto", label: "Detect automatically", group: "Recommended" }, ...LANGUAGES.map((l) => ({ value: l.code, label: l.label, group: TOP_LANGUAGES.includes(l.base) ? "Most used" : "All languages" }))];
 
-  const formState = { video: video ?? undefined, sourceAd, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition };
+  const formState = { video: video ?? undefined, sourceAd, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic, cleanVoice };
 
   function validate(): Errors {
     return validateTranslateForm(formState);
@@ -184,7 +188,9 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
     { label: "From", value: source === "auto" ? "Detected automatically" : languageOf(source).label },
     { label: "Into", value: targets.length === 0 ? "Pick a language" : targets.map((t) => languageOf(t).tag).join(", "), muted: targets.length === 0 },
     { label: "Quality", value: qualityTitle },
-    { label: "Format", value: format === "9:16" ? "9:16 · captions" : "Original · captions" },
+    { label: "Format", value: format === "9:16" ? "Vertical 9:16" : "Original" },
+    { label: "Captions", value: captionStyle.show ? `${captionPosition === "middle" ? "Middle" : "Low"} · ${describeCaptionStyle(captionStyle)}` : "Off" },
+    ...(removeMusic || cleanVoice ? [{ label: "Sound", value: [removeMusic && "No music", cleanVoice && "Clean voice"].filter(Boolean).join(" · ") }] : []),
     ...(enhance ? [{ label: "Enhancement", value: "On" }] : []),
   ];
 
@@ -256,7 +262,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
             />
           </Field>
 
-          <Field id="targets" label="Translate into" hint="Search and pick one or more languages. Regional variants (e.g. Dutch (Belgium), English (UK)) change the voice's accent and spelling." error={errors.targets}>
+          <Field id="targets" label="Translate into" hint="Search and pick one or more languages. For an accent, pick the regional version: English (UK) or English (US), Dutch (Belgium), Spanish (Mexico), Portuguese (Brazil) and more. The speaker keeps their own voice." error={errors.targets}>
             <SearchableSelect id="targets" multiple values={targets} options={languageOptions} onToggle={toggleTarget} placeholder="Search a language…" disabled={submitting} invalid={Boolean(errors.targets)} />
           </Field>
 
@@ -294,19 +300,19 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
 
           {/* Visible since 25 Oct 2026 (was under Advanced): names and special terms are where machine translation slips most. */}
           <Field id="keepTerms" label="Words to keep as they are" optional hint="Brand and product names, and special terms such as an exercise or ingredient name, separated by commas. The translation and the check leave them exactly as written. Max 20.">
-            <Input id="keepTerms" value={keepTerms} maxLength={600} onChange={(e) => setKeepTerms(e.target.value)} placeholder="e.g. Senvia, FlexLid, Kegel" disabled={submitting} />
+            <Input id="keepTerms" value={keepTerms} maxLength={600} onChange={(e) => setKeepTerms(e.target.value)} placeholder="e.g. your brand name, product names" disabled={submitting} />
           </Field>
         </SectionCard>
 
         {/* 3. Captions and format */}
-        <SectionCard number={3} title="Captions and format" description="Captions of what is said are the only thing added to the picture. Choose the frame they go in.">
+        <SectionCard number={3} title="Captions, format and sound" description="Choose the frame, how the captions look (or switch them off) and how the sound comes out.">
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">Format</legend>
             <OptionGrid columns={2}>
               {(
                 [
                   { key: "9:16", title: "Vertical 9:16", text: "For TikTok, Reels and Shorts. The speaker is centred; the sides are cropped.", recommended: true },
-                  { key: "original", title: "Keep original", text: "Same width and height as the video you upload. Captions added.", recommended: false },
+                  { key: "original", title: "Keep original", text: "Same width and height as the video you upload.", recommended: false },
                 ] as const
               ).map((f) => (
                 <OptionCard
@@ -322,20 +328,14 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
             </OptionGrid>
           </fieldset>
 
+          <CaptionStylePicker value={captionStyle} onChange={setCaptionStyle} position={captionPosition} onPosition={setCaptionPosition} disabled={submitting} />
+
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium text-ink">Caption position</legend>
-            <SegmentedControl
-              label="Caption position"
-              size="sm"
-              options={[
-                { key: "low", label: "Low" },
-                { key: "middle", label: "Middle" },
-              ]}
-              value={captionPosition}
-              onChange={setCaptionPosition}
-              disabled={submitting}
-            />
-            <p className="text-[13px] text-muted">Low keeps the captions above the bottom 15% of the picture, so they do not cover a product shown low in frame. Middle puts them at the centre.</p>
+            <legend className="text-sm font-medium text-ink">Sound</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <CheckCard id="removeMusic" checked={removeMusic} onChange={setRemoveMusic} disabled={submitting} title="Remove background music" text="Only the translated voice stays. Useful when the music has lyrics or covers the speech." />
+              <CheckCard id="cleanVoice" checked={cleanVoice} onChange={setCleanVoice} disabled={submitting} title="Clean up the voice" text="Reduces echo and background noise in the translated speech." />
+            </div>
           </fieldset>
 
           <Disclosure title="Advanced" summary={`${trimSilence ? "Silence removed" : "Silence kept"} · ${enhance ? "enhancement on" : "no enhancement"}`}>
@@ -456,5 +456,18 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
         )}
       </SummaryPanel>
     </form>
+  );
+}
+
+/** A checkbox as a bordered card (sound options). */
+function CheckCard({ id, checked, onChange, disabled, title, text }: { id: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; title: string; text: string }) {
+  return (
+    <label htmlFor={id} className={cn("flex cursor-pointer items-start gap-3 rounded-panel border p-4 transition-colors duration-150", checked ? "border-ink bg-surface" : "border-border bg-surface hover:border-ink/30")}>
+      <input id={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} disabled={disabled} className="mt-0.5 size-4 shrink-0" />
+      <span>
+        <span className="block text-sm font-medium text-ink">{title}</span>
+        <span className="block text-[13px] leading-relaxed text-muted">{text}</span>
+      </span>
+    </label>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type DragEvent } from "react";
+import { CleanVideo } from "@/components/ui/CleanVideo";
 import { Clapperboard, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -91,14 +92,12 @@ export function VideoDropzone({
     return (
       <div className="flex flex-col gap-4 rounded-[14px] bg-surface-muted p-4 sm:flex-row">
         <div className="relative mx-auto aspect-[9/16] w-full max-w-[160px] shrink-0 overflow-hidden rounded-[12px] bg-ink shadow-card sm:mx-0">
-          <video
+          <CleanVideo
             src={video.previewUrl}
-            controls
-            playsInline
             preload="metadata"
             muted
             aria-label={`Preview of ${video.file.name}`}
-            className="size-full object-contain"
+            videoClassName="object-contain"
             onLoadedMetadata={(e) => {
               const seconds = e.currentTarget.duration;
               if (Number.isFinite(seconds) && video.seconds === undefined) onChange({ ...video, seconds });

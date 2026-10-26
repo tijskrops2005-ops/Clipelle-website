@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CAPTION_COLOR_VALUES, CAPTION_HIGHLIGHTS, CAPTION_SIZES } from "@/lib/captionOptions";
 import { isTranslateLanguage } from "@/lib/translateLanguages";
 import { config } from "@/lib/config";
 import { DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, isAdLength, isPresenterEngine } from "@/lib/pricing";
@@ -67,6 +68,11 @@ export const TranslateFields = z.object({
   enhance: z.boolean(),
   trimSilence: z.boolean().default(true),
   captionPosition: z.enum(["low", "middle"]).default("low"),
+  /** Caption choices (26 Oct 2026); omitted = the original look. */
+  captionStyle: z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: z.enum(CAPTION_COLOR_VALUES), size: z.enum(CAPTION_SIZES), uppercase: z.boolean() }).partial().optional(),
+  /** Sound (26 Oct 2026): strip the background music, clean up the speech. */
+  removeMusic: z.boolean().optional(),
+  cleanVoice: z.boolean().optional(),
   rightsConfirmed: z.literal(true, { error: "Confirm the rights to the video first." }),
   /** "Localize this ad": the finished ad (same workspace) is the source; no upload, rights recorded as generated here. */
   sourceProjectId: z.string().uuid().optional(),
