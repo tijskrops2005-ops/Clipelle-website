@@ -10,12 +10,16 @@ import { PLAN_KEYS } from "@/lib/billing";
  */
 export async function applyStripeEvent(event: Stripe.Event): Promise<{ handled: boolean; note?: string }> {
   switch (event.type) {
-    case "checkout.session.completed": {
+    // Fulfilment on both events (Stripe: a delayed payment method completes the session unpaid and
+    // pays later). Credits only once the session is paid; the grant is idempotent on the session id.
+    case "checkout.session.completed":
+    case "checkout.session.async_payment_succeeded": {
       const session = event.data.object as Stripe.Checkout.Session;
       const workspaceId = session.metadata?.workspaceId;
       const userId = session.metadata?.userId ?? "";
       if (!workspaceId) return { handled: false, note: "no workspaceId in metadata" };
       if (session.metadata?.kind === "topup" && session.metadata.topupKey) {
+        if (session.payment_status === "unpaid") return { handled: true, note: "topup waits for the payment" };
         await grantTopupCredits(workspaceId, userId, session.metadata.topupKey, session.id);
         return { handled: true, note: "topup granted" };
       }
@@ -24,6 +28,11 @@ export async function applyStripeEvent(event: Stripe.Event): Promise<{ handled: 
         return { handled: true, note: "customer linked" };
       }
       return { handled: false };
+    }
+    case "checkout.session.async_payment_failed": {
+      // The delayed payment failed: nothing was granted, so nothing to undo. Stripe tells the customer.
+      const session = event.data.object as Stripe.Checkout.Session;
+      return { handled: true, note: `payment failed for ${session.metadata?.kind ?? "session"}; nothing granted` };
     }
     case "invoice.paid": {
       const invoice = event.data.object as Stripe.Invoice;

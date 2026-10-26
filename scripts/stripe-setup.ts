@@ -8,6 +8,7 @@
 import Stripe from "stripe";
 import { ALL_PLANS as PLANS, TOPUPS } from "../src/lib/plans";
 import { STRIPE_PRODUCT_TAX_CODE, TOPUP_METADATA } from "../src/lib/billingCheckout";
+import { WEBHOOK_EVENTS } from "../src/lib/billingEvents";
 
 async function main() {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
@@ -50,7 +51,7 @@ async function main() {
     await ensurePrice(p.stripeLookup.annual, `Clipelle ${p.name}`, Math.round(p.annualMonthlyUsd * 12 * 100), { interval: "year" });
   }
   for (const t of TOPUPS) await ensurePrice(t.stripeLookup, `Clipelle credits (${t.credits})`, Math.round(t.usd * 100), undefined, TOPUP_METADATA);
-  console.log("Done. Add the webhook endpoint /api/billing/webhook for: checkout.session.completed, invoice.paid, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted");
+  console.log(`Done. Add the webhook endpoint /api/billing/webhook for: ${WEBHOOK_EVENTS.join(", ")}`);
 }
 
 main().catch((e) => {

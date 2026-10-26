@@ -35,6 +35,24 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     expect(await getCreditBalance(wsId)).toBe(TOPUPS[0].credits);
   });
 
+  it("waits for a delayed payment: no credits while unpaid, once when the async payment succeeds", async () => {
+    const { applyStripeEvent } = await import("./billingWebhook");
+    const { getCreditBalance } = await import("./credits");
+    const { TOPUPS } = await import("./plans");
+    const before = await getCreditBalance(wsId);
+    const session = { id: "cs_test_async", payment_status: "unpaid", metadata: { userId, workspaceId: wsId, kind: "topup", topupKey: TOPUPS[1].key }, customer: "cus_test" };
+    const completed = { id: "evt_test_async_1", type: "checkout.session.completed", data: { object: session } } as unknown as import("stripe").Stripe.Event;
+    expect((await applyStripeEvent(completed)).note).toMatch(/waits/);
+    expect(await getCreditBalance(wsId)).toBe(before);
+    const succeeded = { id: "evt_test_async_2", type: "checkout.session.async_payment_succeeded", data: { object: { ...session, payment_status: "paid" } } } as unknown as import("stripe").Stripe.Event;
+    expect((await applyStripeEvent(succeeded)).handled).toBe(true);
+    expect(await applyStripeEvent(succeeded)).toMatchObject({ handled: true }); // replay
+    expect(await getCreditBalance(wsId)).toBe(before + TOPUPS[1].credits);
+    const failed = { id: "evt_test_async_3", type: "checkout.session.async_payment_failed", data: { object: { ...session, id: "cs_test_async_failed" } } } as unknown as import("stripe").Stripe.Event;
+    expect((await applyStripeEvent(failed)).note).toMatch(/nothing granted/);
+    expect(await getCreditBalance(wsId)).toBe(before + TOPUPS[1].credits);
+  });
+
   it("moves a cancelled subscription back to free on the workspace", async () => {
     const { applyStripeEvent } = await import("./billingWebhook");
     const { db, workspaces } = await import("@/lib/db");
