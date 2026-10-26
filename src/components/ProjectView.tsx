@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { ArrowLeft, Copy, Download, FolderOpen, Languages, LayoutGrid, Plus } from "lucide-react";
 import { Collapsible } from "@/components/ui/Collapsible";
-import { projectDurationMs, projectEstimateUsd } from "@/lib/projectMeta";
-import { formatSeconds } from "@/components/pipeline/PipelineStep";
+import { projectDurationMs } from "@/lib/projectMeta";
+import { formatTook } from "@/components/pipeline/PipelineStep";
+import { adProjectCredits, chargedCredits } from "@/lib/projectCredits";
 import { config } from "@/lib/config";
 import type { AdProject } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
@@ -20,7 +21,6 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
 import { PageHeaderSkeleton, Skeleton } from "@/components/ui/Skeleton";
 import { DemoBadge } from "@/components/DemoModeBadge";
-import { formatUsd } from "@/lib/pricing";
 import { AD_LANGUAGES, isAdLanguage, SPEEDS } from "@/lib/voiceOptions";
 import { DEFAULT_TONE, TONE_META } from "@/lib/adOptions";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
@@ -79,7 +79,6 @@ export function ProjectView({ id }: { id: string }) {
         title={project.name}
         badge={<StatusBadge status={project.status} className="translate-y-1" />}
         description={`${project.productName} · created ${formatDate(project.createdAt)}${project.archivedAt ? " · archived" : ""}${project.tags?.length ? ` · ${project.tags.join(", ")}` : ""}`}
-        actions={<HeaderActions project={project} />}
       />
       <ProjectActions project={project} />
 
@@ -119,7 +118,6 @@ function ResultHero({ project }: { project: AdProject }) {
   const took = projectDurationMs(project);
   const language = isAdLanguage(project.language) ? AD_LANGUAGES[project.language].label : "English";
   const quality = project.engine === "avatar_iv" ? "Premium" : "Standard";
-  const estimate = projectEstimateUsd(project);
   return (
     <section className="space-y-5">
       <SectionHeader title="Your video" description="Ready to download. 9:16, captions included." aside={<DemoBadge>Demo placeholder</DemoBadge>} />
@@ -139,48 +137,40 @@ function ResultHero({ project }: { project: AdProject }) {
               <Fact label="Language" value={`${language}${project.accent ? ` · ${project.accent.toUpperCase()}` : ""}`} />
               <Fact label="Presenter quality" value={quality} />
               <Fact label="Tone" value={TONE_META[project.tone ?? DEFAULT_TONE].label} />
-              <Fact label="Ready in" value={took !== undefined ? formatSeconds(took) : "—"} />
+              <Fact label="Ready in" value={took !== undefined ? formatTook(took) : "—"} />
             </dl>
             <div className="panel p-4">
-              {config.demoMode || project.spentUsd === undefined ? (
-                <p className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                  <span className="text-muted">Estimated cost</span>
-                  <span className="font-medium text-ink">{formatUsd(estimate)} <span className="text-muted">· demo, nothing was charged</span></span>
-                </p>
-              ) : (
-                <p className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                  <span className="text-muted">Spent on this video</span>
-                  <span className="font-medium text-ink">
-                    {formatUsd(project.spentUsd)}
-                    <span className="text-muted"> · estimate was {formatUsd(estimate)}{project.budgetUsd !== undefined ? `, budget ${formatUsd(project.budgetUsd)}` : ""}</span>
-                  </span>
-                </p>
-              )}
+              <p className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span className="text-muted">Credits used</span>
+                <span className="font-medium text-ink">
+                  {config.demoMode ? adProjectCredits(project) : chargedCredits(project)} credits
+                  {config.demoMode && <span className="text-muted"> · demo, nothing was charged</span>}
+                </span>
+              </p>
               {config.demoMode && (
                 <p className="mt-2 text-[13px] leading-relaxed text-muted">This clip is a stand-in. The real ad arrives here once the services are connected.</p>
               )}
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Button href={project.finalVideoUrl!} variant="accent" size="lg" download>
+            {/* One row (26 Oct 2026): the download is the one accent button, the next steps sit beside it. */}
+            <div className="space-y-3">
+              <Button href={project.finalVideoUrl!} variant="accent" size="lg" download className="w-full sm:w-auto">
                 <Download className="size-[18px]" aria-hidden />
                 Download video
               </Button>
-              <Button href={`/new/ad?from=${project.id}`} variant="primary" size="lg">
-                <Copy className="size-4" aria-hidden />
-                Make another version
-              </Button>
-              <Button href={`/new/translate?from=${project.id}`} variant="secondary" size="lg">
-                <Languages className="size-4" aria-hidden />
-                Localize this ad
-              </Button>
-              <Button href={`/new/ad?from=${project.id}&variations=1`} variant="secondary" size="lg">
-                <LayoutGrid className="size-4" aria-hidden />
-                Make variations
-              </Button>
-              <Button href="/dashboard" variant="ghost" size="lg">
-                <ArrowLeft className="size-4" aria-hidden />
-                Back to dashboard
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button href={`/new/translate?from=${project.id}`} variant="secondary">
+                  <Languages className="size-4" aria-hidden />
+                  Translate this ad
+                </Button>
+                <Button href={`/new/ad?from=${project.id}`} variant="secondary">
+                  <Copy className="size-4" aria-hidden />
+                  Make another version
+                </Button>
+                <Button href={`/new/ad?from=${project.id}&variations=1`} variant="secondary">
+                  <LayoutGrid className="size-4" aria-hidden />
+                  Make variations
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -218,22 +208,6 @@ function pipelineSummary(project: AdProject) {
     default:
       return "This project has not been started yet.";
   }
-}
-
-function HeaderActions({ project }: { project: AdProject }) {
-  if (project.status !== "completed" || !project.finalVideoUrl) return null;
-  return (
-    <div className="flex items-center gap-3">
-      <Button href={`/new/ad?from=${project.id}`} variant="secondary">
-        <Copy className="size-4" aria-hidden />
-        Make another version
-      </Button>
-      <Button href={project.finalVideoUrl} variant="accent" download>
-        <Download className="size-4" aria-hidden />
-        Download
-      </Button>
-    </div>
-  );
 }
 
 /**
@@ -298,15 +272,12 @@ function RelatedProjects({ project, compact }: { project: AdProject; compact?: b
 }
 
 function SpentLine({ project }: { project: AdProject }) {
-  if (project.spentUsd === undefined && project.estimateUsd === undefined) return null;
-  const spent = project.spentUsd ?? 0;
-  const budget = project.budgetUsd;
   return (
     <p className="flex items-center justify-between rounded-[10px] bg-surface-muted px-3 py-2 text-[13px]">
-      <span className="text-muted">{config.demoMode ? "Estimated cost" : "Spent so far"}</span>
+      <span className="text-muted">{config.demoMode ? "Credits" : project.status === "failed" ? "Credits" : "Credits reserved"}</span>
       <span className="font-medium text-ink">
-        {config.demoMode ? formatUsd(project.estimateUsd ?? 0) : formatUsd(spent)}
-        {budget !== undefined ? <span className="text-muted"> of {formatUsd(budget)}</span> : null}
+        {config.demoMode ? adProjectCredits(project) : chargedCredits(project)}
+        {project.status === "failed" && !config.demoMode ? <span className="text-muted"> · refunded</span> : null}
       </span>
     </p>
   );

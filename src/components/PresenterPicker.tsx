@@ -96,6 +96,7 @@ export function PresenterPicker({
   }
 
   const selectedId = value ?? defaultId;
+  const names = displayNames(items);
 
   return (
     <div className="space-y-4">
@@ -153,10 +154,8 @@ export function PresenterPicker({
                   <Poster seed={p.id} monogram={p.name[0]} />
                 )}
               </div>
-              <p className="truncate px-2 py-1.5 text-xs font-medium text-ink">
-                {p.name}
-                {p.id === defaultId ? <span className="text-muted"> · default</span> : null}
-              </p>
+              <p className="truncate px-2 py-1.5 text-xs font-medium text-ink" title={p.name}>{names.get(p.id) ?? p.name}</p>
+              {p.id === defaultId && <span className="absolute left-1.5 top-1.5 rounded-full bg-surface/90 px-1.5 py-0.5 text-[10px] font-medium text-ink shadow-soft">Default</span>}
               {selected && (
                 <span className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-accent text-white">
                   <Check className="size-3.5" strokeWidth={3} aria-hidden />
@@ -179,4 +178,20 @@ export function PresenterPicker({
       </div>
     </div>
   );
+}
+
+/**
+ * Tidy names for the tiles (26 Oct 2026): trailing initials from the catalogue ("Teodora P L") are
+ * dropped, and two looks of the same person are numbered ("Teodora", "Teodora 2").
+ */
+function displayNames(items: Presenter[]) {
+  const seen = new Map<string, number>();
+  const out = new Map<string, string>();
+  for (const p of items) {
+    const base = p.name.replace(/(\s+[A-Z]\.?)+$/, "").trim() || p.name;
+    const n = (seen.get(base) ?? 0) + 1;
+    seen.set(base, n);
+    out.set(p.id, n === 1 ? base : `${base} ${n}`);
+  }
+  return out;
 }

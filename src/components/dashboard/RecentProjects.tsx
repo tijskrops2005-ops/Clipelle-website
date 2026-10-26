@@ -14,14 +14,15 @@ const LIMIT = 4;
 export function RecentProjects() {
   const all = useProjects();
   const ready = useProjectsReady();
-  const projects = all.filter((p) => !p.archivedAt).slice(0, LIMIT);
+  const current = all.filter((p) => !p.archivedAt);
+  const projects = current.slice(0, LIMIT);
 
   return (
     <section className="space-y-6">
       <SectionHeader
         title="Recent projects"
         description={
-          !ready ? "Loading…" : all.length === 0 ? "Nothing here yet." : `Showing ${projects.length} of ${all.length}`
+          !ready ? "Loading…" : current.length === 0 ? "Nothing here yet." : current.length > projects.length ? `Showing ${projects.length} of ${current.length}` : `Your ${current.length} latest`
         }
         aside={
           all.length > 0 && (

@@ -1,4 +1,4 @@
-import { AudioLines, BadgeCheck, CircleDollarSign, Clock3, Compass, Gauge, Image as ImageIcon, Infinity as InfinityIcon, Languages, ListChecks, LockKeyhole, Mic, Palette, RotateCcw, Scissors, ShieldCheck, Smartphone, Smile, Sparkles, Stamp, Tag, Captions, UserRound, VideoOff, FileCheck, type LucideIcon } from "lucide-react";
+import { AudioLines, Coins, BadgeCheck, CircleDollarSign, Clock3, Compass, Gauge, Image as ImageIcon, Infinity as InfinityIcon, Languages, ListChecks, LockKeyhole, Mic, Palette, RotateCcw, Scissors, ShieldCheck, Smartphone, Smile, Sparkles, Stamp, Tag, Captions, UserRound, VideoOff, FileCheck, type LucideIcon } from "lucide-react";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
 import { measured } from "@/content/measured";
@@ -10,10 +10,11 @@ import { SwipeTabs } from "@/components/site/SwipeTabs";
 /**
  * "Why Clipelle" (25 Oct 2026, at Tijs's request): the outcomes, the choices and the trust grid in
  * one swipeable block, so the homepage is shorter. Every number is real: the measured minutes come
- * from src/content/measured.ts, the price per minute from plans.ts (Pro, monthly).
+ * from src/content/measured.ts, the price per minute from plans.ts (Pro, monthly). 26 Oct 2026: the
+ * cards no longer repeat the language count or the translation time shown higher up the page.
  */
 
-const GET_ICONS: LucideIcon[] = [Clock3, Languages, CircleDollarSign, VideoOff, Sparkles, Smartphone];
+const GET_ICONS: LucideIcon[] = [CircleDollarSign, VideoOff, InfinityIcon, Coins, Sparkles, Smartphone];
 const PROMISE_ICONS: LucideIcon[] = [CircleDollarSign, RotateCcw, ListChecks, InfinityIcon, ShieldCheck, LockKeyhole];
 const TRANSLATE_ICONS: LucideIcon[] = [Languages, Gauge, Tag, Smartphone, Captions, Scissors, ImageIcon];
 const AD_ICONS: LucideIcon[] = [Clock3, UserRound, Languages, Mic, Smile, Tag, Compass, ImageIcon, Captions, Palette, Stamp, FileCheck];

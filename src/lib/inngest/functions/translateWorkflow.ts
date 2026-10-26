@@ -385,7 +385,10 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
   const fail = (message: string): LanguageOutcome => ({ ok: false, error: message });
   const budgetMessage = (error: unknown) => {
     const e = error as { code?: string; message?: string };
-    if (e?.code === "creative_budget" || e?.code === "per_action_limit") return `Stopped: ${e.message}`;
+    if (e?.code === "creative_budget" || e?.code === "per_action_limit" || e?.code === "user_limit") {
+      console.error(`[cost guard] ${lang}:`, e.message);
+      return "This language stopped at our safety limit for a single video, before anything more was charged. It costs no credits; the other languages finish.";
+    }
     return error instanceof Error ? error.message : "Unknown error.";
   };
 

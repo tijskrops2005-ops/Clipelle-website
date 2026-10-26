@@ -79,6 +79,18 @@ export function compareMonth(input: { costNow: number; videos: number; seconds: 
   return { perAd, credits, fit, yourMoney, yourHours, ourHours, yourTotal, ourTotal, savingUsd: yourTotal - ourTotal, hoursBack: yourHours - ourHours };
 }
 
+/** The same comparison for any video with a known credit price (26 Oct 2026: translations in the calculator). */
+export function compareCredits(input: { costNow: number; videos: number; creditsPerVideo: number; minutesNow: number; hourValue: number }) {
+  const credits = input.creditsPerVideo * input.videos;
+  const fit = planFit(credits, input.videos);
+  const yourMoney = input.costNow * input.videos;
+  const yourHours = (input.videos * input.minutesNow) / 60;
+  const ourHours = (input.videos * HANDS_ON_MINUTES) / 60;
+  const yourTotal = yourMoney + yourHours * input.hourValue;
+  const ourTotal = fit.monthlyUsd + ourHours * input.hourValue;
+  return { perAd: input.creditsPerVideo, credits, fit, yourMoney, yourHours, ourHours, yourTotal, ourTotal, savingUsd: yourTotal - ourTotal, hoursBack: yourHours - ourHours };
+}
+
 /** Credits a month of use needs: ads at one length and quality plus translation minutes (Speed, one language). */
 export function creditsNeeded(input: { ads: number; seconds: AdLength; engine: PresenterEngine; translateMinutes: number }) {
   const perAd = adCredits({ seconds: input.seconds, engine: input.engine });

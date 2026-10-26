@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Languages, Loader2 } from "lucide-react";
 import { config } from "@/lib/config";
 import type { AdProject, LanguageCode, TranslationQuality } from "@/lib/types";
@@ -12,7 +12,6 @@ import { formatDate } from "@/lib/utils";
 import { LANGUAGES, languageOf } from "@/lib/languages";
 import { TOP_LANGUAGES } from "@/lib/translateLanguages";
 import { SearchableSelect, type SelectOption } from "@/components/ui/SearchableSelect";
-import { formatUsd } from "@/lib/translatePricing";
 import { estimateTranslateCost } from "@/lib/pricing";
 import { Badge } from "@/components/ui/Badge";
 import { createTranslateProject } from "@/lib/data/client";
@@ -28,7 +27,8 @@ import { OptionCard, OptionGrid } from "@/components/ui/OptionCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Disclosure } from "@/components/ui/Disclosure";
 import { SummaryPanel } from "@/components/ui/SummaryPanel";
-import { translateCredits } from "@/lib/plans";
+import { CREDIT_RULES, translateCredits } from "@/lib/plans";
+import { getAccountStatus } from "@/lib/data/settingsClient";
 
 type Errors = TranslateFormErrors;
 
@@ -37,8 +37,8 @@ type Errors = TranslateFormErrors;
  * Speed = standard lip-sync, "adequate" translation, best for faces with little movement and
  * quick drafts, faster. Precision = the mouth is re-rendered with avatar models for significantly
  * more realistic lip-sync, context- and gender-aware translation, best for faces that move,
- * side angles, partly covered mouths and more than one speaker; slower. Prices are our rate card
- * per minute of source video per language (speed $1.50, precision $3.00).
+ * side angles, partly covered mouths and more than one speaker; slower. Customers see credits
+ * only (26 Oct 2026): 1 per second for Speed, 2 for Precision, per language (plans.ts).
  */
 const QUALITY: Array<{ key: TranslationQuality; title: string; text: string; bestFor: string; wait: string }> = [
   {
@@ -56,7 +56,6 @@ const QUALITY: Array<{ key: TranslationQuality; title: string; text: string; bes
     wait: "Takes longer; count on roughly twice the time.",
   },
 ];
-const USD_PER_MINUTE: Record<TranslationQuality, number> = { speed: 1.5, precision: 3 };
 
 /**
  * The "Translate an existing video" form: three numbered blocks (video, languages and quality,
@@ -90,11 +89,21 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
   const formRef = useRef<HTMLFormElement>(null);
 
   const seconds = sourceAd?.seconds ?? video?.seconds ?? 30;
+  // Internal only (never shown): the spending limit per language version decides what can start.
   const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 2;
   const estimateFor = (q: TranslationQuality, enh = enhance) =>
     estimateTranslateCost({ seconds, quality: q, enhance: enh, languages: Math.max(1, targets.length), hasSourceTranscript: source !== "auto" });
   const estimate = estimateFor(quality);
   const overBudget = estimate.perLanguageTotal > budget;
+  const [balance, setBalance] = useState<number | null>(null);
+  useEffect(() => {
+    if (config.demoMode) return;
+    let alive = true;
+    getAccountStatus().then((a) => alive && setBalance(a.balance)).catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   function toggleTarget(code: LanguageCode) {
     if (code === source) {
@@ -152,8 +161,11 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
 
   const qualityTitle = QUALITY.find((q) => q.key === quality)?.title ?? "Speed";
   const creditsPerLanguage = translateCredits({ seconds, quality, enhance, languages: Math.max(1, targets.length), hasSourceTranscript: source !== "auto" });
+  const languageCount = Math.max(1, targets.length);
+  const totalCredits = creditsPerLanguage * languageCount;
+  const shortOfCredits = balance !== null && balance < totalCredits;
+  const knownLength = Boolean(fromAd || video);
   const summaryRows = [
-    { label: "Credits", value: `${creditsPerLanguage} per language${targets.length > 1 ? ` · ${creditsPerLanguage * targets.length} in total` : ""}` },
     { label: "Video", value: fromAd ? `${fromAd.name} · ${formatDuration(Math.round(seconds))}` : video ? formatDuration(Math.round(video.seconds ?? 30)) : "Not added yet", muted: !video && !fromAd },
     { label: "From", value: source === "auto" ? "Detected automatically" : languageOf(source).label },
     { label: "Into", value: targets.length === 0 ? "Pick a language" : targets.map((t) => languageOf(t).tag).join(", "), muted: targets.length === 0 },
@@ -238,7 +250,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
             <legend className="text-sm font-medium text-ink">Quality</legend>
             <OptionGrid columns={2}>
               {QUALITY.map((q) => {
-                const est = estimateFor(q.key);
+                const perLanguage = translateCredits({ seconds, quality: q.key, enhance });
                 return (
                   <OptionCard
                     key={q.key}
@@ -247,22 +259,20 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
                     disabled={submitting}
                     title={q.title}
                     badge={q.key === "speed" ? <Badge tone="success">Recommended</Badge> : undefined}
-                    meta={<span className="label-mono text-muted">≈ {formatUsd(est.perLanguageTotal)} / language</span>}
+                    meta={<span className="label-mono text-muted">{perLanguage} credits / language</span>}
                     description={
                       <>
                         <span className="block text-ink/90">{q.text}</span>
                         <span className="mt-1 block">{q.bestFor}</span>
                       </>
                     }
-                    footnote={`${formatUsd(USD_PER_MINUTE[q.key])} per minute of video per language · ${q.wait}`}
+                    footnote={`${CREDIT_RULES.translate[q.key]} ${CREDIT_RULES.translate[q.key] === 1 ? "credit" : "credits"} per second of video, per language · ${q.wait}`}
                   />
                 );
               })}
             </OptionGrid>
             <p className="text-[13px] text-muted">
-              Live estimate for {Math.round(seconds)} s of video, {qualityTitle}, {Math.max(1, targets.length)} {targets.length === 1 || targets.length === 0 ? "language" : "languages"}: translation {formatUsd(estimate.perLanguage.proofread + estimate.perLanguage.render)}, quality check {formatUsd(estimate.perLanguage.check)}, captions {formatUsd(estimate.perLanguage.captions)}
-              {enhance ? `, enhancement ${formatUsd(estimate.perLanguage.enhance)}` : ""} per language
-              {targets.length > 1 ? ` · ${formatUsd(estimate.total)} in total` : ""}.
+              {knownLength ? `For your ${Math.round(seconds)}-second video` : "Shown for a 30-second video until you add yours"}: the translation, the check of every line, lip sync and captions are all included. A short video uses at least {CREDIT_RULES.translateMinimum} credits per language.
             </p>
           </fieldset>
 
@@ -313,37 +323,50 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
           </fieldset>
 
           <Disclosure title="Advanced" summary={`${trimSilence ? "Silence removed" : "Silence kept"} · ${enhance ? "enhancement on" : "no enhancement"}`}>
-            <label htmlFor="trimSilence" className={cn("flex cursor-pointer items-start gap-3 rounded-panel border p-4 transition-colors duration-150", trimSilence ? "border-ink bg-surface" : "border-border bg-surface-muted/60 hover:bg-surface")}>
+            <label htmlFor="trimSilence" className={cn("flex cursor-pointer items-start gap-3 rounded-panel border p-4 transition-colors duration-150", trimSilence ? "border-ink bg-surface" : "border-border bg-surface hover:border-ink/30")}>
               <input id="trimSilence" type="checkbox" checked={trimSilence} onChange={(e) => setTrimSilence(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 shrink-0" />
               <span>
                 <span className="block text-sm font-medium text-ink">Remove silence at start and end</span>
                 <span className="block text-[13px] leading-relaxed text-muted">Cuts quiet stretches longer than about 0.3 s before the first and after the last spoken line. The speech itself and the lip-sync are untouched.</span>
               </span>
             </label>
-            <label htmlFor="enhance" className={cn("flex cursor-pointer items-start gap-3 rounded-panel border p-4 transition-colors duration-150", enhance ? "border-ink bg-surface" : "border-border bg-surface-muted/60 hover:bg-surface")}>
+            <label htmlFor="enhance" className={cn("flex cursor-pointer items-start gap-3 rounded-panel border p-4 transition-colors duration-150", enhance ? "border-ink bg-surface" : "border-border bg-surface hover:border-ink/30")}>
               <input id="enhance" type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 shrink-0" />
               <span>
                 <span className="block text-sm font-medium text-ink">Enhance picture quality</span>
-                <span className="block text-[13px] leading-relaxed text-muted">Sharper, cleaner picture before the captions go on. Adds about {formatUsd(estimateFor(quality, true).perLanguage.enhance)} per language and a few minutes.</span>
+                <span className="block text-[13px] leading-relaxed text-muted">Sharper, cleaner picture before the captions go on. Adds {CREDIT_RULES.translate.enhance} credit per second per language, and a few minutes.</span>
               </span>
             </label>
           </Disclosure>
         </SectionCard>
       </div>
 
-      {/* The fixed summary: choices, cost per language, the rights confirmation and the button */}
+      {/* The fixed summary: choices, credits, the rights confirmation and the button */}
       <SummaryPanel
         rows={summaryRows}
-        total={{ label: targets.length > 1 ? `Per language · ${formatUsd(estimate.total)} in total` : "Estimated cost per language", value: formatUsd(estimate.perLanguageTotal), tone: overBudget ? "danger" : "neutral" }}
+        total={{
+          label: targets.length > 1 ? `Credits · ${targets.length} languages` : "Credits",
+          value: `${totalCredits}`,
+          tone: overBudget || shortOfCredits ? "danger" : "neutral",
+          note: [
+            targets.length > 1 ? `${creditsPerLanguage} per language.` : knownLength ? null : "For 30 seconds; follows your video.",
+            balance !== null ? (shortOfCredits ? `You have ${balance.toLocaleString("en-US")}: ${(totalCredits - balance).toLocaleString("en-US")} short.` : `You have ${balance.toLocaleString("en-US")}; ${(balance - totalCredits).toLocaleString("en-US")} left after this.`) : null,
+          ].filter(Boolean).join(" ") || undefined,
+        }}
         footnote={
           config.demoMode
             ? "Demo mode: this starts a simulated run. No video is uploaded or translated yet."
-            : `Budget ${formatUsd(budget)} per language version. If one version would exceed it, only that version stops; the others finish. The real amount per language is shown on the project page afterwards.`
+            : "Credits are reserved when you start and settled when the videos are ready. You only pay for the languages that are delivered."
         }
       >
         {overBudget && (
           <p role="status" className="rounded-chip bg-danger/10 p-3 text-[13px] font-medium leading-relaxed text-danger">
-            Above the budget of {formatUsd(budget)} per language version. Choose Speed, turn off enhancement, or use a shorter video.
+            This combination is not available for a video this long yet. Choose Speed, turn off enhancement, or use a shorter video.
+          </p>
+        )}
+        {shortOfCredits && !overBudget && (
+          <p role="status" className="rounded-chip bg-danger/10 p-3 text-[13px] font-medium leading-relaxed text-danger">
+            This needs {totalCredits} credits and you have {balance}. <a href="/settings/billing" className="underline underline-offset-2">Add credits</a>, pick fewer languages or use a shorter video.
           </p>
         )}
         {fromAd ? (
@@ -356,7 +379,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
           htmlFor="rights"
           className={cn(
             "flex cursor-pointer items-start gap-3 rounded-panel border p-3.5 transition-colors duration-150",
-            errors.rights ? "border-danger bg-danger/5" : rights ? "border-success/40 bg-success/5" : "border-border bg-surface-muted/60 hover:bg-surface",
+            errors.rights ? "border-danger bg-danger/5" : rights ? "border-success/40 bg-success/5" : "border-border bg-surface hover:border-ink/30",
           )}
         >
           <input
@@ -386,13 +409,13 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
             <p id="confirm-title" className="text-[15px] font-semibold text-ink">Start this translation?</p>
             <p className="mt-1 text-[13px] leading-relaxed text-muted">
               {Math.round(seconds)} s of video · {qualityTitle} · {targets.length} {targets.length === 1 ? "language" : "languages"} ({targets.map((t) => languageOf(t).label).join(", ")}) · {format === "9:16" ? "9:16" : "original size"} with captions.
-              {" "}Estimated cost <span className="font-medium text-ink">{formatUsd(estimate.perLanguageTotal)}</span> per language{targets.length > 1 ? <>, <span className="font-medium text-ink">{formatUsd(estimate.total)}</span> in total</> : null}; budget {formatUsd(budget)} per language.
-              {config.demoMode ? " Demo mode: nothing is charged, the run is simulated." : " The real amount per language is shown on the project page afterwards."}
+              {" "}Uses <span className="font-medium text-ink">{totalCredits} credits</span>{targets.length > 1 ? ` (${creditsPerLanguage} per language)` : ""}.
+              {config.demoMode ? " Demo mode: nothing is charged, the run is simulated." : " A language that fails costs nothing."}
             </p>
             <div className="mt-4 flex flex-col gap-2">
-              <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || !rights || overBudget}>
+              <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || !rights || overBudget || shortOfCredits}>
                 {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
-                {submitting ? "Starting…" : `Start now · ${formatUsd(estimate.total)}`}
+                {submitting ? "Starting…" : `Start now · ${totalCredits} credits`}
               </Button>
               <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={submitting}>
                 Back
@@ -401,9 +424,9 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
           </div>
         ) : (
           <>
-            <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || !rights || overBudget}>
+            <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || !rights || overBudget || shortOfCredits}>
               <Languages className="size-5" aria-hidden />
-              {`Start translation · ${formatUsd(estimate.perLanguageTotal)}${targets.length > 1 ? " per language" : ""}`}
+              {`Start translation · ${totalCredits} credits`}
             </Button>
             <Button href="/new" variant="ghost" className={cn("w-full", submitting && "pointer-events-none opacity-50")} aria-disabled={submitting || undefined}>
               Back

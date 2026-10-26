@@ -54,6 +54,14 @@ export const stepMeta: Record<StepKey, StepMeta> = {
   },
 };
 
+/** A finished duration in words (26 Oct 2026): "45 s", "4.5 min", "33 min". */
+export function formatTook(ms: number) {
+  const sec = Math.max(0, Math.round(ms / 1000));
+  if (sec < 60) return `${sec} s`;
+  const min = sec / 60;
+  return `${min < 10 ? Math.round(min * 10) / 10 : Math.round(min)} min`;
+}
+
 export function formatSeconds(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(total / 60);
@@ -151,7 +159,7 @@ export function StepProgressCard({
             <div className="min-w-0">
               <p className="text-sm font-medium text-ink">{meta.doneLabel ?? "Clip ready"}</p>
               <p className="text-[13px] text-muted">
-                {took !== undefined ? `Done in ${formatSeconds(took)}` : "Done"}
+                {took !== undefined ? `Done in ${formatTook(took)}` : "Done"}
                 {step.attempt && step.attempt > 1 ? ` · attempt ${step.attempt}` : ""}
               </p>
             </div>

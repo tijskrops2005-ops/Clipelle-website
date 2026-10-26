@@ -8,7 +8,7 @@ export type SummaryRow = { label: ReactNode; value: ReactNode; muted?: boolean }
  * The fixed summary next to a form: what was chosen, what it costs, the main button.
  * Sticky from xl; on narrower screens it sits under the form as the last card.
  */
-export function SummaryPanel({ title = "Summary", rows, total, children, footnote, className }: { title?: ReactNode; rows: SummaryRow[]; total?: { label: ReactNode; value: ReactNode; tone?: "neutral" | "danger" }; children?: ReactNode; footnote?: ReactNode; className?: string }) {
+export function SummaryPanel({ title = "Summary", rows, total, children, footnote, className }: { title?: ReactNode; rows: SummaryRow[]; total?: { label: ReactNode; value: ReactNode; tone?: "neutral" | "danger"; note?: ReactNode }; children?: ReactNode; footnote?: ReactNode; className?: string }) {
   return (
     <Card className={cn("xl:sticky xl:top-6", className)}>
       <div className="px-5 pt-5 sm:px-6 sm:pt-6">
@@ -22,9 +22,12 @@ export function SummaryPanel({ title = "Summary", rows, total, children, footnot
           ))}
         </dl>
         {total && (
-          <div className={cn("mt-4 flex items-baseline justify-between gap-4 rounded-chip px-3 py-2.5", total.tone === "danger" ? "bg-danger/10" : "bg-surface-muted")}>
-            <span className="text-sm text-muted">{total.label}</span>
-            <span className={cn("text-lg font-semibold", total.tone === "danger" ? "text-danger" : "text-ink")}>{total.value}</span>
+          <div className={cn("mt-5 rounded-panel px-4 py-3.5", total.tone === "danger" ? "bg-danger/10" : "bg-surface-muted")}>
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="text-sm text-muted">{total.label}</span>
+              <span className={cn("text-[26px] font-semibold leading-none tracking-[-0.02em]", total.tone === "danger" ? "text-danger" : "text-ink")}>{total.value}</span>
+            </div>
+            {total.note && <p className="mt-2 text-[12.5px] leading-relaxed text-muted">{total.note}</p>}
           </div>
         )}
       </div>

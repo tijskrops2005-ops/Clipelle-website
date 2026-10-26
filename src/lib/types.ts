@@ -46,6 +46,8 @@ interface ProjectBase {
   budgetUsd?: number;
   /** Estimate shown before the start, kept for the project page. */
   estimateUsd?: number;
+  /** Credits charged for this project from the ledger (reserved while running, settled when done, 0 after a refund). Missing = no ledger rows. */
+  creditsUsed?: number;
   /**
    * Grouping (2026-10-21): an ad made as "another version" points at the first ad of its group
    * (the root); a translation made from an ad points at that ad. Missing = a project on its own.
@@ -163,6 +165,8 @@ export interface TranslateProject extends ProjectBase {
   detectedLanguage?: LanguageCode;
   targetLanguages: LanguageCode[];
   quality: TranslationQuality;
+  /** Picture enhancement before the captions (+1 credit per second). */
+  enhance?: boolean;
   /**
    * When the user confirmed they own the video and have the speaker's consent
    * (rule 7 in CLAUDE.md). A translate project cannot exist without it.

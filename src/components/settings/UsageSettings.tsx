@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { getUsage, type UsageInfo } from "@/lib/data/settingsClient";
-import { formatUsd } from "@/lib/pricing";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { DemoBadge } from "@/components/DemoModeBadge";
@@ -10,7 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 
 const kindLabel: Record<string, string> = { grant_free: "Free credits", grant_subscription: "Plan credits", grant_topup: "Credit pack", grant_manual: "Added", reserve: "Reserved for a project", settle: "Unused credits returned", refund: "Refunded (project failed)", expire: "Expired" };
 
-/** Usage per project (from the cost log) and the credit ledger, for the signed-in account. */
+/** Usage per project in credits and the credit ledger, for the current workspace. */
 export function UsageSettings() {
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,17 +36,17 @@ export function UsageSettings() {
         </div>
       </div>
 
-      <SectionCard title="Per project" description="What each project really cost in the last 90 days, from the cost log." aside={<DemoBadge>Demo numbers</DemoBadge>}>
+      <SectionCard title="Per project" description="Credits used by each project in the last 90 days. A project that failed shows 0: its credits were refunded." aside={<DemoBadge>Demo numbers</DemoBadge>}>
         {!usage ? (
           <Skeleton className="h-24" />
         ) : usage.projects.length === 0 ? (
-          <p className="text-[15px] text-muted">No paid steps yet.</p>
+          <p className="text-[15px] text-muted">No projects with credits yet.</p>
         ) : (
           <table className="w-full text-left text-sm">
-            <thead className="text-[13px] text-muted"><tr><th className="py-2 pr-4 font-medium">Project</th><th className="py-2 pr-4 font-medium">Type</th><th className="py-2 pr-4 font-medium">Calls</th><th className="py-2 font-medium text-right">Spent</th></tr></thead>
+            <thead className="text-[13px] text-muted"><tr><th className="py-2 pr-4 font-medium">Project</th><th className="py-2 pr-4 font-medium">Type</th><th className="py-2 font-medium text-right">Credits</th></tr></thead>
             <tbody className="divide-y divide-divider">
               {usage.projects.map((p) => (
-                <tr key={p.projectId}><td className="py-2.5 pr-4 text-ink">{p.name}</td><td className="py-2.5 pr-4 text-muted">{p.workflow === "ad" ? "Ad" : p.workflow === "translate" ? "Translation" : ""}</td><td className="py-2.5 pr-4 text-muted">{p.calls}</td><td className="py-2.5 text-right font-medium text-ink">{formatUsd(p.usd)}</td></tr>
+                <tr key={p.projectId}><td className="py-2.5 pr-4 text-ink">{p.name}</td><td className="py-2.5 pr-4 text-muted">{p.workflow === "ad" ? "Ad" : p.workflow === "translate" ? "Translation" : ""}</td><td className="py-2.5 text-right font-medium text-ink">{p.credits.toLocaleString("en-US")}</td></tr>
               ))}
             </tbody>
           </table>

@@ -32,3 +32,11 @@ Wat op verzoek van Tijs van de site is gehaald, waarom, en hoe het terug kan. De
 | Slack-bot en Ad Launcher | Van de site (pagina's, menu, app-zijbalk). Concept bewaard: `docs/concepts/slack-bot-and-ad-launcher.md`. | Zie dat document. |
 | Grijs schetsje bovenaan /platform/url-to-video | Vervangen door de echte advertentie. | — |
 | /press | Toegevoegd: feitenblad uit echte waarden en een perskit met de logobestanden. | — |
+
+## 26 oktober 2026: alles in credits, minder herhaling (op verzoek van Tijs)
+
+| Onderdeel | Wat er gebeurde | Terugzetten |
+|---|---|---|
+| Kleine advertentiedemo met foto (`AdsDemo`) op de homepage | Weg: de grote muis-demo (`ProductDemo`) vertelt hetzelfde en staat nu direct onder de kop "Or make a new ad from a photo or a link"; daaronder alleen de link-rij. | In `HomePage.tsx` de rij `{ key: "ads", … panel: <AdsDemo /> }` terug in `FeatureRows`. |
+| Rij live-cijfers (`LiveStats`) | Verborgen zolang er geen enkel echt cijfer boven de drempel is: de vervangende feiten herhaalden de blokken eromheen. Verschijnt vanzelf bij echte cijfers. | In `LiveStats.tsx` de regel `if (!anyLive) return null;` weghalen. |
+| "190 talen" zes keer op de homepage | Nog twee keer: de chip in de hero en de talenmuur. Statistiekband, swipe-blok en slotband zeggen nu iets anders. | Teksten in `home.translate.stats`, `home.why.get`, `home.finalPoints`. |

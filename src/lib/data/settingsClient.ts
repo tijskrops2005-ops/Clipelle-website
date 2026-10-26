@@ -96,6 +96,17 @@ export async function fetchBrandLogoFile(logoUrl: string): Promise<File | null> 
 export type ProfileInfo = { email: string; name: string; emailVerified: boolean; planKey: string; freeAdGrantedAt: string | null; notifyEmail: boolean };
 const NOTIFY_EMAIL_KEY = "clipelle.demo.notifyEmail";
 
+/**
+ * The workspace's plan and credit balance (26 Oct 2026): the forms read the plan from here, not from
+ * the profile, because plans belong to the workspace. Demo mode has no balance.
+ */
+export type AccountStatus = { planKey: string; balance: number | null };
+export async function getAccountStatus(): Promise<AccountStatus> {
+  if (config.demoMode) return { planKey: "demo", balance: null };
+  const s = await api<{ planKey: string; balance: number }>("/api/billing/status");
+  return { planKey: s.planKey, balance: typeof s.balance === "number" ? s.balance : null };
+}
+
 export async function getProfile(): Promise<ProfileInfo> {
   if (config.demoMode) return { email: "demo@clipelle.local", name: readLocal<string>(NAME_KEY, "Demo"), emailVerified: true, planKey: "free", freeAdGrantedAt: null, notifyEmail: readLocal<boolean>(NOTIFY_EMAIL_KEY, true) };
   return api<ProfileInfo>("/api/settings/profile");
@@ -174,7 +185,7 @@ export const removeMember = async (id: string, userId: string) => { await api(`/
 export const inviteToWorkspace = (id: string, email: string) => api<{ id: string; email: string; link: string; mailed: boolean }>(`/api/workspaces/${id}/invites`, { method: "POST", body: JSON.stringify({ email }) });
 export const revokeInvite = async (id: string, inviteId: string) => { await api(`/api/workspaces/${id}/invites`, { method: "DELETE", body: JSON.stringify({ inviteId }) }); };
 
-export type UsageInfo = { balance: number; projectsThisMonth: number; projects: { projectId: string; name: string; workflow: string; usd: number; calls: number; last: string }[]; ledger: { id: string; credits: number; kind: string; note: string | null; createdAt: string; expiresAt: string | null }[] };
+export type UsageInfo = { balance: number; projectsThisMonth: number; projects: { projectId: string; name: string; workflow: string; credits: number; last: string }[]; ledger: { id: string; credits: number; kind: string; note: string | null; createdAt: string; expiresAt: string | null }[] };
 
 export async function getUsage(): Promise<UsageInfo> {
   if (config.demoMode) return { balance: 120, projectsThisMonth: 4, projects: [], ledger: [{ id: "demo", credits: 120, kind: "grant_manual", note: "Demo credits (simulated)", createdAt: new Date().toISOString(), expiresAt: null }] };

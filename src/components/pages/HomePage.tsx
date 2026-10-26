@@ -1,4 +1,4 @@
-import { ArrowRight, ImageUp, Languages, Link2 } from "lucide-react";
+import { ArrowRight, Languages, Link2 } from "lucide-react";
 import { Suspense } from "react";
 import { config } from "@/lib/config";
 import { faq } from "@/content/faq";
@@ -14,7 +14,7 @@ import { SavingsCalculator } from "@/components/site/SavingsCalculator";
 import { JsonLd } from "@/components/site/JsonLd";
 import { PipelineStrip, ProofChips } from "@/components/site/Sketches";
 import { FeatureRows, HeroShowcase, StatsBand } from "@/components/site/Showcase";
-import { AdsDemo, UrlDemo } from "@/components/site/FeatureDemos";
+import { UrlDemo } from "@/components/site/FeatureDemos";
 import { TranslateShowcase } from "@/components/site/TranslateShowcase";
 import { TranslateDemo } from "@/components/site/TranslateDemo";
 import { ProductDemo } from "@/components/site/ProductDemo";
@@ -69,15 +69,15 @@ export function HomePage({ locale }: { locale: Locale }) {
       <HomeLogos locale={locale} />
       <LiveStats locale={locale} />
 
-      {/* Back on 25 Oct 2026 at Tijs's request: the self-playing ad form. */}
-      <ProductDemo locale={locale} />
-
+      {/* 26 Oct 2026: ads as one story. The section title, the big self-playing ad form (Tijs's
+          favourite cursor demo) as the photo example, then the link row. The smaller photo demo
+          (AdsDemo) told the same story twice and is kept in code only (docs/removed-blocks.md). */}
       <Reveal as="section">
         <SectionIntro eyebrow={h.moreEyebrow} title={h.moreTitle} text={h.moreText} />
+        <ProductDemo locale={locale} bare />
         <FeatureRows
-          className="mt-14"
+          className="mt-16"
           rows={[
-            { key: "ads", label: h.tabs.ads.label, title: h.tabs.ads.title, text: h.tabs.ads.text, points: h.tabs.ads.points, link: { href: L("/platform/ads"), label: h.tabs.ads.link }, icon: ImageUp, panel: <AdsDemo locale={locale} /> },
             { key: "url", label: h.tabs.url.label, title: h.tabs.url.title, text: h.tabs.url.text, points: h.tabs.url.points, link: { href: L("/platform/url-to-video"), label: h.tabs.url.link }, icon: Link2, panel: <UrlDemo locale={locale} /> },
           ]}
         />

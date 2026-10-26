@@ -35,8 +35,8 @@ export function HowItWorks() {
   return (
     <section className="space-y-8">
       <SectionHeader title="How it works" description="One click starts a fixed set of steps. Everything runs on its own; you follow progress on the project page." />
+      <WorkflowRow kicker="Translate a video" href="/new/translate" steps={translateSteps} columns={3} />
       <WorkflowRow kicker="Make an ad from a product photo" href="/new/ad" steps={adSteps} columns={4} />
-      <WorkflowRow kicker="Translate an existing video" href="/new/translate" steps={translateSteps} columns={3} />
     </section>
   );
 }

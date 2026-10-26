@@ -1,8 +1,7 @@
 import { Check, ImageUp, Sparkles } from "lucide-react";
 import type { Locale } from "@/lib/i18n";
 import { firstExample } from "@/lib/examples";
-import { formatUsd } from "@/lib/pricing";
-import { cachedStandardAdEstimate } from "@/lib/pricingCached";
+import { adCredits } from "@/lib/plans";
 import { dict } from "@/content/i18n";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
@@ -16,15 +15,13 @@ import { AdSketch } from "@/components/site/Sketches";
  * own sample, or a drawn ad without one). Labelled as an illustration of the flow; under "reduce
  * motion" it shows the finished state.
  */
-export async function ProductDemo({ locale }: { locale: Locale }) {
+export async function ProductDemo({ locale, bare }: { locale: Locale; /** Without its own title: placed under another section's heading. */ bare?: boolean }) {
   const t = dict(locale);
   const d = t.home.demo;
   const sample = firstExample("ad");
-  // The same estimate the real form shows for 30 s Standard.
-  const price = formatUsd(await cachedStandardAdEstimate());
-  return (
-    <Reveal as="section">
-      <SectionIntro eyebrow={d.eyebrow} title={d.title} text={d.text} />
+  // Credits, as the real form shows them (26 Oct 2026): a 30-second Standard ad.
+  const price = `${adCredits({ seconds: 30, engine: "avatar_iii" })} credits`;
+  const demo = (
       <div className="demo relative mx-auto mt-12 max-w-5xl overflow-hidden rounded-card border border-border bg-surface shadow-card-hover" aria-label={d.label} role="img">
         {/* browser chrome */}
         <div className="flex items-center gap-2 border-b border-divider bg-bg px-4 py-3" aria-hidden>
@@ -94,6 +91,12 @@ export async function ProductDemo({ locale }: { locale: Locale }) {
           </span>
         </div>
       </div>
+  );
+  if (bare) return demo;
+  return (
+    <Reveal as="section">
+      <SectionIntro eyebrow={d.eyebrow} title={d.title} text={d.text} />
+      {demo}
     </Reveal>
   );
 }

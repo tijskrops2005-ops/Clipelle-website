@@ -7,6 +7,8 @@ import { listVoices } from "@/lib/data/client";
 import type { AdLanguageCode, VoiceOptions } from "@/lib/voiceOptions";
 import { DemoBadge } from "@/components/DemoModeBadge";
 
+const VISIBLE_VOICES = 6;
+
 /**
  * Voice choice on /new/ad: filtered on language, accent and the presenter's gender; preselected
  * on the presenter's own voice when it fits the language, else the first match. Previews play one
@@ -82,6 +84,12 @@ export function VoicePicker({
   }
 
   const selectedId = value ?? options?.defaultId ?? null;
+  // A short list first (26 Oct 2026): six voices, the chosen one always among them; the rest one click away.
+  const [showAll, setShowAll] = useState(false);
+  const allVoices = options?.voices ?? [];
+  const firstSix = allVoices.slice(0, VISIBLE_VOICES);
+  const chosen = allVoices.find((v) => v.id === selectedId);
+  const shown = showAll ? allVoices : chosen && !firstSix.includes(chosen) ? [...firstSix.slice(0, VISIBLE_VOICES - 1), chosen] : firstSix;
 
   return (
     <div className="space-y-3">
@@ -101,7 +109,7 @@ export function VoicePicker({
           </li>
         )}
         {options?.voices.length === 0 && !loading && <li className="px-4 py-3 text-sm text-muted">No voices for this combination. Try another accent.</li>}
-        {options?.voices.map((v) => {
+        {options && shown.map((v) => {
           const selected = v.id === selectedId;
           return (
             <li key={v.id} className={cn("flex items-center gap-3 px-3 py-2", selected && "bg-surface-muted")}>
@@ -127,7 +135,7 @@ export function VoicePicker({
                   <span className="block text-[12px] text-muted">
                     {v.gender === "female" ? "Female" : v.gender === "male" ? "Male" : "Voice"}
                     {v.accent ? ` · ${v.accent.toUpperCase()}` : ""}
-                    {v.id === options.defaultId ? " · default" : ""}
+                    {v.id === options.defaultId ? " · recommended for this presenter" : ""}
                   </span>
                 </span>
                 {selected && (
@@ -140,6 +148,11 @@ export function VoicePicker({
           );
         })}
       </ul>
+      {allVoices.length > VISIBLE_VOICES && (
+        <button type="button" onClick={() => setShowAll((x) => !x)} disabled={disabled} className="focus-ring rounded-control text-[13px] font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">
+          {showAll ? "Show fewer voices" : `Show all ${allVoices.length} voices`}
+        </button>
+      )}
     </div>
   );
 }

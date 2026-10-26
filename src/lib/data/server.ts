@@ -1,4 +1,5 @@
 import "server-only";
+import { config } from "@/lib/config";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { AdProject, LanguageCode, Project, Step, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { assets, db, projects, steps, translations, type AdInput, type AssetRow, type ProjectRow, type StepRow, type TranslateInput, type TranslationRow } from "@/lib/db";
@@ -13,7 +14,7 @@ import { DEFAULT_TONE, isAdTone, type AdTone } from "@/lib/adOptions";
 import { DEFAULT_SPEED, isSpeedKey, speedValue, type AdLanguageCode, type SpeedKey } from "@/lib/voiceOptions";
 import type { UploadKind } from "@/lib/data/uploads";
 import { authErrorResponse } from "@/lib/auth";
-import { CreditError, reserveCredits } from "@/lib/credits";
+import { CreditError, projectCreditsUsed, reserveCredits } from "@/lib/credits";
 import { adCredits, FREE_AD, translateCredits } from "@/lib/plans";
 import { DataError } from "@/lib/data/errors";
 import { workspaces } from "@/lib/db";
@@ -89,6 +90,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
   const stepsByKey = new Map(stepRows.map((s) => [s.key, s]));
   const assetsById = new Map(assetRows.map((a) => [a.id, a]));
   const spend = await getProjectSpend(row.id);
+  const creditsUsed = config.demoMode ? undefined : await projectCreditsUsed(row.id).catch(() => undefined);
   const budgetUsd = costLimits().maxPerCreativeUsd;
   const estimateUsd = estimateForProject(row);
 
@@ -128,6 +130,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       spentUsd: spend.totalUsd,
       budgetUsd,
       estimateUsd,
+      creditsUsed,
       parentId: row.parentId ?? undefined,
       version: row.version,
       batchId: row.batchId ?? undefined,
@@ -152,6 +155,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     detectedLanguage: (row.detectedLanguage as LanguageCode | null) ?? undefined,
     targetLanguages: input.targetLanguages,
     quality: input.quality,
+    enhance: input.enhance,
     rightsConfirmedAt: (row.rightsConfirmedAt ?? row.createdAt).toISOString(),
     rightsBasis: input.rightsBasis ?? "own_upload",
     steps: Object.fromEntries(TRANSLATE_STEPS.map((k) => [k, toStep(stepsByKey.get(k))])) as Record<TranslateStepKey, Step>,
@@ -169,6 +173,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     spentUsd: spend.totalUsd,
     budgetUsd,
     estimateUsd,
+    creditsUsed,
     parentId: row.parentId ?? undefined,
     tags: row.tags ?? undefined,
     archivedAt: row.archivedAt?.toISOString(),

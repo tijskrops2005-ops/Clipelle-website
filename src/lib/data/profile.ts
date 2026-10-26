@@ -1,7 +1,6 @@
 import "server-only";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
-import { costEntries, creditLedger, db, notifyWishes, profiles, projects, workspaceMembers, workspaces, type ProfileRow } from "@/lib/db";
-import { chargeOf } from "@/lib/services/costGuard";
+import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
+import { creditLedger, db, notifyWishes, profiles, projects, workspaceMembers, workspaces, type ProfileRow } from "@/lib/db";
 import { listLedger } from "@/lib/credits";
 
 export type BrandDefaults = { accent?: string; captionStyle?: string; font?: string; logoPath?: string };
@@ -49,33 +48,35 @@ export async function listNotifyWishes(userId: string) {
 }
 
 /** Usage per project in the workspace (every member), from cost_entries, plus the credit ledger. */
+/**
+ * Usage per project in credits (26 Oct 2026: customers see credits only): the net of each project's
+ * reserve, settle and refund rows in the last 90 days, newest first.
+ */
 export async function getUsage(scope: { userId: string; workspaceId: string }) {
   const { workspaceId } = scope;
   const d = db();
   const since = new Date();
   since.setDate(since.getDate() - 90);
   const rows = await d
-    .select({ id: costEntries.id, projectId: costEntries.projectId, service: costEntries.service, action: costEntries.action, estimatedUsd: costEntries.estimatedUsd, actualUsd: costEntries.actualUsd, status: costEntries.status, startedAt: costEntries.startedAt, name: projects.name, workflow: projects.workflow })
-    .from(costEntries)
-    .leftJoin(projects, eq(costEntries.projectId, projects.id))
-    .where(and(eq(projects.workspaceId, workspaceId), gte(costEntries.startedAt, since)))
-    .orderBy(desc(costEntries.startedAt))
-    .limit(1000);
-  const perProject = new Map<string, { projectId: string; name: string; workflow: string; usd: number; calls: number; last: Date }>();
+    .select({ projectId: creditLedger.projectId, credits: creditLedger.credits, createdAt: creditLedger.createdAt, name: projects.name, workflow: projects.workflow })
+    .from(creditLedger)
+    .innerJoin(projects, eq(creditLedger.projectId, projects.id))
+    .where(and(eq(creditLedger.workspaceId, workspaceId), gte(creditLedger.createdAt, since)))
+    .orderBy(desc(creditLedger.createdAt))
+    .limit(2000);
+  const perProject = new Map<string, { projectId: string; name: string; workflow: string; credits: number; last: Date }>();
   for (const r of rows) {
-    const key = r.projectId ?? "none";
-    const usd = chargeOf({ status: r.status, actualUsd: r.actualUsd, estimatedUsd: r.estimatedUsd });
-    const cur = perProject.get(key) ?? { projectId: key, name: r.name ?? "Test calls", workflow: r.workflow ?? "", usd: 0, calls: 0, last: r.startedAt };
-    cur.usd = Math.round((cur.usd + usd) * 10000) / 10000;
-    cur.calls += 1;
-    if (r.startedAt > cur.last) cur.last = r.startedAt;
+    const key = r.projectId!;
+    const cur = perProject.get(key) ?? { projectId: key, name: r.name, workflow: r.workflow, credits: 0, last: r.createdAt };
+    cur.credits -= r.credits;
+    if (r.createdAt > cur.last) cur.last = r.createdAt;
     perProject.set(key, cur);
   }
   const month = new Date();
   month.setDate(1);
   month.setHours(0, 0, 0, 0);
-  const [m] = await d.select({ n: sql<number>`count(*)` }).from(projects).where(and(eq(projects.workspaceId, workspaceId), gte(projects.createdAt, month)));
-  return { projects: [...perProject.values()].sort((a, b) => b.last.getTime() - a.last.getTime()), projectsThisMonth: Number(m?.n ?? 0), ledger: await listLedger(workspaceId, 50) };
+  const [m] = await d.select({ n: sql<number>`count(*)` }).from(projects).where(and(eq(projects.workspaceId, workspaceId), gte(projects.createdAt, month), isNull(projects.archivedAt)));
+  return { projects: [...perProject.values()].map((p) => ({ ...p, credits: Math.max(0, p.credits) })).sort((a, b) => b.last.getTime() - a.last.getTime()), projectsThisMonth: Number(m?.n ?? 0), ledger: await listLedger(workspaceId, 50) };
 }
 
 /** Deletes everything of one account: projects (cascade), the credit ledger (credits are forfeited), wishes, profile. Auth user is deleted by the caller. */

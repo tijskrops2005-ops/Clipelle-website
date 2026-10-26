@@ -88,10 +88,17 @@ export async function failStep(projectId: string, key: string, error: unknown): 
   throw new NonRetriableError(`${key}: ${message}`, { cause: error instanceof Error ? error : undefined });
 }
 
+/** What a customer reads when the spending guard stops a step: no amounts, and the credits come back. */
+export const GUARD_MESSAGE = "This video stopped at our safety limit for a single video, before anything more was charged. Your credits for it are refunded. Try a shorter video or Standard quality, or contact us.";
+
 /** A message a customer can act on, without stack traces or provider jargon where avoidable. */
 export function plainMessage(error: unknown): string {
   if (error instanceof StepFailure) return error.message;
-  if (error instanceof CostGuardError) return `Paused by the spending guard: ${error.message}`;
+  // Customers never see amounts in dollars (26 Oct 2026); the full reason goes to the server log.
+  if (error instanceof CostGuardError) {
+    console.error("[cost guard]", error.message);
+    return GUARD_MESSAGE;
+  }
   if (error instanceof Error) return error.message.slice(0, 500);
   return "Something went wrong in this step. Retry it; if it keeps failing, contact support.";
 }

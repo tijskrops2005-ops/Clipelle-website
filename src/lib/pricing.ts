@@ -91,8 +91,8 @@ export type PresenterEngine = keyof typeof PRICING.presenterUsdPerSecond;
 
 /** Customer-facing names for the presenter engines (provider and engine names stay on /dev pages and Settings). */
 export const PRESENTER_QUALITIES: { key: PresenterEngine; label: string; blurb: string }[] = [
-  { key: "avatar_iii", label: "Standard", blurb: "A solid presenter at the lowest price; every length fits the budget. Movement is a little stiffer." },
-  { key: "avatar_iv", label: "Premium", blurb: "Natural head and hand movement, best lip-sync. Costs more per second, so longer videos may not fit the budget." },
+  { key: "avatar_iii", label: "Standard", blurb: "A solid presenter at 2 credits per second, for every length. Movement is a little stiffer." },
+  { key: "avatar_iv", label: "Premium", blurb: "Natural head and hand movement, best lip-sync. 6 credits per second; for now available for short videos." },
 ];
 /**
  * Recommended and preselected quality: Standard (Avatar III). Decided 2026-10-20: 30 s with Premium

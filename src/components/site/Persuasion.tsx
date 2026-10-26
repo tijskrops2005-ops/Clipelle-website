@@ -146,7 +146,7 @@ export function FinalCta({ locale = "en" }: { locale?: Locale }) {
       </div>
       <div className="relative grid items-center gap-10 lg:grid-cols-[1.15fr_1fr]">
         <div className="text-center lg:text-left">
-          <h2 className="mx-auto max-w-xl text-[clamp(1.9rem,4vw,3rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-champagne lg:mx-0">{h.finalTitle}</h2>
+          <h2 className="mx-auto max-w-xl text-balance text-[clamp(1.9rem,4vw,3rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-champagne lg:mx-0">{h.finalTitle}</h2>
           <p className="mx-auto mt-4 max-w-md text-[15px] text-champagne/70 lg:mx-0">{h.finalText}</p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
             <Button href="/signup" variant="accent" size="lg">{t.common.startFree}<ArrowRight className="size-5" aria-hidden /></Button>

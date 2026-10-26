@@ -8,13 +8,15 @@ import { CountUp } from "@/components/motion/CountUp";
 
 /**
  * Three columns of live numbers from our own database (src/lib/publicStats.ts, refreshed hourly).
- * A number below PUBLIC_STATS_MIN is replaced by a product fact; the footnote only appears when
- * at least one real number is on screen.
+ * A number below PUBLIC_STATS_MIN is replaced by a product fact; with no real number at all the
+ * row is not shown (26 Oct 2026), because the facts repeated the blocks around it.
  */
 export async function LiveStats({ locale }: { locale: Locale }) {
   const s = dict(locale).home.liveStats;
   const columns = statColumns(await cachedPublicStats(), publicStatsMin(), { measuredAdMinutes: measured.adMinutes, languageCount: TRANSLATE_LANGUAGES.length });
   const anyLive = columns.some((c) => c.kind === "number");
+  // 26 Oct 2026: without a real number the facts only repeated the blocks around it, so the row waits for real numbers.
+  if (!anyLive) return null;
   return (
     <Reveal as="section" aria-label={s.label}>
       <dl className="grid overflow-hidden rounded-card bg-surface shadow-card sm:grid-cols-3">

@@ -9,6 +9,9 @@ import { Poster } from "@/components/Poster";
 /** Vertical 9:16 video tile — the eye-catcher of the dashboard and the projects grid. */
 export function ProjectTile({ project, selectable, selected, onToggle }: { project: Project; selectable?: boolean; selected?: boolean; onToggle?: () => void }) {
   const isCompleted = project.status === "completed";
+  const posterUrl = projectPosterUrl(project);
+  // A translation has no product photo: its first frame is the poster (26 Oct 2026), the result or else the source.
+  const frameVideo = !posterUrl && project.workflow === "translate" ? project.translations.find((t) => t.videoUrl)?.videoUrl ?? project.sourceVideoUrl : undefined;
 
   return (
     <Link
@@ -28,8 +31,11 @@ export function ProjectTile({ project, selectable, selected, onToggle }: { proje
         <Poster
           seed={project.id}
           monogram={projectMonogram(project)}
-          imageUrl={projectPosterUrl(project)}
+          imageUrl={posterUrl}
         />
+        {frameVideo && (
+          <video src={`${frameVideo}#t=0.5`} muted playsInline preload="metadata" aria-hidden tabIndex={-1} className="pointer-events-none absolute inset-0 size-full object-cover" />
+        )}
 
         {/* a soft sheen that slides over the poster on hover */}
         <span className="pointer-events-none absolute inset-0 -translate-x-full bg-[linear-gradient(105deg,transparent_40%,rgba(255,255,255,0.18)_50%,transparent_60%)] transition-transform duration-700 group-hover:translate-x-full" aria-hidden />
@@ -53,8 +59,7 @@ export function ProjectTile({ project, selectable, selected, onToggle }: { proje
             <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-ink/60 to-transparent" />
             <div className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-3 text-surface">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{project.name}</p>
-                <p className="label-mono mt-1 opacity-80">
+                <p className="label-mono opacity-90">
                   {projectVideoCount(project) > 1 ? `${projectVideoCount(project)} videos · 9:16` : `${projectLengthLabel(project)} · 9:16`}
                 </p>
               </div>

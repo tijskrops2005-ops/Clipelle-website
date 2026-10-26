@@ -4,6 +4,7 @@ import { getUser } from "@/lib/auth";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { WorkflowChooser } from "@/components/WorkflowChooser";
+import { CreateHeader } from "@/components/CreateHeader";
 
 export const metadata: Metadata = { title: "New video" };
 
@@ -22,8 +23,8 @@ export default async function NewVideoPage() {
     );
   }
   return (
-    <div className="mx-auto max-w-4xl space-y-12">
-      <PageHeader title="New video" description="Translate a video you own, or make a new ad. Everything runs on its own after you click start." />
+    <div className="mx-auto max-w-5xl space-y-10">
+      <CreateHeader eyebrow="New video" title="What do you want to make?" text="Translate a video you own, or make a new ad. Everything runs on its own after you click start." />
       <WorkflowChooser />
     </div>
   );

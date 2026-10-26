@@ -25,10 +25,10 @@ export function applyCorrections(segments: Segment[], fragments: CheckedFragment
     if (!corrected || corrected === s.text) return s;
     const fits = corrected.length <= max;
     if (!fits && corrected.length >= s.text.length) {
-      warnings.push(`Line ${s.index}: ${f.issue ?? "needs a longer sentence than the timing allows"}; kept the original translation.`);
+      warnings.push(`Line ${s.index}: the corrected line did not fit the timing, so the first translation was kept. Worth a quick listen.`);
       return s;
     }
-    if (!fits) warnings.push(`Line ${s.index}: still longer than the timing allows (${corrected.length} of ${max} characters); the shorter corrected line is used.`);
+    if (!fits) warnings.push(`Line ${s.index}: shortened as far as the timing allows; it is still a little long and may be spoken slightly faster.`);
     changes.push({ index: s.index, before: s.text, after: corrected, reason: f.issue ?? "corrected" });
     return { ...s, text: corrected };
   });

@@ -8,9 +8,9 @@ import type { AdProject, BatchStatus } from "@/lib/types";
 import { useBatch } from "@/lib/data/client";
 import { useStatusTitle } from "@/lib/useStatusTitle";
 import { formatByKey, hookByKey } from "@/content/formats";
-import { formatUsd } from "@/lib/pricing";
-import { projectDurationMs, projectEstimateUsd } from "@/lib/projectMeta";
-import { formatSeconds } from "@/components/pipeline/PipelineStep";
+import { projectDurationMs } from "@/lib/projectMeta";
+import { chargedCredits, projectCredits } from "@/lib/projectCredits";
+import { formatTook } from "@/components/pipeline/PipelineStep";
 import { Badge, StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -55,8 +55,7 @@ export function BatchView({ id }: { id: string }) {
   }
 
   const done = projects.filter((p) => p.status === "completed" && p.finalVideoUrl);
-  const spent = projects.reduce((sum, p) => sum + (p.spentUsd ?? 0), 0);
-  const estimate = projects.reduce((sum, p) => sum + projectEstimateUsd(p), 0);
+  const credits = projects.reduce((sum, p) => sum + (config.demoMode ? projectCredits(p) : chargedCredits(p)), 0);
   const st = statusTone[batch.status];
 
   function downloadAll() {
@@ -100,8 +99,8 @@ export function BatchView({ id }: { id: string }) {
       <Card>
         <CardContent className="grid gap-4 pt-6 text-sm sm:grid-cols-3">
           <div><p className="label-mono mb-1 text-muted">Variations</p><p className="text-ink/90">{projects.length} · each its own video and run</p></div>
-          <div><p className="label-mono mb-1 text-muted">{config.demoMode ? "Estimated cost" : "Spent so far"}</p><p className="text-ink/90">{config.demoMode ? formatUsd(estimate) : `${formatUsd(spent)} · estimate ${formatUsd(estimate)}`}</p></div>
-          <div><p className="label-mono mb-1 text-muted">Credits</p><p className="text-ink/90">Reserved per variation before the start; a failed one refunds its own.</p></div>
+          <div><p className="label-mono mb-1 text-muted">Credits</p><p className="text-ink/90">{credits} in total{config.demoMode ? " · demo" : ""}</p></div>
+          <div><p className="label-mono mb-1 text-muted">If one fails</p><p className="text-ink/90">Credits are reserved per variation; a failed one refunds its own.</p></div>
         </CardContent>
       </Card>
 
@@ -142,10 +141,10 @@ export function BatchView({ id }: { id: string }) {
                       <StatusBadge status={p.status} />
                     </div>
                     <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
-                      <dt className="text-muted">Cost</dt>
-                      <dd className="text-ink/90">{config.demoMode || p.spentUsd === undefined ? `≈ ${formatUsd(projectEstimateUsd(p))}` : formatUsd(p.spentUsd)}</dd>
+                      <dt className="text-muted">Credits</dt>
+                      <dd className="text-ink/90">{config.demoMode ? projectCredits(p) : chargedCredits(p)}</dd>
                       <dt className="text-muted">Ready in</dt>
-                      <dd className="text-ink/90">{took !== undefined && p.status === "completed" ? formatSeconds(took) : "—"}</dd>
+                      <dd className="text-ink/90">{took !== undefined && p.status === "completed" ? formatTook(took) : "—"}</dd>
                       {p.status === "failed" && (
                         <>
                           <dt className="text-muted">Stopped</dt>

@@ -70,7 +70,8 @@ Rules:
 - Each fragment has a strict character limit; stay within it, shorten rather than cut mid-sentence. Drop fillers and interjections first ("Dude", "So", "Honestly") before anything with meaning, and never drop a product name, a number or a keep term.
 - Return exactly one entry per fragment, same index, same order. Never merge or split fragments.
 - When the source text is missing, judge only the target text: natural, complete sentences; flag anything that looks truncated.
-- Do not rewrite fragments that are fine: mark them ok with corrected null.`;
+- Do not rewrite fragments that are fine: mark them ok with corrected null.
+- The "issue" and the "summary" are shown to the customer: write them in plain words, one short sentence, without character counts, limits or technical terms (e.g. "Shortened to fit the timing; "Kamo" was not a word and is now "Gast"").`;
 
 export async function checkTranslation(input: { segments: Segment[]; sourceLanguage: LanguageCode | null; targetLanguage: LanguageCode; keepTerms?: string[] }): Promise<TranslationCheckResult> {
   const key = process.env.ANTHROPIC_API_KEY?.trim();

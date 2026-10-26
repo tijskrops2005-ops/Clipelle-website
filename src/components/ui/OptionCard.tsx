@@ -57,7 +57,7 @@ export function OptionCard({ selected, onSelect, title, description, meta, footn
       aria-pressed={selected}
       className={cn(
         "focus-ring relative flex w-full flex-col gap-1.5 rounded-panel border p-4 text-left transition-[background-color,border-color,box-shadow,transform] duration-150",
-        selected ? "border-ink bg-surface shadow-soft" : "border-border bg-surface-muted/60 hover:border-ink/30 hover:bg-surface",
+        selected ? "border-ink bg-surface shadow-[0_0_0_1px_var(--ink)]" : "border-border bg-surface hover:border-ink/30 hover:shadow-soft",
         disabled && "pointer-events-none opacity-50",
         className,
       )}

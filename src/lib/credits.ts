@@ -63,3 +63,10 @@ export async function settleCredits(projectId: string, usedCredits: number, note
   const diff = reserved - Math.max(0, Math.round(usedCredits));
   await db().insert(creditLedger).values({ workspaceId: reserve.workspaceId, userId: reserve.userId, projectId, credits: diff, kind: usedCredits > 0 ? "settle" : "refund", note });
 }
+
+/** Credits charged for one project: the net of its reserve, settle and refund rows; undefined without rows. */
+export async function projectCreditsUsed(projectId: string): Promise<number | undefined> {
+  const rows = await db().select({ credits: creditLedger.credits }).from(creditLedger).where(eq(creditLedger.projectId, projectId));
+  if (rows.length === 0) return undefined;
+  return Math.max(0, -rows.reduce((sum, r) => sum + r.credits, 0));
+}

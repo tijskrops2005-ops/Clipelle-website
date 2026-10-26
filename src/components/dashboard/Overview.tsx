@@ -4,14 +4,22 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { ArrowRight, Coins } from "lucide-react";
 import { useProjects, useProjectsReady } from "@/lib/data/client";
-import type { Plan } from "@/lib/plans";
+import { adCredits, type Plan } from "@/lib/plans";
 import { CountUp } from "@/components/motion/CountUp";
 import { ProgressRing } from "@/components/motion/ProgressRing";
 import { DemoBadge } from "@/components/DemoModeBadge";
 import { cn } from "@/lib/utils";
 
-/** One credit is one second of translated video; an ad uses 2 per second (src/lib/plans.ts). */
+/** One credit is one second of translated video (Speed); a 30-second Standard ad uses 60 (src/lib/plans.ts). */
 const REFERENCE_AD_SECONDS = 30;
+const REFERENCE_AD_CREDITS = adCredits({ seconds: REFERENCE_AD_SECONDS, engine: "avatar_iii" });
+
+/** Credits as minutes of Speed translation: "4.8 minutes", "22 minutes". */
+function translationMinutes(credits: number) {
+  const min = credits / 60;
+  if (min < 1) return `${credits} seconds`;
+  return `${min < 10 ? Math.round(min * 10) / 10 : Math.round(min)} minutes`;
+}
 
 type Props = { credits: number | null; plan: Pick<Plan, "key" | "name" | "monthlyUsd" | "creditsPerMonth" | "creditsNote"> | null; demo: boolean };
 
@@ -28,10 +36,12 @@ export function Overview({ credits, plan, demo }: Props) {
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
-  const thisMonth = projects.filter((p) => Date.parse(p.createdAt) >= monthStart.getTime());
+  // Archived projects (old tests) stay out of the counts, as they stay out of the Projects list.
+  const current = projects.filter((p) => !p.archivedAt);
+  const thisMonth = current.filter((p) => Date.parse(p.createdAt) >= monthStart.getTime());
   const done = thisMonth.filter((p) => p.status === "completed").length;
-  const running = projects.filter((p) => p.status === "processing" || p.status === "review").length;
-  const days = lastSevenDays(projects.map((p) => p.createdAt));
+  const running = current.filter((p) => p.status === "processing" || p.status === "review").length;
+  const days = lastSevenDays(current.map((p) => p.createdAt));
   const maxDay = Math.max(1, ...days.map((d) => d.count));
 
   const ringBase = paid && plan ? plan.creditsPerMonth : REFERENCE_AD_SECONDS;
@@ -48,7 +58,7 @@ export function Overview({ credits, plan, demo }: Props) {
           ) : (
             <span>
               You have <strong className="font-semibold text-ink">{credits.toLocaleString("en-US")}</strong> credits left
-              <span className="hidden sm:inline"> · about {credits.toLocaleString("en-US")} seconds of Standard presenter video</span>
+              <span className="hidden sm:inline"> · about {translationMinutes(credits)} of translated video</span>
             </span>
           )}
         </p>
@@ -63,7 +73,7 @@ export function Overview({ credits, plan, demo }: Props) {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="text-[34px] font-semibold leading-none tracking-[-0.02em] text-ink">{credits === null ? "—" : <CountUp value={credits} />}</p>
-              <p className="mt-2 text-[12.5px] text-muted">{credits === null ? "Not connected in demo mode" : paid ? `of ${plan!.creditsPerMonth.toLocaleString("en-US")} included each month` : `a 30-second Standard ad uses ${REFERENCE_AD_SECONDS}`}</p>
+              <p className="mt-2 text-[12.5px] text-muted">{credits === null ? "Not connected in demo mode" : paid ? `of ${plan!.creditsPerMonth.toLocaleString("en-US")} included each month` : `one minute of translation uses 60; a ${REFERENCE_AD_SECONDS}-second ad ${REFERENCE_AD_CREDITS}`}</p>
             </div>
             <ProgressRing value={ringValue} size={58} stroke={6} label={credits === null ? "Credits not available" : `${credits} credits`}>
               <Coins className="size-4 text-accent" aria-hidden />
@@ -75,7 +85,7 @@ export function Overview({ credits, plan, demo }: Props) {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="text-[34px] font-semibold leading-none tracking-[-0.02em] text-ink">{ready ? <CountUp value={thisMonth.length} /> : "—"}</p>
-              <p className="mt-2 text-[12.5px] text-muted">{ready ? `${done} ready · ${running} in progress` : "Loading…"}</p>
+              <p className="mt-2 text-[12.5px] text-muted">{ready ? (running > 0 ? `${done} ready · ${running} in progress` : `${done} ready`) : "Loading…"}</p>
             </div>
             <div className="flex h-12 items-end gap-1" role="img" aria-label={`Videos started per day, last 7 days: ${days.map((d) => d.count).join(", ")}`}>
               {days.map((d, i) => (

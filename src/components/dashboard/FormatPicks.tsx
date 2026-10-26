@@ -14,7 +14,7 @@ export function FormatPicks({ day }: { day: number }) {
   return (
     <section className="rise space-y-4" style={{ "--rise-delay": "400ms" } as CSSProperties} aria-labelledby="format-picks">
       <div className="flex items-center justify-between gap-3">
-        <h2 id="format-picks" className="text-[16px] font-semibold text-ink">Start from a format</h2>
+        <h2 id="format-picks" className="text-[16px] font-semibold text-ink">Start an ad from a format</h2>
         <Link href="/new/ad" className="focus-ring inline-flex items-center gap-1 rounded-control text-[13px] text-muted transition-colors duration-150 hover:text-ink">
           All eight formats <ArrowRight className="size-3.5" aria-hidden />
         </Link>

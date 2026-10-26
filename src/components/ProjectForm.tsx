@@ -5,10 +5,10 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { config } from "@/lib/config";
 import { createAdBatch, createAdProject } from "@/lib/data/client";
-import { fetchBrandLogoFile, getBrandDefaults, getProfile } from "@/lib/data/settingsClient";
+import { fetchBrandLogoFile, getAccountStatus, getBrandDefaults } from "@/lib/data/settingsClient";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { PresenterPicker } from "@/components/PresenterPicker";
-import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, formatUsd, type AdLength, type PresenterEngine } from "@/lib/pricing";
+import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, type AdLength, type PresenterEngine } from "@/lib/pricing";
 import { buildAdDraft, effectiveAccentOf, validateAdForm, type AdFormErrors, type AdFormValues } from "@/lib/forms/adDraft";
 import { adCredits } from "@/lib/plans";
 import { cn } from "@/lib/utils";
@@ -137,11 +137,19 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
   /** "Make variations": 2–5 variants of this product, each its own project. Not on the free plan. */
   const [variations, setVariations] = useState<boolean>(preset.variations ?? false);
   const [variants, setVariants] = useState<Variant[]>([]);
+  // Plan and balance of the workspace (26 Oct 2026: plans belong to the workspace, not the profile).
   const [planKey, setPlanKey] = useState<string | null>(config.demoMode ? "demo" : null);
+  const [balance, setBalance] = useState<number | null>(null);
   useEffect(() => {
     if (config.demoMode) return;
     let alive = true;
-    getProfile().then((p) => alive && setPlanKey(p.planKey)).catch(() => alive && setPlanKey("free"));
+    getAccountStatus()
+      .then((a) => {
+        if (!alive) return;
+        setPlanKey(a.planKey);
+        setBalance(a.balance);
+      })
+      .catch(() => alive && setPlanKey("free"));
     return () => {
       alive = false;
     };
@@ -204,8 +212,9 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
   // nothing saved): the visible buttons are type="button" and call requestSubmit(), and a hidden disabled
   // submit button first in the form blocks implicit submission on Enter. So the button can stay readable.
   const formRef = useRef<HTMLFormElement>(null);
+  // Internal only (never shown): the spending limit per video decides which combinations can start.
   const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 2;
-  // Estimate per combination of length and presenter quality; the budget applies to the combination.
+  // Estimate per combination of length and presenter quality; the limit applies to the combination.
   const estimateFor = (len: AdLength, eng: PresenterEngine = engine) => estimateAdCost({ seconds: len, clipModel: DEFAULTS.clipModel, engine: eng, speed: SPEEDS.find((s) => s.key === speed)?.value ?? 1 });
   const estimate = estimateFor(seconds);
   const overBudget = estimate.total > budget;
@@ -292,10 +301,10 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
   const credits = adCredits({ seconds, engine, speed: SPEEDS.find((s) => s.key === speed)?.value ?? 1 });
   const variantCount = batchOn ? Math.max(variants.length, 1) : 1;
   const totalCredits = credits * variantCount;
-  const totalUsd = estimate.total * variantCount;
+  const creditsFor = (len: AdLength, eng: PresenterEngine = engine) => adCredits({ seconds: len, engine: eng, speed: SPEEDS.find((s) => s.key === speed)?.value ?? 1 });
+  const shortOfCredits = balance !== null && balance < totalCredits;
   const summaryRows = [
     { label: "Length", value: `${seconds} s · 9:16` },
-    { label: "Credits", value: `${credits} credits` },
     { label: "Presenter", value: presenter ? `${presenter.name} · ${qualityLabel}` : qualityLabel },
     { label: "Language", value: `${AD_LANGUAGES[language].label}${voiceAccent ? ` · ${voiceOptions?.accents.find((a) => a.key === voiceAccent)?.label ?? voiceAccent}` : ""}` },
     { label: "Voice speed", value: SPEEDS.find((s) => s.key === speed)?.label ?? "Normal" },
@@ -358,23 +367,30 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
 
           <fieldset>
             <legend className="mb-1.5 text-sm font-medium text-ink">Video length</legend>
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Video length" id="seconds">
+            {/* Five equal tiles (26 Oct 2026): the length big, its credits under it, so the row never wraps. */}
+            <div className="grid grid-cols-5 gap-2" role="group" aria-label="Video length" id="seconds">
               {AD_LENGTHS.map((len) => {
-                const est = estimateFor(len).total;
+                const unavailable = estimateFor(len).total > budget;
+                const active = seconds === len;
                 return (
-                  <OptionCard
+                  <button
                     key={len}
-                    size="chip"
-                    selected={seconds === len}
-                    onSelect={() => setSeconds(len)}
+                    type="button"
+                    onClick={() => setSeconds(len)}
                     disabled={submitting}
-                    title={`${len} s`}
-                    meta={est > budget ? `${formatUsd(est)} · over budget` : formatUsd(est)}
-                  />
+                    aria-pressed={active}
+                    className={cn(
+                      "focus-ring flex flex-col items-center rounded-panel border px-1 py-2.5 transition-[background-color,border-color,box-shadow] duration-150",
+                      active ? "border-ink bg-ink text-surface shadow-soft" : "border-border bg-surface text-ink hover:border-ink/40",
+                    )}
+                  >
+                    <span className="text-[15px] font-semibold">{len} s</span>
+                    <span className={cn("mt-0.5 text-[11.5px]", active ? "text-surface/75" : unavailable ? "text-warning" : "text-muted")}>{unavailable ? `not ${qualityLabel}` : `${creditsFor(len)} credits`}</span>
+                  </button>
                 );
               })}
             </div>
-            <p className="mt-2 text-[13px] text-muted">Recommended: {DEFAULT_AD_SECONDS} s. The presenter talks the whole video; the price follows your choice.</p>
+            <p className="mt-2 text-[13px] text-muted">Recommended: {DEFAULT_AD_SECONDS} s. The presenter talks the whole video; the credits follow your choice.</p>
           </fieldset>
 
           <Disclosure title="Advanced" summary="Product link, offer and direction for the script" forceOpen={Boolean(errors.productUrl)}>
@@ -403,13 +419,11 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
         <SectionCard number={2} title="Presenter and voice" description="Who presents the product, how they sound, and in which quality. The defaults work well for most products.">
           <fieldset>
             <legend className="mb-1.5 text-sm font-medium text-ink">Presenter quality</legend>
-            <p className="mb-3 text-[13px] text-muted">How the presenter looks and moves. The price is for the whole video at the chosen length.</p>
+            <p className="mb-3 text-[13px] text-muted">How the presenter looks and moves. Credits are for the whole video at the chosen length.</p>
             <OptionGrid columns={2}>
               {PRESENTER_QUALITIES.map((q) => {
-                const est = estimateFor(seconds, q.key);
-                const over = est.total > budget;
-                // What this quality adds on top of the recommended one, for the same length.
-                const extra = est.total - estimateFor(seconds, DEFAULT_PRESENTER_ENGINE).total;
+                const over = estimateFor(seconds, q.key).total > budget;
+                const maxLen = [...AD_LENGTHS].reverse().find((len) => estimateFor(len, q.key).total <= budget);
                 return (
                   <OptionCard
                     key={q.key}
@@ -419,9 +433,8 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
                     title={q.label}
                     badge={q.key === DEFAULT_PRESENTER_ENGINE ? <Badge tone="success">Recommended</Badge> : undefined}
                     meta={
-                      <Badge tone={over ? "danger" : "neutral"}>
-                        {over ? `${formatUsd(est.total)} · over budget` : `about ${formatUsd(est.total)}`}
-                        {extra > 0.005 ? ` · +${formatUsd(extra)}` : ""}
+                      <Badge tone={over ? "warning" : "neutral"}>
+                        {over ? (maxLen ? `up to ${maxLen} s` : "not available") : `${creditsFor(seconds, q.key)} credits`}
                       </Badge>
                     }
                     description={q.blurb}
@@ -498,7 +511,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
           <fieldset>
             <legend className="mb-1.5 text-sm font-medium text-ink">Speaking speed</legend>
             <SegmentedControl label="Speaking speed" options={SPEEDS.map((sp) => ({ key: sp.key, label: sp.label }))} value={speed} onChange={setSpeed} disabled={submitting} size="sm" />
-            <p className="mt-1.5 text-[13px] text-muted">The word limit stays the same; a slower voice makes the video about 10% longer and a faster one about 10% shorter. The estimate follows.</p>
+            <p className="mt-1.5 text-[13px] text-muted">The word limit stays the same; a slower voice makes the video about 10% longer and a faster one about 10% shorter. The credits follow.</p>
           </fieldset>
 
           <Disclosure title="Advanced" summary={backgroundChoice === "own" ? "Background: the presenter's own" : backgroundChoice === "image" ? "Background: your own image" : `Background: ${BACKGROUND_COLORS.find((c) => c.key === backgroundChoice)?.label ?? backgroundChoice}`}>
@@ -561,7 +574,6 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
             onChange={setVariants}
             disabled={submitting}
             creditsEach={credits}
-            usdEach={estimate.total}
           />
 
           <fieldset>
@@ -589,7 +601,7 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
             />
           </Field>
 
-          <label className={cn("flex cursor-pointer items-start gap-3 rounded-panel border p-4 text-sm text-ink transition-colors duration-150", reviewScript ? "border-ink bg-surface" : "border-border bg-surface-muted/60 hover:bg-surface")}>
+          <label className={cn("flex cursor-pointer items-start gap-3 rounded-panel border p-4 text-sm text-ink transition-colors duration-150", reviewScript ? "border-ink bg-surface shadow-soft" : "border-border bg-surface hover:border-ink/30")}>
             <input type="checkbox" checked={reviewScript} onChange={(e) => setReviewScript(e.target.checked)} disabled={submitting} className="mt-0.5 size-4" />
             <span>
               <span className="font-medium">Review script first</span>
@@ -656,18 +668,28 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
       {/* The fixed summary: what was chosen, what it costs, the one button */}
       <SummaryPanel
         rows={summaryRows}
-        total={{ label: batchOn ? `${variantCount} variations · ${totalCredits} credits` : `Estimated cost · ${credits} credits`, value: formatUsd(totalUsd), tone: overBudget ? "danger" : "neutral" }}
+        total={{
+          label: batchOn ? `${variantCount} variations` : "Credits",
+          value: `${totalCredits}`,
+          tone: overBudget || shortOfCredits ? "danger" : "neutral",
+          note: balance !== null ? (shortOfCredits ? `You have ${balance.toLocaleString("en-US")} credits: ${(totalCredits - balance).toLocaleString("en-US")} short.` : `You have ${balance.toLocaleString("en-US")}; ${(balance - totalCredits).toLocaleString("en-US")} left after this video.`) : batchOn ? `${credits} credits per video.` : undefined,
+        }}
         footnote={
           config.demoMode
             ? "Demo mode: this starts a simulated run. No real video is generated yet."
-            : `Budget ${formatUsd(budget)} per video. Script ${formatUsd(estimate.parts.script)} · product clip ${formatUsd(estimate.parts.clip)} (+${formatUsd(estimate.parts.expand)} if the photo needs expanding) · ${qualityLabel} presenter ${seconds} s ${formatUsd(estimate.parts.presenter)} · captions and edit ${formatUsd(estimate.parts.captions)}. The real amount is shown on the project page afterwards.`
+            : "Credits are reserved when you start and settled when the video is ready. A video that fails costs nothing."
         }
       >
         {overBudget && (
           <p role="status" className="rounded-chip bg-danger/10 p-3 text-[13px] font-medium leading-relaxed text-danger">
-            A {seconds}-second video with the {qualityLabel} presenter is above the budget of {formatUsd(budget)}, so it cannot start.{" "}
-            {lengthsWithinBudget.length > 0 ? `With ${qualityLabel}, choose ${lengthsWithinBudget.join(" or ")} seconds` : `No length fits the budget with ${qualityLabel}`}
+            The {qualityLabel} presenter is not available for {seconds} seconds yet.{" "}
+            {lengthsWithinBudget.length > 0 ? `With ${qualityLabel}, choose ${lengthsWithinBudget.join(" or ")} seconds` : `Choose another length`}
             {engine === "avatar_iv" ? ", or switch to Standard." : "."}
+          </p>
+        )}
+        {shortOfCredits && !overBudget && (
+          <p role="status" className="rounded-chip bg-danger/10 p-3 text-[13px] font-medium leading-relaxed text-danger">
+            This needs {totalCredits} credits and you have {balance}. <a href="/settings/billing" className="underline underline-offset-2">Add credits</a> or choose a shorter video.
           </p>
         )}
         {confirming ? (
@@ -676,13 +698,13 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
             <p className="mt-1 text-[13px] leading-relaxed text-muted">
               {seconds} s · {qualityLabel} presenter · {AD_LANGUAGES[language].label} · 9:16 with captions.
               {batchOn ? ` Variations: ${variants.map(variantLabel).join(", ")}. Each is its own video with its own run; ${totalCredits} credits are reserved before the first one starts, and a variation that fails refunds only its own.` : ""}
-              {" "}Estimated cost <span className="font-medium text-ink">{formatUsd(totalUsd)}</span>{batchOn ? ` for ${variants.length} videos (${formatUsd(estimate.total)} each)` : ""}, budget {formatUsd(budget)}{batchOn ? " per video" : ""}.
-              {config.demoMode ? " Demo mode: nothing is charged, the run is simulated." : " The real amount is shown on the project page afterwards."}
+              {" "}Uses <span className="font-medium text-ink">{totalCredits} credits</span>{batchOn ? ` for ${variants.length} videos (${credits} each)` : ""}.
+              {config.demoMode ? " Demo mode: nothing is charged, the run is simulated." : " A video that fails costs nothing."}
             </p>
             <div className="mt-4 flex flex-col gap-2">
-              <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || overBudget}>
+              <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || overBudget || shortOfCredits}>
                 {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
-                {submitting ? "Starting…" : `Start now · ${formatUsd(totalUsd)}`}
+                {submitting ? "Starting…" : `Start now · ${totalCredits} credits`}
               </Button>
               <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={submitting}>
                 Back
@@ -691,9 +713,9 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
           </div>
         ) : (
           <>
-            <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || overBudget}>
+            <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || overBudget || shortOfCredits}>
               <Sparkles className="size-5" aria-hidden />
-              {batchOn ? `Generate ${Math.max(variants.length, MIN_BATCH_VARIANTS)} variations · ${formatUsd(totalUsd)}` : `Generate video · ${formatUsd(estimate.total)}`}
+              {batchOn ? `Generate ${Math.max(variants.length, MIN_BATCH_VARIANTS)} variations · ${totalCredits} credits` : `Generate video · ${credits} credits`}
             </Button>
             <Button
               href="/dashboard"
