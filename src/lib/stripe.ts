@@ -2,20 +2,25 @@ import "server-only";
 import Stripe from "stripe";
 
 /**
- * Stripe in test mode. Keys come from .env.local only (STRIPE_SECRET_KEY sk_test_…,
- * STRIPE_WEBHOOK_SECRET whsec_…). Without them `stripeEnabled()` is false and Billing shows a
- * disabled state; nothing else breaks. Live keys are refused on purpose until launch.
+ * Stripe in test mode. Keys come from .env.local only (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+ * whsec_…). Without them `stripeEnabled()` is false and Billing shows a disabled state; nothing else
+ * breaks. Live keys are refused on purpose until launch. A restricted test key (rk_test_…) is the
+ * recommended kind (Stripe best practice, least privilege; permissions in docs/stage8-plan.md);
+ * a secret test key (sk_test_…) also works.
  */
+export function isTestKey(key: string | undefined) {
+  return Boolean(key && /^(sk|rk)_test_/.test(key.trim()));
+}
+
 export function stripeEnabled() {
-  const key = process.env.STRIPE_SECRET_KEY?.trim();
-  return Boolean(key && key.startsWith("sk_test_"));
+  return isTestKey(process.env.STRIPE_SECRET_KEY);
 }
 
 let client: Stripe | null = null;
 export function stripe(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
   if (!key) throw new Error("STRIPE_SECRET_KEY is not set in .env.local.");
-  if (!key.startsWith("sk_test_")) throw new Error("Only a Stripe test key (sk_test_…) is accepted at this stage.");
+  if (!isTestKey(key)) throw new Error("Only a Stripe test key (rk_test_… or sk_test_…) is accepted at this stage.");
   // The SDK's own pinned version (stripe 23.x: 2026-09-30.endive), which includes managed_payments on
   // Checkout Sessions (added in 2026-04-22.dahlia). The old string here mixed a date and a release name.
   if (!client) client = new Stripe(key, { apiVersion: Stripe.API_VERSION });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PLANS, TOPUPS } from "./plans";
-import { MANAGED_PAYMENTS_UNSUPPORTED, managedPaymentsEnabled, REFERRAL_KEYS, STRIPE_PRODUCT_TAX_CODE, subscriptionSessionParams, topupSessionParams, TOPUP_METADATA, withManagedPayments } from "./billingCheckout";
+import { CHECKOUT_INTEGRATION_ID, MANAGED_PAYMENTS_UNSUPPORTED, managedPaymentsEnabled, REFERRAL_KEYS, STRIPE_PRODUCT_TAX_CODE, subscriptionSessionParams, topupSessionParams, TOPUP_METADATA, withManagedPayments } from "./billingCheckout";
 
 const input = { customerId: "cus_test", userId: "user-1", workspaceId: "ws-1", priceId: "price_test", origin: "https://clipelle.test" };
 
@@ -81,5 +81,16 @@ describe("Stripe Managed Payments (merchant of record)", () => {
     // A few of the eligible codes from docs.stripe.com/payments/managed-payments/eligibility (26 Oct 2026).
     const eligible = ["txcd_10000000", "txcd_10103001", "txcd_10105001", "txcd_10105002"];
     expect(eligible).toContain(STRIPE_PRODUCT_TAX_CODE);
+  });
+});
+
+describe("checkout session hygiene (Stripe best practices)", () => {
+  it("tags both sessions with one integration identifier and never pins payment methods", () => {
+    const pro = PLANS.find((p) => p.key === "pro")!;
+    for (const params of [subscriptionSessionParams(pro, input), topupSessionParams(TOPUPS[0], input), subscriptionSessionParams(pro, { ...input, managed: true })]) {
+      expect(params.integration_identifier).toBe(CHECKOUT_INTEGRATION_ID);
+      expect(params).not.toHaveProperty("payment_method_types");
+    }
+    expect(CHECKOUT_INTEGRATION_ID).toMatch(/_[a-z]{8}$/);
   });
 });

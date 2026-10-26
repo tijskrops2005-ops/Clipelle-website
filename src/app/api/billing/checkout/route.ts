@@ -27,7 +27,8 @@ export async function POST(request: Request) {
     let customerId = workspace.stripeCustomerId;
     if (!customerId) {
       // One Stripe customer per workspace; the e-mail is the owner's (the partner platform matches on it).
-      const c = await s.customers.create({ email: user.email, name: workspace.kind === "team" ? workspace.name : undefined, metadata: { userId: user.id, workspaceId: workspace.id } });
+      // Idempotency key per workspace: two quick clicks (or a retry) give one customer, not two.
+      const c = await s.customers.create({ email: user.email, name: workspace.kind === "team" ? workspace.name : undefined, metadata: { userId: user.id, workspaceId: workspace.id } }, { idempotencyKey: `clipelle-customer-${workspace.id}` });
       customerId = c.id;
       await setPlan(workspace.id, { stripeCustomerId: customerId });
     }

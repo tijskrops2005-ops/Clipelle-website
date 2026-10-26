@@ -2,7 +2,7 @@
  * Creates the products and prices in Stripe TEST mode from src/lib/plans.ts, with lookup keys the
  * app uses (reelay_<plan>_monthly, reelay_<plan>_annual, reelay_topup_<usd>). Idempotent: a lookup key
  * with the right amount is left alone; one whose amount changed in plans.ts gets a new price. Run with: `node --env-file=.env.local --import tsx scripts/stripe-setup.ts`
- * (or `npx tsx` after installing tsx). Requires STRIPE_SECRET_KEY=sk_test_…
+ * (or `npx tsx` after installing tsx). Requires STRIPE_SECRET_KEY=rk_test_… (restricted, recommended) or sk_test_…
  * Every product gets STRIPE_PRODUCT_TAX_CODE (needed for Stripe Managed Payments, see billingCheckout.ts).
  */
 import Stripe from "stripe";
@@ -11,7 +11,7 @@ import { STRIPE_PRODUCT_TAX_CODE, TOPUP_METADATA } from "../src/lib/billingCheck
 
 async function main() {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
-  if (!key || !key.startsWith("sk_test_")) throw new Error("Set STRIPE_SECRET_KEY to a test key (sk_test_…) first.");
+  if (!key || !/^(sk|rk)_test_/.test(key)) throw new Error("Set STRIPE_SECRET_KEY to a test key (rk_test_… or sk_test_…) first.");
   const stripe = new Stripe(key, { apiVersion: Stripe.API_VERSION });
 
   /** `metadata` lands on the product AND the price: the partner platform excludes `commissions_disabled: "yes"` (credit packs). */

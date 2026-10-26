@@ -9,6 +9,12 @@ import type { Plan, TopupPack } from "@/lib/plans";
  */
 export const TOPUP_METADATA = { commissions_disabled: "yes" } as const;
 
+/**
+ * Tags every Checkout Session so the Dashboard can tell this flow apart (Stripe best practice on
+ * API 2026-03-25.dahlia and later: a label with a suffix of 8 random letters). Not a secret.
+ */
+export const CHECKOUT_INTEGRATION_ID = "clipelle_checkout_qhzkwmpa";
+
 export type CheckoutInput = { customerId: string; userId: string; workspaceId: string; priceId: string; origin: string; /** Stripe Managed Payments (merchant of record) on this session. */ managed?: boolean };
 
 /**
@@ -67,6 +73,7 @@ export function subscriptionSessionParams(plan: Plan, input: CheckoutInput) {
     subscription_data: { metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key } },
     metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key, kind: "plan" },
     allow_promotion_codes: true,
+    integration_identifier: CHECKOUT_INTEGRATION_ID,
   }, input.managed);
 }
 
@@ -78,6 +85,7 @@ export function topupSessionParams(pack: TopupPack, input: CheckoutInput) {
     success_url: `${input.origin}/settings/billing?checkout=success`,
     cancel_url: `${input.origin}/settings/billing?checkout=cancelled`,
     metadata: { userId: input.userId, workspaceId: input.workspaceId, topupKey: pack.key, kind: "topup" },
+    integration_identifier: CHECKOUT_INTEGRATION_ID,
   }, input.managed);
 }
 

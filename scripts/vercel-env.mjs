@@ -28,7 +28,7 @@ const names = Object.keys(env).filter((n) => env[n] !== "" && !NEVER.has(n));
 const problems = [];
 if (env.NEXT_PUBLIC_DEMO_MODE !== "false") problems.push("NEXT_PUBLIC_DEMO_MODE must be false (otherwise the live site runs in demo mode).");
 for (const n of ["APP_BASE_URL", "NEXT_PUBLIC_SITE_URL"]) if (!/^https:\/\//.test(env[n] ?? "")) problems.push(`${n} must be the public https address (https://www.clipelle.com).`);
-if (env.STRIPE_SECRET_KEY && !env.STRIPE_SECRET_KEY.startsWith("sk_test_")) problems.push("STRIPE_SECRET_KEY is not a test key; the app refuses live keys until the live mode is built.");
+if (env.STRIPE_SECRET_KEY && !/^(sk|rk)_test_/.test(env.STRIPE_SECRET_KEY)) problems.push("STRIPE_SECRET_KEY is not a test key; the app refuses live keys until the live mode is built.");
 if (env.SHOTSTACK_ENV && env.SHOTSTACK_ENV !== "v1") problems.push("SHOTSTACK_ENV should be v1 (production) on the live site; stage adds a watermark.");
 if (problems.length) {
   console.error(`Not sent. Fix these in ${file} first:\n- ${problems.join("\n- ")}`);
