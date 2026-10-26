@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { AD_LENGTHS, type AdLength, type PresenterEngine } from "@/lib/pricing";
-import { formatPrice } from "@/lib/plans";
-import { creditsNeeded, planFit } from "@/lib/pricingHelpers";
+import { currencyFor, formatMoney } from "@/lib/plans";
+import { ALL_SUBSCRIPTIONS, creditsNeeded, planFit } from "@/lib/pricingHelpers";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Button } from "@/components/ui/Button";
 import { dict } from "@/content/i18n";
@@ -14,6 +14,8 @@ export function PlanFinder({ locale = "en" }: { locale?: Locale }) {
   const d = dict(locale);
   const f = d.pricing.finder;
   const c = d.calculator;
+  const currency = currencyFor(locale);
+  const formatPrice = (v: number) => formatMoney(v, currency, locale);
   const [ads, setAds] = useState(10);
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState<AdLength>(30);
@@ -21,9 +23,9 @@ export function PlanFinder({ locale = "en" }: { locale?: Locale }) {
   const [current, setCurrent] = useState(0);
   const r = useMemo(() => {
     const need = creditsNeeded({ ads, seconds, engine, translateMinutes: minutes });
-    const fit = planFit(need.total, ads);
+    const fit = planFit(need.total, ads, ALL_SUBSCRIPTIONS, currency);
     return { need, fit };
-  }, [ads, minutes, seconds, engine]);
+  }, [ads, minutes, seconds, engine, currency]);
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
       <div className="rounded-card bg-surface p-6 shadow-card">

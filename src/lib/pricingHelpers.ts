@@ -1,9 +1,10 @@
 import { AD_LENGTHS, type AdLength, type PresenterEngine } from "@/lib/pricing";
-import { ALL_PLANS, BUSINESS_TIERS, PLANS, TOPUPS, adCredits, annualSaving, translateCredits, type Plan } from "@/lib/plans";
+import { ALL_PLANS, BUSINESS_TIERS, PLANS, TOPUPS, adCredits, annualSaving, packPrice, planPrice, translateCredits, type Currency, type Plan } from "@/lib/plans";
 
 /**
  * Pure helpers for the pricing page and the calculators. Every number comes from plans.ts and
- * pricing.ts; nothing is estimated here. Browser-safe.
+ * pricing.ts; nothing is estimated here. Browser-safe. Amounts are in the `currency` passed (dollars
+ * by default, euros on /nl); the `…Usd` field names predate the euro prices.
  */
 export type PlanFit = {
   credits: number;
@@ -22,7 +23,7 @@ export const INDIVIDUAL_PAID = PLANS.filter((p) => p.monthlyUsd > 0 && p.credits
 export const ALL_SUBSCRIPTIONS = [...INDIVIDUAL_PAID, ...BUSINESS_TIERS];
 
 /** The cheapest mix of credit packs that adds at least `credits` (every pack size is tried). */
-export function cheapestPacks(credits: number): { count: number; usd: number; credits: number } {
+export function cheapestPacks(credits: number, currency: Currency = "usd"): { count: number; usd: number; credits: number } {
   if (credits <= 0) return { count: 0, usd: 0, credits: 0 };
   const sizes = [...TOPUPS].sort((a, b) => b.credits - a.credits);
   let best = { count: Infinity, usd: Infinity, credits: 0 };
@@ -36,7 +37,7 @@ export function cheapestPacks(credits: number): { count: number; usd: number; cr
     const left = credits - got;
     // The last size fills the rest; bigger sizes try every count from "enough on their own" down to none.
     const counts = i === sizes.length - 1 ? [Math.ceil(left / sizes[i].credits)] : Array.from({ length: Math.ceil(left / sizes[i].credits) + 1 }, (_, k) => Math.ceil(left / sizes[i].credits) - k);
-    for (const n of counts) walk(i + 1, got + n * sizes[i].credits, count + n, usd + n * sizes[i].usd);
+    for (const n of counts) walk(i + 1, got + n * sizes[i].credits, count + n, usd + n * packPrice(sizes[i], currency));
   };
   walk(0, 0, 0, 0);
   return best;
@@ -47,11 +48,11 @@ export function cheapestPacks(credits: number): { count: number; usd: number; cr
  * the cheapest credit packs, whichever costs least. Before, the next bigger plan was always picked,
  * even when a smaller plan plus a pack was cheaper.
  */
-export function planFit(creditsPerMonth: number, videos: number, candidates: Plan[] = ALL_SUBSCRIPTIONS): PlanFit {
+export function planFit(creditsPerMonth: number, videos: number, candidates: Plan[] = ALL_SUBSCRIPTIONS, currency: Currency = "usd"): PlanFit {
   let best: PlanFit | null = null;
   for (const plan of candidates) {
-    const packs = cheapestPacks(creditsPerMonth - plan.creditsPerMonth);
-    const monthlyUsd = plan.monthlyUsd + packs.usd;
+    const packs = cheapestPacks(creditsPerMonth - plan.creditsPerMonth, currency);
+    const monthlyUsd = planPrice(plan, currency).monthly + packs.usd;
     if (!best || monthlyUsd < best.monthlyUsd) {
       best = { credits: creditsPerMonth, plan, packs: packs.count, packUsd: packs.usd, monthlyUsd, perVideoUsd: videos ? monthlyUsd / videos : 0, withPacks: packs.count > 0 };
     }
@@ -68,9 +69,9 @@ export const HANDS_ON_MINUTES = 5;
  * (their minutes per video vs HANDS_ON_MINUTES, valued at their hourly rate). `savingUsd` is
  * negative when Clipelle costs more at these numbers; the page then says so.
  */
-export function compareMonth(input: { costNow: number; videos: number; seconds: AdLength; engine: PresenterEngine; translateMinutes: number; minutesNow: number; hourValue: number }) {
+export function compareMonth(input: { costNow: number; videos: number; seconds: AdLength; engine: PresenterEngine; translateMinutes: number; minutesNow: number; hourValue: number; currency?: Currency }) {
   const { perAd, total: credits } = creditsNeeded({ ads: input.videos, seconds: input.seconds, engine: input.engine, translateMinutes: input.translateMinutes });
-  const fit = planFit(credits, input.videos);
+  const fit = planFit(credits, input.videos, ALL_SUBSCRIPTIONS, input.currency);
   const yourMoney = input.costNow * input.videos;
   const yourHours = (input.videos * input.minutesNow) / 60;
   const ourHours = (input.videos * HANDS_ON_MINUTES) / 60;
@@ -80,9 +81,9 @@ export function compareMonth(input: { costNow: number; videos: number; seconds: 
 }
 
 /** The same comparison for any video with a known credit price (26 Oct 2026: translations in the calculator). */
-export function compareCredits(input: { costNow: number; videos: number; creditsPerVideo: number; minutesNow: number; hourValue: number }) {
+export function compareCredits(input: { costNow: number; videos: number; creditsPerVideo: number; minutesNow: number; hourValue: number; currency?: Currency }) {
   const credits = input.creditsPerVideo * input.videos;
-  const fit = planFit(credits, input.videos);
+  const fit = planFit(credits, input.videos, ALL_SUBSCRIPTIONS, input.currency);
   const yourMoney = input.costNow * input.videos;
   const yourHours = (input.videos * input.minutesNow) / 60;
   const ourHours = (input.videos * HANDS_ON_MINUTES) / 60;
@@ -112,14 +113,15 @@ export function planExamples(p: Plan) {
   };
 }
 
-/** Dollars one credit costs on a plan (price ÷ monthly credits); used for "≈ $ on Pro" next to credit prices. */
-export function usdPerCredit(p: Plan) {
-  return p.creditsPerMonth > 0 ? p.monthlyUsd / p.creditsPerMonth : 0;
+/** What one credit costs on a plan (price ÷ monthly credits); used for "≈ $ on Pro" next to credit prices. */
+export function usdPerCredit(p: Plan, currency: Currency = "usd") {
+  return p.creditsPerMonth > 0 ? planPrice(p, currency).monthly / p.creditsPerMonth : 0;
 }
 
 /** Annual billing: how much a year costs and what is saved against twelve monthly payments. */
-export function annualTotals(p: Plan) {
-  return { yearUsd: Math.round(p.annualMonthlyUsd * 12 * 100) / 100, savingUsd: annualSaving(p), savingPct: p.monthlyUsd > 0 ? Math.round((annualSaving(p) / (p.monthlyUsd * 12)) * 100) : 0 };
+export function annualTotals(p: Plan, currency: Currency = "usd") {
+  const x = planPrice(p, currency);
+  return { yearUsd: Math.round(x.annualTotal * 100) / 100, savingUsd: annualSaving(p, currency), savingPct: x.monthly > 0 ? Math.round((annualSaving(p, currency) / (x.monthly * 12)) * 100) : 0 };
 }
 
 export const AD_LENGTH_OPTIONS = AD_LENGTHS;

@@ -5,7 +5,7 @@ import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
 import { publishedCaseStudies } from "@/content/case-studies";
 import { partners } from "@/content/partners";
-import { FREE_CREDITS, PLANS, formatPrice } from "@/lib/plans";
+import { FREE_CREDITS, PLANS, currencyFor, formatMoney, formatPrice, planPrice } from "@/lib/plans";
 import { TRANSLATE_LANGUAGES } from "@/lib/translateLanguages";
 import { measured } from "@/content/measured";
 import { Button } from "@/components/ui/Button";
@@ -56,6 +56,9 @@ export function PartnersPage({ locale }: { locale: Locale }) {
   const p = t.partners;
   const L = (x: string) => localizePath(x, locale);
   const vars = { pct: String(partners.commissionPercent), min: formatPrice(partners.minimumPayoutUsd), platform: partners.platformName };
+  const currency = currencyFor(locale);
+  const money = (v: number) => formatMoney(v, currency, locale);
+  const monthly = (x: (typeof PLANS)[number]) => planPrice(x, currency).monthly;
   const pro = PLANS.find((x) => x.key === "pro")!;
   const starter = PLANS.find((x) => x.key === "starter")!;
   const open = Boolean(partners.signupUrl);
@@ -85,7 +88,7 @@ export function PartnersPage({ locale }: { locale: Locale }) {
         <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-card bg-surface shadow-card">
           <table className="w-full text-left text-[15px]">
             <thead className="bg-surface-muted text-[13px] text-muted"><tr><th className="px-5 py-3 font-medium">{p.table.customerOn}</th><th className="px-5 py-3 font-medium">{p.table.pays}</th><th className="px-5 py-3 font-medium">{fill(p.table.yours, vars)}</th><th className="px-5 py-3 font-medium">{p.table.year}</th></tr></thead>
-            <tbody className="divide-y divide-divider">{[starter, pro].map((x) => <tr key={x.key}><td className="px-5 py-3 font-medium text-ink">{x.name}</td><td className="px-5 py-3">{formatPrice(x.monthlyUsd)}</td><td className="px-5 py-3">{formatPrice(Math.round(x.monthlyUsd * pct) / 100)}</td><td className="px-5 py-3">{formatPrice(Math.round(x.monthlyUsd * pct * 12) / 100)}</td></tr>)}</tbody>
+            <tbody className="divide-y divide-divider">{[starter, pro].map((x) => <tr key={x.key}><td className="px-5 py-3 font-medium text-ink">{x.name}</td><td className="px-5 py-3">{money(monthly(x))}</td><td className="px-5 py-3">{money(Math.round(monthly(x) * pct) / 100)}</td><td className="px-5 py-3">{money(Math.round(monthly(x) * pct * 12) / 100)}</td></tr>)}</tbody>
           </table>
           <p className="px-5 py-3 text-[13px] text-muted">{p.table.note}</p>
         </div>
@@ -176,7 +179,7 @@ export function PressPage({ locale }: { locale: Locale }) {
     .replace("{langs}", String(TRANSLATE_LANGUAGES.length))
     .replace("{t}", num(measured.translationMinutes))
     .replace("{a}", num(measured.adMinutes))
-    .replace("{price}", formatPrice(starter.monthlyUsd))
+    .replace("{price}", formatMoney(planPrice(starter, currencyFor(locale)).monthly, currencyFor(locale), locale))
     .replace("{free}", String(FREE_CREDITS))
     .replace("{founder}", company.operator)
     .replace("{city}", company.city)

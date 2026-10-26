@@ -62,6 +62,15 @@ export const PLAN_MINUTES: Partial<Record<PlanKey, number>> = { starter: 7, pro:
 /** One-off packs: $0.05 a credit (3 minutes 20 seconds of Speed translation for $10). */
 export const TOPUP_USD_PER_CREDIT = 0.05;
 
+/** The two currencies we sell in: dollars on the English site, euros on /nl (26 Oct 2026). */
+export type Currency = "usd" | "eur";
+/**
+ * Euro prices per month, excluding VAT (Tijs, 26 Oct 2026). The same credits as the dollar plan;
+ * annual = exactly ten months (€190 a year, not twelve rounded months like the dollar price).
+ * Stripe holds them as `currency_options.eur` on the same prices (scripts/stripe-setup.ts).
+ */
+export const EUR_MONTHLY: Partial<Record<PlanKey, number>> = { starter: 19, pro: 59, scale: 159, business_249: 249, business_499: 499, business_999: 999 };
+
 export type PlanKey = "free" | "starter" | "pro" | "scale" | "enterprise" | "business_249" | "business_499" | "business_999";
 
 export type Plan = {
@@ -71,6 +80,10 @@ export type Plan = {
   monthlyUsd: number;
   /** Per month when billed annually (ten months charged). */
   annualMonthlyUsd: number;
+  /** Euro price per month, excluding VAT (0 when not sold). */
+  monthlyEur: number;
+  /** Euro price per year: ten months. */
+  annualEur: number;
   creditsPerMonth: number;
   creditsNote: string;
   bullets: string[];
@@ -97,6 +110,8 @@ function plan(key: PlanKey, name: string, tagline: string, monthlyUsd: number, b
     monthlyUsd,
     // Whole dollars (25 Oct 2026): ten months spread over twelve, rounded to the nearest dollar ($15.83 → $16).
     annualMonthlyUsd: Math.round((monthlyUsd * ANNUAL_MONTHS_CHARGED) / 12),
+    monthlyEur: EUR_MONTHLY[key] ?? 0,
+    annualEur: (EUR_MONTHLY[key] ?? 0) * ANNUAL_MONTHS_CHARGED,
     creditsPerMonth: credits,
     creditsNote: credits > 0 ? `${credits.toLocaleString("en-US")} credits per month` : `${FREE_CREDITS} free credits`,
     bullets,
@@ -138,8 +153,9 @@ export function activeListPrice(p: Plan, now = new Date()) {
 }
 
 /** The real yearly saving of a plan: twelve monthly prices minus the annual total. */
-export function annualSaving(p: Plan) {
-  return Math.round((p.monthlyUsd * 12 - p.annualMonthlyUsd * 12) * 100) / 100;
+export function annualSaving(p: Plan, currency: Currency = "usd") {
+  const x = planPrice(p, currency);
+  return Math.round((x.monthly * 12 - x.annualTotal) * 100) / 100;
 }
 
 /** The plan a Stripe price belongs to, by its lookup key (monthly or annual); undefined for packs and unknown keys. */
@@ -152,10 +168,34 @@ export function planByKey(key: string | null | undefined): Plan | undefined {
   return ALL_PLANS.find((p) => p.key === key);
 }
 
-export type TopupPack = { key: string; usd: number; credits: number; stripeLookup: string };
+export type TopupPack = { key: string; usd: number; eur: number; credits: number; stripeLookup: string };
 
-/** One-off packs at the top-up margin; the credits never expire. */
-export const TOPUPS: TopupPack[] = [10, 25, 50].map((usd) => ({ key: `topup_${usd}`, usd, credits: Math.round(usd / TOPUP_USD_PER_CREDIT), stripeLookup: `reelay_topup_${usd}` }));
+/** One-off packs at the top-up margin; the credits never expire. Euro packs: €10, €25, €50 (excl. VAT), the same credits. */
+export const TOPUPS: TopupPack[] = [10, 25, 50].map((usd) => ({ key: `topup_${usd}`, usd, eur: usd, credits: Math.round(usd / TOPUP_USD_PER_CREDIT), stripeLookup: `reelay_topup_${usd}` }));
+
+/** Dollars on the English site, euros on the Dutch one. */
+export function currencyFor(locale: string | null | undefined): Currency {
+  return locale === "nl" ? "eur" : "usd";
+}
+
+/** A plan's prices in one currency: per month, per month when billed annually, and the annual total. */
+export function planPrice(p: Plan, currency: Currency) {
+  if (currency === "eur") return { monthly: p.monthlyEur, annualMonthly: Math.round((p.annualEur / 12) * 100) / 100, annualTotal: p.annualEur };
+  return { monthly: p.monthlyUsd, annualMonthly: p.annualMonthlyUsd, annualTotal: p.annualMonthlyUsd * 12 };
+}
+
+/** What Stripe charges, in cents per currency (monthly price, annual price, packs). */
+export function stripeAmounts(p: Plan) {
+  return { monthly: { usd: Math.round(p.monthlyUsd * 100), eur: Math.round(p.monthlyEur * 100) }, annual: { usd: Math.round(p.annualMonthlyUsd * 12 * 100), eur: Math.round(p.annualEur * 100) } };
+}
+export const packPrice = (t: TopupPack, currency: Currency) => (currency === "eur" ? t.eur : t.usd);
+
+/** "$19", "$1,590", "€15,83" (Dutch) or "€15.83" (English): whole amounts without cents. */
+export function formatMoney(amount: number, currency: Currency, locale: string = "en") {
+  const tag = locale === "nl" ? "nl-NL" : "en-US";
+  const n = amount.toLocaleString(tag, Number.isInteger(amount) ? { maximumFractionDigits: 0 } : { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${currency === "eur" ? "€" : "$"}${n}`;
+}
 
 /**
  * Expiry (decided 21 October 2026): paid credits (subscriptions and packs) NEVER expire while the
@@ -186,7 +226,7 @@ export function planMargin(p: Plan) {
   return { cost: Math.round(cost * 100) / 100, gross: Math.round((p.monthlyUsd - cost) * 100) / 100, pct: Math.round(((p.monthlyUsd - cost) / p.monthlyUsd) * 100), multiple: Math.round((p.monthlyUsd / cost) * 100) / 100 };
 }
 
-/** Price of one minute of Speed translation on a plan (USD). */
-export function usdPerTranslateMinute(p: Plan) {
-  return p.creditsPerMonth > 0 ? Math.round((p.monthlyUsd / (p.creditsPerMonth / 60)) * 100) / 100 : 0;
+/** Price of one minute of Speed translation on a plan (USD by default). */
+export function usdPerTranslateMinute(p: Plan, currency: Currency = "usd") {
+  return p.creditsPerMonth > 0 ? Math.round((planPrice(p, currency).monthly / (p.creditsPerMonth / 60)) * 100) / 100 : 0;
 }

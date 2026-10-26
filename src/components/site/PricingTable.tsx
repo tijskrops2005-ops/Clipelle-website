@@ -6,7 +6,7 @@ import { ArrowRight, Check, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { BUSINESS_TIERS, CREDIT_EXPIRY, PLANS, TOPUPS, activeListPrice, adCreditTable, formatPrice, translateCredits, type Plan } from "@/lib/plans";
+import { BUSINESS_TIERS, CREDIT_EXPIRY, PLANS, TOPUPS, activeListPrice, adCreditTable, currencyFor, formatMoney, packPrice, planPrice, translateCredits, type Currency, type Plan } from "@/lib/plans";
 import { annualTotals, planExamples, usdPerCredit } from "@/lib/pricingHelpers";
 import { PlanFinder } from "./PlanFinder";
 import { dict } from "@/content/i18n";
@@ -19,9 +19,12 @@ type Tab = "individual" | "business" | "api";
  * The pricing page body: tabs Individual / Business / API, a monthly-annual switch with the real
  * saving, plan cards (crossed-out prices only from plans.ts), comparison table, plan finder.
  * Every number comes from plans.ts and pricing.ts. `compact` (Billing settings) shows the cards only.
+ * Prices are in dollars on / and in euros on /nl; Billing passes the currency the customer picked.
  */
-export function PricingTable({ onChoose, busyKey, compact, locale = "en" }: { onChoose?: (plan: Plan, interval: Interval) => void; busyKey?: string | null; compact?: boolean; locale?: Locale }) {
+export function PricingTable({ onChoose, busyKey, compact, locale = "en", currency = currencyFor(locale) }: { onChoose?: (plan: Plan, interval: Interval) => void; busyKey?: string | null; compact?: boolean; locale?: Locale; currency?: Currency }) {
   const t = dict(locale).pricing;
+  const m: Money = { currency, locale };
+  const billingHref = (key: string, interval: Interval) => `/signup?next=${encodeURIComponent(`/settings/billing?plan=${key}&interval=${interval}${currency === "eur" ? "&currency=eur" : ""}`)}`;
   const L = (p: string) => localizePath(p, locale);
   const [interval, setInterval] = useState<Interval>("annual");
   const [tab, setTab] = useState<Tab>("individual");
@@ -30,7 +33,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en" }: { on
   const paid = PLANS.filter((p) => p.key !== "free" && p.key !== "enterprise");
   const free = PLANS.find((p) => p.key === "free")!;
   const business = BUSINESS_TIERS.find((t) => t.key === tier) ?? BUSINESS_TIERS[0];
-  const maxSaving = useMemo(() => Math.max(...paid.map((p) => annualTotals(p).savingPct)), [paid]);
+  const maxSaving = useMemo(() => Math.max(...paid.map((p) => annualTotals(p, currency).savingPct)), [paid, currency]);
 
   const tabs: { key: Tab; label: string }[] = [{ key: "individual", label: t.tabs.individual }, { key: "business", label: t.tabs.business }, { key: "api", label: t.tabs.api }];
 
@@ -59,13 +62,13 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en" }: { on
 
       <div id={`${base}-panel-individual`} role="tabpanel" aria-labelledby={`${base}-tab-individual`} hidden={tab !== "individual"} className={cn(tab === "individual" && "fold-in")}>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          <PlanCard plan={free} interval={interval} t={t} cta={<Button href="/signup" variant="secondary" className="w-full">{t.startFree}</Button>} />
+          <PlanCard plan={free} interval={interval} t={t} m={m} cta={<Button href="/signup" variant="secondary" className="w-full">{t.startFree}</Button>} />
           {paid.map((p, i) => (
-            <PlanCard key={p.key} plan={p} previous={i === 0 ? free : paid[i - 1]} interval={interval} t={t} cta={
+            <PlanCard key={p.key} plan={p} previous={i === 0 ? free : paid[i - 1]} interval={interval} t={t} m={m} cta={
               onChoose ? (
                 <Button type="button" variant={p.recommended ? "accent" : "primary"} className="w-full" onClick={() => onChoose(p, interval)} disabled={Boolean(busyKey)}>{busyKey === p.key ? t.openingCheckout : t.choose.replace("{name}", p.name)}</Button>
               ) : (
-                <Button href={`/signup?next=${encodeURIComponent(`/settings/billing?plan=${p.key}&interval=${interval}`)}`} variant={p.recommended ? "accent" : "primary"} className="w-full">{t.choose.replace("{name}", p.name)}</Button>
+                <Button href={billingHref(p.key, interval)} variant={p.recommended ? "accent" : "primary"} className="w-full">{t.choose.replace("{name}", p.name)}</Button>
               )
             } />
           ))}
@@ -75,7 +78,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en" }: { on
           <p className="mt-1 text-[15px] text-muted">{t.packs.text}</p>
           <ul className="mt-4 grid gap-2 sm:grid-cols-3">
             {TOPUPS.map((x) => (
-              <li key={x.key} className="flex items-center justify-between rounded-chip bg-surface-muted px-4 py-2.5 text-sm"><span className="font-medium text-ink">{x.credits.toLocaleString("en-US")} {t.packs.credits}</span><span className="text-muted">{formatPrice(x.usd)}</span></li>
+              <li key={x.key} className="flex items-center justify-between rounded-chip bg-surface-muted px-4 py-2.5 text-sm"><span className="font-medium text-ink">{x.credits.toLocaleString("en-US")} {t.packs.credits}</span><span className="text-muted">{formatMoney(packPrice(x, currency), currency, locale)}</span></li>
             ))}
           </ul>
         </div>
@@ -90,7 +93,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en" }: { on
               <p className="mb-2 text-sm font-medium text-ink">{t.business.level}</p>
               <SegmentedControl label={t.business.level} options={BUSINESS_TIERS.map((t) => ({ key: t.key, label: `${t.creditsPerMonth.toLocaleString("en-US")}` }))} value={tier} onChange={setTier} />
             </div>
-            <PriceLine plan={business} interval={interval} className="mt-5" t={t} />
+            <PriceLine plan={business} interval={interval} className="mt-5" t={t} m={m} />
             <Examples plan={business} t={t} />
             <ul className="mt-5 flex-1 space-y-2 text-[14px] text-ink/85">{business.bullets.map((b) => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />{b}</li>)}</ul>
             <p className="mt-4 text-[13px] text-muted">{t.business.note}</p>
@@ -120,7 +123,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en" }: { on
             <ul className="mt-4 space-y-2 text-[14px] text-ink/85">{t.api.items.map((b) => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />{b}</li>)}</ul>
             <div className="mt-6 flex flex-wrap gap-2"><Button href="/docs/api" variant="primary">{t.api.docs}</Button><Button href="/docs/mcp" variant="secondary">{t.api.mcp}</Button></div>
           </div>
-          <CreditTable t={t} />
+          <CreditTable t={t} m={m} />
         </div>
       </div>
 
@@ -129,7 +132,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en" }: { on
           <section>
             <h3 className="text-title text-center">{t.creditTable.title}</h3>
             <p className="mx-auto mt-3 max-w-2xl text-center text-[15px] text-muted">{t.creditTable.text}</p>
-            <div className="mt-8"><CreditTable wide t={t} /></div>
+            <div className="mt-8"><CreditTable wide t={t} m={m} /></div>
           </section>
 
           <section>
@@ -149,13 +152,17 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en" }: { on
 }
 
 type T = ReturnType<typeof dict>["pricing"];
+type Money = { currency: Currency; locale: Locale };
 
-function PriceLine({ plan, interval, className, t }: { plan: Plan; interval: Interval; className?: string; t: T }) {
+function PriceLine({ plan, interval, className, t, m }: { plan: Plan; interval: Interval; className?: string; t: T; m: Money }) {
+  const formatPrice = (v: number) => formatMoney(v, m.currency, m.locale);
   const creditsNote = planWords(plan, t).creditsNote;
-  const price = interval === "annual" ? plan.annualMonthlyUsd : plan.monthlyUsd;
-  const list = activeListPrice(plan);
-  const struck = interval === "annual" && plan.monthlyUsd > 0 ? plan.monthlyUsd : list && list > plan.monthlyUsd ? list : null;
-  const totals = annualTotals(plan);
+  const p = planPrice(plan, m.currency);
+  const price = interval === "annual" ? p.annualMonthly : p.monthly;
+  // The launch price in plans.ts is a dollar price; it is never shown next to euros.
+  const list = m.currency === "usd" ? activeListPrice(plan) : null;
+  const struck = interval === "annual" && p.monthly > 0 ? p.monthly : list && list > plan.monthlyUsd ? list : null;
+  const totals = annualTotals(plan, m.currency);
   return (
     <div className={className}>
       <p className="flex flex-wrap items-baseline gap-x-2">
@@ -184,14 +191,14 @@ function planWords(plan: Plan, t: T) {
   return { tagline: w?.tagline ?? plan.tagline, bullets: (w?.bullets ?? plan.bullets).map((b) => b.replaceAll("{m}", String(plan.creditsPerMonth / 60))), creditsNote: plan.creditsPerMonth > 0 ? t.creditsPerMonth.replace("{n}", plan.creditsPerMonth.toLocaleString("en-US")) : (w && "creditsNote" in w ? w.creditsNote : plan.creditsNote) };
 }
 
-function PlanCard({ plan, previous, interval, cta, t }: { plan: Plan; previous?: Plan; interval: Interval; cta: React.ReactNode; t: T }) {
+function PlanCard({ plan, previous, interval, cta, t, m }: { plan: Plan; previous?: Plan; interval: Interval; cta: React.ReactNode; t: T; m: Money }) {
   const words = planWords(plan, t);
   return (
     <div className={cn("flex flex-col rounded-card bg-surface p-6 shadow-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card-hover", plan.recommended && "ring-1 ring-ink")}>
       {plan.recommended && <span className="label-mono mb-3 w-fit rounded-full bg-ink px-2.5 py-1 text-gold-light">{t.recommendation}</span>}
       <p className="text-[17px] font-semibold text-ink">{plan.name}</p>
       <p className="mt-1 text-[13px] text-muted">{words.tagline}</p>
-      <PriceLine plan={plan} interval={interval} className="mt-5" t={t} />
+      <PriceLine plan={plan} interval={interval} className="mt-5" t={t} m={m} />
       <Examples plan={plan} t={t} />
       <p className="mt-3 text-[13px] font-medium text-ink">{plan.key === "free" ? t.freeExpires.replace("{n}", String(CREDIT_EXPIRY.freeAdDays)) : t.neverExpire}</p>
       {previous && previous.key !== "free" && <p className="mt-4 label-mono text-muted">{t.everythingIn.replace("{name}", previous.name)}</p>}
@@ -203,10 +210,11 @@ function PlanCard({ plan, previous, interval, cta, t }: { plan: Plan; previous?:
   );
 }
 
-function CreditTable({ wide, t }: { wide?: boolean; t: T }) {
+function CreditTable({ wide, t, m }: { wide?: boolean; t: T; m: Money }) {
+  const formatPrice = (v: number) => formatMoney(v, m.currency, m.locale);
   const table = adCreditTable();
   const pro = PLANS.find((p) => p.key === "pro")!;
-  const rate = usdPerCredit(pro);
+  const rate = usdPerCredit(pro, m.currency);
   const perMinute = { speed: translateCredits({ seconds: 60, quality: "speed", enhance: false, languages: 1, hasSourceTranscript: true }), precision: translateCredits({ seconds: 60, quality: "precision", enhance: false, languages: 1, hasSourceTranscript: true }) };
   const usd = (c: number) => formatPrice(Math.round(c * rate * 100) / 100);
   return (

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ArrowRight, Check, Gem, Rocket, Sparkles, Star, Zap, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import type { Currency } from "@/lib/plans";
 
 export type PreviewCard = {
   key: string;
@@ -24,7 +25,7 @@ type Labels = { monthly: string; annual: string; save: string; billingLabel: str
 const ICONS: Record<string, LucideIcon> = { free: Zap, starter: Sparkles, pro: Rocket, scale: Gem };
 
 /** The interactive part of the homepage pricing block: the billing switch and the four cards. */
-export function PricingCards({ cards, labels }: { cards: PreviewCard[]; labels: Labels }) {
+export function PricingCards({ cards, labels, currency = "usd" }: { cards: PreviewCard[]; labels: Labels; currency?: Currency }) {
   const [annual, setAnnual] = useState(true);
   const interval = annual ? "annual" : "monthly";
   return (
@@ -48,7 +49,7 @@ export function PricingCards({ cards, labels }: { cards: PreviewCard[]; labels: 
       <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => {
           const Icon = ICONS[c.key] ?? Sparkles;
-          const href = c.paid ? `/signup?next=${encodeURIComponent(`/settings/billing?plan=${c.key}&interval=${interval}`)}` : "/signup";
+          const href = c.paid ? `/signup?next=${encodeURIComponent(`/settings/billing?plan=${c.key}&interval=${interval}${currency === "eur" ? "&currency=eur" : ""}`)}` : "/signup";
           return (
             <div
               key={c.key}

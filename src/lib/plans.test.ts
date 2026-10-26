@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALL_PLANS, BUSINESS_TIERS, CREDIT_COST_USD, FREE_CREDITS, MIN_MARGIN, PLANS, TOPUPS, adCredits, planByLookupKey, translateCredits, usdPerTranslateMinute } from "./plans";
+import { ALL_PLANS, BUSINESS_TIERS, CREDIT_COST_USD, FREE_CREDITS, MIN_MARGIN, PLANS, TOPUPS, adCredits, currencyFor, formatMoney, planByLookupKey, planPrice, stripeAmounts, translateCredits, usdPerTranslateMinute } from "./plans";
 import { AD_LENGTHS, DEFAULTS, estimateAdCost, estimateTranslateCost } from "./pricing";
 
 const paid = ALL_PLANS.filter((p) => p.monthlyUsd > 0 && p.creditsPerMonth > 0);
@@ -84,5 +84,35 @@ describe("plans by Stripe lookup key", () => {
     expect(planByLookupKey("reelay_business_499_monthly")?.key).toBe("business_499");
     expect(planByLookupKey("reelay_topup_10")).toBeUndefined();
     expect(planByLookupKey(null)).toBeUndefined();
+  });
+});
+
+describe("euro prices (26 Oct 2026)", () => {
+  const eur = (key: string) => ALL_PLANS.find((p) => p.key === key)!;
+  it("matches the agreed monthly prices excluding VAT, annual is exactly ten months", () => {
+    const expected: Record<string, number> = { starter: 19, pro: 59, scale: 159, business_249: 249, business_499: 499, business_999: 999 };
+    for (const [key, monthly] of Object.entries(expected)) {
+      expect(eur(key).monthlyEur).toBe(monthly);
+      expect(eur(key).annualEur).toBe(monthly * 10);
+      expect(stripeAmounts(eur(key))).toMatchObject({ monthly: { eur: monthly * 100 }, annual: { eur: monthly * 1000 } });
+    }
+    expect(eur("free").monthlyEur).toBe(0);
+    expect(planPrice(eur("pro"), "eur")).toEqual({ monthly: 59, annualMonthly: 49.17, annualTotal: 590 });
+  });
+  it("leaves dollar prices and credits as they were", () => {
+    expect(stripeAmounts(eur("starter"))).toEqual({ monthly: { usd: 1900, eur: 1900 }, annual: { usd: 19200, eur: 19000 } });
+    expect(planPrice(eur("pro"), "usd")).toEqual({ monthly: 59, annualMonthly: 49, annualTotal: 588 });
+    expect(eur("pro").creditsPerMonth).toBe(22 * 60);
+  });
+  it("sells packs for €10, €25 and €50 with the same credits", () => {
+    expect(TOPUPS.map((t) => [t.eur, t.usd, t.credits])).toEqual([[10, 10, 200], [25, 25, 500], [50, 50, 1000]]);
+  });
+  it("shows dollars on the English site and euros on the Dutch one", () => {
+    expect(currencyFor("en")).toBe("usd");
+    expect(currencyFor("nl")).toBe("eur");
+    expect(formatMoney(19, "eur", "nl")).toBe("€19");
+    expect(formatMoney(15.83, "eur", "nl")).toBe("€15,83");
+    expect(formatMoney(1590, "eur", "nl")).toBe("€1.590");
+    expect(formatMoney(1590, "usd", "en")).toBe("$1,590");
   });
 });

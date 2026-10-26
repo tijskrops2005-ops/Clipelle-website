@@ -2,7 +2,7 @@ import { AudioLines, Coins, BadgeCheck, CircleDollarSign, Clock3, Compass, Gauge
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
 import { measured } from "@/content/measured";
-import { PLANS, usdPerTranslateMinute } from "@/lib/plans";
+import { PLANS, currencyFor, formatMoney, usdPerTranslateMinute } from "@/lib/plans";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { SwipeTabs } from "@/components/site/SwipeTabs";
@@ -24,9 +24,10 @@ const fmt = (n: number | null) => (n == null ? "–" : String(n).replace(".", ",
 export function WhyClipelle({ locale }: { locale: Locale }) {
   const w = dict(locale).home.why;
   const pro = PLANS.find((p) => p.key === "pro")!;
-  const price = `$${usdPerTranslateMinute(pro).toFixed(2)}`;
+  const currency = currencyFor(locale);
+  const price = formatMoney(usdPerTranslateMinute(pro, currency), currency, locale);
   const num = (n: number | null) => (locale === "nl" ? fmt(n) : n == null ? "–" : String(n));
-  const fill = (v: string) => v.replace("{t}", num(measured.translationMinutes)).replace("{a}", num(measured.adMinutes)).replace("{price}", locale === "nl" ? price.replace(".", ",") : price);
+  const fill = (v: string) => v.replace("{t}", num(measured.translationMinutes)).replace("{a}", num(measured.adMinutes)).replace("{price}", price);
 
   const get = (
     <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">

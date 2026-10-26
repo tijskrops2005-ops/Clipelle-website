@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { measured } from "@/content/measured";
 import { AD_LENGTHS, type AdLength, type PresenterEngine } from "@/lib/pricing";
-import { formatPrice, translateCredits } from "@/lib/plans";
+import { currencyFor, formatMoney, planPrice, translateCredits } from "@/lib/plans";
 import { HANDS_ON_MINUTES, INDIVIDUAL_PAID, compareCredits, compareMonth } from "@/lib/pricingHelpers";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { dict } from "@/content/i18n";
@@ -25,6 +25,8 @@ import { cn } from "@/lib/utils";
 const TRANSLATE_LENGTHS = [15, 30, 60, 90, 120, 180] as const;
 export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolean; locale?: Locale }) {
   const c = dict(locale).calculator;
+  const currency = currencyFor(locale);
+  const sym = currency === "eur" ? "€" : "$";
   const [mode, setMode] = useState<"translate" | "ad">("translate");
   const [trSeconds, setTrSeconds] = useState<number>(30);
   const [languages, setLanguages] = useState(2);
@@ -40,15 +42,16 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
   const r = useMemo(() => {
     const month =
       mode === "translate"
-        ? compareCredits({ costNow: currentCost, videos, creditsPerVideo: translateCredits({ seconds: trSeconds, quality, enhance: false }) * languages, minutesNow, hourValue })
-        : compareMonth({ costNow: currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue });
-    const ladder = INDIVIDUAL_PAID.map((p) => ({ plan: p, videos: Math.floor(p.creditsPerMonth / month.perAd), perVideo: (p.monthlyUsd / p.creditsPerMonth) * month.perAd }));
+        ? compareCredits({ costNow: currentCost, videos, creditsPerVideo: translateCredits({ seconds: trSeconds, quality, enhance: false }) * languages, minutesNow, hourValue, currency })
+        : compareMonth({ costNow: currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue, currency });
+    const ladder = INDIVIDUAL_PAID.map((p) => ({ plan: p, videos: Math.floor(p.creditsPerMonth / month.perAd), perVideo: (planPrice(p, currency).monthly / p.creditsPerMonth) * month.perAd }));
     return { ...month, ladder };
-  }, [mode, trSeconds, languages, quality, currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue]);
+  }, [mode, trSeconds, languages, quality, currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue, currency]);
 
   const adTime = measured.adMinutes !== null ? c.adTimeMeasured.replace("{n}", String(measured.adMinutes)) : c.adTimeUnmeasured;
   const trTime = measured.translationMinutes !== null ? c.trTimeMeasured.replace("{n}", String(measured.translationMinutes)).replace("{note}", measured.translationNote) : c.trTimeUnmeasured;
-  const money = (v: number) => (v < 10 ? `$${v.toFixed(2)}` : `$${Math.round(v).toLocaleString("en-US")}`);
+  const cents = (v: number) => `${sym}${v.toLocaleString(locale === "nl" ? "nl-NL" : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const money = (v: number) => (v < 10 ? cents(v) : formatMoney(Math.round(v), currency, locale));
   const hours = (h: number) => `${h < 10 ? Math.round(h * 10) / 10 : Math.round(h)} h`;
   const fitName = r.fit.plan ? (r.fit.withPacks ? `${r.fit.plan.name} ${c.plus} ${r.fit.packs} ${r.fit.packs === 1 ? c.pack : c.packs}` : r.fit.plan.name) : c.aPlan;
   const translating = mode === "translate";
@@ -62,9 +65,9 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
         </div>
         <p className="mt-2 text-[13px] leading-relaxed text-muted">{translating ? c.yourNumbersTextTranslate : c.yourNumbersText}</p>
         <div className="mt-5 space-y-5">
-          <Range id="cost" label={translating ? c.costNowTranslate : c.costNow} value={currentCost} min={1} max={20} step={0.5} onChange={setCurrentCost} format={(v) => `$${v.toFixed(2)}`} />
+          <Range id="cost" label={translating ? c.costNowTranslate : c.costNow} value={currentCost} min={1} max={20} step={0.5} onChange={setCurrentCost} format={cents} />
           <Range id="time" label={c.timeNow} value={minutesNow} min={0} max={180} step={5} onChange={setMinutesNow} format={(v) => `${v} min`} />
-          <Range id="hour" label={c.hourValue} value={hourValue} min={0} max={100} step={5} onChange={setHourValue} format={(v) => `$${v}`} />
+          <Range id="hour" label={c.hourValue} value={hourValue} min={0} max={100} step={5} onChange={setHourValue} format={(v) => `${sym}${v}`} />
           <Range id="videos" label={c.videosPerMonth} value={videos} min={1} max={100} step={1} onChange={setVideos} format={(v) => String(v)} />
           {translating ? (
             <>
@@ -133,7 +136,7 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
                   {l.plan.name}
                   {fits && <span className="whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white">{c.ladderFit}</span>}
                 </p>
-                <p className="mt-1 text-[13px] text-muted">{formatPrice(l.plan.monthlyUsd)} {c.ladderPerMonth}</p>
+                <p className="mt-1 text-[13px] text-muted">{formatMoney(planPrice(l.plan, currency).monthly, currency, locale)} {c.ladderPerMonth}</p>
                 <p className="mt-2 text-[13px] text-ink">{c.ladderVideos.replace("{n}", String(l.videos))}</p>
                 <p className="text-[13px] text-muted">{c.ladderPerVideo.replace("{p}", money(l.perVideo))}</p>
               </li>
