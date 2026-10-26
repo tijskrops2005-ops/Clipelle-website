@@ -6,7 +6,8 @@
  * Every product gets STRIPE_PRODUCT_TAX_CODE (needed for Stripe Managed Payments, see billingCheckout.ts).
  */
 import Stripe from "stripe";
-import { ALL_PLANS as PLANS, TOPUPS } from "../src/lib/plans";
+import { ALL_PLANS as PLANS, BUSINESS_TIERS, TOPUPS } from "../src/lib/plans";
+import { portalConfigurationParams, type PortalKind, type PortalProduct } from "../src/lib/billingPortal";
 import { STRIPE_PRODUCT_TAX_CODE, TOPUP_METADATA } from "../src/lib/billingCheckout";
 import { WEBHOOK_EVENTS } from "../src/lib/billingEvents";
 
@@ -51,6 +52,33 @@ async function main() {
     await ensurePrice(p.stripeLookup.annual, `Clipelle ${p.name}`, Math.round(p.annualMonthlyUsd * 12 * 100), { interval: "year" });
   }
   for (const t of TOPUPS) await ensurePrice(t.stripeLookup, `Clipelle credits (${t.credits})`, Math.round(t.usd * 100), undefined, TOPUP_METADATA);
+
+  // Customer portal: one configuration for personal plans, one for team (Business) plans.
+  async function portalProducts(keys: string[]): Promise<PortalProduct[]> {
+    const byProduct = new Map<string, string[]>();
+    for (const p of PLANS.filter((x) => keys.includes(x.key) && x.stripeLookup)) {
+      const prices = await stripe.prices.list({ lookup_keys: [p.stripeLookup!.monthly, p.stripeLookup!.annual], active: true, limit: 10 });
+      for (const price of prices.data) {
+        const product = typeof price.product === "string" ? price.product : price.product.id;
+        byProduct.set(product, [...(byProduct.get(product) ?? []), price.id]);
+      }
+    }
+    return [...byProduct].map(([product, prices]) => ({ product, prices }));
+  }
+  const existing = await stripe.billingPortal.configurations.list({ active: true, limit: 100 });
+  const teamKeys = BUSINESS_TIERS.map((b) => b.key);
+  for (const kind of ["individual", "team"] as PortalKind[]) {
+    const keys = PLANS.filter((p) => p.stripeLookup && (kind === "team" ? teamKeys.includes(p.key) : !teamKeys.includes(p.key))).map((p) => p.key);
+    const params = portalConfigurationParams(kind, await portalProducts(keys));
+    const found = existing.data.find((c) => c.metadata?.clipelle_portal === kind);
+    if (found) {
+      await stripe.billingPortal.configurations.update(found.id, params);
+      console.log(`~ portal configuration (${kind}) updated: ${found.id}`);
+    } else {
+      const created = await stripe.billingPortal.configurations.create(params);
+      console.log(`+ portal configuration (${kind}): ${created.id}`);
+    }
+  }
   console.log(`Done. Add the webhook endpoint /api/billing/webhook for: ${WEBHOOK_EVENTS.join(", ")}`);
 }
 
