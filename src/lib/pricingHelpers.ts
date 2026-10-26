@@ -1,5 +1,5 @@
 import { AD_LENGTHS, type AdLength, type PresenterEngine } from "@/lib/pricing";
-import { ALL_PLANS, BUSINESS_TIERS, PLANS, PLAN_LEVELS, TOPUPS, adCredits, annualSaving, packPrice, planPrice, translateCredits, type Currency, type Plan } from "@/lib/plans";
+import { ALL_PLANS, BUSINESS_TIERS, PLANS, PLAN_LEVELS, TOPUPS, adCredits, annualSaving, hasFeature, packPrice, planPrice, translateCredits, type Currency, type Plan, type PlanFamily, type PlanFeature } from "@/lib/plans";
 
 /**
  * Pure helpers for the pricing page and the calculators. Every number comes from plans.ts and
@@ -45,20 +45,23 @@ export function cheapestPacks(credits: number, currency: Currency = "usd"): { co
 }
 
 /**
- * The cheapest way to cover a month (25 Oct 2026): every subscription on its own or topped up with
- * the cheapest credit packs, whichever costs least. Before, the next bigger plan was always picked,
- * even when a smaller plan plus a pack was cheaper.
+ * The plan for a month of use (26 Oct 2026, realistic): the cheapest plan or level whose monthly
+ * credits cover the month and that has every feature the choices need (Premium and Precision need
+ * Pro, enhancement Scale). Packs are one-off, so they are no longer added to a monthly price; only
+ * beyond the biggest plan the rest is shown as packs (Enterprise is the better talk then).
  */
-export function planFit(creditsPerMonth: number, videos: number, candidates: Plan[] = ALL_SUBSCRIPTIONS, currency: Currency = "usd"): PlanFit {
-  let best: PlanFit | null = null;
-  for (const plan of candidates) {
-    const packs = cheapestPacks(creditsPerMonth - plan.creditsPerMonth, currency);
-    const monthlyUsd = planPrice(plan, currency).monthly + packs.usd;
-    if (!best || monthlyUsd < best.monthlyUsd) {
-      best = { credits: creditsPerMonth, plan, packs: packs.count, packUsd: packs.usd, monthlyUsd, perVideoUsd: videos ? monthlyUsd / videos : 0, withPacks: packs.count > 0 };
-    }
-  }
-  return best ?? { credits: creditsPerMonth, plan: null, packs: 0, packUsd: 0, monthlyUsd: 0, perVideoUsd: 0, withPacks: false };
+export function planFit(creditsPerMonth: number, videos: number, candidates: Plan[] = ALL_SUBSCRIPTIONS, currency: Currency = "usd", needs: PlanFeature[] = []): PlanFit {
+  const allowed = candidates.filter((p) => p.creditsPerMonth > 0 && needs.every((f) => hasFeature(p.key, f)));
+  const price = (p: Plan) => planPrice(p, currency).monthly;
+  const covering = allowed.filter((p) => p.creditsPerMonth >= creditsPerMonth).sort((a, b) => price(a) - price(b));
+  const fit = (plan: Plan, packs: { count: number; usd: number }): PlanFit => {
+    const monthlyUsd = price(plan) + packs.usd;
+    return { credits: creditsPerMonth, plan, packs: packs.count, packUsd: packs.usd, monthlyUsd, perVideoUsd: videos ? monthlyUsd / videos : 0, withPacks: packs.count > 0 };
+  };
+  if (covering[0]) return fit(covering[0], { count: 0, usd: 0 });
+  const biggest = [...allowed].sort((a, b) => b.creditsPerMonth - a.creditsPerMonth)[0];
+  if (!biggest) return { credits: creditsPerMonth, plan: null, packs: 0, packUsd: 0, monthlyUsd: 0, perVideoUsd: 0, withPacks: false };
+  return fit(biggest, cheapestPacks(creditsPerMonth - biggest.creditsPerMonth, currency));
 }
 
 /** Hands-on time per video with Clipelle: filling in the form and checking the result (stated on the page). */
@@ -72,7 +75,7 @@ export const HANDS_ON_MINUTES = 5;
  */
 export function compareMonth(input: { costNow: number; videos: number; seconds: AdLength; engine: PresenterEngine; translateMinutes: number; minutesNow: number; hourValue: number; currency?: Currency }) {
   const { perAd, total: credits } = creditsNeeded({ ads: input.videos, seconds: input.seconds, engine: input.engine, translateMinutes: input.translateMinutes });
-  const fit = planFit(credits, input.videos, ALL_SUBSCRIPTIONS, input.currency);
+  const fit = planFit(credits, input.videos, ALL_SUBSCRIPTIONS, input.currency, input.engine === "avatar_iv" ? ["premium"] : []);
   const yourMoney = input.costNow * input.videos;
   const yourHours = (input.videos * input.minutesNow) / 60;
   const ourHours = (input.videos * HANDS_ON_MINUTES) / 60;
@@ -82,9 +85,9 @@ export function compareMonth(input: { costNow: number; videos: number; seconds: 
 }
 
 /** The same comparison for any video with a known credit price (26 Oct 2026: translations in the calculator). */
-export function compareCredits(input: { costNow: number; videos: number; creditsPerVideo: number; minutesNow: number; hourValue: number; currency?: Currency }) {
+export function compareCredits(input: { costNow: number; videos: number; creditsPerVideo: number; minutesNow: number; hourValue: number; currency?: Currency; needs?: PlanFeature[] }) {
   const credits = input.creditsPerVideo * input.videos;
-  const fit = planFit(credits, input.videos, ALL_SUBSCRIPTIONS, input.currency);
+  const fit = planFit(credits, input.videos, ALL_SUBSCRIPTIONS, input.currency, input.needs);
   const yourMoney = input.costNow * input.videos;
   const yourHours = (input.videos * input.minutesNow) / 60;
   const ourHours = (input.videos * HANDS_ON_MINUTES) / 60;
@@ -128,3 +131,34 @@ export function annualTotals(p: Plan, currency: Currency = "usd") {
 export const AD_LENGTH_OPTIONS = AD_LENGTHS;
 export const BUSINESS = BUSINESS_TIERS;
 export const EVERY_PLAN = ALL_PLANS;
+
+/** The plan families in upgrade order, with one key each to read their features from. */
+const FAMILY_ORDER: { family: PlanFamily; key: string; name: string }[] = [
+  { family: "free", key: "free", name: "Free" },
+  { family: "starter", key: "starter", name: "Starter" },
+  { family: "pro", key: "pro", name: "Pro" },
+  { family: "scale", key: "scale", name: "Scale" },
+  { family: "business", key: "business_249", name: "Business" },
+];
+const FEATURE_ORDER: PlanFeature[] = ["precision", "premium", "variations", "api", "enhance", "team"];
+const featuresOf = (key: string) => FEATURE_ORDER.filter((f) => hasFeature(key, f));
+
+/**
+ * For a plan card (26 Oct 2026): the plan below it ("Everything in Starter, plus"), the features this
+ * plan adds on top of that one, and the features of the next plan, shown with a lock ("Available in
+ * Pro"). Read from the feature table in plans.ts, so the cards always match what the server allows.
+ */
+export function featureSteps(family: PlanFamily) {
+  const i = FAMILY_ORDER.findIndex((f) => f.family === family);
+  if (i < 0) return { previous: null, added: [] as PlanFeature[], locked: [] as PlanFeature[], next: null };
+  const own = featuresOf(FAMILY_ORDER[i].key);
+  const prev = i > 0 ? FAMILY_ORDER[i - 1] : null;
+  const next = i < FAMILY_ORDER.length - 1 ? FAMILY_ORDER[i + 1] : null;
+  const prevFeatures = prev ? featuresOf(prev.key) : [];
+  return {
+    previous: prev && prev.family !== "free" ? prev.name : null,
+    added: own.filter((f) => !prevFeatures.includes(f)),
+    locked: next ? featuresOf(next.key).filter((f) => !own.includes(f)) : [],
+    next: next?.name ?? null,
+  };
+}

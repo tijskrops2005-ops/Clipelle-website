@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PLANS, TOPUPS } from "./plans";
-import { CHECKOUT_INTEGRATION_ID, INVOICE_FOOTER, checkoutCurrency, termsConsentEnabled, MANAGED_PAYMENTS_UNSUPPORTED, automaticTaxEnabled, managedPaymentsEnabled, REFERRAL_KEYS, STRIPE_PRODUCT_TAX_CODE, subscriptionSessionParams, topupSessionParams, TOPUP_METADATA, withManagedPayments } from "./billingCheckout";
+import { PLANS, TOPUPS, customCreditsPrice, validCustomCredits } from "./plans";
+import { creditsSessionParams, CHECKOUT_INTEGRATION_ID, INVOICE_FOOTER, checkoutCurrency, termsConsentEnabled, MANAGED_PAYMENTS_UNSUPPORTED, automaticTaxEnabled, managedPaymentsEnabled, REFERRAL_KEYS, STRIPE_PRODUCT_TAX_CODE, subscriptionSessionParams, topupSessionParams, TOPUP_METADATA, withManagedPayments } from "./billingCheckout";
 
 const input = { customerId: "cus_test", userId: "user-1", workspaceId: "ws-1", priceId: "price_test", origin: "https://clipelle.test" };
 
@@ -168,5 +168,23 @@ describe("free trial on the checkout", () => {
     expect(without).not.toHaveProperty("payment_method_collection");
     // Managed Payments keeps the trial (Stripe sends the trial e-mails then).
     expect(subscriptionSessionParams(pro, { ...input, trial: true, managed: true }).subscription_data).toMatchObject({ trial_period_days: 7 });
+  });
+});
+
+describe("any amount of credits (26 Oct 2026)", () => {
+  const input = { customerId: "cus_1", userId: "user-1", workspaceId: "ws-1", priceId: "price_unit", origin: "https://x.test" };
+  it("buys the per-credit price with a quantity and carries the credits in the metadata", () => {
+    const params = creditsSessionParams(750, input);
+    expect(params.mode).toBe("payment");
+    expect(params.line_items).toEqual([{ price: "price_unit", quantity: 750 }]);
+    expect(params.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", topupKey: "custom", credits: "750", kind: "topup" });
+    for (const k of REFERRAL_KEYS) expect(params).not.toHaveProperty(k);
+  });
+  it("prices every allowed amount at the pack rate", () => {
+    expect(customCreditsPrice(750)).toBe(37.5);
+    expect(validCustomCredits(100)).toBe(true);
+    expect(validCustomCredits(75)).toBe(false);
+    expect(validCustomCredits(10_050)).toBe(false);
+    expect(validCustomCredits(1234)).toBe(false);
   });
 });

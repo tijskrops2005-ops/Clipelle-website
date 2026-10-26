@@ -9,11 +9,11 @@
  * Every product gets STRIPE_PRODUCT_TAX_CODE (needed for Stripe Managed Payments, see billingCheckout.ts).
  */
 import Stripe from "stripe";
-import { ALL_PLANS as PLANS, BUSINESS_TIERS, TOPUPS, planLabel, stripeAmounts } from "../src/lib/plans";
+import { ALL_PLANS as PLANS, BUSINESS_TIERS, CUSTOM_CREDITS, TOPUPS, planLabel, stripeAmounts } from "../src/lib/plans";
 import { portalConfigurationParams, type PortalKind, type PortalProduct } from "../src/lib/billingPortal";
 import { STRIPE_PRODUCT_TAX_CODE, TOPUP_METADATA } from "../src/lib/billingCheckout";
 import { WEBHOOK_EVENTS } from "../src/lib/billingEvents";
-import { packDescription, planDescription } from "../src/lib/billingProducts";
+import { creditUnitDescription, packDescription, planDescription } from "../src/lib/billingProducts";
 
 async function main() {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
@@ -81,6 +81,8 @@ async function main() {
     await ensurePrice(p.stripeLookup.annual, `Clipelle ${planLabel(p)}`, amounts.annual, { interval: "year" }, undefined, planDescription(p));
   }
   for (const t of TOPUPS) await ensurePrice(t.stripeLookup, `Clipelle credits (${t.credits})`, { usd: Math.round(t.usd * 100), eur: Math.round(t.eur * 100) }, undefined, TOPUP_METADATA, packDescription(t));
+  // Any amount of credits (26 Oct 2026): one price per credit, bought with a quantity; no commission either.
+  await ensurePrice(CUSTOM_CREDITS.stripeLookup, "Clipelle credits", { usd: CUSTOM_CREDITS.unitCents, eur: CUSTOM_CREDITS.unitCents }, undefined, TOPUP_METADATA, creditUnitDescription());
 
   // Customer portal: one configuration for personal plans, one for team (Business) plans.
   async function portalProducts(keys: string[]): Promise<PortalProduct[]> {

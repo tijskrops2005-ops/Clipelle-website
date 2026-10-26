@@ -1,18 +1,18 @@
 import { z } from "zod";
-import { INVOICE_FOOTER, automaticTaxEnabled, checkoutCurrency, managedPaymentsEnabled, termsConsentEnabled, subscriptionSessionParams, topupSessionParams } from "@/lib/billingCheckout";
+import { INVOICE_FOOTER, automaticTaxEnabled, checkoutCurrency, creditsSessionParams, managedPaymentsEnabled, termsConsentEnabled, subscriptionSessionParams, topupSessionParams } from "@/lib/billingCheckout";
 import { requireOwner } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
 import { getOrCreateProfile } from "@/lib/data/profile";
 import { getWorkspace } from "@/lib/workspaces";
-import { planByKey, TOPUPS } from "@/lib/plans";
+import { CUSTOM_CREDITS, planByKey, TOPUPS, validCustomCredits } from "@/lib/plans";
 import { priceByLookupKey, stripe, stripeEnabled } from "@/lib/stripe";
 import { setPlan, trialAvailable } from "@/lib/billing";
 import { databaseModeOnly, readJson } from "@/app/api/projects/_guard";
 
 const Currency = z.enum(["usd", "eur"]).optional();
-const Body = z.union([z.object({ kind: z.literal("plan"), planKey: z.string(), interval: z.enum(["monthly", "annual"]), currency: Currency }), z.object({ kind: z.literal("topup"), topupKey: z.string(), currency: Currency })]);
+const Body = z.union([z.object({ kind: z.literal("plan"), planKey: z.string(), interval: z.enum(["monthly", "annual"]), currency: Currency }), z.object({ kind: z.literal("topup"), topupKey: z.string(), currency: Currency }), z.object({ kind: z.literal("credits"), credits: z.number(), currency: Currency })]);
 
-/** Creates a Stripe Checkout session (test mode) for a plan or a credit pack; with Managed Payments when switched on. */
+/** Creates a Stripe Checkout session (test mode) for a plan, a credit pack or any amount of credits; with Managed Payments when switched on. */
 export async function POST(request: Request) {
   const blocked = databaseModeOnly();
   if (blocked) return blocked;
@@ -63,10 +63,18 @@ export async function POST(request: Request) {
       const session = await s.checkout.sessions.create(subscriptionSessionParams(plan, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax, requireTerms, currency, trial }));
       return Response.json({ url: session.url });
     }
+    // The free plan can only run the free combination, so credits would be money for nothing.
+    if (workspace.planKey === "free") return Response.json({ error: "Credit packs come on top of a paid plan. Choose a plan first." }, { status: 400 });
+    if (b.kind === "credits") {
+      // Any amount (26 Oct 2026): the per-credit price with a quantity.
+      if (!validCustomCredits(b.credits)) return Response.json({ error: `Pick between ${CUSTOM_CREDITS.min} and ${CUSTOM_CREDITS.max.toLocaleString("en-US")} credits, in steps of ${CUSTOM_CREDITS.step}.` }, { status: 400 });
+      const unit = await priceByLookupKey(CUSTOM_CREDITS.stripeLookup);
+      if (!unit) return Response.json({ error: "The price is not set up in Stripe yet. Run the setup script." }, { status: 503 });
+      const session = await s.checkout.sessions.create(creditsSessionParams(b.credits, { customerId, userId: user.id, workspaceId: workspace.id, priceId: unit.id, origin, managed, automaticTax, requireTerms, currency }));
+      return Response.json({ url: session.url });
+    }
     const pack = TOPUPS.find((t) => t.key === b.topupKey);
     if (!pack) return Response.json({ error: "Unknown pack." }, { status: 400 });
-    // The free plan can only run the free combination, so a pack would be money for nothing.
-    if (workspace.planKey === "free") return Response.json({ error: "Credit packs come on top of a paid plan. Choose a plan first." }, { status: 400 });
     const price = await priceByLookupKey(pack.stripeLookup);
     if (!price) return Response.json({ error: "The price is not set up in Stripe yet. Run the setup script." }, { status: 503 });
     const session = await s.checkout.sessions.create(topupSessionParams(pack, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax, requireTerms, currency }));

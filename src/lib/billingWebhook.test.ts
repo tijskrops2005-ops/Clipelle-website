@@ -35,6 +35,20 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     expect(await getCreditBalance(wsId)).toBe(TOPUPS[0].credits);
   });
 
+  it("grants any amount of credits once, only when the amount paid matches (26 Oct 2026)", async () => {
+    const { applyStripeEvent } = await import("./billingWebhook");
+    const { getCreditBalance } = await import("./credits");
+    const before = await getCreditBalance(wsId);
+    const session = (id: string, credits: string, subtotal: number) => ({ id: "evt_" + id, type: "checkout.session.completed", data: { object: { id, payment_status: "paid", amount_subtotal: subtotal, metadata: { userId, workspaceId: wsId, kind: "topup", topupKey: "custom", credits }, customer: "cus_test" } } }) as unknown as import("stripe").Stripe.Event;
+    // 750 credits paid as 750 × 5 cents.
+    expect((await applyStripeEvent(session("cs_test_custom", "750", 3750))).handled).toBe(true);
+    await applyStripeEvent(session("cs_test_custom", "750", 3750)); // replay
+    expect(await getCreditBalance(wsId)).toBe(before + 750);
+    // Metadata that does not match the amount charged grants nothing.
+    expect((await applyStripeEvent(session("cs_test_custom_bad", "5000", 3750))).handled).toBe(false);
+    expect(await getCreditBalance(wsId)).toBe(before + 750);
+  });
+
   it("waits for a delayed payment: no credits while unpaid, once when the async payment succeeds", async () => {
     const { applyStripeEvent } = await import("./billingWebhook");
     const { getCreditBalance } = await import("./credits");

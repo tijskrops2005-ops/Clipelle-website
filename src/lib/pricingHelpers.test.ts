@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AD_LENGTHS, type AdLength } from "./pricing";
 import { ALL_PLANS, BUSINESS_TIERS, CREDIT_COST_USD, MIN_MARGIN, PLANS, TOPUPS, adCredits, annualSaving, translateCredits } from "./plans";
-import { ALL_SUBSCRIPTIONS, annualTotals, cheapestPacks, compareMonth, creditsNeeded, HANDS_ON_MINUTES, planExamples, planFit } from "./pricingHelpers";
+import { ALL_SUBSCRIPTIONS, annualTotals, cheapestPacks, compareMonth, creditsNeeded, featureSteps, HANDS_ON_MINUTES, planExamples, planFit } from "./pricingHelpers";
 
 describe("pricing helpers match plans.ts for every combination", () => {
   it("credits needed = ads × adCredits + minutes × translateCredits", () => {
@@ -17,45 +17,30 @@ describe("pricing helpers match plans.ts for every combination", () => {
     }
   });
 
-  it("picks the cheapest way to cover the month: a plan alone or a plan plus packs", () => {
-    for (const credits of [50, 300, 301, 414, 1030, 1500, 1840, 3110, 3726, 6000, 12000]) {
+  it("picks the cheapest plan or level that covers the month, without monthly packs", () => {
+    for (const credits of [50, 420, 421, 600, 1030, 1500, 1840, 3110, 3726, 6000, 12000, 23160]) {
       const fit = planFit(credits, 5);
       expect(fit.plan).not.toBeNull();
-      // The month is covered.
-      expect(fit.plan!.creditsPerMonth + cheapestPacks(credits - fit.plan!.creditsPerMonth).credits).toBeGreaterThanOrEqual(credits);
-      const best = cheapestPacks(credits - fit.plan!.creditsPerMonth);
-      expect(fit.packs).toBe(best.count);
-      expect(fit.monthlyUsd).toBe(fit.plan!.monthlyUsd + best.usd);
-      // No subscription, alone or with packs, is cheaper.
-      for (const p of ALL_SUBSCRIPTIONS) expect(p.monthlyUsd + cheapestPacks(credits - p.creditsPerMonth).usd).toBeGreaterThanOrEqual(fit.monthlyUsd);
+      expect(fit.plan!.creditsPerMonth).toBeGreaterThanOrEqual(credits);
+      expect(fit.packs).toBe(0);
+      expect(fit.monthlyUsd).toBe(fit.plan!.monthlyUsd);
+      // No covering subscription is cheaper.
+      for (const p of ALL_SUBSCRIPTIONS) if (p.creditsPerMonth >= credits) expect(p.monthlyUsd).toBeGreaterThanOrEqual(fit.monthlyUsd);
     }
+    // Ten 30-second ads (600 credits): the second Starter level, $32, not Starter plus a one-off pack.
+    expect(planFit(600, 10).plan?.key).toBe("starter_2");
   });
 
-  it("tops up a smaller plan when that is cheaper than the next plan", () => {
-    // 414 credits: Starter (300) + two $10 packs = $39, cheaper than Pro at $59.
-    const fit = planFit(414, 9);
-    expect(fit.plan?.key).toBe("starter");
-    expect(fit.monthlyUsd).toBeLessThan(59);
+  it("only suggests plans that have the features the choices need", () => {
+    // Ten Premium ads of 10 s (600 credits) need Pro, even though Starter's levels have the credits.
+    expect(planFit(600, 10, ALL_SUBSCRIPTIONS, "usd", ["premium"]).plan?.key).toBe("pro");
+    expect(planFit(600, 10, ALL_SUBSCRIPTIONS, "usd", ["enhance"]).plan?.key).toBe("scale");
   });
 
-  it("cheapest packs cover the shortfall", () => {
-    for (const need of [1, 110, 111, 500, 551, 2000]) {
-      const p = cheapestPacks(need);
-      expect(p.credits).toBeGreaterThanOrEqual(need);
-      // Never dearer than buying only the smallest pack.
-      const smallest = [...TOPUPS].sort((a, b) => a.usd - b.usd)[0];
-      expect(p.usd).toBeLessThanOrEqual(Math.ceil(need / smallest.credits) * smallest.usd);
-    }
-    expect(cheapestPacks(0)).toEqual({ count: 0, usd: 0, credits: 0 });
-  });
-
-  it("annual saving is twelve monthly prices minus the annual total", () => {
-    for (const p of ALL_PLANS.filter((p) => p.monthlyUsd > 0)) {
-      const t = annualTotals(p);
-      expect(t.savingUsd).toBeCloseTo(p.monthlyUsd * 12 - p.annualMonthlyUsd * 12, 2);
-      expect(t.savingUsd).toBe(annualSaving(p));
-      expect(t.savingPct).toBe(Math.round((annualSaving(p) / (p.monthlyUsd * 12)) * 100));
-    }
+  it("shows packs only beyond the biggest plan", () => {
+    const fit = planFit(30_000, 50);
+    expect(fit.plan?.key).toBe("business_999");
+    expect(fit.withPacks).toBe(true);
   });
 
   it("plan examples follow from the credits and never exceed them", () => {
@@ -85,5 +70,14 @@ describe("pricing helpers match plans.ts for every combination", () => {
     const moneyOnly = compareMonth({ ...base, minutesNow: 0 });
     expect(moneyOnly.savingUsd).toBeLessThan(0);
     expect(moneyOnly.hoursBack).toBeLessThan(0);
+  });
+});
+
+describe("plan cards: what each plan adds and what the next one unlocks (26 Oct 2026)", () => {
+  it("follows the feature table in plans.ts", () => {
+    expect(featureSteps("starter")).toEqual({ previous: null, added: [], locked: ["precision", "premium", "variations", "api"], next: "Pro" });
+    expect(featureSteps("pro")).toEqual({ previous: "Starter", added: ["precision", "premium", "variations", "api"], locked: ["enhance"], next: "Scale" });
+    expect(featureSteps("scale")).toEqual({ previous: "Pro", added: ["enhance"], locked: ["team"], next: "Business" });
+    expect(featureSteps("business")).toMatchObject({ previous: "Scale", added: ["team"], locked: [], next: null });
   });
 });

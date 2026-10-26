@@ -40,3 +40,15 @@ Wat op verzoek van Tijs van de site is gehaald, waarom, en hoe het terug kan. De
 | Kleine advertentiedemo met foto (`AdsDemo`) op de homepage | Weg: de grote muis-demo (`ProductDemo`) vertelt hetzelfde en staat nu direct onder de kop "Or make a new ad from a photo or a link"; daaronder alleen de link-rij. | In `HomePage.tsx` de rij `{ key: "ads", … panel: <AdsDemo /> }` terug in `FeatureRows`. |
 | Rij live-cijfers (`LiveStats`) | Verborgen zolang er geen enkel echt cijfer boven de drempel is: de vervangende feiten herhaalden de blokken eromheen. Verschijnt vanzelf bij echte cijfers. | In `LiveStats.tsx` de regel `if (!anyLive) return null;` weghalen. |
 | "190 talen" zes keer op de homepage | Nog twee keer: de chip in de hero en de talenmuur. Statistiekband, swipe-blok en slotband zeggen nu iets anders. | Teksten in `home.translate.stats`, `home.why.get`, `home.finalPoints`. |
+
+## 26 oktober 2026: prijspagina rustiger, op verzoek van Tijs ("één zo'n dingetje is goed")
+
+| Onderdeel | Wat er gebeurde | Code | Terugzetten |
+|---|---|---|---|
+| **"What a credit buys"** (tabel credits ≈ dollars per lengte) | Weg van /pricing: drie tabellen met getallen was te druk. Staat nog in het API-tabblad. | `CreditTable` in `PricingTable.tsx` | De sectie met `<CreditTable wide …/>` terugzetten onder de kaarten. |
+| **"Find your plan"** (schuifjes + best passende plan) | Vervangen door één eenvoudige rekenhulp **"Which plan fits?"** (`PlanCalculator.tsx`): minuten vertalen, advertenties van 30 s, Premium aan/uit; het antwoord is het kleinste plan of niveau dat het dekt, met de echte prijs. | `PlanFinder.tsx` (bewaard) | `<PlanFinder locale={locale} />` in `PricingTable.tsx`. |
+| **"Clipelle vs doing it yourself"** op /pricing | Weg van /pricing; staat nog op de homepage. | `SavingsCalculator.tsx` | Het `Reveal`-blok terug in `PricingPage.tsx`. |
+| Minutenkiezer en proefregel per kaart | De drie niveaus zijn nu één keuzemenu in credits; de proefvoorwaarden staan één keer onder de maand/jaar-schakelaar. | — | — |
+| Drie vaste creditpakketten op /pricing | Vervangen door een schuifregelaar: elk aantal van 100 tot 10.000 credits (per 50), zelfde prijs per credit. | `CreditsSlider.tsx`, `CUSTOM_CREDITS` in `plans.ts` | — |
+
+Tegelijk is de rekenkern realistischer gemaakt (`planFit`): geen "plan + eenmalig pakket" meer als maandbedrag, en alleen plannen die de gekozen functies hebben (Premium en Precision vanaf Pro).

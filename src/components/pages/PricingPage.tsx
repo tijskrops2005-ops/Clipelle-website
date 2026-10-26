@@ -7,9 +7,7 @@ import { PricingTable } from "@/components/site/PricingTable";
 import { Accordion } from "@/components/site/Accordion";
 import { FinalCta } from "@/components/site/Persuasion";
 import { ServiceSection } from "@/components/site/ServiceSection";
-import { SavingsCalculator } from "@/components/site/SavingsCalculator";
 import { JsonLd } from "@/components/site/JsonLd";
-import { Reveal } from "@/components/site/Reveal";
 import { LatestPosts } from "@/components/site/HomeSections";
 
 export function PricingPage({ locale }: { locale: Locale }) {
@@ -20,10 +18,6 @@ export function PricingPage({ locale }: { locale: Locale }) {
       <JsonLd data={{ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) }} />
       <SectionIntro eyebrow={t.pricing.eyebrow} title={t.pricing.title} text={t.pricing.text} />
       <Suspense fallback={<div className="min-h-64" aria-hidden />}><PricingTable locale={locale} /></Suspense>
-      <Reveal as="section">
-        <SectionIntro eyebrow={t.pricing.compareDiyEyebrow} title={t.pricing.compareDiyTitle} text={t.pricing.compareDiyText} />
-        <div className="mt-10"><Suspense fallback={<div className="min-h-64" aria-hidden />}><SavingsCalculator locale={locale} /></Suspense></div>
-      </Reveal>
       <ServiceSection locale={locale} />
       <section>
         <SectionIntro eyebrow={t.common.faq} title={t.pricing.faqTitle} />

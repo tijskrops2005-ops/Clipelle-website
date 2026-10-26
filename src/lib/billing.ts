@@ -72,10 +72,11 @@ export async function grantPlanCredits(workspaceId: string, userId: string, plan
   await grantCredits({ workspaceId, userId, credits: plan.creditsPerMonth, kind: "grant_subscription", note: `${plan.name} plan`, expiresAt: null, reference: `invoice:${invoiceId}` });
 }
 
-export async function grantTopupCredits(workspaceId: string, userId: string, topupKey: string, sessionId: string) {
-  const pack = TOPUPS.find((t) => t.key === topupKey);
-  if (!pack) return;
-  await grantCredits({ workspaceId, userId, credits: pack.credits, kind: "grant_topup", note: `${pack.credits} credits pack`, expiresAt: null, reference: `checkout:${sessionId}` });
+export async function grantTopupCredits(workspaceId: string, userId: string, topupKey: string, sessionId: string, customCredits?: number) {
+  // A free amount (topupKey "custom"): the number was checked against the amount paid by the webhook.
+  const credits = topupKey === "custom" ? customCredits : TOPUPS.find((t) => t.key === topupKey)?.credits;
+  if (!credits) return;
+  await grantCredits({ workspaceId, userId, credits, kind: "grant_topup", note: topupKey === "custom" ? `${credits} credits` : `${credits} credits pack`, expiresAt: null, reference: `checkout:${sessionId}` });
 }
 
 export async function setPlan(workspaceId: string, patch: { planKey?: string; stripeCustomerId?: string | null; stripeSubscriptionId?: string | null; subscriptionStatus?: string | null; currentPeriodEnd?: Date | null; trialStartedAt?: Date }) {

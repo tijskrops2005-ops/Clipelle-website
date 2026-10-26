@@ -146,19 +146,32 @@ export function subscriptionSessionParams(plan: Plan, input: CheckoutInput) {
 }
 
 export function topupSessionParams(pack: TopupPack, input: CheckoutInput) {
+  return oneOffSessionParams({ topupKey: pack.key }, 1, input);
+}
+
+/**
+ * A free amount of credits (26 Oct 2026): the per-credit price (CUSTOM_CREDITS) with a quantity. Same
+ * invoice, tax, promotion codes and partner exclusion as a pack (the per-credit product carries
+ * TOPUP_METADATA). The webhook checks the credits in the metadata against the amount charged.
+ */
+export function creditsSessionParams(credits: number, input: CheckoutInput) {
+  return oneOffSessionParams({ topupKey: "custom", credits: String(credits) }, credits, input);
+}
+
+function oneOffSessionParams(meta: { topupKey: string; credits?: string }, quantity: number, input: CheckoutInput) {
   return withManagedPayments({
     mode: "payment" as const,
     customer: input.customerId,
     currency: input.currency ?? "usd",
-    line_items: [{ price: input.priceId, quantity: 1 }],
+    line_items: [{ price: input.priceId, quantity }],
     success_url: `${input.origin}/settings/billing?checkout=success`,
     cancel_url: `${input.origin}/settings/billing?checkout=cancelled`,
-    metadata: { userId: input.userId, workspaceId: input.workspaceId, topupKey: pack.key, kind: "topup" },
+    metadata: { userId: input.userId, workspaceId: input.workspaceId, ...meta, kind: "topup" },
     integration_identifier: CHECKOUT_INTEGRATION_ID,
-    // A real invoice (PDF, our company details) for a credit pack, not only a receipt. Managed
-    // Payments issues its own invoices and strips this.
+    // A real invoice (PDF, our company details) for credits, not only a receipt. Managed Payments
+    // issues its own invoices and strips this.
     invoice_creation: { enabled: true, invoice_data: { footer: INVOICE_FOOTER, metadata: { workspaceId: input.workspaceId, kind: "topup" } } },
-    // "Add promotion code" on packs too (26 Oct 2026), as on plans.
+    // "Add promotion code" on credits too (26 Oct 2026), as on plans.
     allow_promotion_codes: true,
     ...taxParams(input.automaticTax),
     ...termsParams(input.requireTerms),

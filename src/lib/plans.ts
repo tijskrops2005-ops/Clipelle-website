@@ -158,9 +158,9 @@ function minutesBullets(key: PlanKey, extra: string) {
 
 export const PLANS: Plan[] = [
   plan("free", "Free", "Try it once", 0, ["30 free credits after e-mail verification", "Half a minute of translation, or one 10-second ad", "No card; use them within 30 days"], { creditsNote: "30 free credits" }),
-  plan("starter", "Starter", "For a shop translating its first videos", 19, minutesBullets("starter", "Every language, Speed or Precision")),
-  plan("pro", "Pro", "For a brand selling in several languages", 59, minutesBullets("pro", "Premium presenter when you want it"), { recommended: true }),
-  plan("scale", "Scale", "For agencies and several brands", 159, minutesBullets("scale", "Precision, enhancement and Premium included")),
+  plan("starter", "Starter", "For a shop translating its first videos", 19, minutesBullets("starter", "Every language, Speed translation")),
+  plan("pro", "Pro", "For a brand selling in several languages", 59, minutesBullets("pro", "Precision, the Premium presenter, variations and the API"), { recommended: true }),
+  plan("scale", "Scale", "For agencies and several brands", 159, minutesBullets("scale", "Everything in Pro, plus picture enhancement")),
   plan("enterprise", "Enterprise", "Custom volume and terms", 0, ["Custom credits and billing", "Onboarding and a direct line", "Book a demo to talk"], { creditsNote: "Custom", stripeLookup: undefined }),
 ];
 
@@ -182,9 +182,13 @@ export const PLAN_LEVELS: Plan[] = (["starter", "pro", "scale"] as const).flatMa
 );
 export const ALL_PLANS: Plan[] = [...PLANS, ...PLAN_LEVELS, ...BUSINESS_TIERS];
 
-/** "Pro", "Pro · 33 min", "Business · 96 min": a level beyond the first (and every Business level) names its minutes. */
+/**
+ * "Pro", "Pro · 1,980 credits", "Business · 5,760 credits": a level beyond the first (and every
+ * Business level) names its monthly credits (26 Oct 2026: credits only, never minutes, on screen and
+ * as the Stripe product name).
+ */
 export function planLabel(p: Plan) {
-  return p.level > 1 || p.family === "business" ? `${p.name} · ${p.creditsPerMonth / 60} min` : p.name;
+  return p.level > 1 || p.family === "business" ? `${p.name} · ${p.creditsPerMonth.toLocaleString("en-US")} credits` : p.name;
 }
 
 /** All levels of one plan, lowest first (a single entry for Free and Enterprise). */
@@ -257,6 +261,16 @@ export type TopupPack = { key: string; usd: number; eur: number; credits: number
 
 /** One-off packs at the top-up margin; the credits never expire. Euro packs: €10, €25, €50 (excl. VAT), the same credits. */
 export const TOPUPS: TopupPack[] = [10, 25, 50].map((usd) => ({ key: `topup_${usd}`, usd, eur: usd, credits: Math.round(usd / TOPUP_USD_PER_CREDIT), stripeLookup: `reelay_topup_${usd}` }));
+
+/**
+ * Any number of credits (26 Oct 2026, Tijs: "zo flexibel mogelijk"): one Stripe price per credit at
+ * the pack rate, bought with a quantity, so every amount from `min` to `max` in steps of `step`
+ * costs exactly credits × TOPUP_USD_PER_CREDIT (the same in euros). Same margin as the packs.
+ */
+export const CUSTOM_CREDITS = { min: 100, max: 10_000, step: 50, stripeLookup: "reelay_credit_unit", unitCents: Math.round(TOPUP_USD_PER_CREDIT * 100) } as const;
+export const validCustomCredits = (credits: number) => Number.isInteger(credits) && credits >= CUSTOM_CREDITS.min && credits <= CUSTOM_CREDITS.max && credits % CUSTOM_CREDITS.step === 0;
+/** The price of `credits` one-off credits, in dollars or euros (the same number). */
+export const customCreditsPrice = (credits: number) => Math.round(credits * CUSTOM_CREDITS.unitCents) / 100;
 
 /** Dollars on the English site, euros on the Dutch one. */
 export function currencyFor(locale: string | null | undefined): Currency {

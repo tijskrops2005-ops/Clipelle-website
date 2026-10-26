@@ -43,3 +43,16 @@ export function portalConfigurationParams(kind: PortalKind, products: PortalProd
     },
   };
 }
+
+/**
+ * A plan or level change for a current subscriber (26 Oct 2026): the portal opens straight on the
+ * confirm screen for the new price (Stripe `flow_data.subscription_update_confirm`), shows the exact
+ * amount, and returns to Billing afterwards. The new price must be in the portal configuration.
+ */
+export function planChangeFlow(input: { subscriptionId: string; itemId: string; priceId: string; returnUrl: string }) {
+  return {
+    type: "subscription_update_confirm" as const,
+    subscription_update_confirm: { subscription: input.subscriptionId, items: [{ id: input.itemId, price: input.priceId, quantity: 1 }] },
+    after_completion: { type: "redirect" as const, redirect: { return_url: input.returnUrl } },
+  };
+}

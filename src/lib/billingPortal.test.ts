@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { portalConfigurationParams } from "./billingPortal";
+import { planChangeFlow, portalConfigurationParams } from "./billingPortal";
 
 describe("customer portal configuration", () => {
   const products = [{ product: "prod_pro", prices: ["price_m", "price_y"] }];
@@ -19,5 +19,15 @@ describe("customer portal configuration", () => {
     expect(p.features.subscription_update.schedule_at_period_end.conditions.map((c) => c.type)).toEqual(["decreasing_item_amount", "shortening_interval"]);
     expect(p.features.subscription_update.products).toEqual(products);
     expect(portalConfigurationParams("team", [], "https://x.test").features.subscription_update.enabled).toBe(false);
+  });
+});
+
+describe("plan change through the portal", () => {
+  it("opens the confirm screen for the new price and returns to Billing", () => {
+    expect(planChangeFlow({ subscriptionId: "sub_1", itemId: "si_1", priceId: "price_2", returnUrl: "https://x.test/settings/billing?changed=1" })).toEqual({
+      type: "subscription_update_confirm",
+      subscription_update_confirm: { subscription: "sub_1", items: [{ id: "si_1", price: "price_2", quantity: 1 }] },
+      after_completion: { type: "redirect", redirect: { return_url: "https://x.test/settings/billing?changed=1" } },
+    });
   });
 });

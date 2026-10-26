@@ -13,3 +13,8 @@ export function planDescription(plan: Plan) {
 export function packDescription(pack: TopupPack) {
   return `${pack.credits.toLocaleString("en-US")} credits on top of your plan. 1 credit = 1 second of translated video; an ad uses ${CREDIT_RULES.ad.avatar_iii} per second. Credits never expire.`;
 }
+
+/** The per-credit product (any amount, bought with a quantity). */
+export function creditUnitDescription() {
+  return `One-off credits on top of your plan, any amount. 1 credit = 1 second of translated video; an ad uses ${CREDIT_RULES.ad.avatar_iii} per second. Credits never expire.`;
+}

@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 /**
  * "Clipelle vs doing it yourself" (24 Oct 2026): the visitor sets what a video costs them now
  * (default $5, the middle of what AI ad tools come to per video), how many they make and how many
- * seconds they are. Next to that: the cheapest way to cover that month with our plans and packs
+ * seconds they are. Next to that: the plan that covers that month (since 26 Oct 2026 a plan or level
+ * with the needed features, no monthly packs)
  * (src/lib/pricingHelpers.ts), the measured time, the difference, and every plan side by side.
  * Since 25 Oct 2026 the visitor's own time counts too (minutes per video and what an hour is
  * worth, both their input), against HANDS_ON_MINUTES with Clipelle; when Clipelle costs more at
@@ -42,7 +43,7 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
   const r = useMemo(() => {
     const month =
       mode === "translate"
-        ? compareCredits({ costNow: currentCost, videos, creditsPerVideo: translateCredits({ seconds: trSeconds, quality, enhance: false }) * languages, minutesNow, hourValue, currency })
+        ? compareCredits({ costNow: currentCost, videos, creditsPerVideo: translateCredits({ seconds: trSeconds, quality, enhance: false }) * languages, minutesNow, hourValue, currency, needs: quality === "precision" ? ["precision"] : [] })
         : compareMonth({ costNow: currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue, currency });
     const ladder = INDIVIDUAL_PAID.map((p) => ({ plan: p, videos: Math.floor(p.creditsPerMonth / month.perAd), perVideo: (planPrice(p, currency).monthly / p.creditsPerMonth) * month.perAd }));
     return { ...month, ladder };

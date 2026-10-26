@@ -2,7 +2,7 @@ import "server-only";
 import type Stripe from "stripe";
 import { grantPlanCredits, grantTopupCredits, grantTrialCredits, setPlan, workspaceByCustomer } from "@/lib/billing";
 import { PLAN_KEYS } from "@/lib/billing";
-import { planByLookupKey } from "@/lib/plans";
+import { CUSTOM_CREDITS, planByLookupKey, validCustomCredits } from "@/lib/plans";
 import { notifyAddress, sendEmail } from "@/lib/email";
 
 /** Looks up a price's lookup key at Stripe (an invoice line carries only the price id). */
@@ -52,6 +52,13 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
       if (!workspaceId) return { handled: false, note: "no workspaceId in metadata" };
       if (session.metadata?.kind === "topup" && session.metadata.topupKey) {
         if (session.payment_status === "unpaid") return { handled: true, note: "topup waits for the payment" };
+        if (session.metadata.topupKey === "custom") {
+          // A free amount: the credits in the metadata must match what was charged before discounts.
+          const credits = Number(session.metadata.credits);
+          if (!validCustomCredits(credits) || session.amount_subtotal !== credits * CUSTOM_CREDITS.unitCents) return { handled: false, note: "custom credits do not match the amount" };
+          await grantTopupCredits(workspaceId, userId, "custom", session.id, credits);
+          return { handled: true, note: "topup granted" };
+        }
         await grantTopupCredits(workspaceId, userId, session.metadata.topupKey, session.id);
         return { handled: true, note: "topup granted" };
       }
