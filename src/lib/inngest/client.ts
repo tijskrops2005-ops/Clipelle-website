@@ -52,3 +52,8 @@ export const webhookDeliveryCreated = eventType("webhook/delivery.created", {
 export const stepRetry = eventType("project/step.retry", {
   schema: z.object({ projectId: z.string().uuid(), stepKey: z.string() }),
 });
+
+/** Credits were just reserved: check whether the workspace's auto-reload should buy more (26 Oct 2026). */
+export const autoReloadCheck = eventType("billing/auto-reload.check", {
+  schema: z.object({ workspaceId: z.string().uuid() }),
+});

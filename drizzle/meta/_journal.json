@@ -169,6 +169,13 @@
       "when": 1793049617257,
       "tag": "0023_unusual_ken_ellis",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793052969120,
+      "tag": "0024_wise_jigsaw",
+      "breakpoints": true
     }
   ]
 }

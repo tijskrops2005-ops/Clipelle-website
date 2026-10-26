@@ -428,6 +428,26 @@ export function buildPresenterTranslateEdit(input: PresenterTranslateEditInput) 
   };
 }
 
+/**
+ * Text removal returns the picture without sound (26 Oct 2026: the cleaned file had no audio track,
+ * so the translation refused it). This puts the original sound under the cleaned picture: the cleaned
+ * video on top (muted), the original below it (sound only, fully covered), at the source's size.
+ */
+export function buildRemuxEdit(input: { pictureUrl: string; soundUrl: string; seconds: number; size?: { width: number; height: number } }) {
+  const total = Math.max(1, Math.round(input.seconds * 10) / 10);
+  return {
+    timeline: {
+      background: "#000000",
+      tracks: [
+        { clips: [{ asset: { type: "video", src: input.pictureUrl, volume: 0 }, start: 0, length: total, fit: "crop" }] },
+        { clips: [{ asset: { type: "video", src: input.soundUrl, volume: 1 }, start: 0, length: total, fit: "crop" }] },
+      ],
+    },
+    output: input.size ? { format: "mp4", size: fitSize(input.size), fps: 25 } : { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 },
+    meta: { totalSeconds: total },
+  };
+}
+
 /** Shotstack renders at most 1920 px per side and wants even numbers. */
 function fitSize(size: { width: number; height: number }) {
   const scale = Math.min(1, 1920 / Math.max(size.width, size.height));

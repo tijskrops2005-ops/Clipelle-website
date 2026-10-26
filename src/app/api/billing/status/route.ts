@@ -7,6 +7,7 @@ import { stripeEnabled } from "@/lib/stripe";
 import { ensureFreeAd, freeAdsPerDay, trialAvailable } from "@/lib/billing";
 import { ensurePersonalWorkspace, getWorkspace } from "@/lib/workspaces";
 import { databaseModeOnly } from "@/app/api/projects/_guard";
+import { DEFAULT_AUTO_RELOAD } from "@/lib/autoReload";
 
 /** Plan, credits and whether payments are configured, for the current workspace; also grants the free ad when due. */
 export async function GET() {
@@ -24,6 +25,8 @@ export async function GET() {
       planKey: ws.planKey,
       // The free trial (26 Oct 2026): offered once, before the first subscription.
       trialAvailable: trialAvailable(ws),
+      // Auto-reload settings and the last failure, if any (26 Oct 2026).
+      autoReload: ws.autoReload ?? DEFAULT_AUTO_RELOAD,
       subscriptionStatus: ws.subscriptionStatus,
       currentPeriodEnd: ws.currentPeriodEnd,
       balance: await getCreditBalance(ws.id),

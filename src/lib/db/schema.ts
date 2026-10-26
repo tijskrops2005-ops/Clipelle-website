@@ -1,5 +1,6 @@
 import type { CaptionStyleChoice } from "@/lib/captionOptions";
 import type { PresenterTranslate } from "@/lib/presenterTranslate";
+import type { AutoReload } from "@/lib/autoReload";
 import {
   bigint,
   boolean,
@@ -559,6 +560,8 @@ export const workspaces = pgTable(
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
     /** When this workspace started its one free trial (26 Oct 2026); null = a trial is still possible. */
     trialStartedAt: timestamp("trial_started_at", { withTimezone: true }),
+    /** Auto-reload (26 Oct 2026): buy credits with the saved card when the balance runs low; settings and state. */
+    autoReload: jsonb("auto_reload").$type<AutoReload>(),
     ...timestamps,
   },
   (t) => [

@@ -7,6 +7,8 @@ import { config } from "@/lib/config";
 import { CUSTOM_CREDITS, PLANS, planByKey, planLabel, customCreditsPrice, formatMoney, validCustomCredits, type Currency, type Plan } from "@/lib/plans";
 import { planChange, type Interval, type PlanChange } from "@/lib/planChange";
 import { PlanConfirmModal } from "@/components/settings/BillingModals";
+import { AutoReloadSettings } from "@/components/settings/AutoReloadSettings";
+import type { AutoReload } from "@/lib/autoReload";
 import { CreditsSlider } from "@/components/site/CreditsSlider";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -15,7 +17,7 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { PricingTable } from "@/components/site/PricingTable";
 import { DemoBadge } from "@/components/DemoModeBadge";
 
-type Status = { enabled: boolean; planKey: string; trialAvailable?: boolean; subscriptionStatus: string | null; currentPeriodEnd: string | null; balance: number; freeAd: { granted: boolean; reason?: string }; freeAdsPerDay: number; emailVerified: boolean };
+type Status = { enabled: boolean; planKey: string; trialAvailable?: boolean; autoReload?: AutoReload | null; subscriptionStatus: string | null; currentPeriodEnd: string | null; balance: number; freeAd: { granted: boolean; reason?: string }; freeAdsPerDay: number; emailVerified: boolean };
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
@@ -196,6 +198,15 @@ export function BillingSettings() {
           </div>
         </div>
       </SectionCard>
+
+      <AutoReloadSettings
+        key={status ? "loaded" : "loading"}
+        value={status?.autoReload ?? null}
+        currency={currency}
+        available={enabled && Boolean(status) && status?.planKey !== "free"}
+        unavailableReason={!enabled ? "Payments are not configured on this server yet." : "Auto-reload comes with a paid plan. Choose a plan first."}
+        onSaved={(next) => setStatus((s) => (s ? { ...s, autoReload: next } : s))}
+      />
 
       <SectionCard id="plans" title="Plans" description="Monthly credits, cancel any time from the portal.">
         <PricingTable compact onChoose={enabled ? choose : undefined} busyKey={busy} currency={currency} trial={Boolean(status?.trialAvailable)} initialPlan={params.get("plan")} currentPlan={status?.planKey ?? null} />

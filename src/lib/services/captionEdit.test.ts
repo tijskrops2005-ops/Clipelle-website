@@ -65,3 +65,15 @@ describe("caption text colour (26 Oct 2026)", () => {
     expect(a.active.font).toEqual({ color: "#111114", background: "#FFD400" });
   });
 });
+
+describe("text removal: the original sound back under the cleaned picture (26 Oct 2026)", () => {
+  it("puts the muted cleaned video over the original, which gives only the sound", async () => {
+    const { buildRemuxEdit } = await import("./finalEdit");
+    const e = buildRemuxEdit({ pictureUrl: "https://x.test/clean.mp4", soundUrl: "https://x.test/source.mp4", seconds: 30, size: { width: 1080, height: 1920 } });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [top, bottom] = (e.timeline as any).tracks;
+    expect(top.clips[0].asset).toMatchObject({ src: "https://x.test/clean.mp4", volume: 0 });
+    expect(bottom.clips[0].asset).toMatchObject({ src: "https://x.test/source.mp4", volume: 1 });
+    expect(e.output).toMatchObject({ size: { width: 1080, height: 1920 } });
+  });
+});

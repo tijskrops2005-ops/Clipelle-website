@@ -5,7 +5,7 @@ import { config } from "@/lib/config";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { AdProject, LanguageCode, Project, Step, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { assets, db, projects, steps, translations, type AdInput, type AssetRow, type ProjectRow, type StepRow, type TranslateInput, type TranslationRow } from "@/lib/db";
-import { adProjectCreated, adScriptApproved, inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
+import { adProjectCreated, adScriptApproved, autoReloadCheck, inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
 import { applyScriptReview, countWords, normaliseHooks, type AdScript } from "@/lib/services/script";
 import { maxSpokenWords } from "@/lib/pricing";
 import { copyObject, objectPath, objectInfo, signedDownloadUrl } from "@/lib/storage";
@@ -517,6 +517,8 @@ export async function startProject(scope: DataScope, projectId: string) {
       error,
     );
   }
+  // Credits went down: let auto-reload look at the balance (never blocks or fails the start).
+  await inngest.send(autoReloadCheck.create({ workspaceId })).catch(() => {});
   return (await getProjectRow(projectId, scope))!;
 }
 

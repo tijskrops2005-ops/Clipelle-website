@@ -79,6 +79,11 @@ export async function grantTopupCredits(workspaceId: string, userId: string, top
   await grantCredits({ workspaceId, userId, credits, kind: "grant_topup", note: topupKey === "custom" ? `${credits} credits` : `${credits} credits pack`, expiresAt: null, reference: `checkout:${sessionId}` });
 }
 
+/** Credits bought by auto-reload, once per paid invoice. */
+export async function grantAutoReloadCredits(workspaceId: string, userId: string, credits: number, invoiceId: string) {
+  await grantCredits({ workspaceId, userId, credits, kind: "grant_topup", note: `${credits} credits (auto-reload)`, expiresAt: null, reference: `autoreload:${invoiceId}` });
+}
+
 export async function setPlan(workspaceId: string, patch: { planKey?: string; stripeCustomerId?: string | null; stripeSubscriptionId?: string | null; subscriptionStatus?: string | null; currentPeriodEnd?: Date | null; trialStartedAt?: Date }) {
   await updateWorkspaceBilling(workspaceId, patch);
 }

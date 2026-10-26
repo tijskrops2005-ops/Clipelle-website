@@ -160,4 +160,23 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     const [w] = await db().select().from(workspaces).where(eq(workspaces.id, wsId));
     expect(w.planKey).toBe("free");
   });
+  it("grants auto-reload credits once on a paid invoice, and switches auto-reload off when it fails (26 Oct 2026)", async () => {
+    const { applyStripeEvent } = await import("./billingWebhook");
+    const { getCreditBalance } = await import("./credits");
+    const { db, workspaces } = await import("@/lib/db");
+    const { eq } = await import("drizzle-orm");
+    await db().update(workspaces).set({ stripeCustomerId: "cus_test_auto", autoReload: { enabled: true, belowCredits: 100, addCredits: 500, monthlyMax: 3 } }).where(eq(workspaces.id, wsId));
+    const before = await getCreditBalance(wsId);
+    const invoice = (id: string, subtotal: number) => ({ id, customer: "cus_test_auto", subtotal, metadata: { kind: "auto_reload", workspaceId: wsId, credits: "500" }, billing_reason: "manual" });
+    const paid = (id: string, subtotal: number) => ({ id: "evt_" + id, type: "invoice.paid", data: { object: invoice(id, subtotal) } }) as unknown as import("stripe").Stripe.Event;
+    expect((await applyStripeEvent(paid("in_test_auto", 2500))).note).toMatch(/auto-reload credits granted/);
+    await applyStripeEvent(paid("in_test_auto", 2500)); // replay
+    expect(await getCreditBalance(wsId)).toBe(before + 500);
+    expect((await applyStripeEvent(paid("in_test_auto_bad", 100))).handled).toBe(false);
+    const failed = { id: "evt_in_test_auto_failed", type: "invoice.payment_failed", data: { object: invoice("in_test_auto_failed", 2500) } } as unknown as import("stripe").Stripe.Event;
+    expect((await applyStripeEvent(failed)).note).toMatch(/switched off/);
+    const [ws] = await db().select().from(workspaces).where(eq(workspaces.id, wsId));
+    expect(ws.autoReload?.enabled).toBe(false);
+    expect(ws.subscriptionStatus).not.toBe("past_due");
+  });
 });

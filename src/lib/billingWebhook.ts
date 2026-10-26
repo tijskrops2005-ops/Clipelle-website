@@ -1,6 +1,7 @@
 import "server-only";
 import type Stripe from "stripe";
-import { grantPlanCredits, grantTopupCredits, grantTrialCredits, setPlan, workspaceByCustomer } from "@/lib/billing";
+import { grantAutoReloadCredits, grantPlanCredits, grantTopupCredits, grantTrialCredits, setPlan, workspaceByCustomer } from "@/lib/billing";
+import { disableAutoReload } from "@/lib/billingAutoReload";
 import { PLAN_KEYS } from "@/lib/billing";
 import { CUSTOM_CREDITS, planByLookupKey, validCustomCredits } from "@/lib/plans";
 import { notifyAddress, sendEmail } from "@/lib/email";
@@ -79,6 +80,13 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
       if (!customerId) return { handled: false, note: "no customer" };
       const ws = await workspaceByCustomer(customerId);
       if (!ws) return { handled: false, note: "unknown customer" };
+      // Auto-reload (26 Oct 2026): our own one-off invoice; the credits in the metadata must match the amount before tax.
+      if (invoice.metadata?.kind === "auto_reload") {
+        const credits = Number(invoice.metadata.credits);
+        if (!validCustomCredits(credits) || invoice.subtotal !== credits * CUSTOM_CREDITS.unitCents) return { handled: false, note: "auto-reload credits do not match the amount" };
+        await grantAutoReloadCredits(ws.id, ws.ownerUserId, credits, invoice.id!);
+        return { handled: true, note: "auto-reload credits granted" };
+      }
       if (!PERIOD_INVOICES.has(invoice.billing_reason ?? "")) return { handled: true, note: `no plan credits for a ${invoice.billing_reason ?? "unknown"} invoice` };
       // The €0 invoice that opens a free trial: the trial credits come with the subscription event,
       // the plan's credits with the first real payment after the trial.
@@ -131,6 +139,11 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
       const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
       const ws = customerId ? await workspaceByCustomer(customerId) : null;
       if (!ws) return { handled: false, note: "unknown customer" };
+      // A failed auto-reload only switches auto-reload off; the plan itself is fine.
+      if (invoice.metadata?.kind === "auto_reload") {
+        await disableAutoReload(ws.id, "The automatic top-up did not go through. Check your card in the billing portal and turn auto-reload on again.");
+        return { handled: true, note: "auto-reload payment failed; switched off" };
+      }
       await setPlan(ws.id, { subscriptionStatus: "past_due" });
       return { handled: true, note: `payment failed (attempt ${invoice.attempt_count ?? 1})` };
     }

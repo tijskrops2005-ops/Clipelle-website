@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
 import { assets, db, projects, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
 import { downloadTextRemovalOutput, estimateTextRemovalUsd, getTextRemoval, startTextRemoval, TEXT_REMOVAL_MODEL, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
@@ -30,7 +30,7 @@ import {
   parseDirectSession,
 } from "@/lib/services/translate";
 import { estimateEnhanceUsd, getEnhanceStatus, submitEnhance } from "@/lib/services/enhance";
-import { buildCaptionEdit, buildPresenterTranslateEdit, getRender, ingestFromUrl, shotstackEnv, startRender } from "@/lib/services/finalEdit";
+import { buildCaptionEdit, buildPresenterTranslateEdit, buildRemuxEdit, getRender, ingestFromUrl, shotstackEnv, startRender } from "@/lib/services/finalEdit";
 import { createAvatarVideo, estimateCostUsd, estimateSeconds, getVideo } from "@/lib/services/heygen";
 import { pickPresenter } from "@/lib/inngest/functions/adWorkflow";
 import { speedValue } from "@/lib/voiceOptions";
@@ -349,7 +349,8 @@ async function checkLanguage(projectId: string, stepId: string, t: TranslationRo
  */
 async function runTextRemoval(projectId: string, input: TranslateInput, step: StepTools): Promise<string> {
   const existing = await step.run("clean-existing", async () => {
-    const [a] = await db().select({ id: assets.id }).from(assets).where(and(eq(assets.projectId, projectId), eq(assets.kind, "cleaned"))).limit(1);
+    // Only the finished file (cleaned picture with the original sound) counts; the silent picture is an in-between.
+    const [a] = await db().select({ id: assets.id }).from(assets).where(and(eq(assets.projectId, projectId), eq(assets.kind, "cleaned"), sql`${assets.storagePath} like '%cleaned-with-sound%'`)).limit(1);
     return a?.id ?? null;
   });
   if (existing) return existing;
@@ -378,7 +379,7 @@ async function runTextRemoval(projectId: string, input: TranslateInput, step: St
       const stored = await step.run("clean-store", () => withDeadline("Saving the cleaned video", 10, async (): Promise<{ assetId: string } | { error: string }> => {
         try {
           const bytes = await downloadTextRemovalOutput(st.outputUrl);
-          const asset = await storeBytes({ projectId, stepId: job.stepId, kind: "cleaned", data: bytes, mime: "video/mp4", fileName: "cleaned.mp4", seconds: input.sourceSeconds });
+          const asset = await storeBytes({ projectId, stepId: job.stepId, kind: "cleaned", data: bytes, mime: "video/mp4", fileName: "cleaned-picture.mp4", seconds: input.sourceSeconds });
           const actual = st.gpuSeconds !== null ? Math.round(st.gpuSeconds * TEXT_REMOVAL_USD_PER_GPU_SECOND * 1000) / 1000 : job.estimate;
           await settleSpend(job.entryId, { status: "completed", actualUsd: actual, basis: st.gpuSeconds !== null ? "provider" : "list", meta: { gpuSeconds: st.gpuSeconds } });
           return { assetId: asset.id };
@@ -387,7 +388,7 @@ async function runTextRemoval(projectId: string, input: TranslateInput, step: St
         }
       }));
       if ("error" in stored) return failClean(stored.error);
-      return stored.assetId;
+      return restoreSound(projectId, input, stored.assetId, job.stepId, step, failClean);
     }
     if (st.status === "failed") {
       await step.run("clean-settle-failed", () => settleSpend(job.entryId, { status: "failed", actualUsd: st.gpuSeconds !== null ? Math.round(st.gpuSeconds * TEXT_REMOVAL_USD_PER_GPU_SECOND * 1000) / 1000 : 0 }));
@@ -523,6 +524,59 @@ async function processPresenterLanguage(projectId: string, input: TranslateInput
     await waitForJob(step, `${code}-presenter-edit-wait-${i}`, "shotstack", render.renderId, cfg.pollSeconds);
   }
   return fail(`Captions for ${lang} took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`);
+}
+
+/** The cleaned picture with the original sound back under it (Shotstack), stored as the source for the translation. */
+async function restoreSound(projectId: string, input: TranslateInput, pictureAssetId: string, stepId: string, step: StepTools, failClean: (message: string) => Promise<never>): Promise<string> {
+  const render = await step.run("clean-sound-submit", () => withDeadline("Restoring the sound", 5, async (): Promise<{ renderId: string; entryId: string; estimate: number } | { error: string }> => {
+    try {
+      const [picture, source] = await Promise.all([loadAsset(pictureAssetId), loadAsset(input.sourceAssetId)]);
+      const sourceUrl = await providerUrl(source);
+      let size = source.width && source.height ? { width: source.width, height: source.height } : undefined;
+      if (!size) {
+        const probed = await withRetries("Reading the video dimensions", () => ingestFromUrl(sourceUrl));
+        if (probed.width && probed.height) size = { width: probed.width, height: probed.height };
+      }
+      const edit = buildRemuxEdit({ pictureUrl: await providerUrl(picture), soundUrl: sourceUrl, seconds: input.sourceSeconds, size });
+      const estimate = Math.round(edit.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000;
+      const reserved = await reserveSpend({ service: "shotstack", action: "restore_sound", estimatedUsd: estimate, fingerprintInput: { projectId, picture: picture.id }, projectId, stepId, languageCount: Math.max(1, input.targetLanguages.length), meta: { env: shotstackEnv() } });
+      try {
+        const r = await withRetries("Restoring the sound", () => startRender(edit, callbackUrlFor("shotstack")));
+        return { renderId: r.renderId, entryId: reserved.entryId, estimate };
+      } catch (error) {
+        await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+        throw error;
+      }
+    } catch (error) {
+      return { error: plainMessage(error) };
+    }
+  }));
+  if ("error" in render) return failClean(render.error);
+  for (let i = 0; i < MAX_POLLS; i++) {
+    const r = await step.run(`clean-sound-status-${i}`, async () => {
+      const x = await getRender(render.renderId);
+      return { status: x.status, url: x.url ?? null, error: x.error ?? null };
+    });
+    if (r.status === "done" && r.url) {
+      const stored = await step.run("clean-sound-store", () => withDeadline("Saving the cleaned video", 10, async (): Promise<{ assetId: string } | { error: string }> => {
+        try {
+          const asset = await storeFromUrl({ projectId, stepId, kind: "cleaned", url: r.url!, fileName: "cleaned-with-sound.mp4", seconds: input.sourceSeconds, fallbackMime: "video/mp4" });
+          await settleSpend(render.entryId, { status: "completed", actualUsd: render.estimate });
+          return { assetId: asset.id };
+        } catch (error) {
+          return { error: plainMessage(error) };
+        }
+      }));
+      if ("error" in stored) return failClean(stored.error);
+      return stored.assetId;
+    }
+    if (r.status === "failed") {
+      await step.run("clean-sound-failed", () => settleSpend(render.entryId, { status: "failed", actualUsd: 0 }));
+      return failClean("The sound could not be put back under the cleaned video. Retry, or start again without removing the on-screen text.");
+    }
+    await waitForJob(step, `clean-sound-wait-${i}`, "shotstack", render.renderId, cfg.pollSeconds);
+  }
+  return failClean(`Restoring the sound took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`);
 }
 
 /* ---------- render + enhance + captions, per language ---------- */
