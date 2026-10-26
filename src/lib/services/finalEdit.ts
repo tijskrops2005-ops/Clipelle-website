@@ -1,5 +1,5 @@
 import "server-only";
-import { CAPTION_SIZE_PX, captionStyleOf, type CaptionHighlight, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { CAPTION_SIZE_PX, DEFAULT_CAPTION_STYLE as DEFAULT_TRANSLATE_LOOK, captionStyleOf, isLightColor, type CaptionHighlight, type CaptionStyleChoice } from "@/lib/captionOptions";
 import { adLayout } from "@/lib/adLayout";
 import { DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, type CaptionStyle } from "@/lib/adOptions";
 
@@ -269,16 +269,23 @@ export type CaptionEditInput = {
   captionStyle?: Partial<CaptionStyleChoice>;
 };
 
+/** The words' own colour and outline: dark text gets a light outline (26 Oct 2026). */
+function captionText(look: CaptionStyleChoice, light: string, ink: string) {
+  const text = look.textColor ?? light;
+  return { text, stroke: { width: 7, color: isLightColor(text) ? ink : light, opacity: 1 } };
+}
+
 /** The active-word styling per highlight choice (Shotstack RichCaptionActive, checked 26 Oct 2026). */
-function activeWord(highlight: CaptionHighlight, color: string, light: string, ink: string) {
-  const stroke = { width: 7, color: ink, opacity: 1 };
+function activeWord(highlight: CaptionHighlight, color: string, light: string, ink: string, look?: CaptionStyleChoice) {
+  const { text, stroke } = captionText(look ?? DEFAULT_TRANSLATE_LOOK, light, ink);
   switch (highlight) {
     case "box":
-      return { font: { color: light, background: color }, stroke };
+      // Text inside a light box (yellow, white) turns dark so it stays readable.
+      return isLightColor(color) ? { font: { color: ink, background: color }, stroke: "none" as const } : { font: { color: text, background: color }, stroke };
     case "color":
-      return { font: { color }, stroke };
+      return { font: { color }, stroke: { ...stroke, color: isLightColor(color) ? ink : light } };
     case "underline":
-      return { font: { color, textDecoration: "underline" }, stroke };
+      return { font: { color, textDecoration: "underline" }, stroke: { ...stroke, color: isLightColor(color) ? ink : light } };
     case "none":
       return undefined;
   }
@@ -293,7 +300,8 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const trimEnd = Math.max(0, Math.round((input.trimEnd ?? 0) * 10) / 10);
   const total = Math.max(1, Math.round((input.seconds - trimStart - trimEnd) * 10) / 10);
   const look = captionStyleOf({ color: accent as CaptionStyleChoice["color"], ...input.captionStyle });
-  const active = activeWord(look.highlight, look.color, light, ink);
+  const active = activeWord(look.highlight, look.color, light, ink, look);
+  const words = captionText(look, light, ink);
 
   const captions = {
     clips: [
@@ -301,9 +309,9 @@ export function buildCaptionEdit(input: CaptionEditInput) {
         asset: {
           type: "rich-caption",
           src: input.srtUrl ?? "alias://source",
-          font: { family: "Roboto", size: CAPTION_SIZE_PX[look.size], color: light, opacity: 1, weight: 900 },
+          font: { family: "Roboto", size: CAPTION_SIZE_PX[look.size], color: words.text, opacity: 1, weight: 900 },
           style: { textTransform: look.uppercase ? "uppercase" : "none" },
-          stroke: { width: 7, color: ink, opacity: 1 },
+          stroke: words.stroke,
           animation: { style: "pop" },
           ...(active ? { active } : {}),
           border: { width: 0, color: ink, opacity: 1, radius: 16 },
@@ -366,16 +374,17 @@ export function buildPresenterTranslateEdit(input: PresenterTranslateEditInput) 
   const light = "#FFFFFF";
   const total = Math.max(1, Math.round(input.presenterSeconds * 10) / 10);
   const look = captionStyleOf(input.captionStyle);
-  const active = activeWord(look.highlight, look.color, light, ink);
+  const active = activeWord(look.highlight, look.color, light, ink, look);
+  const words = captionText(look, light, ink);
   const captions = {
     clips: [
       {
         asset: {
           type: "rich-caption",
           src: "alias://presenter",
-          font: { family: "Roboto", size: CAPTION_SIZE_PX[look.size], color: light, opacity: 1, weight: 900 },
+          font: { family: "Roboto", size: CAPTION_SIZE_PX[look.size], color: words.text, opacity: 1, weight: 900 },
           style: { textTransform: look.uppercase ? "uppercase" : "none" },
-          stroke: { width: 7, color: ink, opacity: 1 },
+          stroke: words.stroke,
           animation: { style: "pop" },
           ...(active ? { active } : {}),
           padding: { top: 6, right: 10, bottom: 6, left: 10 },

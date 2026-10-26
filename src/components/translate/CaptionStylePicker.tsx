@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, CAPTION_TEXT_COLORS, isLightColor, type CaptionStyleChoice } from "@/lib/captionOptions";
 
 /**
  * The caption choices of a translation (26 Oct 2026): on or off, how the spoken word stands out, its
@@ -45,6 +45,20 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, disa
               </fieldset>
             )}
 
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-ink">Text colour</legend>
+              <div role="radiogroup" aria-label="Text colour" className="flex flex-wrap gap-2">
+                {CAPTION_TEXT_COLORS.map((c) => {
+                  const active = c.value === (value.textColor ?? "#FFFFFF");
+                  return (
+                    <button key={c.key} type="button" role="radio" aria-checked={active} aria-label={c.label} title={c.label} disabled={disabled} onClick={() => set({ textColor: c.value })} className={cn("focus-ring grid size-9 place-items-center rounded-full border-2 transition-transform duration-150 hover:scale-105", active ? "border-ink" : "border-border")} style={{ background: c.value }}>
+                      {active && <Check className={cn("size-4", isLightColor(c.value) ? "text-ink" : "text-surface")} aria-hidden />}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+
             <div className="flex flex-wrap gap-x-6 gap-y-4">
               <fieldset className="space-y-2">
                 <legend className="text-sm font-medium text-ink">Size</legend>
@@ -73,11 +87,12 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, disa
 function CaptionPreview({ style, position }: { style: CaptionStyleChoice; position: "low" | "middle" }) {
   const words = ["Made", "for", "every", "language"];
   const scale = CAPTION_SIZE_PX[style.size] / 62;
+  const text = style.textColor ?? "#FFFFFF";
   return (
     <figure className="mx-auto w-[9.5rem]">
       <div className="relative aspect-[9/16] overflow-hidden rounded-tile bg-gradient-to-b from-ink/70 via-ink/45 to-ink/80" aria-hidden>
         <div className="absolute inset-x-3 top-[28%] h-[34%] rounded-[40%] bg-surface/15 blur-md" />
-        <p className={cn("absolute inset-x-2 flex flex-wrap justify-center gap-x-1 gap-y-0.5 text-center font-black leading-tight text-surface", position === "middle" ? "top-1/2 -translate-y-1/2" : "bottom-[22%]")} style={{ fontSize: `${Math.round(13 * scale)}px`, textShadow: "0 0 3px var(--ink), 0 0 2px var(--ink)" }}>
+        <p className={cn("absolute inset-x-2 flex flex-wrap justify-center gap-x-1 gap-y-0.5 text-center font-black leading-tight", position === "middle" ? "top-1/2 -translate-y-1/2" : "bottom-[22%]")} style={{ fontSize: `${Math.round(13 * scale)}px`, color: text, textShadow: isLightColor(text) ? "0 0 3px var(--ink), 0 0 2px var(--ink)" : "0 0 3px #fff, 0 0 2px #fff" }}>
           {words.map((w, i) => {
             const spoken = i === 1 && style.highlight !== "none";
             const text = style.uppercase ? w.toUpperCase() : w;
@@ -85,7 +100,7 @@ function CaptionPreview({ style, position }: { style: CaptionStyleChoice; positi
               <span
                 key={w}
                 className={cn("rounded-[3px] px-0.5", spoken && style.highlight === "underline" && "underline decoration-2 underline-offset-2")}
-                style={spoken ? (style.highlight === "box" ? { background: style.color } : { color: style.color }) : undefined}
+                style={spoken ? (style.highlight === "box" ? { background: style.color, ...(isLightColor(style.color) ? { color: "var(--ink)", textShadow: "none" } : {}) } : { color: style.color }) : undefined}
               >
                 {text}
               </span>

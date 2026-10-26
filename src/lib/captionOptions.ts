@@ -27,6 +27,22 @@ export const CAPTION_COLORS = [
 export type CaptionColor = (typeof CAPTION_COLORS)[number]["value"];
 export const CAPTION_COLOR_VALUES = CAPTION_COLORS.map((c) => c.value) as unknown as readonly [CaptionColor, ...CaptionColor[]];
 
+/** Colour of the words themselves (26 Oct 2026); dark text gets a light outline so it stays readable. */
+export const CAPTION_TEXT_COLORS = [
+  { key: "white", label: "White", value: "#FFFFFF" },
+  { key: "yellow", label: "Yellow", value: "#FFD400" },
+  { key: "black", label: "Black", value: "#111114" },
+] as const;
+export type CaptionTextColor = (typeof CAPTION_TEXT_COLORS)[number]["value"];
+export const CAPTION_TEXT_COLOR_VALUES = CAPTION_TEXT_COLORS.map((c) => c.value) as unknown as readonly [CaptionTextColor, ...CaptionTextColor[]];
+
+/** True for colours where dark text reads better on top (yellow, white). */
+export function isLightColor(hex: string) {
+  const n = parseInt(hex.slice(1), 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  return 0.299 * r + 0.587 * g + 0.114 * b > 186;
+}
+
 export const CAPTION_SIZES = ["small", "medium", "large"] as const;
 export type CaptionSize = (typeof CAPTION_SIZES)[number];
 /** Font size in px on a 1080-wide frame. */
@@ -39,9 +55,11 @@ export type CaptionStyleChoice = {
   color: CaptionColor;
   size: CaptionSize;
   uppercase: boolean;
+  /** Colour of the words; missing on older projects = white. */
+  textColor?: CaptionTextColor;
 };
 
-export const DEFAULT_CAPTION_STYLE: CaptionStyleChoice = { show: true, highlight: "box", color: "#D43F1B", size: "medium", uppercase: true };
+export const DEFAULT_CAPTION_STYLE: CaptionStyleChoice = { show: true, highlight: "box", color: "#D43F1B", size: "medium", uppercase: true, textColor: "#FFFFFF" };
 
 /** The style with every missing field filled from the default (stored projects from before 26 Oct 2026 have none). */
 export function captionStyleOf(style?: Partial<CaptionStyleChoice> | null): CaptionStyleChoice {
@@ -50,7 +68,7 @@ export function captionStyleOf(style?: Partial<CaptionStyleChoice> | null): Capt
 
 export function isDefaultCaptionStyle(style: CaptionStyleChoice) {
   const d = DEFAULT_CAPTION_STYLE;
-  return style.show === d.show && style.highlight === d.highlight && style.color === d.color && style.size === d.size && style.uppercase === d.uppercase;
+  return style.show === d.show && style.highlight === d.highlight && style.color === d.color && style.size === d.size && style.uppercase === d.uppercase && (style.textColor ?? "#FFFFFF") === d.textColor;
 }
 
 /** "Box · red · medium · capitals", or "Off": for summaries and the project page. */
@@ -58,5 +76,6 @@ export function describeCaptionStyle(style: CaptionStyleChoice) {
   if (!style.show) return "Off";
   const color = CAPTION_COLORS.find((c) => c.value === style.color)?.label.toLowerCase() ?? "";
   const highlight = style.highlight === "none" ? "No highlight" : `${CAPTION_HIGHLIGHT_META[style.highlight].label} · ${color}`;
-  return `${highlight} · ${style.size}${style.uppercase ? " · capitals" : ""}`;
+  const text = style.textColor && style.textColor !== "#FFFFFF" ? ` · ${CAPTION_TEXT_COLORS.find((c) => c.value === style.textColor)?.label.toLowerCase()} text` : "";
+  return `${highlight} · ${style.size}${style.uppercase ? " · capitals" : ""}${text}`;
 }

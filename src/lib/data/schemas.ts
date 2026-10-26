@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CAPTION_COLOR_VALUES, CAPTION_HIGHLIGHTS, CAPTION_SIZES } from "@/lib/captionOptions";
+import { CAPTION_COLOR_VALUES, CAPTION_HIGHLIGHTS, CAPTION_SIZES, CAPTION_TEXT_COLOR_VALUES } from "@/lib/captionOptions";
 import { PRESENTER_LANGUAGES, PRESENTER_LAYOUTS } from "@/lib/presenterTranslate";
 import { isTranslateLanguage } from "@/lib/translateLanguages";
 import { config } from "@/lib/config";
@@ -70,7 +70,7 @@ export const TranslateFields = z.object({
   trimSilence: z.boolean().default(true),
   captionPosition: z.enum(["low", "middle"]).default("low"),
   /** Caption choices (26 Oct 2026); omitted = the original look. */
-  captionStyle: z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: z.enum(CAPTION_COLOR_VALUES), size: z.enum(CAPTION_SIZES), uppercase: z.boolean() }).partial().optional(),
+  captionStyle: z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: z.enum(CAPTION_COLOR_VALUES), size: z.enum(CAPTION_SIZES), uppercase: z.boolean(), textColor: z.enum(CAPTION_TEXT_COLOR_VALUES) }).partial().optional(),
   /** Sound (26 Oct 2026): strip the background music, clean up the speech. */
   /** Remove text burned into the picture before translating (Pro, 26 Oct 2026). */
   removeText: z.boolean().optional(),

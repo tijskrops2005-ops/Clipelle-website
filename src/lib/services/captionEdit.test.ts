@@ -50,3 +50,18 @@ describe("translate with an AI presenter: the edit (26 Oct 2026)", () => {
     expect(tracks(e)[1].clips[0]).toMatchObject({ scale: 0.38, position: "topRight" });
   });
 });
+
+describe("caption text colour (26 Oct 2026)", () => {
+  it("colours the words and gives dark text a light outline", () => {
+    const a = captionAsset(buildCaptionEdit({ ...base, captionStyle: { textColor: "#111114" } }));
+    expect(a.font.color).toBe("#111114");
+    expect(a.stroke.color).toBe("#FFFFFF");
+    const y = captionAsset(buildCaptionEdit({ ...base, captionStyle: { textColor: "#FFD400" } }));
+    expect(y.font.color).toBe("#FFD400");
+    expect(y.stroke.color).toBe("#111114");
+  });
+  it("makes the text in a light box dark so it stays readable", () => {
+    const a = captionAsset(buildCaptionEdit({ ...base, captionStyle: { highlight: "box", color: "#FFD400" } }));
+    expect(a.active.font).toEqual({ color: "#111114", background: "#FFD400" });
+  });
+});
