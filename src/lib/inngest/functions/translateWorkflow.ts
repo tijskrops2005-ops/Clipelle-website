@@ -354,6 +354,14 @@ async function runTextRemoval(projectId: string, input: TranslateInput, step: St
     return a?.id ?? null;
   });
   if (existing) return existing;
+  // A retry after the sound step: the cleaned picture is already paid for and stored, so only the sound goes back.
+  const picture = await step.run("clean-picture-existing", async () => {
+    const [a] = await db().select({ id: assets.id, stepId: assets.stepId }).from(assets).where(and(eq(assets.projectId, projectId), eq(assets.kind, "cleaned"), sql`(${assets.storagePath} like '%cleaned-picture%' or ${assets.storagePath} like '%-cleaned.mp4')`)).limit(1);
+    if (!a) return null;
+    const row = await markProcessing(projectId, "upload");
+    return { id: a.id, stepId: a.stepId ?? row.id };
+  });
+  if (picture) return restoreSound(projectId, input, picture.id, picture.stepId, step, (message) => step.run("clean-failed", () => failStep(projectId, "upload", new StepFailure(message))));
   const job = await step.run("clean-submit", () => withDeadline("Starting the text removal", 5, async (): Promise<{ predictionId: string; entryId: string; estimate: number; stepId: string } | { error: string }> => {
     try {
       const row = await markProcessing(projectId, "upload");
