@@ -83,6 +83,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
   const [captionStyle, setCaptionStyle] = useState<CaptionStyleChoice>(DEFAULT_CAPTION_STYLE);
   const [removeMusic, setRemoveMusic] = useState(false);
   const [cleanVoice, setCleanVoice] = useState(false);
+  const [removeText, setRemoveText] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   /** Second step of the submit: the form is valid and the customer sees the cost once more before anything starts. */
@@ -97,7 +98,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
   // Internal only (never shown): the spending limit per language version decides what can start.
   const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 2;
   const estimateFor = (q: TranslationQuality, enh = enhance) =>
-    estimateTranslateCost({ seconds, quality: q, enhance: enh, languages: Math.max(1, targets.length), hasSourceTranscript: source !== "auto" });
+    estimateTranslateCost({ seconds, quality: q, enhance: enh, removeText, languages: Math.max(1, targets.length), hasSourceTranscript: source !== "auto" });
   const estimate = estimateFor(quality);
   const overBudget = estimate.perLanguageTotal > budget;
   const [balance, setBalance] = useState<number | null>(null);
@@ -116,6 +117,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
         // Choices this plan does not include fall back to what it does.
         if (!hasFeature(a.planKey, "precision")) setQuality("speed");
         if (!hasFeature(a.planKey, "enhance")) setEnhance(false);
+        if (!hasFeature(a.planKey, "removeText")) setRemoveText(false);
       })
       .catch(() => {});
     return () => {
@@ -142,7 +144,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
   }));
   const sourceOptions: SelectOption[] = [{ value: "auto", label: "Detect automatically", group: "Recommended" }, ...LANGUAGES.map((l) => ({ value: l.code, label: l.label, group: TOP_LANGUAGES.includes(l.base) ? "Most used" : "All languages" }))];
 
-  const formState = { video: video ?? undefined, sourceAd, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic, cleanVoice };
+  const formState = { video: video ?? undefined, sourceAd, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic, cleanVoice, removeText };
 
   function validate(): Errors {
     return validateTranslateForm(formState);
@@ -178,7 +180,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
   }
 
   const qualityTitle = QUALITY.find((q) => q.key === quality)?.title ?? "Speed";
-  const creditsPerLanguage = translateCredits({ seconds, quality, enhance, languages: Math.max(1, targets.length), hasSourceTranscript: source !== "auto" });
+  const creditsPerLanguage = translateCredits({ seconds, quality, enhance, removeText, languages: Math.max(1, targets.length), hasSourceTranscript: source !== "auto" });
   const languageCount = Math.max(1, targets.length);
   const totalCredits = creditsPerLanguage * languageCount;
   const shortOfCredits = balance !== null && balance < totalCredits;
@@ -190,6 +192,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
     { label: "Quality", value: qualityTitle },
     { label: "Format", value: format === "9:16" ? "Vertical 9:16" : "Original" },
     { label: "Captions", value: captionStyle.show ? `${captionPosition === "middle" ? "Middle" : "Low"} · ${describeCaptionStyle(captionStyle)}` : "Off" },
+    ...(removeText ? [{ label: "On-screen text", value: "Removed" }] : []),
     ...(removeMusic || cleanVoice ? [{ label: "Sound", value: [removeMusic && "No music", cleanVoice && "Clean voice"].filter(Boolean).join(" · ") }] : []),
     ...(enhance ? [{ label: "Enhancement", value: "On" }] : []),
   ];
@@ -231,6 +234,17 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
             />
           </Field>
           )}
+          <label htmlFor="removeText" className={cn("flex items-start gap-3 rounded-panel border p-4 transition-colors duration-150", can("removeText") ? "cursor-pointer" : "cursor-not-allowed opacity-70", removeText ? "border-ink bg-surface" : "border-border bg-surface hover:border-ink/30")}>
+            <input id="removeText" type="checkbox" checked={removeText} onChange={(e) => setRemoveText(e.target.checked)} disabled={submitting || !can("removeText")} className="mt-0.5 size-4 shrink-0" />
+            <span>
+              <span className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
+                Remove on-screen text
+                <Badge tone="warning">Beta</Badge>
+                {!can("removeText") && <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-surface"><Lock className="size-3" aria-hidden />{FEATURE_PLAN.removeText}</span>}
+              </span>
+              <span className="block text-[13px] leading-relaxed text-muted">Titles, old captions, stickers and text logos are painted out of the picture first, so you start from a clean video and only your new captions appear. Adds {CREDIT_RULES.translate.removeText} credit per second per language, and a few minutes.</span>
+            </span>
+          </label>
           <Field id="projectName" label="Project name" hint="Only you see this." error={errors.projectName}>
             <Input
               id="projectName"
@@ -270,7 +284,7 @@ export function TranslateForm({ fromAd }: { fromAd?: AdProject } = {}) {
             <legend className="text-sm font-medium text-ink">Quality</legend>
             <OptionGrid columns={2}>
               {QUALITY.map((q) => {
-                const perLanguage = translateCredits({ seconds, quality: q.key, enhance });
+                const perLanguage = translateCredits({ seconds, quality: q.key, enhance, removeText });
                 return (
                   <OptionCard
                     key={q.key}

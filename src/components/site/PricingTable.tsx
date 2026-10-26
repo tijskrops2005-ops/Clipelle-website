@@ -360,6 +360,7 @@ function CompareTable({ t, locale }: { t: T; locale: Locale }) {
     [R.precision, (p) => hasFeature(p.key, "precision")],
     [R.premium, (p) => hasFeature(p.key, "premium")],
     [R.variations, (p) => hasFeature(p.key, "variations")],
+    [R.removeText, (p) => hasFeature(p.key, "removeText")],
     [R.enhance, (p) => hasFeature(p.key, "enhance")],
     [R.brand, () => true],
     [R.api, (p) => hasFeature(p.key, "api")],

@@ -14,6 +14,7 @@ export const SERVICE_INFO: Record<CostService, { label: string; dashboard: strin
   anthropic: { label: "Claude", dashboard: "https://platform.claude.com/", actualsVia: "token usage × price per million tokens" },
   fal: { label: "fal.ai", dashboard: "https://fal.ai/dashboard/usage", actualsVia: "list price × quantity; totals per model can be checked with the fal.ai usage API (button below)" },
   shotstack: { label: "Shotstack", dashboard: "https://dashboard.shotstack.io/", actualsVia: "list price ($0.10 per 30 s); no usage API" },
+  replicate: { label: "Replicate", dashboard: "https://replicate.com/account/billing", actualsVia: "GPU seconds (metrics.predict_time) × the assumed hardware price" },
 };
 
 export type ReportEntry = {

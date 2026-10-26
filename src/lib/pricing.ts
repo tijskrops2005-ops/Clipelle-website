@@ -84,6 +84,8 @@ export const PRICING = {
   proofreadUsdPerSecond: 0.00416,
   /** Topaz enhancement on fal.ai, per second at up to 1080p. */
   enhanceUsdPerSecond: 0.02,
+  /** On-screen text removal (Replicate GPU time, assumed 4 s at ~$0.0014 per video second); once per project, shared by the languages. */
+  removeTextUsdPerSecond: 0.0056,
 } as const;
 
 export type ClipModelKey = keyof typeof PRICING.clipUsdPerSecond;
@@ -137,7 +139,7 @@ export function estimateAdCost(input: AdEstimateInput) {
   return { parts, total, presenterSeconds };
 }
 
-export type TranslateEstimateInput = { seconds: number; quality: TranslationQuality; enhance: boolean; languages: number; hasSourceTranscript: boolean };
+export type TranslateEstimateInput = { seconds: number; quality: TranslationQuality; enhance: boolean; removeText?: boolean; languages: number; hasSourceTranscript: boolean };
 
 /** Workflow B: cost per language version, plus the total for all chosen languages. */
 export function estimateTranslateCost(input: TranslateEstimateInput) {
@@ -149,6 +151,8 @@ export function estimateTranslateCost(input: TranslateEstimateInput) {
     check: PRICING.checkUsd,
     render: round2(s * PRICING.translateUsdPerSecond[input.quality]),
     enhance: input.enhance ? round2(s * PRICING.enhanceUsdPerSecond) : 0,
+    // Only when chosen, so the breakdown of an ordinary translation is unchanged.
+    ...(input.removeText ? { removeText: round2((s * PRICING.removeTextUsdPerSecond) / n) } : {}),
     captions: captionsUsd(s),
   };
   const perLanguageTotal = round2(Object.values(perLanguage).reduce((a, b) => a + b, 0));

@@ -15,7 +15,7 @@ import type { TranslationQuality } from "@/lib/types";
  */
 
 export const CREDIT_RULES = {
-  translate: { speed: 1, precision: 2, enhance: 1 },
+  translate: { speed: 1, precision: 2, enhance: 1, removeText: 1 },
   /** Every language version costs at least this (the quality check has a fixed part per video). */
   translateMinimum: 10,
   ad: { avatar_iii: 2, avatar_iv: 6 },
@@ -37,8 +37,9 @@ export function adCredits(input: { seconds: number; engine: PresenterEngine; spe
 }
 
 /** Credits per language version of a translation: seconds × the quality's rate (+1 per second with enhancement). */
-export function translateCredits(input: { seconds: number; quality: TranslationQuality; enhance: boolean; languages?: number; hasSourceTranscript?: boolean }) {
-  return Math.max(CREDIT_RULES.translateMinimum, Math.ceil(input.seconds) * (CREDIT_RULES.translate[input.quality] + (input.enhance ? CREDIT_RULES.translate.enhance : 0)));
+export function translateCredits(input: { seconds: number; quality: TranslationQuality; enhance: boolean; removeText?: boolean; languages?: number; hasSourceTranscript?: boolean }) {
+  const extra = (input.enhance ? CREDIT_RULES.translate.enhance : 0) + (input.removeText ? CREDIT_RULES.translate.removeText : 0);
+  return Math.max(CREDIT_RULES.translateMinimum, Math.ceil(input.seconds) * (CREDIT_RULES.translate[input.quality] + extra));
 }
 
 /**
@@ -211,17 +212,17 @@ export const TRIAL = { days: 7, credits: 30 } as const;
  * What each plan unlocks (26 Oct 2026, Tijs approved). The family decides, the level only adds credits.
  * Enforced on the server (data layer, API) and shown with a lock in the forms and on the pricing page.
  */
-export type PlanFeature = "precision" | "premium" | "variations" | "api" | "enhance" | "team";
+export type PlanFeature = "precision" | "premium" | "variations" | "api" | "enhance" | "team" | "removeText";
 const FEATURES: Record<PlanFamily, PlanFeature[]> = {
   free: [],
   starter: [],
-  pro: ["precision", "premium", "variations", "api"],
-  scale: ["precision", "premium", "variations", "api", "enhance"],
-  business: ["precision", "premium", "variations", "api", "enhance", "team"],
-  enterprise: ["precision", "premium", "variations", "api", "enhance", "team"],
+  pro: ["precision", "premium", "variations", "api", "removeText"],
+  scale: ["precision", "premium", "variations", "api", "removeText", "enhance"],
+  business: ["precision", "premium", "variations", "api", "removeText", "enhance", "team"],
+  enterprise: ["precision", "premium", "variations", "api", "removeText", "enhance", "team"],
 };
 /** The cheapest plan that unlocks a feature, for "Available in Pro" labels. */
-export const FEATURE_PLAN: Record<PlanFeature, "Pro" | "Scale" | "Business"> = { precision: "Pro", premium: "Pro", variations: "Pro", api: "Pro", enhance: "Scale", team: "Business" };
+export const FEATURE_PLAN: Record<PlanFeature, "Pro" | "Scale" | "Business"> = { precision: "Pro", premium: "Pro", variations: "Pro", api: "Pro", removeText: "Pro", enhance: "Scale", team: "Business" };
 
 export function hasFeature(planKey: string | null | undefined, feature: PlanFeature) {
   return FEATURES[planFamily(planKey)].includes(feature);

@@ -18,6 +18,7 @@ import { authErrorResponse } from "@/lib/auth";
 import { CreditError, projectCreditsUsed, reserveCredits } from "@/lib/credits";
 import { adCredits, FEATURE_PLAN, FREE_AD, hasFeature, translateCredits } from "@/lib/plans";
 import { DataError } from "@/lib/data/errors";
+import { textRemovalConfigured } from "@/lib/services/textRemoval";
 import { workspaces } from "@/lib/db";
 
 /** Who acts and in which workspace. Every project read or write is scoped to the workspace; the user is recorded on rows. */
@@ -80,6 +81,7 @@ export function lockedFeature(row: Pick<ProjectRow, "workflow" | "input">, planK
   const input = row.input as TranslateInput;
   if (input.quality === "precision" && !hasFeature(planKey, "precision")) return `Precision translation comes with the ${FEATURE_PLAN.precision} plan. Pick Speed, or upgrade in Billing.`;
   if (input.enhance && !hasFeature(planKey, "enhance")) return `Picture enhancement comes with the ${FEATURE_PLAN.enhance} plan. Turn it off, or upgrade in Billing.`;
+  if (input.removeText && !hasFeature(planKey, "removeText")) return `Removing on-screen text comes with the ${FEATURE_PLAN.removeText} plan. Turn it off, or upgrade in Billing.`;
   return null;
 }
 
@@ -90,7 +92,7 @@ export function creditsForProject(row: ProjectRow) {
     return adCredits({ seconds: input.seconds ?? workflowSettings.adSeconds, engine: input.engine ?? workflowSettings.heygenEngine, speed: speedValue(input.speed) });
   }
   const input = row.input as TranslateInput;
-  return translateCredits({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }) * input.targetLanguages.length;
+  return translateCredits({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, removeText: input.removeText, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }) * input.targetLanguages.length;
 }
 
 /** Estimate for one click, with the same numbers the forms show. */
@@ -100,7 +102,7 @@ export function estimateForProject(row: ProjectRow) {
     return estimateAdCost({ seconds: input.seconds ?? workflowSettings.adSeconds, clipModel: workflowSettings.clipModel, engine: input.engine ?? workflowSettings.heygenEngine, speed: speedValue(input.speed) }).total;
   }
   const input = row.input as TranslateInput;
-  return estimateTranslateCost({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }).perLanguageTotal;
+  return estimateTranslateCost({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, removeText: input.removeText, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }).perLanguageTotal;
 }
 
 async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: TranslationRow[], assetRows: AssetRow[]): Promise<Project> {
@@ -173,6 +175,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     targetLanguages: input.targetLanguages,
     quality: input.quality,
     enhance: input.enhance,
+    removeText: input.removeText,
     rightsConfirmedAt: (row.rightsConfirmedAt ?? row.createdAt).toISOString(),
     rightsBasis: input.rightsBasis ?? "own_upload",
     steps: Object.fromEntries(TRANSLATE_STEPS.map((k) => [k, toStep(stepsByKey.get(k))])) as Record<TranslateStepKey, Step>,
@@ -292,6 +295,7 @@ export type NewTranslateProject = {
   captionStyle?: Partial<CaptionStyleChoice>;
   removeMusic?: boolean;
   cleanVoice?: boolean;
+  removeText?: boolean;
   format: "original" | "9:16";
   enhance: boolean;
   rightsConfirmed: boolean;
@@ -348,6 +352,7 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
         ...(t.captionStyle ? { captionStyle: t.captionStyle } : {}),
         ...(t.removeMusic ? { removeMusic: true } : {}),
         ...(t.cleanVoice ? { cleanVoice: true } : {}),
+        ...(t.removeText ? { removeText: true } : {}),
         format: t.format,
         enhance: t.enhance,
       } satisfies TranslateInput,
@@ -469,6 +474,10 @@ export async function startProject(scope: DataScope, projectId: string) {
   const planKey = profile?.planKey ?? "free";
   const locked = lockedFeature(row, planKey);
   if (locked) throw new DataError(locked, 402, "plan_feature");
+  // The text remover needs its own key; without it the option cannot run, so say so before anything is reserved.
+  if (row.workflow === "translate" && (row.input as TranslateInput).removeText && !textRemovalConfigured()) {
+    throw new DataError("Removing on-screen text is not available yet. Turn it off to start the translation.", 503, "text_removal_off");
+  }
   // Translations on the free plan (25 Oct 2026): the 30 free credits cover half a minute of Speed translation; the balance check below decides.
   try {
     await reserveCredits(workspaceId, userId, projectId, credits, `${row.workflow === "ad" ? "Ad" : "Translation"}: ${row.name}`);

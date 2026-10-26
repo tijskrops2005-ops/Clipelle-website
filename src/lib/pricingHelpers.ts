@@ -140,7 +140,7 @@ const FAMILY_ORDER: { family: PlanFamily; key: string; name: string }[] = [
   { family: "scale", key: "scale", name: "Scale" },
   { family: "business", key: "business_249", name: "Business" },
 ];
-const FEATURE_ORDER: PlanFeature[] = ["precision", "premium", "variations", "api", "enhance", "team"];
+const FEATURE_ORDER: PlanFeature[] = ["precision", "premium", "variations", "api", "removeText", "enhance", "team"];
 const featuresOf = (key: string) => FEATURE_ORDER.filter((f) => hasFeature(key, f));
 
 /**

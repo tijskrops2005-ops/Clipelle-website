@@ -297,6 +297,7 @@ export type TranslateProjectDraft = {
   captionStyle?: CaptionStyleChoice;
   removeMusic?: boolean;
   cleanVoice?: boolean;
+  removeText?: boolean;
   format: "original" | "9:16";
   enhance: boolean;
   rightsConfirmed: boolean;

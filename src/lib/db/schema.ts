@@ -51,8 +51,9 @@ export const assetKind = pgEnum("asset_kind", [
   "captioned", // finished translated video with captions (B)
   "background", // customer's own presenter background image (A)
   "logo", // customer's logo for the final edit (A)
+  "cleaned", // source video with the on-screen text removed (B, 26 Oct 2026)
 ]);
-export const costService = pgEnum("cost_service", ["heygen", "anthropic", "fal", "shotstack"]);
+export const costService = pgEnum("cost_service", ["heygen", "anthropic", "fal", "shotstack", "replicate"]);
 export const costStatus = pgEnum("cost_status", ["started", "completed", "failed"]);
 
 /* ---------- JSON shapes stored in jsonb columns ---------- */
@@ -116,6 +117,8 @@ export type TranslateInput = {
   /** Strip the background music / clean up the speech in the translation (HeyGen options). */
   removeMusic?: boolean;
   cleanVoice?: boolean;
+  /** Remove text burned into the picture before translating (once per project). */
+  removeText?: boolean;
   /** Keep the source format or make it vertical. */
   format: "original" | "9:16";
   /** Optional picture enhancement before captions. */

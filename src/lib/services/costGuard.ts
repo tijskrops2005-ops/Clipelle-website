@@ -17,7 +17,7 @@ import { createHash } from "node:crypto";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { costEntries, db, projects, type CostEntryRow } from "@/lib/db";
 
-export type CostService = "heygen" | "anthropic" | "fal" | "shotstack";
+export type CostService = "heygen" | "anthropic" | "fal" | "shotstack" | "replicate";
 export type EntryStatus = "started" | "completed" | "failed";
 
 export type CostEntry = {

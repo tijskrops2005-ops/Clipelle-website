@@ -28,6 +28,7 @@ export type TranslateFormState = {
   captionStyle?: CaptionStyleChoice;
   removeMusic?: boolean;
   cleanVoice?: boolean;
+  removeText?: boolean;
 };
 
 /** The new options as draft keys, only when chosen, so a draft with the defaults is exactly as before. */
@@ -36,6 +37,7 @@ function extras(s: TranslateFormState) {
     ...(s.captionStyle && !isDefaultCaptionStyle(s.captionStyle) ? { captionStyle: s.captionStyle } : {}),
     ...(s.removeMusic ? { removeMusic: true } : {}),
     ...(s.cleanVoice ? { cleanVoice: true } : {}),
+    ...(s.removeText ? { removeText: true } : {}),
   };
 }
 

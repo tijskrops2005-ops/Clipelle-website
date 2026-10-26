@@ -167,6 +167,8 @@ export interface TranslateProject extends ProjectBase {
   quality: TranslationQuality;
   /** Picture enhancement before the captions (+1 credit per second). */
   enhance?: boolean;
+  /** On-screen text removed from the source before translating (+1 credit per second). */
+  removeText?: boolean;
   /**
    * When the user confirmed they own the video and have the speaker's consent
    * (rule 7 in CLAUDE.md). A translate project cannot exist without it.

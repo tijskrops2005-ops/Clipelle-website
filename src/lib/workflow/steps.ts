@@ -285,7 +285,7 @@ export async function settleProjectCredits(projectId: string) {
     } else {
       const input = row.input as TranslateInput;
       const done = await db().select({ id: translations.id }).from(translations).where(and(eq(translations.projectId, projectId), eq(translations.status, "completed")));
-      used = translateCredits({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance }) * done.length;
+      used = translateCredits({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, removeText: input.removeText }) * done.length;
     }
     await settleCredits(projectId, used, used > 0 ? "Delivered" : "Nothing delivered");
   } catch (error) {

@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
-import { db, projects, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
+import { assets, db, projects, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
+import { downloadTextRemovalOutput, estimateTextRemovalUsd, getTextRemoval, startTextRemoval, TEXT_REMOVAL_MODEL, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
 import { languageCodeForName, languageOf } from "@/lib/languages";
 import { checkTranslation, estimateCheckUsd } from "@/lib/services/translationCheck";
 import type { LanguageCode, Segment } from "@/lib/types";
@@ -81,13 +82,16 @@ export const translateWorkflow = inngest.createFunction(
     if (project.status === "completed") return { skipped: "already completed" };
     const input = project.input as TranslateInput;
 
+    /* ---------- 0. optional: remove the on-screen text from the source (once per project) ---------- */
+    const sourceAssetId = input.removeText ? await runTextRemoval(projectId, input, step) : input.sourceAssetId;
+
     /* ---------- 1. upload ---------- */
     const upload = await step.run("upload", () => withDeadline("Uploading the video", 10, async () => {
       const existing = await loadStep(projectId, "upload");
       if (existing.status === "completed" && typeof existing.output?.heygenAssetId === "string") return existing.output as UploadOutput;
       const row = await markProcessing(projectId, "upload");
       try {
-        const source = await loadAsset(input.sourceAssetId);
+        const source = await loadAsset(sourceAssetId);
         const bytes = await downloadAsset(source);
         const asset = await withRetries("Sending the video to the translation service", () =>
           uploadHeygenAsset({ file: new Blob([bytes as BlobPart], { type: source.mime || "video/mp4" }), filename: input.sourceFileName || "source.mp4" }),
@@ -330,6 +334,64 @@ async function checkLanguage(projectId: string, stepId: string, t: TranslationRo
     // The check is a safety net, never a blocker: keep the literal translation and tell the customer.
     return { segments: t.segments, qa: { changes: [], warnings: [`The automatic check could not run (${plainMessage(error)}); the literal translation was used.`], costUsd: 0 } };
   }
+}
+
+/* ---------- optional: remove the on-screen text ---------- */
+
+/**
+ * Removes text burned into the source picture before anything is translated (26 Oct 2026), shown to
+ * the customer as part of the Upload step. Reuses a cleaned file when a retry finds one; paid
+ * through the cost guard and settled with the real GPU time.
+ */
+async function runTextRemoval(projectId: string, input: TranslateInput, step: StepTools): Promise<string> {
+  const existing = await step.run("clean-existing", async () => {
+    const [a] = await db().select({ id: assets.id }).from(assets).where(and(eq(assets.projectId, projectId), eq(assets.kind, "cleaned"))).limit(1);
+    return a?.id ?? null;
+  });
+  if (existing) return existing;
+  const job = await step.run("clean-submit", () => withDeadline("Starting the text removal", 5, async (): Promise<{ predictionId: string; entryId: string; estimate: number; stepId: string } | { error: string }> => {
+    try {
+      const row = await markProcessing(projectId, "upload");
+      const source = await loadAsset(input.sourceAssetId);
+      const estimate = estimateTextRemovalUsd(input.sourceSeconds);
+      const reserved = await reserveSpend({ service: "replicate", action: "remove_text", estimatedUsd: estimate, fingerprintInput: { projectId, source: source.id, attempt: row.attempt }, projectId, stepId: row.id, languageCount: Math.max(1, input.targetLanguages.length), meta: { model: TEXT_REMOVAL_MODEL, seconds: input.sourceSeconds } });
+      try {
+        const r = await withRetries("Starting the text removal", async () => startTextRemoval({ videoUrl: await providerUrl(source) }));
+        return { predictionId: r.predictionId, entryId: reserved.entryId, estimate, stepId: row.id };
+      } catch (error) {
+        await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+        throw error;
+      }
+    } catch (error) {
+      return { error: plainMessage(error) };
+    }
+  }));
+  const failClean = (message: string) => step.run("clean-failed", () => failStep(projectId, "upload", new StepFailure(message)));
+  if ("error" in job) return failClean(job.error);
+  for (let i = 0; i < MAX_POLLS; i++) {
+    const st = await step.run(`clean-status-${i}`, () => getTextRemoval(job.predictionId));
+    if (st.status === "done") {
+      const stored = await step.run("clean-store", () => withDeadline("Saving the cleaned video", 10, async (): Promise<{ assetId: string } | { error: string }> => {
+        try {
+          const bytes = await downloadTextRemovalOutput(st.outputUrl);
+          const asset = await storeBytes({ projectId, stepId: job.stepId, kind: "cleaned", data: bytes, mime: "video/mp4", fileName: "cleaned.mp4", seconds: input.sourceSeconds });
+          const actual = st.gpuSeconds !== null ? Math.round(st.gpuSeconds * TEXT_REMOVAL_USD_PER_GPU_SECOND * 1000) / 1000 : job.estimate;
+          await settleSpend(job.entryId, { status: "completed", actualUsd: actual, basis: st.gpuSeconds !== null ? "provider" : "list", meta: { gpuSeconds: st.gpuSeconds } });
+          return { assetId: asset.id };
+        } catch (error) {
+          return { error: plainMessage(error) };
+        }
+      }));
+      if ("error" in stored) return failClean(stored.error);
+      return stored.assetId;
+    }
+    if (st.status === "failed") {
+      await step.run("clean-settle-failed", () => settleSpend(job.entryId, { status: "failed", actualUsd: st.gpuSeconds !== null ? Math.round(st.gpuSeconds * TEXT_REMOVAL_USD_PER_GPU_SECOND * 1000) / 1000 : 0 }));
+      return failClean(`Removing the on-screen text failed: ${st.error} Retry, or start again without this option.`);
+    }
+    await step.sleep(`clean-wait-${i}`, `${cfg.pollSeconds}s`);
+  }
+  return failClean(`Removing the on-screen text took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`);
 }
 
 /* ---------- render + enhance + captions, per language ---------- */
