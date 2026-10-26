@@ -142,6 +142,12 @@ export function annualSaving(p: Plan) {
   return Math.round((p.monthlyUsd * 12 - p.annualMonthlyUsd * 12) * 100) / 100;
 }
 
+/** The plan a Stripe price belongs to, by its lookup key (monthly or annual); undefined for packs and unknown keys. */
+export function planByLookupKey(lookupKey: string | null | undefined): Plan | undefined {
+  if (!lookupKey) return undefined;
+  return ALL_PLANS.find((p) => p.stripeLookup?.monthly === lookupKey || p.stripeLookup?.annual === lookupKey);
+}
+
 export function planByKey(key: string | null | undefined): Plan | undefined {
   return ALL_PLANS.find((p) => p.key === key);
 }

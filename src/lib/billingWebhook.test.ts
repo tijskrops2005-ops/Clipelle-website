@@ -53,6 +53,35 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     expect(await getCreditBalance(wsId)).toBe(before + TOPUPS[1].credits);
   });
 
+  it("takes the plan from the price, so a plan changed in the portal is recognised", async () => {
+    const { applyStripeEvent } = await import("./billingWebhook");
+    const { db, workspaces } = await import("@/lib/db");
+    const { eq } = await import("drizzle-orm");
+    await db().update(workspaces).set({ stripeCustomerId: "cus_test_plan", planKey: "starter" }).where(eq(workspaces.id, wsId));
+    // The subscription still carries the metadata of the first plan; the price says Pro.
+    const updated = { id: "evt_test_plan_1", type: "customer.subscription.updated", data: { object: { id: "sub_plan", customer: "cus_test_plan", status: "active", metadata: { planKey: "starter" }, items: { data: [{ current_period_end: 1893456000, price: { id: "price_pro", lookup_key: "reelay_pro_monthly" } }] } } } } as unknown as import("stripe").Stripe.Event;
+    await applyStripeEvent(updated);
+    const [w] = await db().select().from(workspaces).where(eq(workspaces.id, wsId));
+    expect(w.planKey).toBe("pro");
+  });
+
+  it("grants plan credits for a new period only, by the price on the invoice, once", async () => {
+    const { applyStripeEvent } = await import("./billingWebhook");
+    const { getCreditBalance } = await import("./credits");
+    const { PLANS } = await import("./plans");
+    const pro = PLANS.find((p) => p.key === "pro")!;
+    const deps = { lookupKeyOfPrice: async (id: string) => (id === "price_pro_annual" ? "reelay_pro_annual" : null) };
+    const invoice = (id: string, reason: string) => ({ id, type: "invoice.paid", data: { object: { id: `in_${id}`, billing_reason: reason, customer: "cus_test_plan", parent: { subscription_details: { metadata: { planKey: "starter" } } }, lines: { data: [{ metadata: {}, pricing: { price_details: { price: "price_pro_annual", product: "prod_pro" } } }] } } } }) as unknown as import("stripe").Stripe.Event;
+    const before = await getCreditBalance(wsId);
+    // A mid-period plan change bills a proration invoice: no second month of credits.
+    expect((await applyStripeEvent(invoice("evt_test_inv_1", "subscription_update"), deps)).note).toMatch(/no plan credits/);
+    expect(await getCreditBalance(wsId)).toBe(before);
+    // The renewal grants the plan the price belongs to (Pro), not the stale metadata (Starter), once.
+    expect((await applyStripeEvent(invoice("evt_test_inv_2", "subscription_cycle"), deps)).note).toMatch(/pro/);
+    await applyStripeEvent(invoice("evt_test_inv_2", "subscription_cycle"), deps);
+    expect(await getCreditBalance(wsId)).toBe(before + pro.creditsPerMonth);
+  });
+
   it("moves a cancelled subscription back to free on the workspace", async () => {
     const { applyStripeEvent } = await import("./billingWebhook");
     const { db, workspaces } = await import("@/lib/db");

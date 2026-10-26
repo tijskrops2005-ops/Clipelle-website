@@ -86,6 +86,7 @@ describe.skipIf(!hasDb)("stripe webhook route with Managed Payments", () => {
     const paid = event("invoice.paid", {
       id: `in_mp_${run}`,
       object: "invoice",
+      billing_reason: "subscription_create",
       customer,
       parent: { type: "subscription_details", subscription_details: { subscription: `sub_mp_${run}`, metadata: { userId, workspaceId: wsId, planKey: "starter" } } },
       lines: { object: "list", data: [{ id: "il_1", metadata: {} }] },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALL_PLANS, BUSINESS_TIERS, CREDIT_COST_USD, FREE_CREDITS, MIN_MARGIN, PLANS, TOPUPS, adCredits, translateCredits, usdPerTranslateMinute } from "./plans";
+import { ALL_PLANS, BUSINESS_TIERS, CREDIT_COST_USD, FREE_CREDITS, MIN_MARGIN, PLANS, TOPUPS, adCredits, planByLookupKey, translateCredits, usdPerTranslateMinute } from "./plans";
 import { AD_LENGTHS, DEFAULTS, estimateAdCost, estimateTranslateCost } from "./pricing";
 
 const paid = ALL_PLANS.filter((p) => p.monthlyUsd > 0 && p.creditsPerMonth > 0);
@@ -73,5 +73,16 @@ describe("plans", () => {
       expect(usdPerTranslateMinute(p)).toBeGreaterThanOrEqual(2);
       expect(usdPerTranslateMinute(p)).toBeLessThanOrEqual(3);
     }
+  });
+});
+
+
+describe("plans by Stripe lookup key", () => {
+  it("finds a plan from its monthly or annual price, and nothing for packs", () => {
+    expect(planByLookupKey("reelay_pro_monthly")?.key).toBe("pro");
+    expect(planByLookupKey("reelay_starter_annual")?.key).toBe("starter");
+    expect(planByLookupKey("reelay_business_499_monthly")?.key).toBe("business_499");
+    expect(planByLookupKey("reelay_topup_10")).toBeUndefined();
+    expect(planByLookupKey(null)).toBeUndefined();
   });
 });
