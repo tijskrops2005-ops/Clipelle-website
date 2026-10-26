@@ -80,7 +80,7 @@ export function CreditsSelect({ label, options, value, onChange }: { label: stri
         <ChevronDown className={cn("size-4 shrink-0 text-muted transition-transform duration-200", open && "rotate-180")} aria-hidden />
       </button>
       {open && (
-        <ul id={listId} role="listbox" aria-label={label} className="fold-in absolute inset-x-0 top-[calc(100%+6px)] z-20 overflow-hidden rounded-control border border-border bg-surface py-1 shadow-card-hover">
+        <ul id={listId} role="listbox" aria-label={label} className="fold-in absolute left-0 top-[calc(100%+6px)] z-30 w-max min-w-full max-w-[min(20rem,calc(100vw-32px))] overflow-hidden rounded-control border border-border bg-surface py-1 shadow-card-hover">
           {options.map((o, i) => {
             const selected = o.key === current.key;
             return (

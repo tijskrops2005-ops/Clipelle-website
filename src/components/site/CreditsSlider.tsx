@@ -32,7 +32,7 @@ export function CreditsSlider({ value, onChange, currency, locale = "en", labels
                 setDraft(null);
               }}
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-              className="focus-ring rounded-control bg-transparent text-[28px] font-semibold tracking-[-0.02em] text-ink"
+              className="focus-ring rounded-control border-0 bg-transparent p-0 text-[28px] font-semibold tracking-[-0.02em] text-ink"
               style={{ fontVariantNumeric: "tabular-nums", width: `${(draft ?? fmt(value)).length + 0.1}ch` }}
             />
             <span className="text-[15px] font-medium text-muted">{labels.credits}</span>
@@ -50,9 +50,9 @@ export function CreditsSlider({ value, onChange, currency, locale = "en", labels
         onChange={(e) => onChange(Number(e.target.value))}
         className="mt-4 w-full accent-accent"
       />
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 grid grid-cols-5 gap-1.5">
         {PRESETS.map((p) => (
-          <button key={p} type="button" onClick={() => onChange(p)} aria-pressed={value === p} className={cn("focus-ring h-8 rounded-full px-3 text-[13px] font-medium transition-colors", value === p ? "bg-ink text-surface" : "bg-surface text-ink shadow-soft hover:bg-divider")}>
+          <button key={p} type="button" onClick={() => onChange(p)} aria-pressed={value === p} className={cn("focus-ring h-8 rounded-full px-1 text-[12.5px] font-medium transition-colors", value === p ? "bg-ink text-surface" : "bg-surface text-ink shadow-soft hover:bg-divider")}>
             {fmt(p)}
           </button>
         ))}

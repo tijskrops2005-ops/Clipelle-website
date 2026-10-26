@@ -9,7 +9,7 @@ import { BillingSwitch } from "@/components/ui/BillingSwitch";
 import { CreditsSelect } from "@/components/ui/CreditsSelect";
 import { CreditsSlider } from "./CreditsSlider";
 import { PlanCalculator } from "./PlanCalculator";
-import { CREDIT_EXPIRY, PLANS, TRIAL, activeListPrice, adCreditTable, currencyFor, formatMoney, hasFeature, planByKey, planLevels, planPrice, translateCredits, type Currency, type Plan, type PlanFamily, type PlanKey } from "@/lib/plans";
+import { CREDIT_EXPIRY, PLANS, TRIAL, activeListPrice, adCreditTable, currencyFor, formatMoney, hasFeature, planByKey, planFamily, planLevels, planPrice, translateCredits, type Currency, type Plan, type PlanFamily, type PlanKey } from "@/lib/plans";
 import { ALL_SUBSCRIPTIONS, annualTotals, featureSteps, usdPerCredit } from "@/lib/pricingHelpers";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
@@ -25,7 +25,7 @@ type Tab = "individual" | "business" | "api";
  * Every number comes from plans.ts and pricing.ts. `compact` (Billing settings) shows the cards only.
  * Prices are in dollars on / and in euros on /nl; Billing passes the currency the customer picked.
  */
-export function PricingTable({ onChoose, busyKey, compact, locale = "en", currency = currencyFor(locale), trial = true, initialPlan }: { onChoose?: (plan: Plan, interval: Interval) => void; busyKey?: string | null; compact?: boolean; locale?: Locale; currency?: Currency; /** Show the free-trial button and terms (the site always; Billing only while the workspace can still start one). */ trial?: boolean; /** Preselect this plan's level (a `?plan=` link). */ initialPlan?: string | null }) {
+export function PricingTable({ onChoose, busyKey, compact, locale = "en", currency = currencyFor(locale), trial = true, initialPlan, currentPlan }: { onChoose?: (plan: Plan, interval: Interval) => void; busyKey?: string | null; compact?: boolean; locale?: Locale; currency?: Currency; /** Show the free-trial button and terms (the site always; Billing only while the workspace can still start one). */ trial?: boolean; /** Preselect this plan's level (a `?plan=` link). */ initialPlan?: string | null; /** Billing: the workspace's plan, marked "Current plan". */ currentPlan?: string | null }) {
   const t = dict(locale).pricing;
   const m: Money = { currency, locale };
   const billingHref = (key: string, interval: Interval) => `/signup?next=${encodeURIComponent(`/settings/billing?plan=${key}&interval=${interval}${currency === "eur" ? "&currency=eur" : ""}`)}`;
@@ -51,7 +51,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en", curren
   const tabs: { key: Tab; label: string }[] = [{ key: "individual", label: t.tabs.individual }, { key: "business", label: t.tabs.business }, { key: "api", label: t.tabs.api }];
 
   return (
-    <div className="space-y-16">
+    <div className={cn("@container", compact ? "space-y-8" : "space-y-16")}>
       <div className="flex flex-col items-center gap-5">
         <div role="tablist" aria-label={t.tabs.ariaLabel} className="inline-flex gap-1 rounded-full bg-surface-muted p-1" onKeyDown={(e) => {
           if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
@@ -74,25 +74,45 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en", curren
       </div>
 
       <div id={`${base}-panel-individual`} role="tabpanel" aria-labelledby={`${base}-tab-individual`} hidden={tab !== "individual"} className={cn(tab === "individual" && "fold-in")}>
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          <PlanCard plan={free} interval={interval} t={t} m={m} cta={<Button href="/signup" variant="secondary" className="w-full">{t.startFree}</Button>} />
-          {families.map((family) => {
-            const plan = pick(family);
-            const variant = planLevels(family)[0].recommended ? "accent" : "primary";
-            return (
-              <PlanCard key={family} plan={plan} interval={interval} t={t} m={m} onLevel={setLevel(family)}
-                cta={
-                  onChoose ? (
-                    <Button type="button" variant={variant} className="w-full" onClick={() => onChoose(plan, interval)} disabled={Boolean(busyKey)}>{ctaFor(plan, t.choose.replace("{name}", plan.name))}</Button>
-                  ) : (
-                    <Button href={billingHref(plan.key, interval)} variant={variant} className="w-full">{trialLabel}</Button>
-                  )
-                } />
-            );
-          })}
-        </div>
+        {compact ? (
+          // Billing (26 Oct 2026): plans as rows in a narrow column, no Free card; features stay on /pricing.
+          <div className="divide-y divide-divider overflow-visible rounded-panel border border-border">
+            {families.map((family) => {
+              const plan = pick(family);
+              const current = currentPlan === plan.key;
+              return (
+                <PlanRow key={family} plan={plan} interval={interval} t={t} m={m} onLevel={setLevel(family)} current={planFamily(currentPlan) === family}
+                  cta={
+                    onChoose ? (
+                      <Button type="button" variant={planLevels(family)[0].recommended ? "accent" : "primary"} className="w-full" onClick={() => onChoose(plan, interval)} disabled={Boolean(busyKey) || current}>{current ? t.currentPlan : ctaFor(plan, t.choose.replace("{name}", plan.name))}</Button>
+                    ) : (
+                      <Button type="button" variant="secondary" className="w-full" disabled>{t.choose.replace("{name}", plan.name)}</Button>
+                    )
+                  } />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="grid gap-5 @2xl:grid-cols-2 @5xl:grid-cols-4">
+            <PlanCard plan={free} interval={interval} t={t} m={m} cta={<Button href="/signup" variant="secondary" className="w-full">{t.startFree}</Button>} />
+            {families.map((family) => {
+              const plan = pick(family);
+              const variant = planLevels(family)[0].recommended ? "accent" : "primary";
+              return (
+                <PlanCard key={family} plan={plan} interval={interval} t={t} m={m} onLevel={setLevel(family)}
+                  cta={
+                    onChoose ? (
+                      <Button type="button" variant={variant} className="w-full" onClick={() => onChoose(plan, interval)} disabled={Boolean(busyKey)}>{ctaFor(plan, t.choose.replace("{name}", plan.name))}</Button>
+                    ) : (
+                      <Button href={billingHref(plan.key, interval)} variant={variant} className="w-full">{trialLabel}</Button>
+                    )
+                  } />
+              );
+            })}
+          </div>
+        )}
         {!compact && (
-          <div className="mt-8 grid gap-6 rounded-card bg-surface p-6 shadow-card sm:p-7 lg:grid-cols-[1fr_1.4fr] lg:items-center">
+          <div className="mt-8 grid gap-6 rounded-card bg-surface p-6 shadow-card sm:p-7 @4xl:grid-cols-[1fr_1.4fr] @4xl:items-center">
             <div>
               <p className="text-[20px] font-semibold text-ink">{t.packs.title}</p>
               <p className="mt-1.5 text-[15px] text-muted">{t.packs.text}</p>
@@ -107,7 +127,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en", curren
       </div>
 
       <div id={`${base}-panel-business`} role="tabpanel" aria-labelledby={`${base}-tab-business`} hidden={tab !== "business"} className={cn(tab === "business" && "fold-in")}>
-        <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+        <div className="grid gap-5 @3xl:grid-cols-[1.4fr_1fr]">
           <div className="flex flex-col rounded-card bg-surface p-6 shadow-card ring-1 ring-ink">
             <p className="text-[17px] font-semibold text-ink">{business.name}</p>
             <p className="mt-1 text-[13px] text-muted">{planWords(business, t).tagline}: {t.business.tagline}</p>
@@ -134,7 +154,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en", curren
       </div>
 
       <div id={`${base}-panel-api`} role="tabpanel" aria-labelledby={`${base}-tab-api`} hidden={tab !== "api"} className={cn(tab === "api" && "fold-in")}>
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5 @3xl:grid-cols-2">
           <div className="rounded-card bg-surface p-6 shadow-card">
             <p className="text-[17px] font-semibold text-ink">{t.api.title}</p>
             <p className="mt-1 text-[15px] text-muted">{t.api.text}</p>
@@ -171,7 +191,7 @@ function PriceLine({ plan, interval, className, t, m }: { plan: Plan; interval: 
   const note = price === 0 ? t.trial.noCard : interval === "annual" ? t.aYear.replace("{year}", formatPrice(totals.yearUsd)).replace("{saving}", formatPrice(totals.savingUsd)) : t.billedMonthly;
   return (
     <div className={className}>
-      <p className="flex flex-wrap items-baseline gap-x-2">
+      <p className="flex items-baseline gap-x-2 whitespace-nowrap">
         {struck !== null && <s className="text-[20px] text-muted" aria-label={t.was.replace("{price}", formatPrice(struck))}>{formatPrice(struck)}</s>}
         <span className="text-display">{price === 0 ? (m.locale === "nl" ? "Gratis" : "Free") : formatPrice(price)}</span>
         {price > 0 && <span className="text-base font-medium text-muted">{t.perMonth}</span>}
@@ -199,6 +219,33 @@ function planWords(plan: Plan, t: T) {
   const key = plan.family as keyof T["plans"];
   const w = t.plans[key];
   return { tagline: w?.tagline ?? plan.tagline, bullets: (w?.bullets ?? plan.bullets).map((b) => b.replaceAll("{m}", String(plan.creditsPerMonth / 60))), creditsNote: plan.creditsPerMonth > 0 ? t.creditsPerMonth.replace("{n}", plan.creditsPerMonth.toLocaleString("en-US")) : (w && "creditsNote" in w ? w.creditsNote : plan.creditsNote) };
+}
+
+/** One plan as a row (Billing): name, credits, price and the button; stacked on a phone. */
+function PlanRow({ plan, interval, cta, onLevel, current, t, m }: { plan: Plan; interval: Interval; cta: React.ReactNode; onLevel: (key: string) => void; current: boolean; t: T; m: Money }) {
+  const words = planWords(plan, t);
+  const p = planPrice(plan, m.currency);
+  const price = interval === "annual" ? p.annualMonthly : p.monthly;
+  const totals = annualTotals(plan, m.currency);
+  const note = interval === "annual" ? t.aYearShort.replace("{year}", formatMoney(totals.yearUsd, m.currency, m.locale)).replace("{saving}", formatMoney(totals.savingUsd, m.currency, m.locale)) : t.billedMonthlyShort;
+  return (
+    <div className="grid gap-4 p-5 @2xl:grid-cols-[minmax(0,1fr)_12rem_9rem_10rem] @2xl:items-center">
+      <div className="min-w-0">
+        <p className="flex flex-wrap items-center gap-2 text-[17px] font-semibold text-ink">
+          {plan.name}
+          {current && <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-[12px] font-semibold text-success">{t.currentPlan}</span>}
+          {!current && planLevels(plan.family)[0].recommended && <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2.5 py-0.5 text-[12px] font-semibold text-gold-light"><Star className="size-3 fill-current" aria-hidden />{t.recommendation}</span>}
+        </p>
+        <p className="mt-0.5 text-[13px] leading-snug text-muted">{words.tagline}</p>
+      </div>
+      <LevelSelect plan={plan} onChange={onLevel} t={t} m={m} interval={interval} />
+      <div className="min-w-0">
+        <p className="whitespace-nowrap text-[22px] font-semibold tracking-[-0.02em] text-ink">{formatMoney(price, m.currency, m.locale)}<span className="text-[14px] font-medium text-muted">{t.perMonth}</span></p>
+        <p className="truncate text-[12px] text-muted" title={note}>{note}</p>
+      </div>
+      <div>{cta}</div>
+    </div>
+  );
 }
 
 function PlanCard({ plan, interval, cta, onLevel, t, m }: { plan: Plan; interval: Interval; cta: React.ReactNode; onLevel?: (key: string) => void; t: T; m: Money }) {

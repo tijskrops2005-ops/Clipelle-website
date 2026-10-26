@@ -198,7 +198,8 @@ export function BillingSettings() {
       </SectionCard>
 
       <SectionCard id="plans" title="Plans" description="Monthly credits, cancel any time from the portal.">
-        <PricingTable compact onChoose={enabled ? choose : undefined} busyKey={busy} currency={currency} trial={Boolean(status?.trialAvailable)} initialPlan={params.get("plan")} />
+        <PricingTable compact onChoose={enabled ? choose : undefined} busyKey={busy} currency={currency} trial={Boolean(status?.trialAvailable)} initialPlan={params.get("plan")} currentPlan={status?.planKey ?? null} />
+        <p className="mt-4 text-[13px] text-muted">What each plan includes: <a href="/pricing" target="_blank" rel="noopener" className="focus-ring rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">compare the plans</a>.</p>
       </SectionCard>
 
       <PlanConfirmModal change={shown} busy={busy !== null} onConfirm={confirm} onClose={closeConfirm} />
