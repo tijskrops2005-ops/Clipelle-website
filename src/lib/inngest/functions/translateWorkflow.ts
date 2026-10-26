@@ -30,7 +30,11 @@ import {
   parseDirectSession,
 } from "@/lib/services/translate";
 import { estimateEnhanceUsd, getEnhanceStatus, submitEnhance } from "@/lib/services/enhance";
-import { buildCaptionEdit, getRender, ingestFromUrl, shotstackEnv, startRender } from "@/lib/services/finalEdit";
+import { buildCaptionEdit, buildPresenterTranslateEdit, getRender, ingestFromUrl, shotstackEnv, startRender } from "@/lib/services/finalEdit";
+import { createAvatarVideo, estimateCostUsd, estimateSeconds, getVideo } from "@/lib/services/heygen";
+import { pickPresenter } from "@/lib/inngest/functions/adWorkflow";
+import { speedValue } from "@/lib/voiceOptions";
+import type { AdInput } from "@/lib/db";
 import { reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { workflowSettings as cfg } from "@/lib/workflow/settings";
 import {
@@ -394,6 +398,132 @@ async function runTextRemoval(projectId: string, input: TranslateInput, step: St
   return failClean(`Removing the on-screen text took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`);
 }
 
+/* ---------- AI presenter, per language (26 Oct 2026) ---------- */
+
+/**
+ * The checked translation spoken by the presenter the customer picked (voice, accent, speed), then
+ * captions from the presenter's own audio in the chosen layout. Paid calls through the cost guard;
+ * a failure ends only this language.
+ */
+async function processPresenterLanguage(projectId: string, input: TranslateInput, code: LanguageCode, proofreadId: string, languageCount: number, step: StepTools, budgetMessage: (error: unknown) => string): Promise<LanguageOutcome> {
+  const lang = languageOf(code).tag;
+  const fail = (message: string): LanguageOutcome => ({ ok: false, error: message });
+  const p = input.presenter!;
+
+  // a. The presenter video, from the checked lines.
+  const job = await step.run(`${code}-presenter-submit`, () => withDeadline("Starting the presenter video", 5, async (): Promise<{ done: true; assetId: string } | { done: false; videoId: string; entryId: string; estimate: number; stepId: string } | { error: string }> => {
+    try {
+      const [t] = await db().select().from(translations).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).limit(1);
+      if (!t) throw new LanguageFailure(`No translation row for ${lang}.`);
+      if (t.captionedAssetId) return { done: true, assetId: t.captionedAssetId };
+      if (parseDirectSession(proofreadId)) throw new LanguageFailure("The AI presenter needs the checked translation first, and this account's translation service did not return it. Translate with the original speaker instead.");
+      const script = t.segments.map((x) => x.text.trim()).filter(Boolean).join(" ");
+      if (!script) throw new LanguageFailure(`There is no translated text for ${lang} to speak.`);
+      const stepRow = await loadStep(projectId, "captions");
+      const { lookId, voiceId } = await pickPresenter(p.engine, p.lookId, { language: code, accent: p.accent, voiceId: p.voiceId } as AdInput);
+      const seconds = estimateSeconds(script);
+      const estimate = estimateCostUsd(p.engine, seconds);
+      const reserved = await reserveSpend({ service: "heygen", action: "avatar_video", estimatedUsd: estimate, fingerprintInput: { projectId, code, attempt: stepRow.attempt }, projectId, stepId: stepRow.id, language: code, languageCount, meta: { engine: p.engine, resolution: cfg.heygenResolution, seconds } });
+      try {
+        const speed = speedValue(p.speed);
+        const created = await withRetries("Starting the presenter video", () =>
+          createAvatarVideo({ avatarId: lookId, voiceId, script, engine: p.engine, resolution: cfg.heygenResolution, fit: "cover", voiceSettings: speed !== 1 ? { speed } : undefined, title: `Clipelle ${projectId.slice(0, 8)} ${code}`, idempotencyKey: reserved.fingerprint }),
+        );
+        await db().update(translations).set({ status: "processing", error: null, updatedAt: new Date() }).where(eq(translations.id, t.id));
+        return { done: false, videoId: created.video_id, entryId: reserved.entryId, estimate, stepId: stepRow.id };
+      } catch (error) {
+        await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+        throw error;
+      }
+    } catch (error) {
+      return { error: budgetMessage(error) };
+    }
+  }));
+  if ("error" in job) return fail(job.error);
+  if (job.done) return { ok: true, assetId: job.assetId };
+
+  let presenterAssetId = "";
+  let presenterSeconds = input.sourceSeconds;
+  for (let i = 0; i < MAX_POLLS && !presenterAssetId; i++) {
+    const video = await step.run(`${code}-presenter-status-${i}`, () => getVideo(job.videoId));
+    if (video.status === "completed" && video.video_url) {
+      const stored = await step.run(`${code}-presenter-store`, () => withDeadline("Saving the presenter video", 10, async (): Promise<{ assetId: string; seconds: number } | { error: string }> => {
+        try {
+          const asset = await storeFromUrl({ projectId, stepId: job.stepId, kind: "presenter", url: video.video_url!, fileName: `presenter-${code}.mp4`, language: code, seconds: video.duration ?? undefined, fallbackMime: "video/mp4" });
+          await db().update(translations).set({ videoAssetId: asset.id, updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, code)));
+          await settleSpend(job.entryId, { status: "completed", actualUsd: video.duration ? estimateCostUsd(p.engine, video.duration) : job.estimate, basis: "list", meta: { durationSeconds: video.duration ?? null, videoId: job.videoId } });
+          return { assetId: asset.id, seconds: video.duration ?? input.sourceSeconds };
+        } catch (error) {
+          return { error: budgetMessage(error) };
+        }
+      }));
+      if ("error" in stored) return fail(stored.error);
+      presenterAssetId = stored.assetId;
+      presenterSeconds = stored.seconds;
+      break;
+    }
+    if (video.status === "failed") {
+      await step.run(`${code}-presenter-failed`, () => settleSpend(job.entryId, { status: "failed", actualUsd: 0 }));
+      return fail(`The ${lang} presenter video could not be made: ${video.failure_message ?? video.failure_code ?? "unknown reason"}.`);
+    }
+    await waitForJob(step, `${code}-presenter-wait-${i}`, "heygen", job.videoId, cfg.pollSeconds);
+  }
+  if (!presenterAssetId) return fail(`The ${lang} presenter video took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`);
+
+  // b. Captions (and the customer's video behind, when chosen) via Shotstack.
+  const render = await step.run(`${code}-presenter-edit-submit`, () => withDeadline("Starting the captions", 10, async (): Promise<{ renderId: string; entryId: string; estimate: number; stepId: string; seconds: number } | { error: string }> => {
+    try {
+      const stepRow = await loadStep(projectId, "captions");
+      const presenter = await loadAsset(presenterAssetId);
+      let sourceUrl: string | undefined;
+      if (p.layout === "overlay") {
+        const [cleaned] = await db().select().from(assets).where(and(eq(assets.projectId, projectId), eq(assets.kind, "cleaned"))).limit(1);
+        sourceUrl = await providerUrl(cleaned ?? (await loadAsset(input.sourceAssetId)));
+      }
+      const edit = buildPresenterTranslateEdit({ presenterUrl: await providerUrl(presenter), presenterSeconds, layout: p.layout, sourceUrl, sourceSeconds: input.sourceSeconds, captionPosition: input.captionPosition ?? "low", captionStyle: input.captionStyle });
+      const estimate = Math.round(edit.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000;
+      const reserved = await reserveSpend({ service: "shotstack", action: "translate_captions", estimatedUsd: estimate, fingerprintInput: { projectId, code, video: presenter.id }, projectId, stepId: stepRow.id, language: code, languageCount, meta: { env: shotstackEnv(), layout: p.layout } });
+      try {
+        const r = await withRetries("Starting the captions", () => startRender(edit, callbackUrlFor("shotstack")));
+        return { renderId: r.renderId, entryId: reserved.entryId, estimate, stepId: stepRow.id, seconds: edit.meta.totalSeconds };
+      } catch (error) {
+        await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+        throw error;
+      }
+    } catch (error) {
+      return { error: budgetMessage(error) };
+    }
+  }));
+  if ("error" in render) return fail(render.error);
+
+  for (let i = 0; i < MAX_POLLS; i++) {
+    const r = await step.run(`${code}-presenter-edit-status-${i}`, async () => {
+      const x = await getRender(render.renderId);
+      return { status: x.status, url: x.url ?? null, duration: x.duration ?? null, error: x.error ?? null };
+    });
+    if (r.status === "done" && r.url) {
+      const stored = await step.run(`${code}-presenter-edit-store`, () => withDeadline("Saving the final video", 10, async (): Promise<{ assetId: string } | { error: string }> => {
+        try {
+          const asset = await storeFromUrl({ projectId, stepId: render.stepId, kind: "captioned", url: r.url!, fileName: `final-${code}.mp4`, language: code, seconds: r.duration ?? render.seconds, fallbackMime: "video/mp4" });
+          await db().update(translations).set({ captionedAssetId: asset.id, status: "completed", error: null, updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, code)));
+          await settleSpend(render.entryId, { status: "completed", actualUsd: render.estimate });
+          return { assetId: asset.id };
+        } catch (error) {
+          return { error: budgetMessage(error) };
+        }
+      }));
+      if ("error" in stored) return fail(stored.error);
+      return { ok: true, assetId: stored.assetId };
+    }
+    if (r.status === "failed") {
+      await step.run(`${code}-presenter-edit-failed`, () => settleSpend(render.entryId, { status: "failed", actualUsd: 0 }));
+      return fail(`Adding captions to the ${lang} video failed: ${r.error || "unknown reason"}.`);
+    }
+    await waitForJob(step, `${code}-presenter-edit-wait-${i}`, "shotstack", render.renderId, cfg.pollSeconds);
+  }
+  return fail(`Captions for ${lang} took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`);
+}
+
 /* ---------- render + enhance + captions, per language ---------- */
 
 /** Thrown inside a language's sub-flow: that language stops, the others continue. */
@@ -453,6 +583,9 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
     }
     return error instanceof Error ? error.message : "Unknown error.";
   };
+
+  // "Translate with an AI presenter": a chosen presenter speaks the checked lines instead of a lip-synced render.
+  if (input.speaker === "presenter" && input.presenter) return processPresenterLanguage(projectId, input, code, proofreadId, languageCount, step, budgetMessage);
 
   // a. Approved subtitles back to HeyGen and the paid render.
   const gen = await step.run(`${code}-generate`, () => withDeadline("Starting the video render", 5, async (): Promise<{ translationId: string; entryId: string; estimate: number; done: boolean; direct?: boolean } | { error: string }> => {

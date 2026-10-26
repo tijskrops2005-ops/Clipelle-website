@@ -139,7 +139,7 @@ export function estimateAdCost(input: AdEstimateInput) {
   return { parts, total, presenterSeconds };
 }
 
-export type TranslateEstimateInput = { seconds: number; quality: TranslationQuality; enhance: boolean; removeText?: boolean; languages: number; hasSourceTranscript: boolean };
+export type TranslateEstimateInput = { seconds: number; quality: TranslationQuality; enhance: boolean; removeText?: boolean; /** AI presenter instead of the lip-synced speaker: the presenter video replaces the translation render. */ presenterEngine?: PresenterEngine; languages: number; hasSourceTranscript: boolean };
 
 /** Workflow B: cost per language version, plus the total for all chosen languages. */
 export function estimateTranslateCost(input: TranslateEstimateInput) {
@@ -149,7 +149,7 @@ export function estimateTranslateCost(input: TranslateEstimateInput) {
   const perLanguage = {
     proofread: round2(s * PRICING.proofreadUsdPerSecond + transcriptShare),
     check: PRICING.checkUsd,
-    render: round2(s * PRICING.translateUsdPerSecond[input.quality]),
+    render: round2(s * (input.presenterEngine ? PRICING.presenterUsdPerSecond[input.presenterEngine] : PRICING.translateUsdPerSecond[input.quality])),
     enhance: input.enhance ? round2(s * PRICING.enhanceUsdPerSecond) : 0,
     // Only when chosen, so the breakdown of an ordinary translation is unchanged.
     ...(input.removeText ? { removeText: round2((s * PRICING.removeTextUsdPerSecond) / n) } : {}),

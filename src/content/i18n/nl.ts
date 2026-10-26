@@ -455,7 +455,7 @@ export const nl: SiteDict = {
     level: "Credits per maand",
     currentPlan: "Huidig plan",
     creditsOption: "{n} credits/mnd",
-    features: { precision: "Vertalen met Precision", premium: "Premium-presentator", variations: "2 tot 5 varianten in één keer", api: "API-sleutels en MCP-server", enhance: "Beeldverbetering", team: "Teamworkspace met leden", removeText: "Tekst in beeld weghalen" },
+    features: { precision: "Vertalen met Precision", premium: "Premium-presentator", variations: "2 tot 5 varianten in één keer", api: "API-sleutels en MCP-server", enhance: "Beeldverbetering", team: "Teamworkspace met leden", removeText: "Tekst in beeld weghalen", aiPresenter: "AI-presentator bij vertalingen" },
     availableIn: "Vanaf {plan}",
     trial: { cta: "Probeer {n} dagen gratis", terms: "Elk betaald plan begint met {n} dagen gratis: {zero} vandaag, en je kunt opzeggen voordat het afloopt.", noCard: "Geen creditcard nodig" },
     band: { title: "Meer volume, of voor je gemaakt", text: "Credits, facturatie en voorwaarden op maat voor grotere teams. Of stuur ons je producten en wij maken de video's voor je.", sales: "Praat met sales", service: "Wij maken het" },

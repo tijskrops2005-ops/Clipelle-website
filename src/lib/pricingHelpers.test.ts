@@ -75,8 +75,8 @@ describe("pricing helpers match plans.ts for every combination", () => {
 
 describe("plan cards: what each plan adds and what the next one unlocks (26 Oct 2026)", () => {
   it("follows the feature table in plans.ts", () => {
-    expect(featureSteps("starter")).toEqual({ previous: null, added: [], locked: ["precision", "premium", "variations", "api", "removeText"], next: "Pro" });
-    expect(featureSteps("pro")).toEqual({ previous: "Starter", added: ["precision", "premium", "variations", "api", "removeText"], locked: ["enhance"], next: "Scale" });
+    expect(featureSteps("starter")).toEqual({ previous: null, added: [], locked: ["precision", "premium", "variations", "api", "removeText", "aiPresenter"], next: "Pro" });
+    expect(featureSteps("pro")).toEqual({ previous: "Starter", added: ["precision", "premium", "variations", "api", "removeText", "aiPresenter"], locked: ["enhance"], next: "Scale" });
     expect(featureSteps("scale")).toEqual({ previous: "Pro", added: ["enhance"], locked: ["team"], next: "Business" });
     expect(featureSteps("business")).toMatchObject({ previous: "Scale", added: ["team"], locked: [], next: null });
   });

@@ -461,7 +461,7 @@ export const en = {
     level: "Credits a month",
     currentPlan: "Current plan",
     creditsOption: "{n} credits/mo",
-    features: { precision: "Precision translation", premium: "Premium presenter", variations: "2 to 5 variations in one go", api: "API keys and MCP server", enhance: "Picture enhancement", team: "Team workspace with members", removeText: "Remove on-screen text" },
+    features: { precision: "Precision translation", premium: "Premium presenter", variations: "2 to 5 variations in one go", api: "API keys and MCP server", enhance: "Picture enhancement", team: "Team workspace with members", removeText: "Remove on-screen text", aiPresenter: "AI presenter for translations" },
     availableIn: "Available in {plan}",
     trial: { cta: "Start {n}-day free trial", terms: "Every paid plan starts with a {n}-day free trial: {zero} today, cancel any time before it ends.", noCard: "No card needed" },
     band: { title: "More volume, or made for you", text: "Custom credits, invoicing and terms for larger teams. Or send us your products and we make the videos for you.", sales: "Talk to sales", service: "Done for you" },

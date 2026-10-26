@@ -344,6 +344,81 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   };
 }
 
+export type PresenterTranslateEditInput = {
+  presenterUrl: string;
+  /** Length of the presenter video: the length of the result. */
+  presenterSeconds: number;
+  layout: "presenter" | "overlay";
+  /** "overlay": the customer's video (cleaned when chosen), muted behind the presenter, repeated to fill. */
+  sourceUrl?: string;
+  sourceSeconds?: number;
+  captionPosition?: "low" | "middle";
+  captionStyle?: Partial<CaptionStyleChoice>;
+};
+
+/**
+ * "Translate with an AI presenter" (26 Oct 2026): the presenter speaks the translation; captions are
+ * transcribed from the presenter's own audio (alias), so they match the new timing. "overlay" puts the
+ * presenter in a box at the top right over the customer's muted video; output 1080×1920.
+ */
+export function buildPresenterTranslateEdit(input: PresenterTranslateEditInput) {
+  const ink = "#111114";
+  const light = "#FFFFFF";
+  const total = Math.max(1, Math.round(input.presenterSeconds * 10) / 10);
+  const look = captionStyleOf(input.captionStyle);
+  const active = activeWord(look.highlight, look.color, light, ink);
+  const captions = {
+    clips: [
+      {
+        asset: {
+          type: "rich-caption",
+          src: "alias://presenter",
+          font: { family: "Roboto", size: CAPTION_SIZE_PX[look.size], color: light, opacity: 1, weight: 900 },
+          style: { textTransform: look.uppercase ? "uppercase" : "none" },
+          stroke: { width: 7, color: ink, opacity: 1 },
+          animation: { style: "pop" },
+          ...(active ? { active } : {}),
+          padding: { top: 6, right: 10, bottom: 6, left: 10 },
+          align: { vertical: "middle" },
+        },
+        start: 0,
+        length: total,
+        width: 900,
+        height: 500,
+        offset: { x: 0, y: input.captionPosition === "middle" ? 0 : -0.18 },
+      },
+    ],
+  };
+  const overlay = input.layout === "overlay" && input.sourceUrl;
+  const presenter = {
+    clips: [
+      {
+        alias: "presenter",
+        asset: { type: "video", src: input.presenterUrl, volume: 1 },
+        start: 0,
+        length: total,
+        fit: "crop",
+        ...(overlay ? { scale: 0.38, position: "topRight", offset: { x: -0.03, y: -0.025 } } : {}),
+      },
+    ],
+  };
+  const tracks: Record<string, unknown>[] = look.show ? [captions, presenter] : [presenter];
+  if (overlay) {
+    // The customer's video, muted, repeated until the presenter has finished.
+    const length = Math.max(1, input.sourceSeconds ?? total);
+    const clips: Record<string, unknown>[] = [];
+    for (let start = 0; start < total; start += length) {
+      clips.push({ asset: { type: "video", src: input.sourceUrl, volume: 0 }, start: Math.round(start * 10) / 10, length: Math.round(Math.min(length, total - start) * 10) / 10, fit: "crop" });
+    }
+    tracks.push({ clips });
+  }
+  return {
+    timeline: { background: ink, tracks },
+    output: { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 },
+    meta: { totalSeconds: total },
+  };
+}
+
 /** Shotstack renders at most 1920 px per side and wants even numbers. */
 function fitSize(size: { width: number; height: number }) {
   const scale = Math.min(1, 1920 / Math.max(size.width, size.height));

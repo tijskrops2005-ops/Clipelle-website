@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CAPTION_COLOR_VALUES, CAPTION_HIGHLIGHTS, CAPTION_SIZES } from "@/lib/captionOptions";
+import { PRESENTER_LANGUAGES, PRESENTER_LAYOUTS } from "@/lib/presenterTranslate";
 import { isTranslateLanguage } from "@/lib/translateLanguages";
 import { config } from "@/lib/config";
 import { DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, isAdLength, isPresenterEngine } from "@/lib/pricing";
@@ -73,6 +74,9 @@ export const TranslateFields = z.object({
   /** Sound (26 Oct 2026): strip the background music, clean up the speech. */
   /** Remove text burned into the picture before translating (Pro, 26 Oct 2026). */
   removeText: z.boolean().optional(),
+  /** Who speaks the translation (26 Oct 2026): the original speaker (lip-synced, default) or an AI presenter. */
+  speaker: z.enum(["original", "presenter"]).optional(),
+  presenter: z.object({ engine: z.enum(["avatar_iii", "avatar_iv"]), lookId: z.string().max(100).optional(), voiceId: z.string().max(100).optional(), accent: z.string().max(40).optional(), speed: z.enum(["slower", "normal", "faster"]).optional(), layout: z.enum(PRESENTER_LAYOUTS) }).optional(),
   removeMusic: z.boolean().optional(),
   cleanVoice: z.boolean().optional(),
   rightsConfirmed: z.literal(true, { error: "Confirm the rights to the video first." }),
@@ -80,7 +84,10 @@ export const TranslateFields = z.object({
   sourceProjectId: z.string().uuid().optional(),
 });
 
-export const TranslateBody = TranslateFields.refine((b) => !b.targetLanguages.includes(b.sourceLanguage), { error: "A target language cannot be the same as the spoken language." });
+export const TranslateBody = TranslateFields.refine((b) => !b.targetLanguages.includes(b.sourceLanguage), { error: "A target language cannot be the same as the spoken language." }).refine(
+  (b) => b.speaker !== "presenter" || (Boolean(b.presenter) && b.targetLanguages.length === 1 && (PRESENTER_LANGUAGES as string[]).includes(b.targetLanguages[0])),
+  { error: "With an AI presenter, pick one target language that has presenter voices." },
+);
 
 
 export type AdBodyInput = z.infer<typeof AdBody>;

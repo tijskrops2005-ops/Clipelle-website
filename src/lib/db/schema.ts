@@ -1,4 +1,5 @@
 import type { CaptionStyleChoice } from "@/lib/captionOptions";
+import type { PresenterTranslate } from "@/lib/presenterTranslate";
 import {
   bigint,
   boolean,
@@ -119,6 +120,9 @@ export type TranslateInput = {
   cleanVoice?: boolean;
   /** Remove text burned into the picture before translating (once per project). */
   removeText?: boolean;
+  /** "original" (lip-synced, default) or "presenter": an AI presenter speaks the translation. */
+  speaker?: "original" | "presenter";
+  presenter?: PresenterTranslate;
   /** Keep the source format or make it vertical. */
   format: "original" | "9:16";
   /** Optional picture enhancement before captions. */

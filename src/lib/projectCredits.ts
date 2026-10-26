@@ -12,7 +12,7 @@ export function adProjectCredits(p: AdProject) {
 }
 
 export function creditsPerLanguage(p: TranslateProject) {
-  return translateCredits({ seconds: p.sourceSeconds, quality: p.quality, enhance: Boolean(p.enhance), removeText: Boolean(p.removeText) });
+  return translateCredits({ seconds: p.sourceSeconds, quality: p.quality, enhance: Boolean(p.enhance), removeText: Boolean(p.removeText), presenterEngine: p.speaker === "presenter" ? p.presenter?.engine : undefined });
 }
 
 /** What the project costs by the rule: the ad, or every language version. */

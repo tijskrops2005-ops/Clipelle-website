@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { CaptionStyleChoice } from "@/lib/captionOptions";
+import type { PresenterTranslate } from "@/lib/presenterTranslate";
 import { config } from "@/lib/config";
 import type { AdProject, Batch, LanguageCode, PresenterPage, Project, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { variantFields, variantLabel, type Variant } from "@/content/formats";
@@ -298,6 +299,8 @@ export type TranslateProjectDraft = {
   removeMusic?: boolean;
   cleanVoice?: boolean;
   removeText?: boolean;
+  speaker?: "original" | "presenter";
+  presenter?: PresenterTranslate;
   format: "original" | "9:16";
   enhance: boolean;
   rightsConfirmed: boolean;

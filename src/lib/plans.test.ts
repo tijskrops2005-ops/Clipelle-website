@@ -16,6 +16,15 @@ function costsPerCredit() {
       }
     }
   }
+  // "Translate with an AI presenter" (26 Oct 2026): priced like an ad of that quality.
+  for (const engine of ["avatar_iii", "avatar_iv"] as const) {
+    for (const seconds of [5, 10, 30, 60, 180]) {
+      for (const removeText of [false, true]) {
+        const usd = estimateTranslateCost({ seconds, quality: "speed", enhance: false, removeText, presenterEngine: engine, languages: 1, hasSourceTranscript: true }).perLanguageTotal;
+        out.push({ name: `presenter translate ${engine} ${seconds}s${removeText ? "+text" : ""}`, usd: usd / translateCredits({ seconds, quality: "speed", enhance: false, removeText, presenterEngine: engine }) });
+      }
+    }
+  }
   for (const seconds of AD_LENGTHS) {
     for (const engine of ["avatar_iii", "avatar_iv"] as const) out.push({ name: `ad ${engine} ${seconds}s`, usd: estimateAdCost({ seconds, clipModel: DEFAULTS.clipModel, engine }).total / adCredits({ seconds, engine }) });
   }

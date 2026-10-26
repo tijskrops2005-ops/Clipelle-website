@@ -30,3 +30,23 @@ describe("caption choices for a translation (26 Oct 2026)", () => {
     expect(tracks[0].clips[0].asset.type).toBe("video");
   });
 });
+
+describe("translate with an AI presenter: the edit (26 Oct 2026)", () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tracks = (e: any) => e.timeline.tracks;
+  it("puts captions from the presenter's own audio over the presenter", async () => {
+    const { buildPresenterTranslateEdit } = await import("./finalEdit");
+    const e = buildPresenterTranslateEdit({ presenterUrl: "https://x.test/p.mp4", presenterSeconds: 12.34, layout: "presenter" });
+    expect(tracks(e)).toHaveLength(2);
+    expect(tracks(e)[0].clips[0].asset.src).toBe("alias://presenter");
+    expect(tracks(e)[1].clips[0]).toMatchObject({ alias: "presenter", length: 12.3 });
+  });
+  it("overlays the presenter on the muted source, repeated to the presenter's length", async () => {
+    const { buildPresenterTranslateEdit } = await import("./finalEdit");
+    const e = buildPresenterTranslateEdit({ presenterUrl: "https://x.test/p.mp4", presenterSeconds: 25, layout: "overlay", sourceUrl: "https://x.test/s.mp4", sourceSeconds: 10 });
+    const source = tracks(e)[2].clips;
+    expect(source.map((c: { start: number; length: number }) => [c.start, c.length])).toEqual([[0, 10], [10, 10], [20, 5]]);
+    expect(source[0].asset.volume).toBe(0);
+    expect(tracks(e)[1].clips[0]).toMatchObject({ scale: 0.38, position: "topRight" });
+  });
+});

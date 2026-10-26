@@ -2,6 +2,7 @@ import type { TranslateProjectDraft } from "@/lib/data/client";
 import type { LanguageCode, TranslationQuality } from "@/lib/types";
 import { config } from "@/lib/config";
 import { isDefaultCaptionStyle, type CaptionStyleChoice } from "@/lib/captionOptions";
+import type { PresenterTranslate } from "@/lib/presenterTranslate";
 
 /**
  * Pure helpers behind the "Translate a video" form: validation and the exact object that goes
@@ -29,6 +30,8 @@ export type TranslateFormState = {
   removeMusic?: boolean;
   cleanVoice?: boolean;
   removeText?: boolean;
+  speaker?: "original" | "presenter";
+  presenter?: PresenterTranslate;
 };
 
 /** The new options as draft keys, only when chosen, so a draft with the defaults is exactly as before. */
@@ -38,6 +41,7 @@ function extras(s: TranslateFormState) {
     ...(s.removeMusic ? { removeMusic: true } : {}),
     ...(s.cleanVoice ? { cleanVoice: true } : {}),
     ...(s.removeText ? { removeText: true } : {}),
+    ...(s.speaker === "presenter" && s.presenter ? { speaker: "presenter" as const, presenter: s.presenter } : {}),
   };
 }
 

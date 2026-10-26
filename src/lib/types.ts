@@ -169,6 +169,9 @@ export interface TranslateProject extends ProjectBase {
   enhance?: boolean;
   /** On-screen text removed from the source before translating (+1 credit per second). */
   removeText?: boolean;
+  /** Who speaks: the original speaker (lip-synced) or an AI presenter (26 Oct 2026). */
+  speaker?: "original" | "presenter";
+  presenter?: import("@/lib/presenterTranslate").PresenterTranslate;
   /**
    * When the user confirmed they own the video and have the speaker's consent
    * (rule 7 in CLAUDE.md). A translate project cannot exist without it.

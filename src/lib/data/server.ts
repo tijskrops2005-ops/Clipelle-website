@@ -1,5 +1,6 @@
 import "server-only";
 import type { CaptionStyleChoice } from "@/lib/captionOptions";
+import type { PresenterTranslate } from "@/lib/presenterTranslate";
 import { config } from "@/lib/config";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { AdProject, LanguageCode, Project, Step, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
@@ -81,6 +82,8 @@ export function lockedFeature(row: Pick<ProjectRow, "workflow" | "input">, planK
   const input = row.input as TranslateInput;
   if (input.quality === "precision" && !hasFeature(planKey, "precision")) return `Precision translation comes with the ${FEATURE_PLAN.precision} plan. Pick Speed, or upgrade in Billing.`;
   if (input.enhance && !hasFeature(planKey, "enhance")) return `Picture enhancement comes with the ${FEATURE_PLAN.enhance} plan. Turn it off, or upgrade in Billing.`;
+  if (input.speaker === "presenter" && !hasFeature(planKey, "aiPresenter")) return `Translating with an AI presenter comes with the ${FEATURE_PLAN.aiPresenter} plan. Keep the original speaker, or upgrade in Billing.`;
+  if (input.speaker === "presenter" && input.presenter?.engine === "avatar_iv" && !hasFeature(planKey, "premium")) return `The Premium presenter comes with the ${FEATURE_PLAN.premium} plan. Pick Standard, or upgrade in Billing.`;
   if (input.removeText && !hasFeature(planKey, "removeText")) return `Removing on-screen text comes with the ${FEATURE_PLAN.removeText} plan. Turn it off, or upgrade in Billing.`;
   return null;
 }
@@ -92,7 +95,7 @@ export function creditsForProject(row: ProjectRow) {
     return adCredits({ seconds: input.seconds ?? workflowSettings.adSeconds, engine: input.engine ?? workflowSettings.heygenEngine, speed: speedValue(input.speed) });
   }
   const input = row.input as TranslateInput;
-  return translateCredits({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, removeText: input.removeText, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }) * input.targetLanguages.length;
+  return translateCredits({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, removeText: input.removeText, presenterEngine: input.speaker === "presenter" ? input.presenter?.engine : undefined, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }) * input.targetLanguages.length;
 }
 
 /** Estimate for one click, with the same numbers the forms show. */
@@ -102,7 +105,7 @@ export function estimateForProject(row: ProjectRow) {
     return estimateAdCost({ seconds: input.seconds ?? workflowSettings.adSeconds, clipModel: workflowSettings.clipModel, engine: input.engine ?? workflowSettings.heygenEngine, speed: speedValue(input.speed) }).total;
   }
   const input = row.input as TranslateInput;
-  return estimateTranslateCost({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, removeText: input.removeText, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }).perLanguageTotal;
+  return estimateTranslateCost({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, removeText: input.removeText, presenterEngine: input.speaker === "presenter" ? input.presenter?.engine : undefined, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }).perLanguageTotal;
 }
 
 async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: TranslationRow[], assetRows: AssetRow[]): Promise<Project> {
@@ -176,6 +179,8 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     quality: input.quality,
     enhance: input.enhance,
     removeText: input.removeText,
+    speaker: input.speaker ?? "original",
+    presenter: input.presenter,
     rightsConfirmedAt: (row.rightsConfirmedAt ?? row.createdAt).toISOString(),
     rightsBasis: input.rightsBasis ?? "own_upload",
     steps: Object.fromEntries(TRANSLATE_STEPS.map((k) => [k, toStep(stepsByKey.get(k))])) as Record<TranslateStepKey, Step>,
@@ -296,6 +301,8 @@ export type NewTranslateProject = {
   removeMusic?: boolean;
   cleanVoice?: boolean;
   removeText?: boolean;
+  speaker?: "original" | "presenter";
+  presenter?: PresenterTranslate;
   format: "original" | "9:16";
   enhance: boolean;
   rightsConfirmed: boolean;
@@ -353,6 +360,7 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
         ...(t.removeMusic ? { removeMusic: true } : {}),
         ...(t.cleanVoice ? { cleanVoice: true } : {}),
         ...(t.removeText ? { removeText: true } : {}),
+        ...(t.speaker === "presenter" && t.presenter ? { speaker: "presenter" as const, presenter: t.presenter } : {}),
         format: t.format,
         enhance: t.enhance,
       } satisfies TranslateInput,

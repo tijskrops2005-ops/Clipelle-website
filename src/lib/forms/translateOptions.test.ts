@@ -17,3 +17,23 @@ describe("caption and sound choices in the translate draft (26 Oct 2026)", () =>
     expect(draft({ captionStyle: style, removeMusic: true, cleanVoice: true })).toMatchObject({ captionStyle: style, removeMusic: true, cleanVoice: true });
   });
 });
+
+describe("translate with an AI presenter: what the server accepts (26 Oct 2026)", () => {
+  const body = { workflow: "translate", name: "Chair", sourceFileName: "chair.mp4", sourceSeconds: 10, sourceLanguage: "auto", quality: "speed", format: "9:16", enhance: false, rightsConfirmed: true };
+  const presenter = { engine: "avatar_iii", layout: "presenter" };
+  it("needs exactly one language with presenter voices", async () => {
+    const { TranslateBody } = await import("@/lib/data/schemas");
+    expect(TranslateBody.safeParse({ ...body, targetLanguages: ["nl"], speaker: "presenter", presenter }).success).toBe(true);
+    expect(TranslateBody.safeParse({ ...body, targetLanguages: ["nl", "de"], speaker: "presenter", presenter }).success).toBe(false);
+    expect(TranslateBody.safeParse({ ...body, targetLanguages: ["ja"], speaker: "presenter", presenter }).success).toBe(false);
+    expect(TranslateBody.safeParse({ ...body, targetLanguages: ["nl"], speaker: "presenter" }).success).toBe(false);
+    // The original speaker keeps several languages.
+    expect(TranslateBody.safeParse({ ...body, targetLanguages: ["nl", "de"] }).success).toBe(true);
+  });
+  it("prices the presenter like an ad of that quality, with the ad minimum", async () => {
+    const { translateCredits } = await import("@/lib/plans");
+    expect(translateCredits({ seconds: 10, quality: "speed", enhance: false, presenterEngine: "avatar_iii" })).toBe(30);
+    expect(translateCredits({ seconds: 30, quality: "speed", enhance: false, presenterEngine: "avatar_iii" })).toBe(60);
+    expect(translateCredits({ seconds: 30, quality: "speed", enhance: false, presenterEngine: "avatar_iv", removeText: true })).toBe(210);
+  });
+});

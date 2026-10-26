@@ -319,7 +319,7 @@ function isBackgroundRejection(error: unknown) {
  * A landscape look is refused: HeyGen letterboxes it in 9:16 (picture 720×406 in a 720×1280 frame) and
  * a centre crop would be a blurry strip, so the ad would be unusable.
  */
-async function pickPresenter(engine: HeygenEngine, chosenLookId: string | undefined, input: AdInput) {
+export async function pickPresenter(engine: HeygenEngine, chosenLookId: string | undefined, input: AdInput) {
   let look: AvatarLook | undefined;
   // The customer's pick wins; otherwise the configured default look.
   const wanted = chosenLookId || cfg.heygenLookId;
