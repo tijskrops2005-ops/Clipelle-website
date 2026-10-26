@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PLANS, TOPUPS } from "./plans";
-import { CHECKOUT_INTEGRATION_ID, MANAGED_PAYMENTS_UNSUPPORTED, managedPaymentsEnabled, REFERRAL_KEYS, STRIPE_PRODUCT_TAX_CODE, subscriptionSessionParams, topupSessionParams, TOPUP_METADATA, withManagedPayments } from "./billingCheckout";
+import { CHECKOUT_INTEGRATION_ID, INVOICE_FOOTER, MANAGED_PAYMENTS_UNSUPPORTED, automaticTaxEnabled, managedPaymentsEnabled, REFERRAL_KEYS, STRIPE_PRODUCT_TAX_CODE, subscriptionSessionParams, topupSessionParams, TOPUP_METADATA, withManagedPayments } from "./billingCheckout";
 
 const input = { customerId: "cus_test", userId: "user-1", workspaceId: "ws-1", priceId: "price_test", origin: "https://clipelle.test" };
 
@@ -92,5 +92,35 @@ describe("checkout session hygiene (Stripe best practices)", () => {
       expect(params).not.toHaveProperty("payment_method_types");
     }
     expect(CHECKOUT_INTEGRATION_ID).toMatch(/_[a-z]{8}$/);
+  });
+});
+
+describe("tax and invoices", () => {
+  const pro = PLANS.find((p) => p.key === "pro")!;
+  it("a credit pack gets a real invoice with our company details (KvK, VAT)", () => {
+    const params = topupSessionParams(TOPUPS[0], input);
+    expect(params.invoice_creation?.enabled).toBe(true);
+    expect(params.invoice_creation?.invoice_data.footer).toBe(INVOICE_FOOTER);
+    expect(INVOICE_FOOTER).toMatch(/KvK|Chamber of Commerce/);
+    expect(INVOICE_FOOTER).toMatch(/VAT/);
+  });
+  it("Stripe Tax is off by default and, when on, collects address and VAT numbers", () => {
+    expect(automaticTaxEnabled({})).toBe(false);
+    expect(subscriptionSessionParams(pro, input)).not.toHaveProperty("automatic_tax");
+    const taxed = subscriptionSessionParams(pro, { ...input, automaticTax: true });
+    expect(taxed.automatic_tax).toEqual({ enabled: true });
+    expect(taxed.tax_id_collection).toEqual({ enabled: true });
+    expect(taxed.customer_update).toEqual({ address: "auto", name: "auto" });
+  });
+  it("Managed Payments takes over tax and invoices: none of it is sent then", () => {
+    const sub = subscriptionSessionParams(pro, { ...input, automaticTax: true, managed: true });
+    const pack = topupSessionParams(TOPUPS[0], { ...input, automaticTax: true, managed: true });
+    for (const p of [sub, pack]) {
+      expect(p).not.toHaveProperty("automatic_tax");
+      expect(p).not.toHaveProperty("tax_id_collection");
+      expect(p).not.toHaveProperty("customer_update");
+      expect(p.managed_payments).toEqual({ enabled: true });
+    }
+    expect(pack).not.toHaveProperty("invoice_creation");
   });
 });

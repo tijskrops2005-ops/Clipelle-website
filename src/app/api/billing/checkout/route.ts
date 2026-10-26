@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { managedPaymentsEnabled, subscriptionSessionParams, topupSessionParams } from "@/lib/billingCheckout";
+import { INVOICE_FOOTER, automaticTaxEnabled, managedPaymentsEnabled, subscriptionSessionParams, topupSessionParams } from "@/lib/billingCheckout";
 import { requireOwner } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
 import { getOrCreateProfile } from "@/lib/data/profile";
@@ -28,13 +28,16 @@ export async function POST(request: Request) {
     if (!customerId) {
       // One Stripe customer per workspace; the e-mail is the owner's (the partner platform matches on it).
       // Idempotency key per workspace: two quick clicks (or a retry) give one customer, not two.
-      const c = await s.customers.create({ email: user.email, name: workspace.kind === "team" ? workspace.name : undefined, metadata: { userId: user.id, workspaceId: workspace.id } }, { idempotencyKey: `clipelle-customer-${workspace.id}` });
+      // The invoice footer carries our company details on every invoice of this customer (subscriptions too).
+      const c = await s.customers.create({ email: user.email, name: workspace.kind === "team" ? workspace.name : undefined, metadata: { userId: user.id, workspaceId: workspace.id }, invoice_settings: { footer: INVOICE_FOOTER } }, { idempotencyKey: `clipelle-customer-${workspace.id}` });
       customerId = c.id;
       await setPlan(workspace.id, { stripeCustomerId: customerId });
     }
     const origin = process.env.NEXT_PUBLIC_SITE_URL?.trim() || new URL(request.url).origin;
     // Stripe as merchant of record when STRIPE_MANAGED_PAYMENTS is on (default off).
     const managed = managedPaymentsEnabled();
+    // Stripe Tax only for our own sales; with Managed Payments Stripe handles tax itself.
+    const automaticTax = !managed && automaticTaxEnabled();
     const b = parsed.data;
     if (b.kind === "plan") {
       const plan = planByKey(b.planKey);
@@ -43,7 +46,7 @@ export async function POST(request: Request) {
       if (!plan.team && workspace.kind === "team") return Response.json({ error: "A team workspace uses the Business plan." }, { status: 400 });
       const price = await priceByLookupKey(b.interval === "annual" ? plan.stripeLookup.annual : plan.stripeLookup.monthly);
       if (!price) return Response.json({ error: "The price is not set up in Stripe yet. Run the setup script." }, { status: 503 });
-      const session = await s.checkout.sessions.create(subscriptionSessionParams(plan, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed }));
+      const session = await s.checkout.sessions.create(subscriptionSessionParams(plan, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax }));
       return Response.json({ url: session.url });
     }
     const pack = TOPUPS.find((t) => t.key === b.topupKey);
@@ -52,7 +55,7 @@ export async function POST(request: Request) {
     if (workspace.planKey === "free") return Response.json({ error: "Credit packs come on top of a paid plan. Choose a plan first." }, { status: 400 });
     const price = await priceByLookupKey(pack.stripeLookup);
     if (!price) return Response.json({ error: "The price is not set up in Stripe yet. Run the setup script." }, { status: 503 });
-    const session = await s.checkout.sessions.create(topupSessionParams(pack, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed }));
+    const session = await s.checkout.sessions.create(topupSessionParams(pack, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax }));
     return Response.json({ url: session.url });
   } catch (error) {
     return dataErrorResponse(error);

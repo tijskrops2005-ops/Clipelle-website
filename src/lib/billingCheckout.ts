@@ -1,4 +1,5 @@
 import type { Plan, TopupPack } from "@/lib/plans";
+import { companyLine } from "@/content/company";
 
 /**
  * Pure builders for the Stripe Checkout sessions, so a test can prove what each kind sends.
@@ -15,7 +16,36 @@ export const TOPUP_METADATA = { commissions_disabled: "yes" } as const;
  */
 export const CHECKOUT_INTEGRATION_ID = "clipelle_checkout_qhzkwmpa";
 
-export type CheckoutInput = { customerId: string; userId: string; workspaceId: string; priceId: string; origin: string; /** Stripe Managed Payments (merchant of record) on this session. */ managed?: boolean };
+export type CheckoutInput = {
+  customerId: string;
+  userId: string;
+  workspaceId: string;
+  priceId: string;
+  origin: string;
+  /** Stripe Managed Payments (merchant of record) on this session. */
+  managed?: boolean;
+  /** Stripe Tax on this session (only without Managed Payments; needs an active tax registration). */
+  automaticTax?: boolean;
+};
+
+/**
+ * Stripe Tax for our own sales, when Managed Payments is off. Off unless STRIPE_AUTOMATIC_TAX is
+ * "true". Turn it on only after adding a tax registration in Stripe (Dashboard → Tax →
+ * Registrations): without one Stripe calculates and collects no tax and reports no error. With it,
+ * the session collects the billing address, lets businesses enter their VAT number (reverse charge)
+ * and adds VAT on top of the price (tax_behavior unspecified = exclusive).
+ */
+export function automaticTaxEnabled(env: Record<string, string | undefined> = process.env) {
+  return ["true", "1", "on", "yes"].includes((env.STRIPE_AUTOMATIC_TAX ?? "").trim().toLowerCase());
+}
+
+/** Our company line (name, address, KvK, VAT) on every invoice: Dutch invoice rules. */
+export const INVOICE_FOOTER = companyLine("en");
+
+/** The tax part of a session; Managed Payments strips it again, since Stripe then handles tax itself. */
+function taxParams(on: boolean | undefined) {
+  return on ? { automatic_tax: { enabled: true }, tax_id_collection: { enabled: true }, customer_update: { address: "auto" as const, name: "auto" as const } } : {};
+}
 
 /**
  * Stripe Managed Payments, Stripe as merchant of record (26 Oct 2026). Off unless
@@ -74,6 +104,7 @@ export function subscriptionSessionParams(plan: Plan, input: CheckoutInput) {
     metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key, kind: "plan" },
     allow_promotion_codes: true,
     integration_identifier: CHECKOUT_INTEGRATION_ID,
+    ...taxParams(input.automaticTax),
   }, input.managed);
 }
 
@@ -86,6 +117,10 @@ export function topupSessionParams(pack: TopupPack, input: CheckoutInput) {
     cancel_url: `${input.origin}/settings/billing?checkout=cancelled`,
     metadata: { userId: input.userId, workspaceId: input.workspaceId, topupKey: pack.key, kind: "topup" },
     integration_identifier: CHECKOUT_INTEGRATION_ID,
+    // A real invoice (PDF, our company details) for a credit pack, not only a receipt. Managed
+    // Payments issues its own invoices and strips this.
+    invoice_creation: { enabled: true, invoice_data: { footer: INVOICE_FOOTER, metadata: { workspaceId: input.workspaceId, kind: "topup" } } },
+    ...taxParams(input.automaticTax),
   }, input.managed);
 }
 
