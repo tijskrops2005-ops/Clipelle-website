@@ -92,7 +92,6 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
   const [captionStyle, setCaptionStyle] = useState<CaptionStyleChoice>(DEFAULT_CAPTION_STYLE);
   const [removeMusic, setRemoveMusic] = useState(false);
   const [cleanVoice, setCleanVoice] = useState(false);
-  const [naturalPace, setNaturalPace] = useState(false);
   const [removeText, setRemoveText] = useState(false);
   // Who speaks the translation (26 Oct 2026): the original speaker, lip-synced, or an AI presenter.
   const [speaker, setSpeaker] = useState<"original" | "presenter">(initialSpeaker);
@@ -160,7 +159,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
   }));
   const sourceOptions: SelectOption[] = [{ value: "auto", label: "Detect automatically", group: "Recommended" }, ...LANGUAGES.map((l) => ({ value: l.code, label: l.label, group: TOP_LANGUAGES.includes(l.base) ? "Most used" : "All languages" }))];
 
-  const formState = { video: video ?? undefined, sourceAd, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic: withPresenter ? false : removeMusic, cleanVoice: withPresenter ? false : cleanVoice, naturalPace: withPresenter ? false : naturalPace, removeText, replaceTerms: replaceRows, instructions, speaker, presenter: withPresenter ? presenterSetup : undefined };
+  const formState = { video: video ?? undefined, sourceAd, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic: withPresenter ? false : removeMusic, cleanVoice: withPresenter ? false : cleanVoice, removeText, replaceTerms: replaceRows, instructions, speaker, presenter: withPresenter ? presenterSetup : undefined };
 
   function validate(): Errors {
     return validateTranslateForm(formState);
@@ -210,7 +209,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
     { label: "Captions", value: captionStyle.show ? `${captionPosition === "middle" ? "Middle" : "Low"} · ${describeCaptionStyle(captionStyle)}` : "Off" },
     ...(cleanReplace(replaceRows).length ? [{ label: "Words replaced", value: String(cleanReplace(replaceRows).length) }] : []),
     ...(removeText ? [{ label: "On-screen text", value: withPresenter ? "Removed" : "Removed · captions over it" }] : []),
-    ...(removeMusic || cleanVoice || naturalPace ? [{ label: "Sound", value: [removeMusic && "No music", cleanVoice && "Clean voice", naturalPace && "Natural pace"].filter(Boolean).join(" · ") }] : []),
+    ...(removeMusic || cleanVoice ? [{ label: "Sound", value: [removeMusic && "No music", cleanVoice && "Clean voice"].filter(Boolean).join(" · ") }] : []),
     ...(enhance ? [{ label: "Enhancement", value: "On" }] : []),
   ];
 
@@ -444,7 +443,6 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
             <div className="grid gap-2 sm:grid-cols-2">
               <CheckCard id="removeMusic" checked={removeMusic} onChange={setRemoveMusic} disabled={submitting} title="Remove background music" text="Only the translated voice stays. Useful when the music has lyrics or covers the speech." />
               <CheckCard id="cleanVoice" checked={cleanVoice} onChange={setCleanVoice} disabled={submitting} title="Clean up the voice" text="Reduces echo and background noise in the translated speech." />
-              <CheckCard id="naturalPace" checked={naturalPace} onChange={setNaturalPace} disabled={submitting} title="Natural speaking pace" text="The voice speaks at its own pace instead of filling the original timing, so it sounds livelier; the video may end up slightly shorter or longer." />
             </div>
           </fieldset>)}
 

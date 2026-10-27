@@ -364,7 +364,8 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
         ...(t.captionStyle ? { captionStyle: t.captionStyle } : {}),
         ...(t.removeMusic ? { removeMusic: true } : {}),
         ...(t.cleanVoice ? { cleanVoice: true } : {}),
-        ...(t.naturalPace ? { naturalPace: true } : {}),
+        // Natural speaking pace is the default (27 Oct 2026, no extra cost: billing follows the source length).
+        naturalPace: t.naturalPace !== false,
         ...(t.removeText ? { removeText: true } : {}),
         ...(t.speaker === "presenter" && t.presenter ? { speaker: "presenter" as const, presenter: t.presenter } : {}),
         format: t.format,

@@ -879,11 +879,26 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
       const stepRow = await loadStep(projectId, "captions");
       const video = await loadAsset(sourceForCaptions);
       const srt = srtAssetId ? await loadAsset(srtAssetId) : null;
-      const seconds = video.seconds ?? input.sourceSeconds;
+      let seconds = video.seconds ?? input.sourceSeconds;
       // Silence at the start and end, read from the subtitle cue times (no audio analysis needed):
       // more than 0.3 s before the first line or after the last line is cut, keeping a 0.3 s breath.
       const [t] = await db().select().from(translations).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).limit(1);
-      const cues = t?.segments ?? [];
+      let cues = t?.segments ?? [];
+      if (input.naturalPace) {
+        // Natural pace (27 Oct 2026): the delivered video may be a little shorter or longer than the source,
+        // so its real length is read (free probe) and the captions follow the delivered subtitle times,
+        // keeping the checked words when the lines match one to one.
+        const probed = await withRetries("Reading the video length", async () => ingestFromUrl(await providerUrl(video))).catch(() => null);
+        if (probed?.duration) seconds = probed.duration;
+        if (srt) {
+          const delivered = parseSrt(await fetchSrtText(await providerUrl(srt))).filter((c) => c.text.trim());
+          if (delivered.length) {
+            cues = delivered.length === cues.length
+              ? delivered.map((c, i) => ({ ...cues[i], start: c.start, end: c.end }))
+              : delivered.map((c) => ({ index: c.index, start: c.start, end: c.end, original: "", translated: c.text, text: c.text }));
+          }
+        }
+      }
       let trimStart = 0;
       let trimEnd = 0;
       let srtUrl = srt ? await providerUrl(srt) : undefined;
