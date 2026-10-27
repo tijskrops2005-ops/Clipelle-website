@@ -44,7 +44,11 @@ function createDb() {
  * After a long quiet spell (a laptop that slept, a server that idled) the pooled sockets may be dead
  * without anyone noticing: the 20-second idle timer does not run during sleep, and a query on such a
  * socket waits until TCP gives up (27 Oct 2026: 47–54 s per request, then ECONNRESET). So after more
- * than 25 s without use the pool is replaced by a fresh one; the old one closes in the background.
+ * than 25 s without use the pool is replaced by a fresh one.
+ *
+ * The old pool is never ended (27 Oct 2026): code that still held it (a job step that waited for a
+ * render, a request in flight) got CONNECTION_DESTROYED and a translation failed on it. Its idle
+ * connections close by themselves after `idle_timeout`, and a query on it simply opens a new one.
  */
 const STALE_AFTER_MS = 25_000;
 
@@ -55,12 +59,9 @@ export function db(): Db {
   const now = Date.now();
   const stale = globalForDb.__clipelleDbUsedAt === undefined || now - globalForDb.__clipelleDbUsedAt > STALE_AFTER_MS;
   if (!globalForDb.__clipelleDb || stale) {
-    const old = globalForDb.__clipelleDbClient;
     const fresh = createDb();
     globalForDb.__clipelleDb = fresh.db;
     globalForDb.__clipelleDbClient = fresh.client;
-    // Let queries already running on the old pool finish (or fail) on their own; close it without waiting.
-    if (old) void old.end({ timeout: 30 }).catch(() => {});
   }
   globalForDb.__clipelleDbUsedAt = now;
   return globalForDb.__clipelleDb;

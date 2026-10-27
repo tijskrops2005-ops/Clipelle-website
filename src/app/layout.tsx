@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { config } from "@/lib/config";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
@@ -33,8 +34,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {/* One-time carry-over of browser storage written under the pre-rename prefix (22 Oct 2026); runs before hydration so no preference is lost. */}
-        <script
+        {/* One-time carry-over of browser storage written under the pre-rename prefix (22 Oct 2026); runs before hydration so no preference is lost.
+            Through next/script (27 Oct 2026): a plain <script> made React warn on every client re-render of the root layout. */}
+        <Script
+          id="storage-carry-over"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `try{var s=window.localStorage;for(var i=s.length-1;i>=0;i--){var k=s.key(i);if(k&&(k.indexOf("reelay.")===0||k.indexOf("reelay:")===0)){var n="clipelle"+k.slice(6);if(s.getItem(n)===null)s.setItem(n,s.getItem(k));s.removeItem(k);}}}catch(e){}`,
           }}
