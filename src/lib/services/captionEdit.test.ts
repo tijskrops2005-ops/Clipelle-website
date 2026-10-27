@@ -78,32 +78,53 @@ describe("text removal: the original sound back under the cleaned picture (26 Oc
   });
 });
 
-describe("captions over removed text, in a box that wraps the text (27 Oct 2026)", () => {
+describe("captions over removed text, on one fixed bar (27 Oct 2026)", () => {
   const box = { top: 0.7, bottom: 0.78, left: 0.1, right: 0.9 };
-  it("centres the captions on the old text, in a white box around the words, dark words without outline", () => {
+  it("centres the captions on the old text, on a white bar as wide as the old text, dark words without outline", () => {
     const e = buildCaptionEdit({ ...base, coverBox: box });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tracks = (e.timeline as any).tracks;
     expect(tracks).toHaveLength(2);
     const clip = tracks[0].clips[0];
     expect(clip.offset.y).toBeCloseTo(-0.24, 2);
-    expect(clip.asset.background).toMatchObject({ color: "#FFFFFF", wrap: true });
+    expect(clip.asset.background).toMatchObject({ color: "#FFFFFF" });
+    expect(clip.asset.background).not.toHaveProperty("wrap");
+    expect(clip.width).toBe(994);
     expect(clip.asset.font.color).toBe("#111114");
     expect(clip.asset.stroke.width).toBe(0);
     expect(clip.asset.animation.style).toBe("highlight");
   });
   it("uses the chosen box colour, light words on dark, and no box when None is chosen", () => {
     const dark = captionAsset(buildCaptionEdit({ ...base, coverBox: box, captionStyle: { bar: "dark" } }));
-    expect(dark.background).toMatchObject({ color: "#111114", wrap: true });
+    expect(dark.background).toMatchObject({ color: "#111114" });
     expect(dark.font.color).toBe("#FFFFFF");
     expect(captionAsset(buildCaptionEdit({ ...base, coverBox: box, captionStyle: { bar: "none" } }))).not.toHaveProperty("background");
     // Without removed text there is no box unless one is chosen.
     expect(captionAsset(buildCaptionEdit(base))).not.toHaveProperty("background");
-    expect(captionAsset(buildCaptionEdit({ ...base, captionStyle: { bar: "yellow" } })).background).toMatchObject({ color: "#FFD400" });
+    // Without removed text a chosen box wraps the words.
+    expect(captionAsset(buildCaptionEdit({ ...base, captionStyle: { bar: "yellow" } })).background).toMatchObject({ color: "#FFD400", wrap: true });
   });
   it("keeps the captions clear of the very top and bottom", async () => {
     const { captionOffsetFor } = await import("./finalEdit");
     expect(captionOffsetFor({ top: 0.97, bottom: 0.99 })).toBe(-0.42);
     expect(captionOffsetFor({ top: 0.45, bottom: 0.55 })).toBe(0);
+  });
+});
+
+describe("never more than two caption lines (27 Oct 2026)", () => {
+  it("makes every caption box two lines high for its size", async () => {
+    const { twoLineHeight } = await import("./finalEdit");
+    for (const size of ["small", "medium", "large"] as const) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clip = (buildCaptionEdit({ ...base, captionStyle: { size, bar: "white" } }).timeline as any).tracks[0].clips[0];
+      expect(clip.height).toBe(twoLineHeight(clip.asset.font.size, "box"));
+      expect(clip.height).toBeLessThan(clip.asset.font.size * 3 * 1.2);
+    }
+    expect(twoLineHeight(48, "box")).toBe(172);
+  });
+  it("keeps the old text's bar between 70% and 92% of the frame", async () => {
+    const { coverWidthFor } = await import("./finalEdit");
+    expect(coverWidthFor({ left: 0.4, right: 0.6 }, 1080)).toBe(756);
+    expect(coverWidthFor({ left: 0.02, right: 0.98 }, 1080)).toBe(994);
   });
 });

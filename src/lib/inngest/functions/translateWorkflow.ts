@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
-import { chunkCues, CHUNK_CHARS } from "@/lib/captionChunks";
+import { chunkCues, CHUNK_CHARS, fillGaps } from "@/lib/captionChunks";
 import { captionStyleOf } from "@/lib/captionOptions";
 import { assets, db, projects, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
 import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, type TextBox } from "@/lib/services/textLocate";
@@ -363,11 +363,12 @@ async function locateOldText(projectId: string, input: TranslateInput, step: Ste
       const row = await loadStep(projectId, "upload");
       const source = await loadAsset(input.sourceAssetId);
       const url = await providerUrl(source);
-      const reservedFrames = await reserveSpend({ service: "fal", action: "extract_frame", estimatedUsd: EXTRACT_FRAME_USD * 2, fingerprintInput: { projectId, source: source.id }, projectId, stepId: row.id, languageCount: Math.max(1, input.targetLanguages.length) });
+      const reservedFrames = await reserveSpend({ service: "fal", action: "extract_frame", estimatedUsd: EXTRACT_FRAME_USD * 3, fingerprintInput: { projectId, source: source.id }, projectId, stepId: row.id, languageCount: Math.max(1, input.targetLanguages.length) });
       let frames: string[] = [];
       try {
-        frames = await Promise.all([extractFrame(url, "first"), extractFrame(url, "middle")]);
-        await settleSpend(reservedFrames.entryId, { status: "completed", actualUsd: EXTRACT_FRAME_USD * 2, basis: "list" });
+        // Three moments, so the box covers the widest old line, not just two of them.
+        frames = await Promise.all([extractFrame(url, "first"), extractFrame(url, "middle"), extractFrame(url, "last")]);
+        await settleSpend(reservedFrames.entryId, { status: "completed", actualUsd: EXTRACT_FRAME_USD * 3, basis: "list" });
       } catch (error) {
         await settleSpend(reservedFrames.entryId, { status: "failed", actualUsd: 0 });
         throw error;
@@ -915,7 +916,9 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         // with the picture when silence is cut. The service's own SRT is the fallback without lines.
         // Short chunks of a few words, at most two caption lines (27 Oct 2026): a whole sentence at once read as a block.
         const size = captionStyleOf(input.captionStyle).size;
-        const shifted = buildSrt(chunkCues(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })), CHUNK_CHARS[size]));
+        const chunks = chunkCues(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })), CHUNK_CHARS[size]);
+        // Over removed text the bar never leaves the screen, so the cleaned spot never shows.
+        const shifted = buildSrt(input.oldTextBox ? fillGaps(chunks, Math.max(1, seconds - trimStart - trimEnd)) : chunks);
         const asset = await storeBytes({ projectId, stepId: stepRow.id, kind: "srt", data: new TextEncoder().encode(shifted), mime: "application/x-subrip", fileName: `captions-${code}${trimStart > 0 ? "-trimmed" : "-checked"}.srt`, language: code });
         srtUrl = await providerUrl(asset);
       }

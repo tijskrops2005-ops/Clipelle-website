@@ -318,6 +318,12 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const words = bar.color ? { text: look.textColor ?? light, stroke: { width: 0, color: light, opacity: 0 } } : captionText(look, light, ink);
   // Over removed text the captions are centred where that text was.
   const offsetY = input.coverBox ? captionOffsetFor(input.coverBox) : input.captionPosition === "middle" ? 0 : -0.18;
+  // Over removed text (27 Oct 2026, after a review of the smudge and leftover pill edges): one fixed bar
+  // as wide as the old text plus a margin, on screen for the whole video, so the cleaned spot never shows.
+  const frameWidth = input.size ? fitSize(input.size).width : 1080;
+  const fixedBar = Boolean(input.coverBox && bar.color);
+  const width = fixedBar ? coverWidthFor(input.coverBox!, frameWidth) : Math.round(frameWidth * 0.833);
+  const height = twoLineHeight(CAPTION_SIZE_PX[look.size], bar.color ? "box" : "outline");
 
   const captions = {
     clips: [
@@ -331,14 +337,15 @@ export function buildCaptionEdit(input: CaptionEditInput) {
           // In a box the words stay put (no pop), so the box keeps its shape while a line is spoken.
           animation: { style: bar.color ? "highlight" : "pop" },
           ...(active ? { active } : {}),
-          ...(bar.color ? { background: { color: bar.color, opacity: bar.opacity, borderRadius: 18, wrap: true, padding: 18 } } : { border: { width: 0, color: ink, opacity: 1, radius: 16 } }),
+          ...(bar.color ? { background: fixedBar ? { color: bar.color, opacity: bar.opacity, borderRadius: 18 } : { color: bar.color, opacity: bar.opacity, borderRadius: 18, wrap: true, padding: 18 } } : { border: { width: 0, color: ink, opacity: 1, radius: 16 } }),
           padding: bar.color ? { top: 8, right: 14, bottom: 8, left: 14 } : { top: 6, right: 10, bottom: 6, left: 10 },
           align: { horizontal: "center", vertical: "middle" },
         },
         start: 0,
         length: total,
-        width: 900,
-        height: 500,
+        // The clip is exactly two lines high: the service fills the box before it moves on, so this is what keeps a caption to two lines.
+        width,
+        height,
         // "low": the caption box sits roughly between 18% and 32% from the bottom, clear of the bottom 15%.
         offset: { x: 0, y: offsetY },
       },
@@ -410,7 +417,7 @@ export function buildPresenterTranslateEdit(input: PresenterTranslateEditInput) 
         start: 0,
         length: total,
         width: 900,
-        height: 500,
+        height: twoLineHeight(CAPTION_SIZE_PX[look.size], "outline"),
         offset: { x: 0, y: input.captionPosition === "middle" ? 0 : -0.18 },
       },
     ],
@@ -472,6 +479,22 @@ export function buildRemuxEdit(input: { pictureUrl: string; soundUrl: string; se
 export function captionOffsetFor(box: { top: number; bottom: number }) {
   const centre = (box.top + box.bottom) / 2;
   return Math.round(Math.min(0.42, Math.max(-0.42, 0.5 - centre)) * 1000) / 1000;
+}
+
+/**
+ * Rich captions fill their clip box with words before they turn the page, whatever the subtitle cues
+ * say (seen in a render on 27 Oct 2026: five contiguous cues showed as one five-line block in a 500 px
+ * box, and two lines in a 170 px box). So the box is made two lines high: line height ≈ 1.25 × the
+ * font size, plus the asset padding (and the pill padding on a box).
+ */
+export function twoLineHeight(fontPx: number, look: "box" | "outline") {
+  return Math.round(fontPx * 2 * 1.25 + (look === "box" ? 16 + 36 : 12));
+}
+
+/** Width of the fixed bar over removed text: the old text's width plus a margin, between 70% and 92% of the frame. */
+export function coverWidthFor(box: { left: number; right: number }, frameWidth: number) {
+  const fraction = Math.min(0.92, Math.max(0.7, box.right - box.left + 0.16));
+  return Math.round((frameWidth * fraction) / 2) * 2;
 }
 
 /** Shotstack renders at most 1920 px per side and wants even numbers. */

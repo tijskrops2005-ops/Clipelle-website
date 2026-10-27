@@ -47,3 +47,17 @@ export function chunkCues(cues: Cue[], maxChars = CHUNK_CHARS.medium): Cue[] {
   }
   return out.map((c, i) => ({ ...c, index: i + 1 }));
 }
+
+/**
+ * Captions over removed text stay on screen from the first frame to the last (27 Oct 2026): between two
+ * lines, and before the first and after the last, the cleaned spot showed for a moment. Each cue runs
+ * on until the next one starts; the first starts at 0 and the last ends with the video.
+ */
+export function fillGaps(cues: Cue[], totalSeconds: number): Cue[] {
+  const sorted = [...cues].sort((a, b) => a.start - b.start);
+  return sorted.map((c, i) => ({
+    ...c,
+    start: i === 0 ? 0 : c.start,
+    end: i === sorted.length - 1 ? Math.max(c.end, totalSeconds) : sorted[i + 1].start,
+  }));
+}

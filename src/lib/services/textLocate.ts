@@ -8,13 +8,13 @@ import { claudeTokensToUsd, isScriptModel } from "@/lib/pricing";
 
 /**
  * Where was the old text? (27 Oct 2026, Tijs) Text removal leaves a soft smudge where a big caption
- * line was, so our captions go exactly there, on a soft bar that covers it. Two frames of the
- * source (first and middle, fal.ai `fal-ai/ffmpeg-api/extract-frame`: `video_url`, `frame_type`
+ * line was, so our captions go exactly there, on a bar that covers it. Three frames of the
+ * source (first, middle and last since 27 Oct 2026, fal.ai `fal-ai/ffmpeg-api/extract-frame`: `video_url`, `frame_type`
  * first | middle | last → `images[].url`, checked 27 Oct 2026) are shown to Claude, which returns
  * the box of the burned-in caption text as fractions of the frame.
  */
 export const EXTRACT_FRAME_ENDPOINT = "fal-ai/ffmpeg-api/extract-frame";
-/** Indicative: a frame grab is a second of compute; the vision check reads two small images. */
+/** Indicative: a frame grab is a second of compute; the vision check reads three small images. */
 export const EXTRACT_FRAME_USD = 0.002;
 export const LOCATE_TEXT_USD = 0.01;
 
@@ -45,7 +45,7 @@ const Output = z.object({
   right: z.number().min(0).max(1).nullable().describe("Right edge, fraction of the frame width"),
 });
 
-const SYSTEM = `You look at frames of a short vertical video. Find the burned-in caption or subtitle text: the line(s) of text that show what is said, usually in the lower or middle part of the picture. Ignore logos, watermarks, product labels and text that is part of the scene. Return one box around the caption text as it appears across the frames (the union when it moves a little), as fractions of the frame (0 to 1). When there is no such text, return found false and nulls.`;
+const SYSTEM = `You look at frames of a short vertical video. Find the burned-in caption or subtitle text: the line(s) of text that show what is said, usually in the lower or middle part of the picture. Ignore logos, watermarks, product labels and text that is part of the scene. Return one box around the caption text, including any box, pill or outline drawn behind it, as it appears across the frames (the union of all frames, so the widest line fits), as fractions of the frame (0 to 1). When there is no such text, return found false and nulls.`;
 
 /** The box of the old caption text, or null when there was none. Cost is returned for the cost guard. */
 export async function locateBurnedCaptions(frameUrls: string[]): Promise<{ box: TextBox | null; costUsd: number }> {

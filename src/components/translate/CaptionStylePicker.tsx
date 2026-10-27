@@ -52,7 +52,7 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, over
               <SegmentedControl label="Background" size="sm" options={CAPTION_BARS.map((b) => ({ key: b, label: CAPTION_BAR_META[b].label }))} value={bar} onChange={(b) => set({ bar: b })} disabled={disabled} />
               <p className="text-[13px] text-muted">
                 {onBox ? "A box that fits snugly around each caption line and only shows while it is on screen; the text colour follows the box." : "The words float over the picture with an outline."}
-                {overOldText ? " Your captions go exactly where the old text was." : ""}
+                {overOldText ? (onBox ? " Your captions go exactly where the old text was, on one bar that stays from the first second to the last, so nothing of the old text shows." : " Your captions go exactly where the old text was.") : ""}
               </p>
             </fieldset>
 
@@ -110,7 +110,7 @@ function CaptionPreview({ style, position, bar, overOldText }: { style: CaptionS
         <div className="absolute inset-x-3 top-[28%] h-[34%] rounded-[40%] bg-surface/15 blur-md" />
         <div className={cn("absolute inset-x-2 flex justify-center", position === "middle" && !overOldText ? "top-1/2 -translate-y-1/2" : "bottom-[22%]")}>
           <p
-            className={cn("inline-flex max-w-full flex-wrap justify-center gap-x-1 gap-y-0.5 text-center font-black leading-tight", box.color && "rounded-[7px] px-2 py-1.5")}
+            className={cn("inline-flex max-w-full flex-wrap justify-center gap-x-1 gap-y-0.5 text-center font-black leading-tight", box.color && "rounded-[7px] px-2 py-1.5", box.color && overOldText && "w-[86%]")}
             style={{ fontSize: `${Math.round(13 * scale)}px`, color: text, background: box.color ? hexAlpha(box.color, box.opacity) : undefined, textShadow: box.color ? "none" : isLightColor(text) ? "0 0 3px var(--ink), 0 0 2px var(--ink)" : "0 0 3px #fff, 0 0 2px #fff" }}
           >
             {words.map((w, i) => {
