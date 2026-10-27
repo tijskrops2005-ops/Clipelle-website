@@ -2,24 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowRight, Languages, Loader2, Lock, Plus, X } from "lucide-react";
+import { ArrowRight, Languages, Loader2, Lock, Plus, ShieldCheck, X } from "lucide-react";
 import { config } from "@/lib/config";
 import type { AdProject, LanguageCode, TranslationQuality } from "@/lib/types";
-import { isTranslateLanguage } from "@/lib/translateLanguages";
+import { isTranslateLanguage, TOP_LANGUAGES } from "@/lib/translateLanguages";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
-import { ShieldCheck } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { LANGUAGES, languageOf } from "@/lib/languages";
-import { TOP_LANGUAGES } from "@/lib/translateLanguages";
 import { SearchableSelect, type SelectOption } from "@/components/ui/SearchableSelect";
 import { estimateTranslateCost } from "@/lib/pricing";
 import { Badge } from "@/components/ui/Badge";
 import { createTranslateProject } from "@/lib/data/client";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import { Field } from "@/components/ui/Field";
+import { Field, controlClass, controlStateClass } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { MobileActionBar } from "@/components/ui/MobileActionBar";
 import { Textarea } from "@/components/ui/Textarea";
 import { VideoDropzone, formatDuration, type UploadedVideo } from "@/components/ui/VideoDropzone";
 import { buildTranslateDraft, cleanReplace, validateTranslateForm, type TranslateFormErrors } from "@/lib/forms/translateDraft";
@@ -31,7 +29,6 @@ import { CaptionStylePicker } from "@/components/translate/CaptionStylePicker";
 import { DEFAULT_PRESENTER_TRANSLATE, PresenterSetup } from "@/components/translate/PresenterSetup";
 import { PRESENTER_LANGUAGES, type PresenterTranslate } from "@/lib/presenterTranslate";
 import { AD_LANGUAGES, type AdLanguageCode } from "@/lib/voiceOptions";
-import { controlClass, controlStateClass } from "@/components/ui/Field";
 import { DEFAULT_CAPTION_STYLE, describeCaptionStyle, type CaptionStyleChoice } from "@/lib/captionOptions";
 import { CREDIT_RULES, FEATURE_PLAN, hasFeature, translateCredits, type PlanFeature } from "@/lib/plans";
 import { PlanHint } from "@/components/PlanHint";
@@ -51,16 +48,16 @@ const QUALITY: Array<{ key: TranslationQuality; title: string; text: string; bes
   {
     key: "speed",
     title: "Speed",
-    text: "Fast and affordable. Standard lip-sync and a straightforward translation.",
-    bestFor: "Good for one person talking straight into the camera with little movement, and for quick drafts.",
-    wait: "Usually ready within a few minutes.",
+    text: "Standard lip sync and a straightforward translation.",
+    bestFor: "For one person facing the camera, and for quick drafts.",
+    wait: "A few minutes.",
   },
   {
     key: "precision",
     title: "Precision",
-    text: "The mouth is re-rendered for the new language, so the lip-sync looks noticeably more real. The translation also follows context and the speaker's gender.",
-    bestFor: "Better for faces that move, side angles, a partly covered mouth, several speakers, and for final ads.",
-    wait: "Takes longer; count on roughly twice the time.",
+    text: "The mouth is redrawn for the new language: noticeably more real lip sync.",
+    bestFor: "For faces that move, side angles, several speakers, and final ads.",
+    wait: "About twice as long.",
   },
 ];
 
@@ -217,13 +214,13 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
   ];
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} noValidate className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+    <form ref={formRef} onSubmit={onSubmit} noValidate className="grid gap-8 pb-28 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start xl:pb-0">
       <button type="submit" disabled tabIndex={-1} aria-hidden className="hidden" />
       <div className="min-w-0 space-y-6">
         <ServiceStatusBanner />
 
         {/* 1. The video */}
-        <SectionCard number={1} title={fromAd ? "Your ad" : "Your video"} description={fromAd ? "The finished ad is the source: nothing to upload. The presenter's voice and lips are matched to each new language; the product clip, captions style and edit stay as they are." : "One speaker, clear audio. The voice and lip movements are matched to the new language; the pictures and the edit stay as they are."}>
+        <SectionCard number={1} title={fromAd ? "Your ad" : "Your video"} description={fromAd ? "The finished ad is the source: nothing to upload." : "One speaker, clear audio. The voice and lips follow the new language; the picture stays as it is."}>
           {fromAd ? (
             <div className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-start">
               <VideoPlayer src={fromAd.finalVideoUrl!} poster={fromAd.imageUrls[0]} simulated={config.demoMode} className="mx-auto w-full max-w-[160px] sm:mx-0" />
@@ -261,7 +258,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
                 <Badge tone="warning">Beta</Badge>
                 {!can("removeText") && <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-surface"><Lock className="size-3" aria-hidden />{FEATURE_PLAN.removeText}</span>}
               </span>
-              <span className="block text-[13px] leading-relaxed text-muted">Titles, old captions, stickers and text logos are painted out of the picture first, and your new captions go exactly where the old text was, on a bar that hides any trace. Adds {CREDIT_RULES.translate.removeText} credit per second per language, and a few minutes.</span>
+              <span className="block text-[13px] leading-relaxed text-muted">Old captions, titles and stickers are painted out; your new captions go where they were. +{CREDIT_RULES.translate.removeText} credit per second per language.</span>
             </span>
           </label>
           <Field id="projectName" label="Project name" hint="Only you see this." error={errors.projectName}>
@@ -281,11 +278,11 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
         </SectionCard>
 
         {/* 2. Languages and quality */}
-        <SectionCard number={2} title={withPresenter ? "Language and presenter" : "Languages and quality"} description={withPresenter ? "The words of your video are translated and checked, then the presenter you pick speaks them in the voice and accent you choose." : "Pick one or more target languages. Every translation is checked line by line against the original before it is rendered; nothing waits for you."}>
+        <SectionCard number={2} title={withPresenter ? "Language and presenter" : "Languages and quality"} description={withPresenter ? "The lines are translated and checked, then the presenter you pick speaks them." : "Pick the languages. Every line is checked against the original before the render."}>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">Who speaks the translation?</legend>
             <OptionGrid columns={2}>
-              <OptionCard selected={!withPresenter} onSelect={() => setSpeaker("original")} disabled={submitting} title="The original speaker" badge={<Badge tone="success">Recommended</Badge>} description="Their own voice, with the lips matched to the new language. Several languages at once." />
+              <OptionCard selected={!withPresenter} onSelect={() => setSpeaker("original")} disabled={submitting} title="The original speaker" badge={<Badge tone="success">Recommended</Badge>} description="Their own voice, lips matched. Several languages at once." />
               <OptionCard
                 selected={withPresenter}
                 onSelect={() => {
@@ -300,13 +297,13 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
                 lockedTo={!can("aiPresenter") ? FEATURE_PLAN.aiPresenter : undefined}
                 title="An AI presenter"
                 badge={<Badge tone="warning">New</Badge>}
-                description="Pick another face, voice and accent. The presenter speaks the checked translation, with your captions."
+                description="Another face, voice and accent speaks the checked translation."
               />
             </OptionGrid>
             {!can("aiPresenter") && <PlanHint feature="aiPresenter" text="The AI presenter comes with Pro and up." />}
           </fieldset>
 
-          <Field id="source" label="Spoken language" hint="Detect automatically works well for one clear speaker. Pick the language only when detection gets it wrong.">
+          <Field id="source" label="Spoken language" hint="Detect automatically works for one clear speaker.">
             <SearchableSelect
               id="source"
               value={source}
@@ -321,7 +318,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
 
           {withPresenter ? (
             <>
-              <Field id="targets" label="Translate into" hint="One language per video. These languages have presenter voices; pick the accent below." error={errors.targets}>
+              <Field id="targets" label="Translate into" hint="One language per video; these have presenter voices." error={errors.targets}>
                 <select
                   id="targets"
                   value={targets[0] ?? ""}
@@ -345,7 +342,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
             </>
           ) : (
             <>
-          <Field id="targets" label="Translate into" hint="Search and pick one or more languages. For an accent, pick the regional version: English (UK) or English (US), Dutch (Belgium), Spanish (Mexico), Portuguese (Brazil) and more. The speaker keeps their own voice." error={errors.targets}>
+          <Field id="targets" label="Translate into" hint="One or more. For an accent, pick the regional version, e.g. English (UK) or Spanish (Mexico)." error={errors.targets}>
                 <SearchableSelect id="targets" multiple values={targets} options={languageOptions} onToggle={toggleTarget} placeholder="Search a language…" disabled={submitting} invalid={Boolean(errors.targets)} />
               </Field>
 
@@ -370,27 +367,29 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
                             <span className="mt-1 block">{q.bestFor}</span>
                           </>
                         }
-                        footnote={`${CREDIT_RULES.translate[q.key]} ${CREDIT_RULES.translate[q.key] === 1 ? "credit" : "credits"} per second of video, per language · ${q.wait}`}
+                        footnote={`${CREDIT_RULES.translate[q.key]} ${CREDIT_RULES.translate[q.key] === 1 ? "credit" : "credits"} per second, per language · ${q.wait}`}
                       />
                     );
                   })}
                 </OptionGrid>
                 {!can("precision") && <PlanHint feature="precision" text="Precision comes with Pro and up." />}
                 <p className="text-[13px] text-muted">
-                  {knownLength ? `For your ${Math.round(seconds)}-second video` : "Shown for a 30-second video until you add yours"}: the translation, the check of every line, lip sync and captions are all included. A short video uses at least {CREDIT_RULES.translateMinimum} credits per language.
+                  {knownLength ? `For your ${Math.round(seconds)}-second video.` : "For 30 seconds until you add your video."} Translation, the check of every line, lip sync and captions are included; at least {CREDIT_RULES.translateMinimum} credits per language.
                 </p>
               </fieldset>
             </>
           )}
 
           {/* Visible since 25 Oct 2026 (was under Advanced): names and special terms are where machine translation slips most. */}
-          <Field id="keepTerms" label="Words to keep as they are" optional hint="Brand and product names, and special terms such as an exercise or ingredient name, separated by commas. The translation and the check leave them exactly as written. Max 20.">
+          <Field id="keepTerms" label="Words to keep as they are" optional hint="Brand and product names stay exactly as written. Comma-separated, up to 20.">
             <Input id="keepTerms" value={keepTerms} maxLength={600} onChange={(e) => setKeepTerms(e.target.value)} placeholder="e.g. your brand name, product names" disabled={submitting} />
           </Field>
 
+          {/* Less used (27 Oct 2026): folded, so the form reads short. */}
+          <Disclosure title="Change the wording" summary={[cleanReplace(replaceRows).length ? `${cleanReplace(replaceRows).length} ${cleanReplace(replaceRows).length === 1 ? "word" : "words"} replaced` : null, instructions.trim() ? "instructions added" : null].filter(Boolean).join(" · ") || "Replace words, or ask for a change"}>
           <fieldset className="space-y-2">
             <legend className="flex w-full items-center justify-between text-sm font-medium text-ink">Words to replace <span className="label-mono text-muted">Optional</span></legend>
-            <p className="text-[13px] text-muted">Say something else than the video does, everywhere it comes up: another brand&apos;s name becomes yours, an old price becomes the new one. The rest stays the same.</p>
+            <p className="text-[13px] text-muted">Say something else than the video does: another brand becomes yours, an old price the new one.</p>
             <div className="space-y-2">
               {replaceRows.map((row, i) => (
                 <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2">
@@ -410,20 +409,21 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
             )}
           </fieldset>
 
-          <Field id="instructions" label="Anything to change?" optional hint="Plain words, up to 300 characters. Each line is changed only where it still fits its moment in the video, so the lip-sync stays right.">
+          <Field id="instructions" label="Anything to change?" optional hint="Plain words, up to 300 characters. A line changes only where it still fits its moment.">
             <Textarea id="instructions" value={instructions} maxLength={300} rows={2} onChange={(e) => setInstructions(e.target.value)} placeholder="e.g. Leave out the sentence about free shipping." disabled={submitting} />
           </Field>
+          </Disclosure>
         </SectionCard>
 
         {/* 3. Captions and format */}
-        <SectionCard number={3} title="Captions, format and sound" description="Choose the frame, how the captions look (or switch them off) and how the sound comes out.">
+        <SectionCard number={3} title="Captions, format and sound" description="The frame, the captions and the sound.">
           {!withPresenter && (<fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">Format</legend>
             <OptionGrid columns={2}>
               {(
                 [
-                  { key: "9:16", title: "Vertical 9:16", text: "For TikTok, Reels and Shorts. The speaker is centred; the sides are cropped.", recommended: true },
-                  { key: "original", title: "Keep original", text: "Same width and height as the video you upload.", recommended: false },
+                  { key: "9:16", title: "Vertical 9:16", text: "For TikTok, Reels and Shorts; the sides are cropped.", recommended: true },
+                  { key: "original", title: "Keep original", text: "The same size as your upload.", recommended: false },
                 ] as const
               ).map((f) => (
                 <OptionCard
@@ -444,8 +444,8 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
           {!withPresenter && (<fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">Sound</legend>
             <div className="grid gap-2 sm:grid-cols-2">
-              <CheckCard id="removeMusic" checked={removeMusic} onChange={setRemoveMusic} disabled={submitting} title="Remove background music" text="Only the translated voice stays. Useful when the music has lyrics or covers the speech." />
-              <CheckCard id="cleanVoice" checked={cleanVoice} onChange={setCleanVoice} disabled={submitting} title="Clean up the voice" text="Reduces echo and background noise in the translated speech." />
+              <CheckCard id="removeMusic" checked={removeMusic} onChange={setRemoveMusic} disabled={submitting} title="Remove background music" text="Only the translated voice stays." />
+              <CheckCard id="cleanVoice" checked={cleanVoice} onChange={setCleanVoice} disabled={submitting} title="Clean up the voice" text="Less echo and background noise." />
             </div>
           </fieldset>)}
 
@@ -454,14 +454,14 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
               <input id="trimSilence" type="checkbox" checked={trimSilence} onChange={(e) => setTrimSilence(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 shrink-0" />
               <span>
                 <span className="block text-sm font-medium text-ink">Remove silence at start and end</span>
-                <span className="block text-[13px] leading-relaxed text-muted">Cuts quiet stretches longer than about 0.3 s before the first and after the last spoken line. The speech itself and the lip-sync are untouched.</span>
+                <span className="block text-[13px] leading-relaxed text-muted">Quiet stretches before the first and after the last line are cut.</span>
               </span>
             </label>
             <label htmlFor="enhance" className={cn("flex items-start gap-3 rounded-panel border p-4 transition-colors duration-150", can("enhance") ? "cursor-pointer" : "cursor-not-allowed opacity-70", enhance ? "border-ink bg-surface" : "border-border bg-surface hover:border-ink/30")}>
               <input id="enhance" type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} disabled={submitting || !can("enhance")} className="mt-0.5 size-4 shrink-0" />
               <span>
                 <span className="flex items-center gap-2 text-sm font-medium text-ink">Enhance picture quality{!can("enhance") && <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-surface"><Lock className="size-3" aria-hidden />{FEATURE_PLAN.enhance}</span>}</span>
-                <span className="block text-[13px] leading-relaxed text-muted">Sharper, cleaner picture before the captions go on. Adds {CREDIT_RULES.translate.enhance} credit per second per language, and a few minutes.</span>
+                <span className="block text-[13px] leading-relaxed text-muted">Sharper picture before the captions. +{CREDIT_RULES.translate.enhance} credit per second per language.</span>
               </span>
             </label>
           </Disclosure>)}
@@ -571,6 +571,34 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
           </p>
         )}
       </SummaryPanel>
+
+      {/* Phones and tablets (27 Oct 2026): the credits and the button stay in view; a missing rights tick scrolls to the box. */}
+      <MobileActionBar>
+        {confirming && (
+          <p className="mb-2 text-[12.5px] leading-snug text-muted">
+            {Math.round(seconds)} s · {targets.length} {targets.length === 1 ? "language" : "languages"} · {totalCredits} credits{balance !== null && !shortOfCredits ? ` · ${(balance - totalCredits).toLocaleString("en-US")} left after this` : ""}. {config.demoMode ? "Demo: nothing is charged." : "A language that fails costs nothing."}
+          </p>
+        )}
+        <div className="flex items-center gap-3">
+          {confirming ? (
+            <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={submitting}>Back</Button>
+          ) : (
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] text-muted">{targets.length > 1 ? `Credits · ${targets.length} languages` : "Credits"}</p>
+              <p className={cn("text-[20px] font-semibold leading-none tracking-[-0.02em]", overBudget || shortOfCredits ? "text-danger" : "text-ink")}>{totalCredits}</p>
+            </div>
+          )}
+          <Button type="button" variant="accent" size="lg" className={cn("shrink-0", confirming && "flex-1")} onClick={() => formRef.current?.requestSubmit()} disabled={submitting || overBudget || shortOfCredits}>
+            {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
+            {submitting ? (uploadPct !== null && uploadPct < 100 ? `Uploading ${uploadPct}%` : "Starting…") : confirming ? "Start now" : "Start translation"}
+          </Button>
+        </div>
+        {submitting && uploadPct !== null && (
+          <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface-muted" aria-hidden>
+            <div className="h-full w-full origin-left rounded-full bg-accent transition-transform duration-300" style={{ transform: `scaleX(${uploadPct / 100})` }} />
+          </div>
+        )}
+      </MobileActionBar>
     </form>
   );
 }
