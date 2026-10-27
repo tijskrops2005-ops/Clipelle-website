@@ -302,6 +302,7 @@ export type NewTranslateProject = {
   captionStyle?: Partial<CaptionStyleChoice>;
   removeMusic?: boolean;
   cleanVoice?: boolean;
+  naturalPace?: boolean;
   removeText?: boolean;
   speaker?: "original" | "presenter";
   presenter?: PresenterTranslate;
@@ -363,6 +364,7 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
         ...(t.captionStyle ? { captionStyle: t.captionStyle } : {}),
         ...(t.removeMusic ? { removeMusic: true } : {}),
         ...(t.cleanVoice ? { cleanVoice: true } : {}),
+        ...(t.naturalPace ? { naturalPace: true } : {}),
         ...(t.removeText ? { removeText: true } : {}),
         ...(t.speaker === "presenter" && t.presenter ? { speaker: "presenter" as const, presenter: t.presenter } : {}),
         format: t.format,

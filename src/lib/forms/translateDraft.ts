@@ -29,6 +29,7 @@ export type TranslateFormState = {
   captionStyle?: CaptionStyleChoice;
   removeMusic?: boolean;
   cleanVoice?: boolean;
+  naturalPace?: boolean;
   removeText?: boolean;
   /** Rows of "in the video" → "say instead"; empty rows are left out. */
   replaceTerms?: { from: string; to: string }[];
@@ -43,6 +44,7 @@ function extras(s: TranslateFormState) {
     ...(s.captionStyle && !isDefaultCaptionStyle(s.captionStyle) ? { captionStyle: s.captionStyle } : {}),
     ...(s.removeMusic ? { removeMusic: true } : {}),
     ...(s.cleanVoice ? { cleanVoice: true } : {}),
+    ...(s.naturalPace ? { naturalPace: true } : {}),
     ...(s.removeText ? { removeText: true } : {}),
     ...(cleanReplace(s.replaceTerms).length ? { replaceTerms: cleanReplace(s.replaceTerms) } : {}),
     ...(s.instructions?.trim() ? { instructions: s.instructions.trim().slice(0, 300) } : {}),

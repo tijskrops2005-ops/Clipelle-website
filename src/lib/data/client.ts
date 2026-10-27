@@ -300,6 +300,7 @@ export type TranslateProjectDraft = {
   captionStyle?: CaptionStyleChoice;
   removeMusic?: boolean;
   cleanVoice?: boolean;
+  naturalPace?: boolean;
   removeText?: boolean;
   speaker?: "original" | "presenter";
   presenter?: PresenterTranslate;

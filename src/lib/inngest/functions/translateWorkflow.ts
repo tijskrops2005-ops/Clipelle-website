@@ -1,5 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
+import { chunkCues, CHUNK_CHARS } from "@/lib/captionChunks";
+import { captionStyleOf } from "@/lib/captionOptions";
 import { assets, db, projects, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
 import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, type TextBox } from "@/lib/services/textLocate";
 import { downloadTextRemovalOutput, estimateTextRemovalUsd, getTextRemoval, startTextRemoval, TEXT_REMOVAL_MODEL, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
@@ -195,7 +197,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       }
       try {
         const created = await withRetries("Starting the translation", () =>
-          createProofread({ video: { assetId: upload.heygenAssetId }, outputLanguages: outputs.map((o) => o.heygen), mode: input.quality, title: `Clipelle ${projectId.slice(0, 8)}`, brandGlossaryId, removeMusic: input.removeMusic, cleanVoice: input.cleanVoice, idempotencyKey: `${projectId}:proofread:${row.attempt}` }),
+          createProofread({ video: { assetId: upload.heygenAssetId }, outputLanguages: outputs.map((o) => o.heygen), mode: input.quality, title: `Clipelle ${projectId.slice(0, 8)}`, brandGlossaryId, removeMusic: input.removeMusic, cleanVoice: input.cleanVoice, naturalPace: input.naturalPace, idempotencyKey: `${projectId}:proofread:${row.attempt}` }),
         );
         const sessions: SessionMap = {};
         outputs.forEach((o, i) => {
@@ -894,7 +896,9 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
       if (cues.length > 0) {
         // The captions are always the checked lines (25 Oct 2026; before, only when trimming), shifted
         // with the picture when silence is cut. The service's own SRT is the fallback without lines.
-        const shifted = buildSrt(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })));
+        // Short chunks of a few words, at most two caption lines (27 Oct 2026): a whole sentence at once read as a block.
+        const size = captionStyleOf(input.captionStyle).size;
+        const shifted = buildSrt(chunkCues(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })), CHUNK_CHARS[size]));
         const asset = await storeBytes({ projectId, stepId: stepRow.id, kind: "srt", data: new TextEncoder().encode(shifted), mime: "application/x-subrip", fileName: `captions-${code}${trimStart > 0 ? "-trimmed" : "-checked"}.srt`, language: code });
         srtUrl = await providerUrl(asset);
       }

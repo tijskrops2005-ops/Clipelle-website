@@ -68,6 +68,7 @@ Rules:
 - Keep the meaning of the source. Never add claims, numbers or calls to action that are not in the source, except what the customer's replacements or wishes ask for.
 - Apply the customer's replacements in every fragment where the source term appears, and their wishes for the wording (leaving something out, a different word) where they fit the limit; mention each such change in "issue".
 - Keep brand and product names and any listed "keep" terms exactly as written.
+- Keep everything the speaker says, also when they repeat themselves: the new voice has to fill the same time, and a shorter text makes it speak slowly with long pauses. Only shorten a fragment that is over its limit.
 - Each fragment has a strict character limit; stay within it, shorten rather than cut mid-sentence. Drop fillers and interjections first ("Dude", "So", "Honestly") before anything with meaning, and never drop a product name, a number or a keep term.
 - Return exactly one entry per fragment, same index, same order. Never merge or split fragments.
 - When the source text is missing, judge only the target text: natural, complete sentences; flag anything that looks truncated.

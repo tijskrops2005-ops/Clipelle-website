@@ -83,6 +83,7 @@ export const TranslateFields = z.object({
   presenter: z.object({ engine: z.enum(["avatar_iii", "avatar_iv"]), lookId: z.string().max(100).optional(), voiceId: z.string().max(100).optional(), accent: z.string().max(40).optional(), speed: z.enum(["slower", "normal", "faster"]).optional(), layout: z.enum(PRESENTER_LAYOUTS) }).optional(),
   removeMusic: z.boolean().optional(),
   cleanVoice: z.boolean().optional(),
+  naturalPace: z.boolean().optional(),
   rightsConfirmed: z.literal(true, { error: "Confirm the rights to the video first." }),
   /** "Localize this ad": the finished ad (same workspace) is the source; no upload, rights recorded as generated here. */
   sourceProjectId: z.string().uuid().optional(),

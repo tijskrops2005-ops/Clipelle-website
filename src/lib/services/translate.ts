@@ -126,6 +126,8 @@ export type CreateProofreadInput = {
   /** Strip the background music (`disable_music_track`) / clean up the speech (`enable_speech_enhancement`). */
   removeMusic?: boolean;
   cleanVoice?: boolean;
+  /** Let the video run a little shorter or longer so the voice speaks at a natural pace (`enable_video_stretching`, 27 Oct 2026). */
+  naturalPace?: boolean;
   idempotencyKey?: string;
 };
 
@@ -143,6 +145,7 @@ export async function createProofread(input: CreateProofreadInput) {
       // Sent only when chosen, so a default request is unchanged (checked against the reference on 26 Oct 2026).
       ...(input.removeMusic ? { disable_music_track: true } : {}),
       ...(input.cleanVoice ? { enable_speech_enhancement: true } : {}),
+      ...(input.naturalPace ? { enable_video_stretching: true } : {}),
     }),
   });
   return data;

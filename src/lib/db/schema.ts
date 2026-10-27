@@ -123,6 +123,8 @@ export type TranslateInput = {
   /** Strip the background music / clean up the speech in the translation (HeyGen options). */
   removeMusic?: boolean;
   cleanVoice?: boolean;
+  /** The voice keeps a natural pace; the video may run slightly shorter or longer. */
+  naturalPace?: boolean;
   /** Remove text burned into the picture before translating (once per project). */
   removeText?: boolean;
   /** Where the old caption text was (fractions of the frame), found once before the text removal; null = none found. */
