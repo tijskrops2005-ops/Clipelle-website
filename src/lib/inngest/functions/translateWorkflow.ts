@@ -26,7 +26,7 @@ import {
   parseSrt,
   uploadHeygenAsset,
   uploadProofreadSrt,
-  createBrandGlossary,
+  applyBrandGlossary,
   type SrtCue,
   createDirectTranslation,
   directSession,
@@ -168,9 +168,11 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       const replaceTerms = input.replaceTerms ?? [];
       if (keepTerms.length || replaceTerms.length) {
         try {
-          brandGlossaryId = await withRetries("Saving the terms to keep", () => createBrandGlossary({ name: `reelay-${projectId.slice(0, 8)}-${row.attempt}`, doNotTranslate: keepTerms, replace: replaceTerms }));
+          brandGlossaryId = await withRetries("Saving the terms to keep", () => applyBrandGlossary({ doNotTranslate: keepTerms, replace: replaceTerms }));
         } catch (error) {
-          glossaryWarning = `The terms to keep could not be registered (${plainMessage(error)}); the check will still protect them in the subtitles.`;
+          // The provider's words stay in the log; the customer gets a plain line.
+          console.error("[glossary]", error instanceof Error ? error.message : error);
+          glossaryWarning = "Your words to keep or replace could not be passed to the translation itself; the automatic check still kept them in the captions.";
         }
       }
 

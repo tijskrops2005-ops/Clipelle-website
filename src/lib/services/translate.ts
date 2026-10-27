@@ -98,19 +98,28 @@ export function matchLanguages(live: string[]): Record<LanguageCode, string | nu
  * `do_not_translate_terms: [{term}]`; free; the id goes into `brand_glossary_id` on the proofread.
  * An unknown glossary id fails with 400 before rendering, so no credits are spent.
  */
-export async function createBrandGlossary(input: { name: string; doNotTranslate: string[]; /** "Say Y instead of X" (27 Oct 2026): `forced_translations` items `term`, `translation`, `target_language` (checked on the reference that day). */ replace?: { from: string; to: string }[] }): Promise<string> {
-  const data = await heygenFetch<{ brand_glossary_id?: string; id?: string }>("/v3/brand-glossaries", {
-    method: "POST",
-    body: JSON.stringify({
-      name: input.name.slice(0, 64),
-      do_not_translate_terms: input.doNotTranslate.map((term) => ({ term })),
-      ...(input.replace?.length ? { forced_translations: input.replace.map((r) => ({ term: r.from, translation: r.to, target_language: { scope: "all" } })) } : {}),
-    }),
-  });
-  const id = data.brand_glossary_id ?? data.id;
+/**
+ * The account's one glossary (27 Oct 2026: the service allows one per workspace on this plan; a second
+ * create answers 409 "already has a glossary"). Before each translation its lists are replaced with
+ * this project's words (PATCH replaces a list in full), then it is attached to the proofread.
+ */
+export async function applyBrandGlossary(input: { doNotTranslate: string[]; replace?: { from: string; to: string }[] }): Promise<string> {
+  const body = {
+    do_not_translate_terms: input.doNotTranslate.map((term) => ({ term })),
+    forced_translations: (input.replace ?? []).map((r) => ({ term: r.from, translation: r.to, target_language: { scope: "all" } })),
+  };
+  const list = await heygenFetch<{ brand_glossary_id: string; name: string }[]>("/v3/brand-glossaries");
+  const existing = (Array.isArray(list) ? list : []).find((g) => g.name === GLOSSARY_NAME) ?? (Array.isArray(list) ? list[0] : undefined);
+  if (existing) {
+    await heygenFetch(`/v3/brand-glossaries/${encodeURIComponent(existing.brand_glossary_id)}`, { method: "PATCH", body: JSON.stringify(body) });
+    return existing.brand_glossary_id;
+  }
+  const created = await heygenFetch<{ brand_glossary_id?: string; id?: string }>("/v3/brand-glossaries", { method: "POST", body: JSON.stringify({ name: GLOSSARY_NAME, ...body }) });
+  const id = created.brand_glossary_id ?? created.id;
   if (!id) throw new HeygenError("The glossary was created without an id.", 502, "empty_response");
   return id;
 }
+const GLOSSARY_NAME = "clipelle";
 
 /* ---------- proofread sessions ---------- */
 
@@ -121,7 +130,7 @@ export type CreateProofreadInput = {
   mode: TranslationQuality;
   title: string;
   speakerNum?: number;
-  /** Brand glossary with the customer's do-not-translate terms (createBrandGlossary). */
+  /** The account's glossary with this project's words (applyBrandGlossary). */
   brandGlossaryId?: string;
   /** Strip the background music (`disable_music_track`) / clean up the speech (`enable_speech_enhancement`). */
   removeMusic?: boolean;

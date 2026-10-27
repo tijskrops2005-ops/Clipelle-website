@@ -99,8 +99,26 @@ export function plainMessage(error: unknown): string {
     console.error("[cost guard]", error.message);
     return GUARD_MESSAGE;
   }
-  if (error instanceof Error) return error.message.slice(0, 500);
+  if (error instanceof Error) {
+    const clean = customerSafe(error.message);
+    if (clean !== error.message) console.error("[step]", error.message);
+    return clean.slice(0, 500);
+  }
   return "Something went wrong in this step. Retry it; if it keeps failing, contact support.";
+}
+
+/**
+ * Provider names, status codes and API paths never reach customers (rule: no provider names on
+ * customer screens; 27 Oct 2026 a raw "HeyGen error 409 … PATCH /v3/brand-glossaries" showed up).
+ */
+export function customerSafe(message: string) {
+  return message
+    .replace(/\b(?:HeyGen|Shotstack|fal\.ai|fal|Replicate|Anthropic|Claude|Supabase|Inngest|Topaz)\b(?:\s+error)?(?:\s+\d{3})?(?:\s*\([a-z _-]+\))?/gi, "the service")
+    .replace(/\b(?:GET|POST|PATCH|PUT|DELETE)\s+\/v\d\/\S+/g, "")
+    .replace(/\/v\d\/[\w\-/{}.?=&]+/g, "")
+    .replace(/\s+([.,;:])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 /** Errors worth a second try: network hiccups, rate limits, 5xx. Not: bad input, no credit, cost guard. */
