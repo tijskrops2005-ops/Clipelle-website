@@ -9,7 +9,9 @@ import { emailFrom } from "@/lib/brand";
  * Another provider can be plugged in here behind the same function.
  */
 /** `replyTo`: where "Reply" goes, e.g. the visitor who filled in a site form (forwarded requests). */
-export type OutgoingEmail = { to: string; subject: string; text: string; replyTo?: string };
+/** `html`: the branded version next to the plain text. `inline`: images the HTML shows as cid:<contentId> (27 Oct 2026). */
+export type InlineImage = { contentId: string; filename: string; contentType: string; data: Buffer };
+export type OutgoingEmail = { to: string; subject: string; text: string; html?: string; inline?: InlineImage[]; replyTo?: string };
 
 export async function sendEmail(mail: OutgoingEmail): Promise<{ sent: boolean; reason?: string }> {
   const key = process.env.RESEND_API_KEY?.trim();
@@ -21,7 +23,15 @@ export async function sendEmail(mail: OutgoingEmail): Promise<{ sent: boolean; r
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [mail.to], subject: mail.subject, text: mail.text, ...(mail.replyTo ? { reply_to: mail.replyTo } : {}) }),
+    body: JSON.stringify({
+      from,
+      to: [mail.to],
+      subject: mail.subject,
+      text: mail.text,
+      ...(mail.html ? { html: mail.html } : {}),
+      ...(mail.inline?.length ? { attachments: mail.inline.map((a) => ({ filename: a.filename, content: a.data.toString("base64"), content_type: a.contentType, content_id: a.contentId })) } : {}),
+      ...(mail.replyTo ? { reply_to: mail.replyTo } : {}),
+    }),
     signal: AbortSignal.timeout(10_000),
   });
   if (!r.ok) return { sent: false, reason: `provider_${r.status}` };

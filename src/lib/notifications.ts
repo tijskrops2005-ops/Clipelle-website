@@ -1,9 +1,11 @@
 import "server-only";
-import { and, eq, isNull } from "drizzle-orm";
-import { db, profiles, projectBatches, projects, steps } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
+import { and, asc, eq, isNull } from "drizzle-orm";
+import { db, profiles, projectBatches, projects, steps, translations } from "@/lib/db";
+import { sendEmail, type InlineImage } from "@/lib/email";
 import { absoluteUrl } from "@/lib/site";
-import { composeBatchMail, composeProjectMail } from "@/lib/notificationMail";
+import { composeBatchMail, composeProjectMail, type MailDownload } from "@/lib/notificationMail";
+import { makeMailPoster } from "@/lib/mailPoster";
+import { languageOf } from "@/lib/languages";
 import { batchStatusOf } from "@/lib/batchStatus";
 
 /**
@@ -12,6 +14,10 @@ import { batchStatusOf } from "@/lib/batchStatus";
  * owner's switch in Settings → Profile turns it off; the "notified" stamp makes it run once.
  * Never throws: a mail problem must not fail a finished video.
  */
+function mailLinks() {
+  return { logoUrl: absoluteUrl("/brand/clipelle-logo-dark-600.png"), settingsUrl: absoluteUrl("/settings") };
+}
+
 export async function notifyProjectEnd(projectId: string) {
   try {
     const [row] = await db().select().from(projects).where(and(eq(projects.id, projectId), isNull(projects.notifiedAt))).limit(1);
@@ -22,8 +28,25 @@ export async function notifyProjectEnd(projectId: string) {
     const [owner] = await db().select().from(profiles).where(eq(profiles.userId, row.ownerId)).limit(1);
     if (!owner || !owner.notifyEmail) return;
     const [failedStep] = row.status === "failed" ? await db().select({ error: steps.error }).from(steps).where(and(eq(steps.projectId, projectId), eq(steps.status, "failed"))).limit(1) : [];
-    const mail = composeProjectMail({ name: row.name, status: row.status, kind: row.workflow, url: absoluteUrl(`/projects/${row.id}`), error: failedStep?.error ?? undefined, recipientName: owner.name });
-    await sendEmail({ to: owner.email, ...mail });
+    const url = absoluteUrl(`/projects/${row.id}`);
+    let downloads: MailDownload[] = [];
+    const inline: InlineImage[] = [];
+    let poster: { cid: string; width: number; height: number } | null = null;
+    if (row.status === "completed") {
+      // The project page starts the download itself (?download=), after a sign-in when needed.
+      if (row.workflow === "ad") downloads = [{ label: "Video", url: `${url}?download=1` }];
+      else {
+        const done = await db().select({ language: translations.language }).from(translations).where(and(eq(translations.projectId, projectId), eq(translations.status, "completed"))).orderBy(asc(translations.createdAt));
+        downloads = done.map((t) => ({ label: languageOf(t.language).label, url: `${url}?download=${encodeURIComponent(t.language)}` }));
+      }
+      const picture = await makeMailPoster(projectId);
+      if (picture) {
+        poster = { cid: "poster", width: picture.width, height: picture.height };
+        inline.push({ contentId: "poster", filename: "video.jpg", contentType: "image/jpeg", data: picture.jpeg });
+      }
+    }
+    const mail = composeProjectMail({ name: row.name, status: row.status, kind: row.workflow, url, error: failedStep?.error ?? undefined, recipientName: owner.name, downloads, poster, links: mailLinks() });
+    await sendEmail({ to: owner.email, ...mail, inline });
   } catch (error) {
     console.error("[notify] project mail failed", error);
   }
@@ -45,7 +68,7 @@ export async function notifyBatchEnd(batchId: string) {
     if (!owner || !owner.notifyEmail) return;
     const finished = members.filter((m) => m.status === "completed").length;
     const failed = members.filter((m) => m.status === "failed").length;
-    const mail = composeBatchMail({ name: batch.name, status, finished, failed, total: members.length, url: absoluteUrl(`/batches/${batchId}`), recipientName: owner.name });
+    const mail = composeBatchMail({ name: batch.name, status, finished, failed, total: members.length, url: absoluteUrl(`/batches/${batchId}`), recipientName: owner.name, links: mailLinks() });
     await sendEmail({ to: owner.email, ...mail });
   } catch (error) {
     console.error("[notify] batch mail failed", error);

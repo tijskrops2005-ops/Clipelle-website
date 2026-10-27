@@ -4,6 +4,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 const sent: { to: string; subject: string }[] = [];
 vi.mock("@/lib/email", () => ({ sendEmail: vi.fn(async (m: { to: string; subject: string }) => (sent.push(m), { sent: true })), notifyAddress: () => null }));
 
+vi.mock("@/lib/mailPoster", () => ({ makeMailPoster: vi.fn(async () => null) }));
+
 const hasDb = Boolean(process.env.DATABASE_URL);
 const userId = "00000000-0000-0000-0000-0000000000ce";
 
