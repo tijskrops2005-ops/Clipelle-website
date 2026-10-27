@@ -25,7 +25,7 @@ function Frame({ label, children, illustration, cursor }: { label: string; child
       <div className="relative grid grid-cols-[1fr_auto] items-center gap-4 p-4 sm:gap-6 sm:p-6" aria-hidden>
         {children}
         {/* A cursor that walks the same clicks as the loop (wide screens; on phones the layout is too tight for a path). */}
-        <span className={`${cursor} pointer-events-none absolute z-10 hidden md:block`}>
+        <span className={`${cursor} pointer-events-none absolute inset-0 z-10 hidden md:block`}>
           <svg width="20" height="20" viewBox="0 0 24 24" className="drop-shadow-md"><path d="M4 2l16 9-7 2-3 7z" fill="#111114" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" /></svg>
         </span>
       </div>

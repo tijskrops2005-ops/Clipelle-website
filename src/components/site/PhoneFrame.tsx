@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { LazyVideo } from "@/components/site/LazyVideo";
 
 /**
  * A 9:16 phone frame with a looping, muted sample video, or an animated caption placeholder
@@ -9,7 +10,7 @@ export function PhoneFrame({ src, poster, caption = "Sample made with Clipelle",
     <figure className={cn("relative mx-auto w-[240px] sm:w-[280px]", float && "float-soft", className)}>
       <div className="relative aspect-[9/16] overflow-hidden rounded-[32px] border-[6px] border-ink bg-ink shadow-card-hover">
         {src ? (
-          <video src={src} poster={poster} muted autoPlay loop playsInline preload="metadata" aria-label={caption} className="size-full object-cover" />
+          <LazyVideo src={src} poster={poster} label={caption} />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-b from-surface-muted via-border to-ink/60" aria-hidden>
             <div className="absolute inset-x-4 bottom-10 text-center">

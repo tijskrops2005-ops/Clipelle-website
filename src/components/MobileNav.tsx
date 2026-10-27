@@ -2,9 +2,10 @@
 
 import { config } from "@/lib/config";
 import Link from "next/link";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { Menu, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Drawer } from "@/components/ui/Drawer";
 import { Brand } from "@/components/Brand";
 import { UserMenu } from "@/components/UserMenu";
 import { SidebarLinks, type ShellUser } from "@/components/Sidebar";
@@ -14,21 +15,6 @@ export function MobileNav({ user }: { user: ShellUser }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const close = () => setOpen(false);
-
-  // Escape closes the drawer; body scroll is locked while it is open.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
-    };
-  }, [open]);
 
   return (
     <>
@@ -57,23 +43,9 @@ export function MobileNav({ user }: { user: ShellUser }) {
         </div>
       </div>
 
-      {open && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="presentation">
-          {/* backdrop */}
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={close}
-            className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]"
-          />
-          {/* drawer */}
-          <div
-            id={panelId}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Menu"
-            className="absolute inset-y-0 left-0 flex w-[min(20rem,85vw)] flex-col rounded-r-card bg-surface px-6 py-5 shadow-card-hover"
-          >
+      {/* The drawer stays mounted and slides (27 Oct 2026); closed it is inert. */}
+      <Drawer open={open} onClose={close} label="Menu" className="px-6 py-5">
+          <div id={panelId} className="flex min-h-0 flex-1 flex-col">
             <div className="flex items-center justify-between">
               <Brand onClick={close} />
               <button
@@ -97,8 +69,7 @@ export function MobileNav({ user }: { user: ShellUser }) {
 
             <p className="pt-3 text-[13px] leading-relaxed text-muted">{config.tagline}</p>
           </div>
-        </div>
-      )}
+      </Drawer>
     </>
   );
 }

@@ -92,7 +92,7 @@ export function TranslateDemo({ locale }: { locale: Locale }) {
           </div>
 
           {/* the cursor (wide screens only: the layout below md stacks, where the path would miss) */}
-          <span className="tdemo-cursor pointer-events-none absolute z-10 hidden md:block">
+          <span className="tdemo-cursor pointer-events-none absolute inset-0 z-10 hidden md:block">
             <svg width="22" height="22" viewBox="0 0 24 24" className="drop-shadow-md"><path d="M4 2l16 9-7 2-3 7z" fill="#111114" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" /></svg>
           </span>
         </div>

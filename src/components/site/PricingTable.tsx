@@ -376,14 +376,15 @@ function CompareTable({ t, locale }: { t: T; locale: Locale }) {
   const rows = allRows.filter((r): r is [string, (p: Plan) => string | boolean] => r !== null);
   return (
     <div className="mt-8 overflow-x-auto rounded-card bg-surface shadow-card">
+      {/* Phones (27 Oct 2026): the feature column stays put while the plans scroll sideways. */}
       <table className="w-full min-w-[720px] text-left text-[15px]">
         <thead className="bg-surface-muted text-[13px] text-muted">
-          <tr><th className="px-5 py-3 font-medium">{t.compare.feature}</th>{cols.map((p) => <th key={p.key} className="px-5 py-3 font-medium text-ink">{p.name}</th>)}</tr>
+          <tr><th className="sticky left-0 z-10 bg-surface-muted px-5 py-3 font-medium">{t.compare.feature}</th>{cols.map((p) => <th key={p.key} className="px-5 py-3 font-medium text-ink">{p.name}</th>)}</tr>
         </thead>
         <tbody className="divide-y divide-divider">
           {rows.map(([label, fn]) => (
             <tr key={label}>
-              <td className="px-5 py-3 text-ink">{label}</td>
+              <td className="sticky left-0 z-10 bg-surface px-5 py-3 text-ink shadow-[1px_0_0_var(--divider)]">{label}</td>
               {cols.map((p) => {
                 const v = fn(p);
                 return <td key={p.key} className="px-5 py-3 text-muted">{v === true ? <Check className="size-4 text-success" aria-label={t.compare.included} /> : v === false ? <Minus className="size-4 text-border" aria-label={t.compare.notIncluded} /> : v}</td>;

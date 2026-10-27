@@ -7,6 +7,7 @@ import { ChevronDown, Menu, X } from "lucide-react";
 import { config } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { Drawer } from "@/components/ui/Drawer";
 import { menus, menusFor, type MenuItem, type MenuKey } from "./siteNav";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
@@ -163,14 +164,6 @@ export function SiteHeader({ account, locale = "en" }: { account: ReactNode; loc
       clearTimers();
     };
   }, []);
-  useEffect(() => {
-    if (!drawer) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [drawer]);
 
   const twoColumns = (current?.columns.length ?? 0) > 1;
 
@@ -254,11 +247,8 @@ export function SiteHeader({ account, locale = "en" }: { account: ReactNode; loc
         )}
       </div>
 
-      {/* Mobile drawer */}
-      {drawer && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="presentation">
-          <button type="button" aria-label={t.header.menuClose} onClick={() => setDrawer(false)} className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" />
-          <div role="dialog" aria-modal="true" aria-label="Menu" className="absolute inset-y-0 left-0 flex w-[min(22rem,88vw)] flex-col overflow-y-auto rounded-r-card bg-surface px-5 py-5 shadow-card-hover">
+      {/* Mobile drawer: stays mounted and slides (27 Oct 2026). */}
+      <Drawer open={drawer} onClose={() => setDrawer(false)} label="Menu" width="w-[min(22rem,88vw)]" className="overflow-y-auto px-5 py-5">
             <div className="flex items-center justify-between">
               <LogoLockup />
               <button type="button" aria-label={t.header.menuClose} onClick={() => setDrawer(false)} className="focus-ring grid size-10 place-items-center rounded-full text-ink hover:bg-ink/5">
@@ -277,9 +267,7 @@ export function SiteHeader({ account, locale = "en" }: { account: ReactNode; loc
             <Button href="/signup" variant="accent" size="lg" className="mt-auto w-full" onClick={closeAll}>
               {t.common.startFree}
             </Button>
-          </div>
-        </div>
-      )}
+      </Drawer>
     </header>
   );
 }

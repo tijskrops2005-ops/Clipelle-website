@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { DemoRunner } from "@/components/DemoRunner";
 import { StatusWatcher } from "@/components/StatusWatcher";
+import { PauseOffscreen } from "@/components/motion/PauseOffscreen";
 import { ToolSearch } from "@/components/ToolSearch";
 import { TopBar } from "@/components/TopBar";
 import { isAdmin } from "@/lib/adminAccess";
@@ -36,6 +37,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen">
       <DemoRunner />
       <StatusWatcher />
+      <PauseOffscreen />
       <ToolSearch />
       {/* The sidebar stays in view while the page scrolls; its middle scrolls on its own when the list is long. */}
       <div className="sticky top-0 hidden h-screen lg:block">

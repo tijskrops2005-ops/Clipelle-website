@@ -23,7 +23,7 @@ export function TopBar() {
   const pathname = usePathname();
   const unseen = useUnseenCount();
   return (
-    <div className="sticky top-0 z-30 border-b border-divider/70 bg-bg/80 backdrop-blur-md">
+    <div className="sticky top-0 z-30 border-b border-divider/70 bg-bg/95">
       <div className="mx-auto flex h-14 w-full max-w-[1180px] items-center justify-between gap-4 px-8 lg:px-10">
         <p className="truncate text-[13px] font-medium text-muted">{sectionOf(pathname)}</p>
         <div className="flex items-center gap-2">

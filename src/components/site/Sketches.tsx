@@ -39,7 +39,7 @@ export function AdSketch({ className, label = "Illustration", words = ["Tired of
         ))}
       </div>
       {/* progress */}
-      <div className="absolute inset-x-5 bottom-5 h-1 rounded-full bg-white/20"><div className="playhead absolute -top-1 size-3 rounded-full bg-white shadow" /></div>
+      <div className="absolute inset-x-5 bottom-5 h-1 rounded-full bg-white/20"><div className="playhead-track absolute inset-x-[4%] -top-1 h-3"><div className="playhead absolute left-0 top-0 size-3 rounded-full bg-white shadow" /></div></div>
       <span className="label-mono absolute left-3 top-3 rounded-full bg-surface/90 px-2 py-0.5 text-[10px] text-ink">{label}</span>
     </div>
   );

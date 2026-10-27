@@ -7,7 +7,7 @@ type Size = "sm" | "md" | "lg";
 
 const base =
   "inline-flex items-center justify-center gap-2 font-medium whitespace-nowrap " +
-  "transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 " +
+  "transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 " +
   "focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:pointer-events-none active:scale-[0.985] active:transition-transform";
 
 const variants: Record<Variant, string> = {
