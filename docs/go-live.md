@@ -29,7 +29,7 @@ Vink af wat klaar is: ☐ wordt ☑.
 | 3 | Inhoud verzamelen | Tijs | ☐ |
 | 4 | Supabase productie | Tijs + Claude | ☑ project `clipelle-prod` (27 okt), tabellen en voorbeeldvideo's erin, beveiligingstest groen |
 | 5 | Resend (e-mail) | Tijs | ◐ DNS-records staan er al |
-| 6 | Supabase Auth in het nieuwe project | Tijs + Claude | ☐ |
+| 6 | Supabase Auth in het nieuwe project | Tijs + Claude | ☑ URL's, SMTP via Resend, Google en de vier Clipelle-mails (27 okt) |
 | 7 | Stripe testmodus | Tijs + Claude | ☐ |
 | 8 | Reditus | Tijs + Claude | ☐ |
 | 9 | Inngest Cloud | Tijs + Claude | ☐ |
@@ -99,12 +99,12 @@ Je bedrijfsgegevens (Tijs Krops, Sluitgatweg 10, Nagele, KvK 97223344, btw NL005
 
 Het huidige project is al ingesteld; het nieuwe project moet hetzelfde krijgen.
 
-1. ☐ **Claude via Chrome:** Authentication → URL Configuration:
+1. ☑ **Claude via Chrome:** Authentication → URL Configuration:
    - Site URL: `https://www.clipelle.com`
    - Redirect URLs: `https://www.clipelle.com/auth/callback`, `https://www.clipelle.com/auth/callback?next=/reset-password` en `http://localhost:3001/auth/callback`
-2. ☐ **Claude via Chrome:** Email Templates. Gebruik de teksten uit `docs/email-templates/` (Clipelle-stijl, met een inlogcode in plaats van een link).
-3. ☐ **Tijs:** SMTP met host `smtp.resend.com`, poort `465`, gebruiker `resend`, en als wachtwoord je Resend-sleutel. Afzender: `hello@clipelle.com`, naam: Clipelle. Het wachtwoord vul jij in; dat mag Claude niet.
-4. ☐ **Tijs:** Google-login. Voeg in Google Cloud Console bij je OAuth-client de redirect-URI van het nieuwe project toe (`https://<nieuw-project>.supabase.co/auth/v1/callback`). Plak client-id en secret in Supabase onder Providers → Google. `NEXT_PUBLIC_AUTH_GOOGLE=true` staat in `.env.prod`.
+2. ☑ **Claude (via de Management API):** Email Templates. Gebruik de teksten uit `docs/email-templates/` (Clipelle-stijl, met een inlogcode in plaats van een link).
+3. ☑ **Tijs:** SMTP met host `smtp.resend.com`, poort `465`, gebruiker `resend`, en als wachtwoord je Resend-sleutel. Afzender: `hello@clipelle.com`, naam: Clipelle. Het wachtwoord vul jij in; dat mag Claude niet.
+4. ☑ **Tijs:** Google-login. Voeg in Google Cloud Console bij je OAuth-client de redirect-URI van het nieuwe project toe (`https://<nieuw-project>.supabase.co/auth/v1/callback`). Plak client-id en secret in Supabase onder Providers → Google. `NEXT_PUBLIC_AUTH_GOOGLE=true` staat in `.env.prod`.
 
 **Klaar als:** aanmelden een code van hello@clipelle.com stuurt en inloggen werkt.
 
