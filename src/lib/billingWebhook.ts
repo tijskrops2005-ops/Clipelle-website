@@ -1,6 +1,6 @@
 import "server-only";
 import type Stripe from "stripe";
-import { grantAutoReloadCredits, grantPlanCredits, grantTopupCredits, setPlan, workspaceByCustomer } from "@/lib/billing";
+import { grantAnnualMonth, grantAutoReloadCredits, grantPlanCredits, grantTopupCredits, setPlan, workspaceByCustomer } from "@/lib/billing";
 import { disableAutoReload } from "@/lib/billingAutoReload";
 import { PLAN_KEYS } from "@/lib/billing";
 import { CUSTOM_CREDITS, planByKey, planByLookupKey, validCustomCredits } from "@/lib/plans";
@@ -111,9 +111,9 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
       const lookup = typeof price === "string" ? await deps.lookupKeyOfPrice(price) : price?.lookup_key ?? null;
       const planKey = planByLookupKey(lookup)?.key ?? (line?.metadata?.planKey as string | undefined) ?? (invoice.parent?.subscription_details?.metadata?.planKey as string | undefined) ?? ws.planKey;
       if (PLAN_KEYS.includes(planKey as (typeof PLAN_KEYS)[number]) && planKey !== "free") {
-        // An annual price pays for twelve months of credits (27 Oct 2026).
-        const months = lookup && planByKey(planKey)?.stripeLookup?.annual === lookup ? 12 : 1;
-        await grantPlanCredits(ws.id, ws.ownerUserId, planKey, invoice.id, months);
+        // An annual price is paid once a year, its credits come every month (27 Oct 2026): month 1 now, the rest from the daily job.
+        if (lookup && planByKey(planKey)?.stripeLookup?.annual === lookup) await grantAnnualMonth(ws.id, ws.ownerUserId, planKey, invoice.id!, 1);
+        else await grantPlanCredits(ws.id, ws.ownerUserId, planKey, invoice.id);
         await setPlan(ws.id, { planKey, subscriptionStatus: "active" });
         return { handled: true, note: `plan credits for ${planKey}` };
       }

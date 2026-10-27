@@ -35,8 +35,8 @@ export async function GET() {
       amountCents: price?.unit_amount ?? null,
       currency: price?.currency ?? "usd",
       interval: annual ? "annual" : "monthly",
-      // What the paid invoice brings: a month of credits, or twelve on an annual price.
-      credits: plan ? plan.creditsPerMonth * (annual ? 12 : 1) : null,
+      // What the paid invoice brings now: one month of credits (an annual plan then adds a month each month).
+      credits: plan?.creditsPerMonth ?? null,
       planKey: found.ws.planKey,
     });
   } catch (error) {

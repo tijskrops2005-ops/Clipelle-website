@@ -1,6 +1,7 @@
 import "server-only";
-import { count, eq, gte, sql } from "drizzle-orm";
-import { db, profiles } from "@/lib/db";
+import { and, count, desc, eq, gt, gte, like, sql } from "drizzle-orm";
+import { creditLedger, db, profiles, workspaces } from "@/lib/db";
+import { ANNUAL_MONTHS, annualMonthsDue, annualReference, parseAnnualReference } from "@/lib/annualCredits";
 import { ALL_PLANS, CREDIT_EXPIRY, FREE_AD, FREE_AD_CREDITS, TOPUPS, planByKey } from "@/lib/plans";
 import { grantCredits } from "@/lib/credits";
 import { updateWorkspaceBilling, workspaceByCustomer } from "@/lib/workspaces";
@@ -60,15 +61,57 @@ export function trialAvailable(w: { trialStartedAt: Date | null; stripeSubscript
   return !w.trialStartedAt && !w.stripeSubscriptionId && w.planKey === "free";
 }
 
-/**
- * Credits for a plan period, on an invoice paid event. Idempotent on the invoice id. They never expire.
- * An annual invoice pays for twelve months, so it brings twelve months of credits at once (27 Oct 2026;
- * before, a year's payment brought one month's credits).
- */
-export async function grantPlanCredits(workspaceId: string, userId: string, planKey: string, invoiceId: string, months = 1) {
+/** Credits for a plan period, on an invoice paid event. Idempotent on the invoice id. They never expire. */
+export async function grantPlanCredits(workspaceId: string, userId: string, planKey: string, invoiceId: string) {
   const plan = planByKey(planKey);
   if (!plan || plan.creditsPerMonth === 0) return;
-  await grantCredits({ workspaceId, userId, credits: plan.creditsPerMonth * months, kind: "grant_subscription", note: months === 12 ? `${plan.name} plan, 12 months` : `${plan.name} plan`, expiresAt: null, reference: `invoice:${invoiceId}` });
+  await grantCredits({ workspaceId, userId, credits: plan.creditsPerMonth, kind: "grant_subscription", note: `${plan.name} plan`, expiresAt: null, reference: `invoice:${invoiceId}` });
+}
+
+/**
+ * One month of an annual plan's credits (27 Oct 2026, Tijs: paid once a year, credits every month).
+ * Month 1 comes with the paid invoice, months 2 to 12 from the daily job. Idempotent per month.
+ */
+export async function grantAnnualMonth(workspaceId: string, userId: string, planKey: string, invoiceId: string, month: number) {
+  const plan = planByKey(planKey);
+  if (!plan || plan.creditsPerMonth === 0 || month < 1 || month > ANNUAL_MONTHS) return;
+  await grantCredits({ workspaceId, userId, credits: plan.creditsPerMonth, kind: "grant_subscription", note: `${plan.name} plan (annual, month ${month} of ${ANNUAL_MONTHS})`, expiresAt: null, reference: annualReference(invoiceId, planKey, month) });
+}
+
+/** Subscriptions that still receive their monthly credits; a cancelled plan stops (it is "free" by then). */
+const RECEIVING = new Set(["active", "canceling", "past_due"]);
+
+/**
+ * The daily job behind annual plans: for the newest annual period of every workspace, adds each month
+ * that has started since the payment and has not been granted yet. A period stops when the plan was
+ * cancelled or changed (the workspace no longer has that plan), and after month 12. Returns the grants made.
+ */
+export async function grantDueAnnualCredits(now = new Date()) {
+  const since = new Date(now.getTime() - 400 * 86_400_000);
+  const starts = await db()
+    .select({ workspaceId: creditLedger.workspaceId, reference: creditLedger.reference, createdAt: creditLedger.createdAt })
+    .from(creditLedger)
+    .where(and(eq(creditLedger.kind, "grant_subscription"), like(creditLedger.reference, "annual:%:1"), gt(creditLedger.createdAt, since)))
+    .orderBy(desc(creditLedger.createdAt));
+  const seen = new Set<string>();
+  let granted = 0;
+  for (const start of starts) {
+    if (!start.workspaceId || seen.has(start.workspaceId)) continue;
+    seen.add(start.workspaceId);
+    const period = parseAnnualReference(start.reference);
+    if (!period) continue;
+    const [ws] = await db().select().from(workspaces).where(eq(workspaces.id, start.workspaceId)).limit(1);
+    if (!ws || ws.planKey !== period.planKey || !RECEIVING.has(ws.subscriptionStatus ?? "")) continue;
+    const due = annualMonthsDue(start.createdAt, now);
+    for (let month = 2; month <= due; month++) {
+      const reference = annualReference(period.invoiceId, period.planKey, month);
+      const [twin] = await db().select({ id: creditLedger.id }).from(creditLedger).where(and(eq(creditLedger.workspaceId, ws.id), eq(creditLedger.reference, reference))).limit(1);
+      if (twin) continue;
+      await grantAnnualMonth(ws.id, ws.ownerUserId, period.planKey, period.invoiceId, month);
+      granted++;
+    }
+  }
+  return granted;
 }
 
 export async function grantTopupCredits(workspaceId: string, userId: string, topupKey: string, sessionId: string, customCredits?: number) {

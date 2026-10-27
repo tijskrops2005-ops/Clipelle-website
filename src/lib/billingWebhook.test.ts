@@ -91,10 +91,10 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     expect((await applyStripeEvent(invoice("evt_test_inv_1", "subscription_update"), deps)).note).toMatch(/no plan credits/);
     expect(await getCreditBalance(wsId)).toBe(before);
     // The renewal grants the plan the price belongs to (Pro), not the stale metadata (Starter), once;
-    // the price is annual, so it brings twelve months of credits (27 Oct 2026).
+    // the price is annual, so it brings month 1 now (the daily job adds the other months).
     expect((await applyStripeEvent(invoice("evt_test_inv_2", "subscription_cycle"), deps)).note).toMatch(/pro/);
     await applyStripeEvent(invoice("evt_test_inv_2", "subscription_cycle"), deps);
-    expect(await getCreditBalance(wsId)).toBe(before + pro.creditsPerMonth * 12);
+    expect(await getCreditBalance(wsId)).toBe(before + pro.creditsPerMonth);
   });
 
   it("marks a failed renewal and a cancellation at period end, without touching credits", async () => {
@@ -151,14 +151,15 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     expect(await getCreditBalance(wsId)).toBe(before + pro.creditsPerMonth);
   });
 
-  it("gives the plan's credits when the trial is ended early, twelve months on an annual price, never on a proration (27 Oct 2026)", async () => {
+  it("gives the plan's credits when the trial is ended early, never on a proration; an annual plan gets a month at a time (27 Oct 2026)", async () => {
     const { applyStripeEvent, isFullPeriodUpdate } = await import("./billingWebhook");
+    const { grantDueAnnualCredits } = await import("./billing");
     const { getCreditBalance } = await import("./credits");
     const { PLANS } = await import("./plans");
     const { db, workspaces } = await import("@/lib/db");
     const { eq } = await import("drizzle-orm");
     const starter = PLANS.find((p) => p.key === "starter")!;
-    await db().update(workspaces).set({ stripeCustomerId: "cus_test_startnow", planKey: "starter" }).where(eq(workspaces.id, wsId));
+    await db().update(workspaces).set({ stripeCustomerId: "cus_test_startnow", planKey: "starter", subscriptionStatus: "active" }).where(eq(workspaces.id, wsId));
     const before = await getCreditBalance(wsId);
     const line = (proration: boolean) => ({ metadata: {}, parent: { subscription_item_details: { proration } }, pricing: { price_details: { price: "price_x", product: "prod_x" } } });
     const invoice = (id: string, paid: number, proration: boolean) => ({ id, type: "invoice.paid", data: { object: { id: `in_${id}`, billing_reason: "subscription_update", amount_paid: paid, customer: "cus_test_startnow", parent: { subscription_details: { subscription: "sub_sn", metadata: {} } }, lines: { data: [line(proration)] } } } }) as unknown as import("stripe").Stripe.Event;
@@ -170,9 +171,21 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     // A proration or an unpaid update brings nothing.
     expect(isFullPeriodUpdate({ billing_reason: "subscription_update", amount_paid: 900, lines: { data: [line(true)] } } as never)).toBe(false);
     expect(isFullPeriodUpdate({ billing_reason: "subscription_update", amount_paid: 0, lines: { data: [line(false)] } } as never)).toBe(false);
-    // An annual price pays for twelve months of credits.
+    // An annual price: month 1 with the payment, then one month at a time from the daily job, at most 12.
     const annual = { lookupKeyOfPrice: async () => "reelay_starter_annual", subscriptionStatus: async () => "active" };
     await applyStripeEvent(invoice("evt_test_sn_2", 19200, false), annual);
+    expect(await getCreditBalance(wsId)).toBe(before + starter.creditsPerMonth * 2);
+    const day = 86_400_000;
+    await grantDueAnnualCredits(new Date(Date.now() + 10 * day));
+    expect(await getCreditBalance(wsId)).toBe(before + starter.creditsPerMonth * 2);
+    await grantDueAnnualCredits(new Date(Date.now() + 95 * day)); // months 2, 3 and 4 have started
+    await grantDueAnnualCredits(new Date(Date.now() + 95 * day)); // the same day again adds nothing
+    expect(await getCreditBalance(wsId)).toBe(before + starter.creditsPerMonth * 5);
+    await grantDueAnnualCredits(new Date(Date.now() + 370 * day)); // after month 12 has started: never more than 12 months
+    expect(await getCreditBalance(wsId)).toBe(before + starter.creditsPerMonth * 13);
+    // A cancelled plan stops the months (the workspace is back on free).
+    await db().update(workspaces).set({ planKey: "free", subscriptionStatus: "canceled" }).where(eq(workspaces.id, wsId));
+    await grantDueAnnualCredits(new Date(Date.now() + 380 * day));
     expect(await getCreditBalance(wsId)).toBe(before + starter.creditsPerMonth * 13);
   });
 

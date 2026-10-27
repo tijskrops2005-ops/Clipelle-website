@@ -54,13 +54,13 @@ export function PlanConfirmModal({ change, busy, onConfirm, onClose }: { change:
               <>
                 <Row label="Due today"><strong className="text-ink">{money(0)}</strong></Row>
                 <Row label="During the trial">Your free credits; start the plan early any time under Billing to get its credits at once</Row>
-                <Row label={`On ${date(c.trialEnds)}`}>{money(c.amount)}, then {c.interval === "annual" ? `${n(c.creditsAfter * 12)} credits, a year's worth at once` : `${n(c.creditsAfter)} credits`}</Row>
+                <Row label={`On ${date(c.trialEnds)}`}>{money(c.amount)}, then {n(c.creditsAfter)} credits every month</Row>
               </>
             )}
             {c.mode === "new" && c.dueToday !== null && (
               <>
                 <Row label="Due today"><strong className="text-ink">{money(c.dueToday)}</strong></Row>
-                <Row label="Credits">{c.interval === "annual" ? `${n(c.creditsAfter * 12)}, a year's worth,` : n(c.creditsAfter)} as soon as the payment is confirmed</Row>
+                <Row label="Credits">{n(c.creditsAfter)} as soon as the payment is confirmed, then every month</Row>
               </>
             )}
             {c.mode === "change" && <Row label="When">{c.direction === "downgrade" ? "From your next renewal; your credits stay" : "Right away; the new credits come with your next renewal"}</Row>}
@@ -99,7 +99,7 @@ export function StartNowModal({ quote, planName, busy, onConfirm, onClose }: { q
         <div className="space-y-4">
           <dl className="divide-y divide-divider text-[14px]">
             <Row label="Due today"><strong className="text-ink">{money ?? "Your plan's price"}</strong>{q.interval === "annual" ? " for the year" : ""}</Row>
-            <Row label="Credits">{q.credits ? `${n(q.credits)} credits` : "Your plan's credits"}, as soon as the payment is confirmed</Row>
+            <Row label="Credits">{q.credits ? `${n(q.credits)} credits` : "Your plan's credits"} as soon as the payment is confirmed, then every month</Row>
             <Row label="Next payment">{q.interval === "annual" ? "In a year" : "In a month"}, then every {q.interval === "annual" ? "year" : "month"}</Row>
           </dl>
           <p className="text-[13px] text-muted">We charge the card you added for the trial. Prices exclude VAT where it applies. Credits never expire; cancel any time from the billing portal.</p>
