@@ -304,11 +304,14 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const trimStart = Math.max(0, Math.round((input.trimStart ?? 0) * 10) / 10);
   const trimEnd = Math.max(0, Math.round((input.trimEnd ?? 0) * 10) / 10);
   const total = Math.max(1, Math.round((input.seconds - trimStart - trimEnd) * 10) / 10);
-  const look = captionStyleOf({ color: accent as CaptionStyleChoice["color"], ...input.captionStyle });
-  const active = activeWord(look.highlight, look.color, light, ink, look);
-  const words = captionText(look, light, ink);
   const frame = input.size ? fitSize(input.size) : { width: 1080, height: 1920 };
-  const cover = look.show && input.coverBox ? coverBar(input.coverBox, frame, CAPTION_SIZE_PX[look.size]) : null;
+  const base = captionStyleOf({ color: accent as CaptionStyleChoice["color"], ...input.captionStyle });
+  const cover = base.show && input.coverBox ? coverBar(input.coverBox, frame, CAPTION_SIZE_PX[base.size]) : null;
+  // On a white bar the words are dark and need no outline; a white highlight would vanish, so it turns red.
+  const onWhite = Boolean(cover) && (base.bar ?? "white") === "white";
+  const look: CaptionStyleChoice = onWhite ? { ...base, textColor: "#111114", color: base.color === "#FFFFFF" ? "#D43F1B" : base.color } : base;
+  const active = activeWord(look.highlight, look.color, light, ink, look);
+  const words = onWhite ? { text: ink, stroke: { width: 0, color: light, opacity: 0 } } : captionText(look, light, ink);
 
   const captions = {
     clips: [
@@ -353,7 +356,7 @@ export function buildCaptionEdit(input: CaptionEditInput) {
     ? { format: "mp4", size: fitSize(input.size), fps: 25 }
     : { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 };
   // The soft bar over the removed text sits between the captions and the video.
-  const bar = cover ? { clips: [{ asset: { type: "shape", shape: "rectangle", width: cover.width, height: cover.height, fill: { color: ink, opacity: 0.6 }, rectangle: { width: cover.width, height: cover.height, cornerRadius: 22 } }, start: 0, length: total, offset: { x: 0, y: cover.offsetY } }] } : null;
+  const bar = cover ? { clips: [{ asset: { type: "shape", shape: "rectangle", width: cover.width, height: cover.height, fill: onWhite ? { color: light, opacity: 0.94 } : { color: ink, opacity: 0.75 }, rectangle: { width: cover.width, height: cover.height, cornerRadius: 22 } }, start: 0, length: total, offset: { x: 0, y: cover.offsetY } }] } : null;
   return {
     // Captions off: only the video track (still cropped or resized, silence still trimmed).
     timeline: { background: ink, tracks: look.show ? (bar ? [captions, bar, video] : [captions, video]) : [video] },

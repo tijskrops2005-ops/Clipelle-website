@@ -57,9 +57,18 @@ export type CaptionStyleChoice = {
   uppercase: boolean;
   /** Colour of the words; missing on older projects = white. */
   textColor?: CaptionTextColor;
+  /** With text removal: the bar behind the captions where the old text was (27 Oct 2026). */
+  bar?: CaptionBar;
 };
 
-export const DEFAULT_CAPTION_STYLE: CaptionStyleChoice = { show: true, highlight: "box", color: "#D43F1B", size: "medium", uppercase: true, textColor: "#FFFFFF" };
+export const CAPTION_BARS = ["white", "dark"] as const;
+export type CaptionBar = (typeof CAPTION_BARS)[number];
+export const CAPTION_BAR_META: Record<CaptionBar, { label: string; blurb: string }> = {
+  white: { label: "White", blurb: "A white bar with dark text, like the labels on TikTok. Hides the old text best." },
+  dark: { label: "Dark", blurb: "A dark bar with light text." },
+};
+
+export const DEFAULT_CAPTION_STYLE: CaptionStyleChoice = { show: true, highlight: "box", color: "#D43F1B", size: "medium", uppercase: true, textColor: "#FFFFFF", bar: "white" };
 
 /** The style with every missing field filled from the default (stored projects from before 26 Oct 2026 have none). */
 export function captionStyleOf(style?: Partial<CaptionStyleChoice> | null): CaptionStyleChoice {
@@ -68,7 +77,7 @@ export function captionStyleOf(style?: Partial<CaptionStyleChoice> | null): Capt
 
 export function isDefaultCaptionStyle(style: CaptionStyleChoice) {
   const d = DEFAULT_CAPTION_STYLE;
-  return style.show === d.show && style.highlight === d.highlight && style.color === d.color && style.size === d.size && style.uppercase === d.uppercase && (style.textColor ?? "#FFFFFF") === d.textColor;
+  return style.show === d.show && style.highlight === d.highlight && style.color === d.color && style.size === d.size && style.uppercase === d.uppercase && (style.textColor ?? "#FFFFFF") === d.textColor && (style.bar ?? "white") === d.bar;
 }
 
 /** "Box · red · medium · capitals", or "Off": for summaries and the project page. */

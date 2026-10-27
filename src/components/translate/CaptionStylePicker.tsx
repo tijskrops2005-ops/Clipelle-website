@@ -3,15 +3,17 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, CAPTION_TEXT_COLORS, isLightColor, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { CAPTION_BARS, CAPTION_BAR_META, CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, CAPTION_TEXT_COLORS, isLightColor, type CaptionStyleChoice } from "@/lib/captionOptions";
 
 /**
  * The caption choices of a translation (26 Oct 2026): on or off, how the spoken word stands out, its
  * colour, size, capitals and position, with a drawn preview that follows every choice. The preview is
  * an illustration in our own tokens, not a render; the real captions come from the edit service.
  */
-export function CaptionStylePicker({ value, onChange, position, onPosition, disabled }: { value: CaptionStyleChoice; onChange: (next: CaptionStyleChoice) => void; position: "low" | "middle"; onPosition: (p: "low" | "middle") => void; disabled?: boolean }) {
+export function CaptionStylePicker({ value, onChange, position, onPosition, overOldText = false, disabled }: { value: CaptionStyleChoice; onChange: (next: CaptionStyleChoice) => void; position: "low" | "middle"; onPosition: (p: "low" | "middle") => void; /** With text removal: the captions sit where the old text was, on a bar (27 Oct 2026). */ overOldText?: boolean; disabled?: boolean }) {
   const set = (patch: Partial<CaptionStyleChoice>) => onChange({ ...value, ...patch });
+  const bar = value.bar ?? "white";
+  const whiteBar = overOldText && bar === "white";
   return (
     <div className="space-y-5">
       <fieldset className="space-y-2">
@@ -45,7 +47,15 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, disa
               </fieldset>
             )}
 
-            <fieldset className="space-y-2">
+            {overOldText && (
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium text-ink">Bar behind the captions</legend>
+                <SegmentedControl label="Bar behind the captions" size="sm" options={CAPTION_BARS.map((b) => ({ key: b, label: CAPTION_BAR_META[b].label }))} value={bar} onChange={(b) => set({ bar: b })} disabled={disabled} />
+                <p className="text-[13px] text-muted">Your captions go exactly where the old text was. {CAPTION_BAR_META[bar].blurb}</p>
+              </fieldset>
+            )}
+
+            {!whiteBar && (<fieldset className="space-y-2">
               <legend className="text-sm font-medium text-ink">Text colour</legend>
               <div role="radiogroup" aria-label="Text colour" className="flex flex-wrap gap-2">
                 {CAPTION_TEXT_COLORS.map((c) => {
@@ -57,17 +67,19 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, disa
                   );
                 })}
               </div>
-            </fieldset>
+            </fieldset>)}
 
             <div className="flex flex-wrap gap-x-6 gap-y-4">
               <fieldset className="space-y-2">
                 <legend className="text-sm font-medium text-ink">Size</legend>
                 <SegmentedControl label="Size" size="sm" options={CAPTION_SIZES.map((s) => ({ key: s, label: s[0].toUpperCase() + s.slice(1) }))} value={value.size} onChange={(s) => set({ size: s })} disabled={disabled} />
               </fieldset>
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-medium text-ink">Position</legend>
-                <SegmentedControl label="Position" size="sm" options={[{ key: "low", label: "Low" }, { key: "middle", label: "Middle" }]} value={position} onChange={onPosition} disabled={disabled} />
-              </fieldset>
+              {!overOldText && (
+                <fieldset className="space-y-2">
+                  <legend className="text-sm font-medium text-ink">Position</legend>
+                  <SegmentedControl label="Position" size="sm" options={[{ key: "low", label: "Low" }, { key: "middle", label: "Middle" }]} value={position} onChange={onPosition} disabled={disabled} />
+                </fieldset>
+              )}
             </div>
 
             <label className="flex cursor-pointer items-center gap-3 text-sm text-ink">
@@ -76,7 +88,7 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, disa
             </label>
           </div>
 
-          <CaptionPreview style={value} position={position} />
+          <CaptionPreview style={value} position={position} bar={overOldText ? bar : null} />
         </div>
       )}
     </div>
@@ -84,15 +96,16 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, disa
 }
 
 /** A small 9:16 frame with a sample line; the second word is the one being spoken. */
-function CaptionPreview({ style, position }: { style: CaptionStyleChoice; position: "low" | "middle" }) {
+function CaptionPreview({ style, position, bar }: { style: CaptionStyleChoice; position: "low" | "middle"; bar: "white" | "dark" | null }) {
   const words = ["Made", "for", "every", "language"];
   const scale = CAPTION_SIZE_PX[style.size] / 62;
-  const text = style.textColor ?? "#FFFFFF";
+  // On a white bar the words are dark without an outline, as in the real edit.
+  const text = bar === "white" ? "#111114" : style.textColor ?? "#FFFFFF";
   return (
     <figure className="mx-auto w-[9.5rem]">
       <div className="relative aspect-[9/16] overflow-hidden rounded-tile bg-gradient-to-b from-ink/70 via-ink/45 to-ink/80" aria-hidden>
         <div className="absolute inset-x-3 top-[28%] h-[34%] rounded-[40%] bg-surface/15 blur-md" />
-        <p className={cn("absolute inset-x-2 flex flex-wrap justify-center gap-x-1 gap-y-0.5 text-center font-black leading-tight", position === "middle" ? "top-1/2 -translate-y-1/2" : "bottom-[22%]")} style={{ fontSize: `${Math.round(13 * scale)}px`, color: text, textShadow: isLightColor(text) ? "0 0 3px var(--ink), 0 0 2px var(--ink)" : "0 0 3px #fff, 0 0 2px #fff" }}>
+        <p className={cn("absolute inset-x-2 flex flex-wrap justify-center gap-x-1 gap-y-0.5 text-center font-black leading-tight", bar && "rounded-[8px] px-1.5 py-1.5", bar === "white" && "bg-white/95", bar === "dark" && "bg-ink/75", position === "middle" && !bar ? "top-1/2 -translate-y-1/2" : "bottom-[22%]")} style={{ fontSize: `${Math.round(13 * scale)}px`, color: text, textShadow: bar === "white" ? "none" : isLightColor(text) ? "0 0 3px var(--ink), 0 0 2px var(--ink)" : "0 0 3px #fff, 0 0 2px #fff" }}>
           {words.map((w, i) => {
             const spoken = i === 1 && style.highlight !== "none";
             const text = style.uppercase ? w.toUpperCase() : w;

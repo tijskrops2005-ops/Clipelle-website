@@ -86,7 +86,15 @@ describe("captions over removed text (27 Oct 2026)", () => {
     const tracks = (e.timeline as any).tracks;
     expect(tracks).toHaveLength(3);
     expect(tracks[0].clips[0].offset.y).toBeCloseTo(-0.24, 2);
-    expect(tracks[1].clips[0].asset).toMatchObject({ type: "shape", shape: "rectangle", fill: { opacity: 0.6 } });
+    // Default: a white bar with dark words and no outline.
+    expect(tracks[1].clips[0].asset).toMatchObject({ type: "shape", shape: "rectangle", fill: { color: "#FFFFFF", opacity: 0.94 } });
+    expect(tracks[0].clips[0].asset.font.color).toBe("#111114");
+    expect(tracks[0].clips[0].asset.stroke.width).toBe(0);
+    // The dark bar keeps light words with their outline.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dark = (buildCaptionEdit({ ...base, coverBox: { top: 0.7, bottom: 0.78, left: 0.1, right: 0.9 }, captionStyle: { bar: "dark" } }).timeline as any).tracks;
+    expect(dark[1].clips[0].asset.fill).toEqual({ color: "#111114", opacity: 0.75 });
+    expect(dark[0].clips[0].asset.font.color).toBe("#FFFFFF");
     expect(tracks[1].clips[0].offset.y).toBe(tracks[0].clips[0].offset.y);
   });
   it("keeps the bar inside the frame and at least two caption lines high", async () => {

@@ -89,7 +89,7 @@ export const translateWorkflow = inngest.createFunction(
 
     /* ---------- 0. optional: remove the on-screen text from the source (once per project) ---------- */
     // Before the text is removed: where was it? Our captions go there later, on a bar (27 Oct 2026).
-    const oldTextBox = input.removeText && input.captionCover !== false ? await locateOldText(projectId, input, step) : null;
+    const oldTextBox = input.removeText ? await locateOldText(projectId, input, step) : null;
     const sourceAssetId = input.removeText ? await runTextRemoval(projectId, input, step) : input.sourceAssetId;
 
     /* ---------- 1. upload ---------- */

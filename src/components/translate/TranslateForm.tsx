@@ -89,7 +89,6 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
   const [removeMusic, setRemoveMusic] = useState(false);
   const [cleanVoice, setCleanVoice] = useState(false);
   const [removeText, setRemoveText] = useState(false);
-  const [captionCover, setCaptionCover] = useState(true);
   // Who speaks the translation (26 Oct 2026): the original speaker, lip-synced, or an AI presenter.
   const [speaker, setSpeaker] = useState<"original" | "presenter">(initialSpeaker);
   const [presenterSetup, setPresenterSetup] = useState<PresenterTranslate>(DEFAULT_PRESENTER_TRANSLATE);
@@ -156,7 +155,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
   }));
   const sourceOptions: SelectOption[] = [{ value: "auto", label: "Detect automatically", group: "Recommended" }, ...LANGUAGES.map((l) => ({ value: l.code, label: l.label, group: TOP_LANGUAGES.includes(l.base) ? "Most used" : "All languages" }))];
 
-  const formState = { video: video ?? undefined, sourceAd, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic: withPresenter ? false : removeMusic, cleanVoice: withPresenter ? false : cleanVoice, removeText, captionCover, speaker, presenter: withPresenter ? presenterSetup : undefined };
+  const formState = { video: video ?? undefined, sourceAd, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic: withPresenter ? false : removeMusic, cleanVoice: withPresenter ? false : cleanVoice, removeText, speaker, presenter: withPresenter ? presenterSetup : undefined };
 
   function validate(): Errors {
     return validateTranslateForm(formState);
@@ -204,7 +203,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
     withPresenter ? { label: "Speaker", value: `AI presenter · ${presenterSetup.engine === "avatar_iv" ? "Premium" : "Standard"}` } : { label: "Quality", value: qualityTitle },
     { label: "Format", value: format === "9:16" ? "Vertical 9:16" : "Original" },
     { label: "Captions", value: captionStyle.show ? `${captionPosition === "middle" ? "Middle" : "Low"} · ${describeCaptionStyle(captionStyle)}` : "Off" },
-    ...(removeText ? [{ label: "On-screen text", value: captionCover && !withPresenter ? "Removed · captions over it" : "Removed" }] : []),
+    ...(removeText ? [{ label: "On-screen text", value: withPresenter ? "Removed" : "Removed · captions over it" }] : []),
     ...(removeMusic || cleanVoice ? [{ label: "Sound", value: [removeMusic && "No music", cleanVoice && "Clean voice"].filter(Boolean).join(" · ") }] : []),
     ...(enhance ? [{ label: "Enhancement", value: "On" }] : []),
   ];
@@ -254,18 +253,9 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
                 <Badge tone="warning">Beta</Badge>
                 {!can("removeText") && <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-surface"><Lock className="size-3" aria-hidden />{FEATURE_PLAN.removeText}</span>}
               </span>
-              <span className="block text-[13px] leading-relaxed text-muted">Titles, old captions, stickers and text logos are painted out of the picture first, so you start from a clean video and only your new captions appear. Adds {CREDIT_RULES.translate.removeText} credit per second per language, and a few minutes.</span>
+              <span className="block text-[13px] leading-relaxed text-muted">Titles, old captions, stickers and text logos are painted out of the picture first, and your new captions go exactly where the old text was, on a bar that hides any trace. Adds {CREDIT_RULES.translate.removeText} credit per second per language, and a few minutes.</span>
             </span>
           </label>
-          {removeText && !withPresenter && (
-            <label htmlFor="captionCover" className="-mt-2 ml-7 flex cursor-pointer items-start gap-3 text-sm text-ink">
-              <input id="captionCover" type="checkbox" checked={captionCover} onChange={(e) => setCaptionCover(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 shrink-0" />
-              <span>
-                <span className="block font-medium">Put my captions where the old text was</span>
-                <span className="block text-[13px] leading-relaxed text-muted">Removed text can leave a soft smudge. Your captions go exactly there, on a subtle dark bar that hides it. The position below is then ignored.</span>
-              </span>
-            </label>
-          )}
           <Field id="projectName" label="Project name" hint="Only you see this." error={errors.projectName}>
             <Input
               id="projectName"
@@ -415,7 +405,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
             </OptionGrid>
           </fieldset>)}
 
-          <CaptionStylePicker value={captionStyle} onChange={setCaptionStyle} position={captionPosition} onPosition={setCaptionPosition} disabled={submitting} />
+          <CaptionStylePicker value={captionStyle} onChange={setCaptionStyle} position={captionPosition} onPosition={setCaptionPosition} overOldText={removeText && !withPresenter} disabled={submitting} />
 
           {!withPresenter && (<fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">Sound</legend>
