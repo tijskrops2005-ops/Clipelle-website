@@ -25,7 +25,7 @@ function requireDatabaseUrl() {
   return url;
 }
 
-type Db = ReturnType<typeof createDb>;
+type Db = ReturnType<typeof createDb>["db"];
 
 function createDb() {
   const client = postgres(requireDatabaseUrl(), {
@@ -37,14 +37,32 @@ function createDb() {
     ssl: "require",
     connection: { application_name: "clipelle" },
   });
-  return drizzle({ client, schema });
+  return { db: drizzle({ client, schema }), client };
 }
 
+/**
+ * After a long quiet spell (a laptop that slept, a server that idled) the pooled sockets may be dead
+ * without anyone noticing: the 20-second idle timer does not run during sleep, and a query on such a
+ * socket waits until TCP gives up (27 Oct 2026: 47–54 s per request, then ECONNRESET). So after more
+ * than 25 s without use the pool is replaced by a fresh one; the old one closes in the background.
+ */
+const STALE_AFTER_MS = 25_000;
+
 // Cached on globalThis so Next.js dev hot reloads reuse the connection.
-const globalForDb = globalThis as unknown as { __clipelleDb?: Db };
+const globalForDb = globalThis as unknown as { __clipelleDb?: Db; __clipelleDbClient?: ReturnType<typeof postgres>; __clipelleDbUsedAt?: number };
 
 export function db(): Db {
-  if (!globalForDb.__clipelleDb) globalForDb.__clipelleDb = createDb();
+  const now = Date.now();
+  const stale = globalForDb.__clipelleDbUsedAt === undefined || now - globalForDb.__clipelleDbUsedAt > STALE_AFTER_MS;
+  if (!globalForDb.__clipelleDb || stale) {
+    const old = globalForDb.__clipelleDbClient;
+    const fresh = createDb();
+    globalForDb.__clipelleDb = fresh.db;
+    globalForDb.__clipelleDbClient = fresh.client;
+    // Let queries already running on the old pool finish (or fail) on their own; close it without waiting.
+    if (old) void old.end({ timeout: 30 }).catch(() => {});
+  }
+  globalForDb.__clipelleDbUsedAt = now;
   return globalForDb.__clipelleDb;
 }
 
