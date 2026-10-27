@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { CAPTION_BARS, CAPTION_BAR_META, CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, CAPTION_TEXT_COLORS, isLightColor, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { CAPTION_BARS, CAPTION_BAR_META, effectiveBar, type CaptionBar, CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, CAPTION_TEXT_COLORS, isLightColor, type CaptionStyleChoice } from "@/lib/captionOptions";
 
 /**
  * The caption choices of a translation (26 Oct 2026): on or off, how the spoken word stands out, its
@@ -12,8 +12,8 @@ import { CAPTION_BARS, CAPTION_BAR_META, CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAP
  */
 export function CaptionStylePicker({ value, onChange, position, onPosition, overOldText = false, disabled }: { value: CaptionStyleChoice; onChange: (next: CaptionStyleChoice) => void; position: "low" | "middle"; onPosition: (p: "low" | "middle") => void; /** With text removal: the captions sit where the old text was, on a bar (27 Oct 2026). */ overOldText?: boolean; disabled?: boolean }) {
   const set = (patch: Partial<CaptionStyleChoice>) => onChange({ ...value, ...patch });
-  const bar = value.bar ?? "white";
-  const whiteBar = overOldText && bar === "white";
+  const bar = effectiveBar(value, overOldText);
+  const onBox = bar !== "none";
   return (
     <div className="space-y-5">
       <fieldset className="space-y-2">
@@ -47,15 +47,16 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, over
               </fieldset>
             )}
 
-            {overOldText && (
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-medium text-ink">Bar behind the captions</legend>
-                <SegmentedControl label="Bar behind the captions" size="sm" options={CAPTION_BARS.map((b) => ({ key: b, label: CAPTION_BAR_META[b].label }))} value={bar} onChange={(b) => set({ bar: b })} disabled={disabled} />
-                <p className="text-[13px] text-muted">Your captions go exactly where the old text was. {CAPTION_BAR_META[bar].blurb}</p>
-              </fieldset>
-            )}
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-ink">Background</legend>
+              <SegmentedControl label="Background" size="sm" options={CAPTION_BARS.map((b) => ({ key: b, label: CAPTION_BAR_META[b].label }))} value={bar} onChange={(b) => set({ bar: b })} disabled={disabled} />
+              <p className="text-[13px] text-muted">
+                {onBox ? "A box that fits snugly around each caption line and only shows while it is on screen; the text colour follows the box." : "The words float over the picture with an outline."}
+                {overOldText ? " Your captions go exactly where the old text was." : ""}
+              </p>
+            </fieldset>
 
-            {!whiteBar && (<fieldset className="space-y-2">
+            {!onBox && (<fieldset className="space-y-2">
               <legend className="text-sm font-medium text-ink">Text colour</legend>
               <div role="radiogroup" aria-label="Text colour" className="flex flex-wrap gap-2">
                 {CAPTION_TEXT_COLORS.map((c) => {
@@ -88,7 +89,7 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, over
             </label>
           </div>
 
-          <CaptionPreview style={value} position={position} bar={overOldText ? bar : null} />
+          <CaptionPreview style={value} position={position} bar={bar} overOldText={overOldText} />
         </div>
       )}
     </div>
@@ -96,32 +97,44 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, over
 }
 
 /** A small 9:16 frame with a sample line; the second word is the one being spoken. */
-function CaptionPreview({ style, position, bar }: { style: CaptionStyleChoice; position: "low" | "middle"; bar: "white" | "dark" | null }) {
+function CaptionPreview({ style, position, bar, overOldText }: { style: CaptionStyleChoice; position: "low" | "middle"; bar: CaptionBar; overOldText: boolean }) {
   const words = ["Made", "for", "every", "language"];
   const scale = CAPTION_SIZE_PX[style.size] / 62;
-  // On a white bar the words are dark without an outline, as in the real edit.
-  const text = bar === "white" ? "#111114" : style.textColor ?? "#FFFFFF";
+  const box = CAPTION_BAR_META[bar];
+  // In a box the words take the contrasting colour and lose their outline, as in the real edit.
+  const text = box.color ? (isLightColor(box.color) ? "#111114" : "#FFFFFF") : style.textColor ?? "#FFFFFF";
+  const highlight = box.color && style.color.toLowerCase() === box.color.toLowerCase() ? "#D43F1B" : style.color;
   return (
     <figure className="mx-auto w-[9.5rem]">
       <div className="relative aspect-[9/16] overflow-hidden rounded-tile bg-gradient-to-b from-ink/70 via-ink/45 to-ink/80" aria-hidden>
         <div className="absolute inset-x-3 top-[28%] h-[34%] rounded-[40%] bg-surface/15 blur-md" />
-        <p className={cn("absolute inset-x-2 flex flex-wrap justify-center gap-x-1 gap-y-0.5 text-center font-black leading-tight", bar && "rounded-[8px] px-1.5 py-1.5", bar === "white" && "bg-white/95", bar === "dark" && "bg-ink/75", position === "middle" && !bar ? "top-1/2 -translate-y-1/2" : "bottom-[22%]")} style={{ fontSize: `${Math.round(13 * scale)}px`, color: text, textShadow: bar === "white" ? "none" : isLightColor(text) ? "0 0 3px var(--ink), 0 0 2px var(--ink)" : "0 0 3px #fff, 0 0 2px #fff" }}>
-          {words.map((w, i) => {
-            const spoken = i === 1 && style.highlight !== "none";
-            const text = style.uppercase ? w.toUpperCase() : w;
-            return (
-              <span
-                key={w}
-                className={cn("rounded-[3px] px-0.5", spoken && style.highlight === "underline" && "underline decoration-2 underline-offset-2")}
-                style={spoken ? (style.highlight === "box" ? { background: style.color, ...(isLightColor(style.color) ? { color: "var(--ink)", textShadow: "none" } : {}) } : { color: style.color }) : undefined}
-              >
-                {text}
-              </span>
-            );
-          })}
-        </p>
+        <div className={cn("absolute inset-x-2 flex justify-center", position === "middle" && !overOldText ? "top-1/2 -translate-y-1/2" : "bottom-[22%]")}>
+          <p
+            className={cn("inline-flex max-w-full flex-wrap justify-center gap-x-1 gap-y-0.5 text-center font-black leading-tight", box.color && "rounded-[7px] px-2 py-1.5")}
+            style={{ fontSize: `${Math.round(13 * scale)}px`, color: text, background: box.color ? hexAlpha(box.color, box.opacity) : undefined, textShadow: box.color ? "none" : isLightColor(text) ? "0 0 3px var(--ink), 0 0 2px var(--ink)" : "0 0 3px #fff, 0 0 2px #fff" }}
+          >
+            {words.map((w, i) => {
+              const spoken = i === 1 && style.highlight !== "none";
+              const label = style.uppercase ? w.toUpperCase() : w;
+              return (
+                <span
+                  key={w}
+                  className={cn("rounded-[3px] px-0.5", spoken && style.highlight === "underline" && "underline decoration-2 underline-offset-2")}
+                  style={spoken ? (style.highlight === "box" ? { background: highlight, color: isLightColor(highlight) ? "#111114" : "#FFFFFF", textShadow: "none" } : { color: highlight }) : undefined}
+                >
+                  {label}
+                </span>
+              );
+            })}
+          </p>
+        </div>
       </div>
       <figcaption className="mt-1.5 text-center text-[11.5px] text-muted">Preview</figcaption>
     </figure>
   );
+}
+
+function hexAlpha(hex: string, alpha: number) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }

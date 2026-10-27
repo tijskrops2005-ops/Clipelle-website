@@ -1,5 +1,5 @@
 import "server-only";
-import { CAPTION_SIZE_PX, DEFAULT_CAPTION_STYLE as DEFAULT_TRANSLATE_LOOK, captionStyleOf, isLightColor, type CaptionHighlight, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { CAPTION_BAR_META, CAPTION_SIZE_PX, DEFAULT_CAPTION_STYLE as DEFAULT_TRANSLATE_LOOK, captionStyleOf, effectiveBar, isLightColor, type CaptionHighlight, type CaptionStyleChoice } from "@/lib/captionOptions";
 import { adLayout } from "@/lib/adLayout";
 import { DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, type CaptionStyle } from "@/lib/adOptions";
 
@@ -304,14 +304,20 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const trimStart = Math.max(0, Math.round((input.trimStart ?? 0) * 10) / 10);
   const trimEnd = Math.max(0, Math.round((input.trimEnd ?? 0) * 10) / 10);
   const total = Math.max(1, Math.round((input.seconds - trimStart - trimEnd) * 10) / 10);
-  const frame = input.size ? fitSize(input.size) : { width: 1080, height: 1920 };
   const base = captionStyleOf({ color: accent as CaptionStyleChoice["color"], ...input.captionStyle });
-  const cover = base.show && input.coverBox ? coverBar(input.coverBox, frame, CAPTION_SIZE_PX[base.size]) : null;
-  // On a white bar the words are dark and need no outline; a white highlight would vanish, so it turns red.
-  const onWhite = Boolean(cover) && (base.bar ?? "white") === "white";
-  const look: CaptionStyleChoice = onWhite ? { ...base, textColor: "#111114", color: base.color === "#FFFFFF" ? "#D43F1B" : base.color } : base;
-  const active = activeWord(look.highlight, look.color, light, ink, look);
-  const words = onWhite ? { text: ink, stroke: { width: 0, color: light, opacity: 0 } } : captionText(look, light, ink);
+  // A background that wraps the text (27 Oct 2026); over removed text it is white unless chosen otherwise.
+  const barKey = base.show ? effectiveBar(base, Boolean(input.coverBox)) : "none";
+  const bar = CAPTION_BAR_META[barKey];
+  const darkWords = bar.color !== null && isLightColor(bar.color);
+  // On a box the words need no outline; a highlight in the box's own colour would vanish, so it turns red (or white on red).
+  const look: CaptionStyleChoice = bar.color
+    ? { ...base, textColor: darkWords ? "#111114" : "#FFFFFF", color: base.color.toLowerCase() === bar.color.toLowerCase() ? (bar.color === "#D43F1B" ? "#FFFFFF" : "#D43F1B") : base.color }
+    : base;
+  const activeBase = activeWord(look.highlight, look.color, light, ink, look);
+  const active = activeBase && bar.color ? { ...activeBase, stroke: "none" as const } : activeBase;
+  const words = bar.color ? { text: look.textColor ?? light, stroke: { width: 0, color: light, opacity: 0 } } : captionText(look, light, ink);
+  // Over removed text the captions are centred where that text was.
+  const offsetY = input.coverBox ? captionOffsetFor(input.coverBox) : input.captionPosition === "middle" ? 0 : -0.18;
 
   const captions = {
     clips: [
@@ -322,19 +328,19 @@ export function buildCaptionEdit(input: CaptionEditInput) {
           font: { family: "Roboto", size: CAPTION_SIZE_PX[look.size], color: words.text, opacity: 1, weight: 900 },
           style: { textTransform: look.uppercase ? "uppercase" : "none" },
           stroke: words.stroke,
-          animation: { style: "pop" },
+          // In a box the words stay put (no pop), so the box keeps its shape while a line is spoken.
+          animation: { style: bar.color ? "highlight" : "pop" },
           ...(active ? { active } : {}),
-          border: { width: 0, color: ink, opacity: 1, radius: 16 },
-          padding: { top: 6, right: 10, bottom: 6, left: 10 },
-          align: { vertical: "middle" },
+          ...(bar.color ? { background: { color: bar.color, opacity: bar.opacity, borderRadius: 18, wrap: true, padding: 18 } } : { border: { width: 0, color: ink, opacity: 1, radius: 16 } }),
+          padding: bar.color ? { top: 8, right: 14, bottom: 8, left: 14 } : { top: 6, right: 10, bottom: 6, left: 10 },
+          align: { horizontal: "center", vertical: "middle" },
         },
         start: 0,
         length: total,
         width: 900,
         height: 500,
         // "low": the caption box sits roughly between 18% and 32% from the bottom, clear of the bottom 15%.
-        // Over removed text: centred on where that text was.
-        offset: { x: 0, y: cover ? cover.offsetY : input.captionPosition === "middle" ? 0 : -0.18 },
+        offset: { x: 0, y: offsetY },
       },
     ],
   };
@@ -355,11 +361,9 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const output = input.size
     ? { format: "mp4", size: fitSize(input.size), fps: 25 }
     : { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 };
-  // The soft bar over the removed text sits between the captions and the video.
-  const bar = cover ? { clips: [{ asset: { type: "shape", shape: "rectangle", width: cover.width, height: cover.height, fill: onWhite ? { color: light, opacity: 0.94 } : { color: ink, opacity: 0.75 }, rectangle: { width: cover.width, height: cover.height, cornerRadius: 22 } }, start: 0, length: total, offset: { x: 0, y: cover.offsetY } }] } : null;
   return {
     // Captions off: only the video track (still cropped or resized, silence still trimmed).
-    timeline: { background: ink, tracks: look.show ? (bar ? [captions, bar, video] : [captions, video]) : [video] },
+    timeline: { background: ink, tracks: look.show ? [captions, video] : [video] },
     output,
     meta: { totalSeconds: total, trimStart, trimEnd },
   };
@@ -462,17 +466,12 @@ export function buildRemuxEdit(input: { pictureUrl: string; soundUrl: string; se
 }
 
 /**
- * The bar over removed text: as wide as the caption area, at least two caption lines high, centred
- * on the old text. Shotstack's offset y is a fraction of the frame height from the centre, up positive.
+ * Where the captions go over removed text: centred on the old text. Shotstack's offset y is a fraction
+ * of the frame height from the centre, up positive; kept clear of the very top and bottom.
  */
-export function coverBar(box: { top: number; bottom: number }, frame: { width: number; height: number }, fontPx: number) {
+export function captionOffsetFor(box: { top: number; bottom: number }) {
   const centre = (box.top + box.bottom) / 2;
-  const minHeight = Math.round(fontPx * 2.6 + 40);
-  const height = Math.max(minHeight, Math.round((box.bottom - box.top) * frame.height + 40));
-  const half = height / 2 / frame.height;
-  // Keep the whole bar inside the frame.
-  const clamped = Math.min(1 - half, Math.max(half, centre));
-  return { width: Math.round(frame.width * 0.92), height, offsetY: Math.round((0.5 - clamped) * 1000) / 1000 };
+  return Math.round(Math.min(0.42, Math.max(-0.42, 0.5 - centre)) * 1000) / 1000;
 }
 
 /** Shotstack renders at most 1920 px per side and wants even numbers. */

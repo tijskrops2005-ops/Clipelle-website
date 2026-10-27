@@ -163,9 +163,10 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       let brandGlossaryId: string | undefined;
       let glossaryWarning: string | undefined;
       const keepTerms = (input.keepTerms ?? []).map((x) => x.trim()).filter(Boolean);
-      if (keepTerms.length) {
+      const replaceTerms = input.replaceTerms ?? [];
+      if (keepTerms.length || replaceTerms.length) {
         try {
-          brandGlossaryId = await withRetries("Saving the terms to keep", () => createBrandGlossary({ name: `reelay-${projectId.slice(0, 8)}-${row.attempt}`, doNotTranslate: keepTerms }));
+          brandGlossaryId = await withRetries("Saving the terms to keep", () => createBrandGlossary({ name: `reelay-${projectId.slice(0, 8)}-${row.attempt}`, doNotTranslate: keepTerms, replace: replaceTerms }));
         } catch (error) {
           glossaryWarning = `The terms to keep could not be registered (${plainMessage(error)}); the check will still protect them in the subtitles.`;
         }
@@ -333,7 +334,7 @@ async function checkLanguage(projectId: string, stepId: string, t: TranslationRo
   const estimate = Math.max(0.005, estimateCheckUsd(t.segments));
   const reserved = await reserveSpend({ service: "anthropic", action: "translate_check", estimatedUsd: estimate, fingerprintInput: { projectId, language: t.language, text: t.segments.map((s) => s.text) }, projectId, stepId, language: t.language, languageCount, meta: { model: cfg.rewriteModel, lines: t.segments.length } });
   try {
-    const result = await withRetries("Checking the translation", () => checkTranslation({ segments: t.segments, sourceLanguage, targetLanguage: t.language, keepTerms: input.keepTerms }));
+    const result = await withRetries("Checking the translation", () => checkTranslation({ segments: t.segments, sourceLanguage, targetLanguage: t.language, keepTerms: input.keepTerms, replaceTerms: input.replaceTerms, instructions: input.instructions }));
     await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens", meta: { usage: result.usage, changes: result.changes.length } });
     return { segments: result.segments, qa: { changes: result.changes, warnings: result.warnings, summary: result.summary, costUsd: result.costUsd } };
   } catch (error) {

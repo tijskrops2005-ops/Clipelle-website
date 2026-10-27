@@ -292,6 +292,8 @@ export type TranslateProjectDraft = {
   targetLanguages: LanguageCode[];
   quality: TranslationQuality;
   keepTerms?: string[];
+  replaceTerms?: { from: string; to: string }[];
+  instructions?: string;
   trimSilence?: boolean;
   captionPosition?: "low" | "middle";
   /** Only sent when it differs from the original look (src/lib/captionOptions.ts). */

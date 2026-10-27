@@ -38,3 +38,13 @@ describe("translate with an AI presenter: what the server accepts (26 Oct 2026)"
   });
 });
 
+
+describe("words to replace and wishes (27 Oct 2026)", () => {
+  it("sends only filled rows, trimmed, and the wishes when there are any", () => {
+    const d = draft({ replaceTerms: [{ from: " GlowCo ", to: "Clipelle" }, { from: "", to: "x" }, { from: "old", to: " " }], instructions: "  Leave out the shipping line. " });
+    expect(d).toMatchObject({ replaceTerms: [{ from: "GlowCo", to: "Clipelle" }], instructions: "Leave out the shipping line." });
+    const empty = draft({ replaceTerms: [{ from: "", to: "" }], instructions: "  " });
+    expect(empty).not.toHaveProperty("replaceTerms");
+    expect(empty).not.toHaveProperty("instructions");
+  });
+});

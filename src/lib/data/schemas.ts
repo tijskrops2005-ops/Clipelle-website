@@ -65,6 +65,10 @@ export const TranslateFields = z.object({
   targetLanguages: z.array(z.string().refine(isTranslateLanguage, { error: "Unknown target language." })).min(1).max(20),
   quality: z.enum(["speed", "precision"]),
   keepTerms: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
+  /** "Say Y instead of X", e.g. another brand's name (27 Oct 2026). */
+  replaceTerms: z.array(z.object({ from: z.string().trim().min(1).max(60), to: z.string().trim().min(1).max(60) })).max(10).optional(),
+  /** Free wishes for the wording ("leave out the part about shipping"), applied by the check within the timing. */
+  instructions: z.string().trim().max(300).optional(),
   format: z.enum(["original", "9:16"]),
   enhance: z.boolean(),
   trimSilence: z.boolean().default(true),

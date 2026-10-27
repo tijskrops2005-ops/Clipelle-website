@@ -30,6 +30,9 @@ export type TranslateFormState = {
   removeMusic?: boolean;
   cleanVoice?: boolean;
   removeText?: boolean;
+  /** Rows of "in the video" → "say instead"; empty rows are left out. */
+  replaceTerms?: { from: string; to: string }[];
+  instructions?: string;
   speaker?: "original" | "presenter";
   presenter?: PresenterTranslate;
 };
@@ -41,6 +44,8 @@ function extras(s: TranslateFormState) {
     ...(s.removeMusic ? { removeMusic: true } : {}),
     ...(s.cleanVoice ? { cleanVoice: true } : {}),
     ...(s.removeText ? { removeText: true } : {}),
+    ...(cleanReplace(s.replaceTerms).length ? { replaceTerms: cleanReplace(s.replaceTerms) } : {}),
+    ...(s.instructions?.trim() ? { instructions: s.instructions.trim().slice(0, 300) } : {}),
     ...(s.speaker === "presenter" && s.presenter ? { speaker: "presenter" as const, presenter: s.presenter } : {}),
   };
 }
@@ -54,6 +59,11 @@ export function validateTranslateForm(s: TranslateFormState): TranslateFormError
   if (s.targets.length === 0) next.targets = "Choose at least one target language.";
   if (!s.rights && !s.sourceAd) next.rights = "We can only translate videos you own, with the speaker's consent. Tick the box to continue.";
   return next;
+}
+
+/** Filled rows only, trimmed, at most 10. */
+export function cleanReplace(rows: { from: string; to: string }[] | undefined) {
+  return (rows ?? []).map((r) => ({ from: r.from.trim(), to: r.to.trim() })).filter((r) => r.from && r.to).slice(0, 10);
 }
 
 /** Comma- or newline-separated terms, trimmed, at most 20. */

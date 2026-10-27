@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Languages, Loader2, Lock } from "lucide-react";
+import { ArrowRight, Languages, Loader2, Lock, Plus, X } from "lucide-react";
 import { config } from "@/lib/config";
 import type { AdProject, LanguageCode, TranslationQuality } from "@/lib/types";
 import { isTranslateLanguage } from "@/lib/translateLanguages";
@@ -20,8 +20,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
 import { VideoDropzone, formatDuration, type UploadedVideo } from "@/components/ui/VideoDropzone";
-import { buildTranslateDraft, validateTranslateForm, type TranslateFormErrors } from "@/lib/forms/translateDraft";
+import { buildTranslateDraft, cleanReplace, validateTranslateForm, type TranslateFormErrors } from "@/lib/forms/translateDraft";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { OptionCard, OptionGrid } from "@/components/ui/OptionCard";
 import { Disclosure } from "@/components/ui/Disclosure";
@@ -81,6 +82,9 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
   const [rights, setRights] = useState(Boolean(fromAd));
   const sourceAd = fromAd ? { id: fromAd.id, seconds: fromAd.seconds ?? 30 } : undefined;
   const [keepTerms, setKeepTerms] = useState("");
+  // "Say Y instead of X" and free wishes for the wording (27 Oct 2026).
+  const [replaceRows, setReplaceRows] = useState<{ from: string; to: string }[]>([{ from: "", to: "" }]);
+  const [instructions, setInstructions] = useState("");
   const [format, setFormat] = useState<"original" | "9:16">("9:16");
   const [enhance, setEnhance] = useState(false);
   const [trimSilence, setTrimSilence] = useState(true);
@@ -155,7 +159,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
   }));
   const sourceOptions: SelectOption[] = [{ value: "auto", label: "Detect automatically", group: "Recommended" }, ...LANGUAGES.map((l) => ({ value: l.code, label: l.label, group: TOP_LANGUAGES.includes(l.base) ? "Most used" : "All languages" }))];
 
-  const formState = { video: video ?? undefined, sourceAd, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic: withPresenter ? false : removeMusic, cleanVoice: withPresenter ? false : cleanVoice, removeText, speaker, presenter: withPresenter ? presenterSetup : undefined };
+  const formState = { video: video ?? undefined, sourceAd, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic: withPresenter ? false : removeMusic, cleanVoice: withPresenter ? false : cleanVoice, removeText, replaceTerms: replaceRows, instructions, speaker, presenter: withPresenter ? presenterSetup : undefined };
 
   function validate(): Errors {
     return validateTranslateForm(formState);
@@ -203,6 +207,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
     withPresenter ? { label: "Speaker", value: `AI presenter · ${presenterSetup.engine === "avatar_iv" ? "Premium" : "Standard"}` } : { label: "Quality", value: qualityTitle },
     { label: "Format", value: format === "9:16" ? "Vertical 9:16" : "Original" },
     { label: "Captions", value: captionStyle.show ? `${captionPosition === "middle" ? "Middle" : "Low"} · ${describeCaptionStyle(captionStyle)}` : "Off" },
+    ...(cleanReplace(replaceRows).length ? [{ label: "Words replaced", value: String(cleanReplace(replaceRows).length) }] : []),
     ...(removeText ? [{ label: "On-screen text", value: withPresenter ? "Removed" : "Removed · captions over it" }] : []),
     ...(removeMusic || cleanVoice ? [{ label: "Sound", value: [removeMusic && "No music", cleanVoice && "Clean voice"].filter(Boolean).join(" · ") }] : []),
     ...(enhance ? [{ label: "Enhancement", value: "On" }] : []),
@@ -378,6 +383,32 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
           {/* Visible since 25 Oct 2026 (was under Advanced): names and special terms are where machine translation slips most. */}
           <Field id="keepTerms" label="Words to keep as they are" optional hint="Brand and product names, and special terms such as an exercise or ingredient name, separated by commas. The translation and the check leave them exactly as written. Max 20.">
             <Input id="keepTerms" value={keepTerms} maxLength={600} onChange={(e) => setKeepTerms(e.target.value)} placeholder="e.g. your brand name, product names" disabled={submitting} />
+          </Field>
+
+          <fieldset className="space-y-2">
+            <legend className="flex w-full items-center justify-between text-sm font-medium text-ink">Words to replace <span className="label-mono text-muted">Optional</span></legend>
+            <p className="text-[13px] text-muted">Say something else than the video does, everywhere it comes up: another brand&apos;s name becomes yours, an old price becomes the new one. The rest stays the same.</p>
+            <div className="space-y-2">
+              {replaceRows.map((row, i) => (
+                <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2">
+                  <Input aria-label={`Word ${i + 1} in the video`} value={row.from} maxLength={60} onChange={(e) => setReplaceRows((rows) => rows.map((r, j) => (j === i ? { ...r, from: e.target.value } : r)))} placeholder="In the video, e.g. GlowCo" disabled={submitting} />
+                  <ArrowRight className="size-4 text-muted" aria-hidden />
+                  <Input aria-label={`Word ${i + 1} to say instead`} value={row.to} maxLength={60} onChange={(e) => setReplaceRows((rows) => rows.map((r, j) => (j === i ? { ...r, to: e.target.value } : r)))} placeholder="Say instead, e.g. your brand" disabled={submitting} />
+                  <button type="button" onClick={() => setReplaceRows((rows) => (rows.length === 1 ? [{ from: "", to: "" }] : rows.filter((_, j) => j !== i)))} disabled={submitting} aria-label={`Remove word ${i + 1}`} className="focus-ring grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-muted hover:text-ink">
+                    <X className="size-4" aria-hidden />
+                  </button>
+                </div>
+              ))}
+            </div>
+            {replaceRows.length < 10 && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => setReplaceRows((rows) => [...rows, { from: "", to: "" }])} disabled={submitting}>
+                <Plus className="size-4" aria-hidden />Add a word
+              </Button>
+            )}
+          </fieldset>
+
+          <Field id="instructions" label="Anything to change?" optional hint="Plain words, up to 300 characters. Each line is changed only where it still fits its moment in the video, so the lip-sync stays right.">
+            <Textarea id="instructions" value={instructions} maxLength={300} rows={2} onChange={(e) => setInstructions(e.target.value)} placeholder="e.g. Leave out the sentence about free shipping." disabled={submitting} />
           </Field>
         </SectionCard>
 

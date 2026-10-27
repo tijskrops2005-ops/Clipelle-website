@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       })();
       const row = await createDraft({ userId: caller.userId, workspaceId: caller.workspaceId }, {
         workflow: "translate",
-        translate: { name: t.name, sourceFileName: fileName, sourceSeconds: t.video.durationSeconds, sourceLanguage: t.sourceLanguage as LanguageCode | "auto", targetLanguages: t.targetLanguages as LanguageCode[], quality: t.quality, keepTerms: t.keepTerms, trimSilence: t.trimSilence, captionPosition: t.captionPosition, captionStyle: t.captionStyle, removeMusic: t.removeMusic, cleanVoice: t.cleanVoice, removeText: t.removeText, speaker: t.speaker, presenter: t.presenter, format: t.format, enhance: t.enhance, rightsConfirmed: t.rightsConfirmed },
+        translate: { name: t.name, sourceFileName: fileName, sourceSeconds: t.video.durationSeconds, sourceLanguage: t.sourceLanguage as LanguageCode | "auto", targetLanguages: t.targetLanguages as LanguageCode[], quality: t.quality, keepTerms: t.keepTerms, replaceTerms: t.replaceTerms, instructions: t.instructions, trimSilence: t.trimSilence, captionPosition: t.captionPosition, captionStyle: t.captionStyle, removeMusic: t.removeMusic, cleanVoice: t.cleanVoice, removeText: t.removeText, speaker: t.speaker, presenter: t.presenter, format: t.format, enhance: t.enhance, rightsConfirmed: t.rightsConfirmed },
       });
       await attachFromUrl({ userId: caller.userId, workspaceId: caller.workspaceId }, row.id, "source", t.video.url, { accept: "video", maxBytes: config.limits.translateVideoMaxMb * 1024 * 1024, seconds: t.video.durationSeconds });
       await startProject({ userId: caller.userId, workspaceId: caller.workspaceId }, row.id);

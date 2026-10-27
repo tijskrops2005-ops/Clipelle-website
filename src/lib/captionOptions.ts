@@ -61,14 +61,25 @@ export type CaptionStyleChoice = {
   bar?: CaptionBar;
 };
 
-export const CAPTION_BARS = ["white", "dark"] as const;
+/**
+ * A background that wraps the caption text (27 Oct 2026, Shotstack `background.wrap`: the box shrinks
+ * to the text plus padding and only shows while a line is on screen). Words turn dark on a light box.
+ */
+export const CAPTION_BARS = ["none", "white", "cream", "yellow", "dark"] as const;
 export type CaptionBar = (typeof CAPTION_BARS)[number];
-export const CAPTION_BAR_META: Record<CaptionBar, { label: string; blurb: string }> = {
-  white: { label: "White", blurb: "A white bar with dark text, like the labels on TikTok. Hides the old text best." },
-  dark: { label: "Dark", blurb: "A dark bar with light text." },
+export const CAPTION_BAR_META: Record<CaptionBar, { label: string; color: string | null; opacity: number }> = {
+  none: { label: "None", color: null, opacity: 0 },
+  white: { label: "White", color: "#FFFFFF", opacity: 0.92 },
+  cream: { label: "Cream", color: "#F6F1E7", opacity: 0.94 },
+  yellow: { label: "Yellow", color: "#FFD400", opacity: 0.95 },
+  dark: { label: "Dark", color: "#111114", opacity: 0.8 },
 };
+/** The background in use: the customer's pick, else white over removed text and none otherwise. */
+export function effectiveBar(style: Pick<CaptionStyleChoice, "bar">, overOldText: boolean): CaptionBar {
+  return style.bar ?? (overOldText ? "white" : "none");
+}
 
-export const DEFAULT_CAPTION_STYLE: CaptionStyleChoice = { show: true, highlight: "box", color: "#D43F1B", size: "medium", uppercase: true, textColor: "#FFFFFF", bar: "white" };
+export const DEFAULT_CAPTION_STYLE: CaptionStyleChoice = { show: true, highlight: "box", color: "#D43F1B", size: "medium", uppercase: true, textColor: "#FFFFFF" };
 
 /** The style with every missing field filled from the default (stored projects from before 26 Oct 2026 have none). */
 export function captionStyleOf(style?: Partial<CaptionStyleChoice> | null): CaptionStyleChoice {
@@ -77,7 +88,7 @@ export function captionStyleOf(style?: Partial<CaptionStyleChoice> | null): Capt
 
 export function isDefaultCaptionStyle(style: CaptionStyleChoice) {
   const d = DEFAULT_CAPTION_STYLE;
-  return style.show === d.show && style.highlight === d.highlight && style.color === d.color && style.size === d.size && style.uppercase === d.uppercase && (style.textColor ?? "#FFFFFF") === d.textColor && (style.bar ?? "white") === d.bar;
+  return style.show === d.show && style.highlight === d.highlight && style.color === d.color && style.size === d.size && style.uppercase === d.uppercase && (style.textColor ?? "#FFFFFF") === d.textColor && style.bar === undefined;
 }
 
 /** "Box · red · medium · capitals", or "Off": for summaries and the project page. */

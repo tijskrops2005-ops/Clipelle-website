@@ -98,10 +98,14 @@ export function matchLanguages(live: string[]): Record<LanguageCode, string | nu
  * `do_not_translate_terms: [{term}]`; free; the id goes into `brand_glossary_id` on the proofread.
  * An unknown glossary id fails with 400 before rendering, so no credits are spent.
  */
-export async function createBrandGlossary(input: { name: string; doNotTranslate: string[] }): Promise<string> {
+export async function createBrandGlossary(input: { name: string; doNotTranslate: string[]; /** "Say Y instead of X" (27 Oct 2026): `forced_translations` items `term`, `translation`, `target_language` (checked on the reference that day). */ replace?: { from: string; to: string }[] }): Promise<string> {
   const data = await heygenFetch<{ brand_glossary_id?: string; id?: string }>("/v3/brand-glossaries", {
     method: "POST",
-    body: JSON.stringify({ name: input.name.slice(0, 64), do_not_translate_terms: input.doNotTranslate.map((term) => ({ term })) }),
+    body: JSON.stringify({
+      name: input.name.slice(0, 64),
+      do_not_translate_terms: input.doNotTranslate.map((term) => ({ term })),
+      ...(input.replace?.length ? { forced_translations: input.replace.map((r) => ({ term: r.from, translation: r.to, target_language: { scope: "all" } })) } : {}),
+    }),
   });
   const id = data.brand_glossary_id ?? data.id;
   if (!id) throw new HeygenError("The glossary was created without an id.", 502, "empty_response");
