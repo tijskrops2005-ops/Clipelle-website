@@ -3,6 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { createFalClient } from "@fal-ai/client";
 import { z } from "zod";
+import sharp from "sharp";
+import { changedBand, joinBands } from "@/lib/changedBand";
 import { workflowSettings } from "@/lib/workflow/settings";
 import { claudeTokensToUsd, isScriptModel } from "@/lib/pricing";
 
@@ -65,3 +67,28 @@ export async function locateBurnedCaptions(frameUrls: string[]): Promise<{ box: 
   if (!p?.found || p.top === null || p.bottom === null || p.left === null || p.right === null || p.bottom <= p.top || p.right <= p.left) return { box: null, costUsd };
   return { box: { top: p.top, bottom: p.bottom, left: p.left, right: p.right }, costUsd };
 }
+
+/**
+ * The exact place of the removed text (27 Oct 2026): the same three moments of the source and of the
+ * cleaned picture (same length and frame rate) are compared pixel by pixel; only the removal changed
+ * them, so the changed band is the smudge. Free apart from the six frame grabs.
+ */
+export async function measureRemovedText(sourceUrl: string, cleanedUrl: string): Promise<TextBox | null> {
+  const moments = ["first", "middle", "last"] as const;
+  const frames = await Promise.all(moments.flatMap((m) => [extractFrame(sourceUrl, m), extractFrame(cleanedUrl, m)]));
+  const bands = [];
+  for (let i = 0; i < frames.length; i += 2) {
+    const [a, b] = await Promise.all([greyPixels(frames[i]), greyPixels(frames[i + 1])]);
+    bands.push(a.width === b.width && a.height === b.height ? changedBand(a.data, b.data, a.width, a.height) : null);
+  }
+  return joinBands(bands);
+}
+
+/** A frame as small greyscale pixels (180 wide is plenty to find a line of text). */
+async function greyPixels(url: string) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+  if (!res.ok) throw new TextLocateError(`Could not read a frame (${res.status}).`, "frame_download");
+  const { data, info } = await sharp(Buffer.from(await res.arrayBuffer())).resize({ width: 180 }).greyscale().raw().toBuffer({ resolveWithObject: true });
+  return { data, width: info.width, height: info.height };
+}
+

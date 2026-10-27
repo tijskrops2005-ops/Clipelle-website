@@ -129,6 +129,8 @@ export type TranslateInput = {
   removeText?: boolean;
   /** Where the old caption text was (fractions of the frame), found once before the text removal; null = none found. */
   oldTextBox?: { top: number; bottom: number; left: number; right: number } | null;
+  /** The exact place of the removed text, measured after the removal by comparing frames (27 Oct 2026); preferred over oldTextBox. */
+  removedTextBox?: { top: number; bottom: number; left: number; right: number } | null;
   /** "original" (lip-synced, default) or "presenter": an AI presenter speaks the translation. */
   speaker?: "original" | "presenter";
   presenter?: PresenterTranslate;

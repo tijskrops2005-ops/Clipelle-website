@@ -320,10 +320,12 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const offsetY = input.coverBox ? captionOffsetFor(input.coverBox) : input.captionPosition === "middle" ? 0 : -0.18;
   // Over removed text (27 Oct 2026, after a review of the smudge and leftover pill edges): one fixed bar
   // as wide as the old text plus a margin, on screen for the whole video, so the cleaned spot never shows.
-  const frameWidth = input.size ? fitSize(input.size).width : 1080;
+  const frame = input.size ? fitSize(input.size) : { width: 1080, height: 1920 };
   const fixedBar = Boolean(input.coverBox && bar.color);
-  const width = fixedBar ? coverWidthFor(input.coverBox!, frameWidth) : Math.round(frameWidth * 0.833);
-  const height = twoLineHeight(CAPTION_SIZE_PX[look.size], bar.color ? "box" : "outline");
+  const width = fixedBar ? coverWidthFor(input.coverBox!, frame.width) : Math.round(frame.width * 0.833);
+  const lines = twoLineHeight(CAPTION_SIZE_PX[look.size], bar.color ? "box" : "outline");
+  // The bar is never lower than the smudge plus a margin above and below, so it always covers it.
+  const height = fixedBar ? Math.max(lines, coverHeightFor(input.coverBox!, frame.height)) : lines;
 
   const captions = {
     clips: [
@@ -489,6 +491,11 @@ export function captionOffsetFor(box: { top: number; bottom: number }) {
  */
 export function twoLineHeight(fontPx: number, look: "box" | "outline") {
   return Math.round(fontPx * 2 * 1.25 + (look === "box" ? 16 + 36 : 12));
+}
+
+/** Height of the fixed bar over removed text: the smudge's height plus 24 px above and below. */
+export function coverHeightFor(box: { top: number; bottom: number }, frameHeight: number) {
+  return Math.round(((box.bottom - box.top) * frameHeight + 48) / 2) * 2;
 }
 
 /** Width of the fixed bar over removed text: the old text's width plus a margin, between 70% and 92% of the frame. */

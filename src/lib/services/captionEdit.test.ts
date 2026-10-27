@@ -128,3 +128,18 @@ describe("never more than two caption lines (27 Oct 2026)", () => {
     expect(coverWidthFor({ left: 0.02, right: 0.98 }, 1080)).toBe(994);
   });
 });
+
+describe("the bar always covers the cleaned spot (27 Oct 2026)", () => {
+  it("is centred on the spot and at least as high as the spot plus a margin", async () => {
+    const { coverHeightFor } = await import("./finalEdit");
+    const box = { top: 0.597, bottom: 0.653, left: 0.2, right: 0.8 };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const clip = (buildCaptionEdit({ ...base, coverBox: box, captionStyle: { bar: "dark", size: "medium" } }).timeline as any).tracks[0].clips[0];
+    expect(clip.offset.y).toBeCloseTo(0.5 - 0.625, 3);
+    expect(clip.height).toBeGreaterThanOrEqual(coverHeightFor(box, 1920));
+    // A tall old text block makes the bar taller than two lines.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tall = (buildCaptionEdit({ ...base, coverBox: { ...box, top: 0.5, bottom: 0.65 } }).timeline as any).tracks[0].clips[0];
+    expect(tall.height).toBe(coverHeightFor({ top: 0.5, bottom: 0.65 }, 1920));
+  });
+});

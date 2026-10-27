@@ -3,7 +3,7 @@ import { inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/clien
 import { chunkCues, CHUNK_CHARS, fillGaps } from "@/lib/captionChunks";
 import { captionStyleOf } from "@/lib/captionOptions";
 import { assets, db, projects, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
-import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, type TextBox } from "@/lib/services/textLocate";
+import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, measureRemovedText, type TextBox } from "@/lib/services/textLocate";
 import { downloadTextRemovalOutput, estimateTextRemovalUsd, getTextRemoval, startTextRemoval, TEXT_REMOVAL_MODEL, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
 import { languageCodeForName, languageOf } from "@/lib/languages";
 import { checkTranslation, estimateCheckUsd } from "@/lib/services/translationCheck";
@@ -93,6 +93,8 @@ export const translateWorkflow = inngest.createFunction(
     // Before the text is removed: where was it? Our captions go there later, on a bar (27 Oct 2026).
     const oldTextBox = input.removeText ? await locateOldText(projectId, input, step) : null;
     const sourceAssetId = input.removeText ? await runTextRemoval(projectId, input, step) : input.sourceAssetId;
+    // After the removal: the exact place of the smudge, measured from the pictures; the earlier guess is the fallback.
+    const coverBox = input.removeText ? ((await measureRemovedTextStep(projectId, input, step)) ?? oldTextBox) : null;
 
     /* ---------- 1. upload ---------- */
     const upload = await step.run("upload", () => withDeadline("Uploading the video", 10, async () => {
@@ -126,7 +128,7 @@ export const translateWorkflow = inngest.createFunction(
     const sessions = await runTranslate(projectId, input, upload, step);
 
     /* ---------- 4. render + enhance + captions, per language ---------- */
-    const results = await runCaptions(projectId, { ...input, oldTextBox }, upload, sessions, step);
+    const results = await runCaptions(projectId, { ...input, oldTextBox: coverBox }, upload, sessions, step);
     await step.run("complete", async () => {
       await db().update(projects).set({ status: "completed", updatedAt: new Date() }).where(eq(projects.id, projectId));
       await settleProjectCredits(projectId);
@@ -387,6 +389,39 @@ async function locateOldText(projectId: string, input: TranslateInput, step: Ste
       box = null;
     }
     await db().update(projects).set({ input: sql`${projects.input} || ${JSON.stringify({ oldTextBox: box })}::jsonb`, updatedAt: new Date() }).where(eq(projects.id, projectId));
+    return box;
+  }));
+}
+
+/**
+ * Where the removal changed the picture (27 Oct 2026): three frames of the source and of the cleaned
+ * picture, compared pixel by pixel, give the exact band of the smudge, so the caption bar always
+ * lands on it. Stored on the project so a retry does not grab the frames again; any failure falls
+ * back to the box found before the removal.
+ */
+async function measureRemovedTextStep(projectId: string, input: TranslateInput, step: StepTools): Promise<TextBox | null> {
+  if (input.removedTextBox !== undefined) return input.removedTextBox;
+  return step.run("measure-removed-text", () => withDeadline("Finding the cleaned spot", 3, async () => {
+    let box: TextBox | null = null;
+    try {
+      const [picture] = await db().select({ id: assets.id }).from(assets).where(and(eq(assets.projectId, projectId), eq(assets.kind, "cleaned"), sql`(${assets.storagePath} like '%cleaned-picture%' or ${assets.storagePath} like '%-cleaned.mp4')`)).limit(1);
+      if (picture) {
+        const row = await loadStep(projectId, "upload");
+        const [source, cleaned] = await Promise.all([loadAsset(input.sourceAssetId), loadAsset(picture.id)]);
+        const reserved = await reserveSpend({ service: "fal", action: "extract_frame", estimatedUsd: EXTRACT_FRAME_USD * 6, fingerprintInput: { projectId, source: source.id, cleaned: cleaned.id }, projectId, stepId: row.id, languageCount: Math.max(1, input.targetLanguages.length) });
+        try {
+          box = await measureRemovedText(await providerUrl(source), await providerUrl(cleaned));
+          await settleSpend(reserved.entryId, { status: "completed", actualUsd: EXTRACT_FRAME_USD * 6, basis: "list" });
+        } catch (error) {
+          await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error("[measure removed text]", error instanceof Error ? error.message : error);
+      box = null;
+    }
+    await db().update(projects).set({ input: sql`${projects.input} || ${JSON.stringify({ removedTextBox: box })}::jsonb`, updatedAt: new Date() }).where(eq(projects.id, projectId));
     return box;
   }));
 }
