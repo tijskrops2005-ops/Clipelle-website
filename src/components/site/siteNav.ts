@@ -23,6 +23,11 @@ import {
   Workflow,
   type LucideIcon,
 } from "lucide-react";
+import { config } from "@/lib/config";
+
+/** 27 Oct 2026: with ads switched off, the two ad tools are announced ("Soon") and the ad-only solutions leave the menu. */
+const ADS = config.features.ads;
+const ifAds = (item: MenuItem) => ({ ...item, soon: !ADS || undefined });
 
 /** One entry in a card menu. `soon` marks what is announced but not built: the page says so too. */
 export type MenuItem = { href: string; title: string; text: string; icon: LucideIcon; soon?: boolean };
@@ -40,15 +45,15 @@ export const menus: Menu[] = [
         title: "Creation",
         items: [
           { href: "/platform/translate", title: "Translate & lipsync", text: "A video you own, in other languages, with the speaker's own voice and matching lips.", icon: Languages },
-          { href: "/platform/ads", title: "Image to video", text: "One product photo becomes a finished 9:16 ad with a presenter and captions.", icon: Clapperboard },
-          { href: "/platform/url-to-video", title: "URL to video", text: "Paste a product link; name, description and photos are filled in for you.", icon: Link2 },
+          ifAds({ href: "/platform/ads", title: "Image to video", text: "One product photo becomes a finished 9:16 ad with a presenter and captions.", icon: Clapperboard }),
+          ifAds({ href: "/platform/url-to-video", title: "URL to video", text: "Paste a product link; name, description and photos are filled in for you.", icon: Link2 }),
           { href: "/new", title: "Studio", text: "The app where your videos are made and kept.", icon: LayoutDashboard },
         ],
       },
       {
         title: "Integrations",
         items: [
-          { href: "/integrations/api", title: "API", text: "Create ads and translations from your own code with an API key.", icon: Code2 },
+          { href: "/integrations/api", title: "API", text: "Create translations from your own code with an API key.", icon: Code2 },
           { href: "/integrations/mcp", title: "MCP", text: "Let an AI assistant make videos through the Model Context Protocol.", icon: Workflow },
         ],
       },
@@ -58,20 +63,32 @@ export const menus: Menu[] = [
     key: "solutions",
     label: "Solutions",
     columns: [
-      {
-        items: [
-          { href: "/solutions/ecommerce-brands", title: "E-commerce brands", text: "A steady flow of product ads without a studio day.", icon: ShoppingBag },
-          { href: "/solutions/shopify-stores", title: "Shopify stores", text: "Turn product pages into ads, one link at a time.", icon: Store },
-          { href: "/solutions/dropshipping", title: "Dropshipping", text: "Test products with a video before you commit stock.", icon: Captions },
-        ],
-      },
-      {
-        items: [
-          { href: "/solutions/agencies", title: "Agencies", text: "Many brands, one process, costs known before each video.", icon: Building2 },
-          { href: "/solutions/apps-and-saas", title: "Apps and SaaS", text: "Explain a feature in a vertical video with a presenter.", icon: Smartphone },
-          { href: "/solutions/creators-and-localization", title: "Creators and localization", text: "One video, many languages, your own voice.", icon: Users },
-        ],
-      },
+      ...(ADS
+        ? [
+            {
+              items: [
+                { href: "/solutions/ecommerce-brands", title: "E-commerce brands", text: "A steady flow of product ads without a studio day.", icon: ShoppingBag },
+                { href: "/solutions/shopify-stores", title: "Shopify stores", text: "Turn product pages into ads, one link at a time.", icon: Store },
+                { href: "/solutions/dropshipping", title: "Dropshipping", text: "Test products with a video before you commit stock.", icon: Captions },
+              ],
+            },
+            {
+              items: [
+                { href: "/solutions/agencies", title: "Agencies", text: "Many brands, one process, costs known before each video.", icon: Building2 },
+                { href: "/solutions/apps-and-saas", title: "Apps and SaaS", text: "Explain a feature in a vertical video with a presenter.", icon: Smartphone },
+                { href: "/solutions/creators-and-localization", title: "Creators and localization", text: "One video, many languages, your own voice.", icon: Users },
+              ],
+            },
+          ]
+        : [
+            {
+              items: [
+                { href: "/solutions/ecommerce-brands", title: "E-commerce brands", text: "One product video, in the language of every market you sell in.", icon: ShoppingBag },
+                { href: "/solutions/agencies", title: "Agencies", text: "Many clients, one process, every video in several languages.", icon: Building2 },
+                { href: "/solutions/creators-and-localization", title: "Creators and localization", text: "One video, many languages, your own voice.", icon: Users },
+              ],
+            },
+          ]),
     ],
   },
   {

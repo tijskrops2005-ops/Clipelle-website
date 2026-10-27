@@ -7,16 +7,19 @@ import { getOnboarding, type OnboardingState } from "@/lib/data/client";
 import { useProjects } from "@/lib/data/client";
 import { Card, CardContent } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
+import { config } from "@/lib/config";
 
 const DISMISS_KEY = "clipelle.onboarding.dismissed.v1";
 
-const ITEMS: { key: keyof OnboardingState; label: string; text: string; href: string }[] = [
-  { key: "firstAd", label: "Make your first ad", text: "One product photo and a few sentences; the rest runs on its own.", href: "/new/ad" },
-  { key: "brand", label: "Set your brand style", text: "Accent colour, caption look, font and logo, prefilled on every ad.", href: "/settings/brand" },
-  { key: "translation", label: "Translate a video", text: "A video you own, or an ad you made here, into other languages.", href: "/new/translate" },
+const ALL_ITEMS: { key: keyof OnboardingState; label: string; text: string; href: string; ads?: boolean }[] = [
+  { key: "translation", label: "Translate your first video", text: "A video you own, into other languages, with the speaker's own voice.", href: "/new/translate" },
+  { key: "firstAd", label: "Make your first ad", text: "One product photo and a few sentences; the rest runs on its own.", href: "/new/ad", ads: true },
+  { key: "brand", label: "Set your brand style", text: "Accent colour, caption look, font and logo, prefilled on every ad.", href: "/settings/brand", ads: true },
   { key: "team", label: "Invite a team member", text: "Share one credit pool with your team (Business plan).", href: "/settings/team" },
   { key: "apiKey", label: "Create an API key", text: "Make videos from your own code or an AI assistant (paid plans).", href: "/settings/api" },
 ];
+/** The ad items only while ads are on (27 Oct 2026). */
+const ITEMS = ALL_ITEMS.filter((i) => !i.ads || config.features.ads);
 
 /** First-time checklist on the dashboard: disappears when everything is done or when dismissed. */
 export function OnboardingChecklist() {
@@ -75,7 +78,7 @@ export function OnboardingChecklist() {
             <X className="size-4" aria-hidden />
           </button>
         </div>
-        <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        <ul className={cn("mt-4 grid gap-2 sm:grid-cols-2", ITEMS.length >= 5 ? "lg:grid-cols-5" : "lg:grid-cols-3")}>
           {ITEMS.map((item) => {
             const ok = state[item.key];
             return (

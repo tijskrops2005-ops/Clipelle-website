@@ -145,6 +145,7 @@ export default function ApiDocsPage() {
 
       <section id="ads" className="space-y-4">
         <h2>Create an ad</h2>
+        {!config.features.ads && <p className="rounded-[12px] border border-warning/30 bg-warning/5 px-4 py-3 text-[14px] text-ink"><strong className="font-semibold">Coming soon.</strong> Ads from a photo are switched off for now: this endpoint answers <code className="font-mono">403 coming_soon</code>. Translations work today.</p>}
         <p><code className="font-mono">POST /api/v1/ads</code> creates the ad and starts it. The body takes the same fields as the form; image links must be public (PNG, JPG or WebP, up to 10 MB each, at most 5). The response is <code className="font-mono">201</code> with the project; poll it until <code className="font-mono">status</code> is <code className="font-mono">completed</code>.</p>
         <CodeBlock code={curlAd} lang="bash" title="curl" />
         <CodeBlock code={jsAd} lang="javascript" title="JavaScript (Node 18+)" />

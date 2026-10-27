@@ -2,6 +2,7 @@ import { AudioLines, Coins, BadgeCheck, CircleDollarSign, Clock3, Compass, Gauge
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
 import { measured } from "@/content/measured";
+import { config } from "@/lib/config";
 import { PLANS, currencyFor, formatMoney, usdPerTranslateMinute } from "@/lib/plans";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
@@ -31,7 +32,7 @@ export function WhyClipelle({ locale }: { locale: Locale }) {
 
   const get = (
     <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-      {w.get.map((g, i) => {
+      {w.get.filter((g) => config.features.ads || !g.value.includes("{a}")).map((g, i) => {
         const Icon = GET_ICONS[i] ?? BadgeCheck;
         return (
           <li key={g.title} className="rounded-card bg-surface p-4 shadow-card sm:p-6">
@@ -65,10 +66,12 @@ export function WhyClipelle({ locale }: { locale: Locale }) {
         <h3 className="text-[16px] font-semibold">{w.decideTranslate}</h3>
         {chips(w.decideTranslateItems, TRANSLATE_ICONS)}
       </div>
-      <div className="rounded-card bg-surface p-6 shadow-card">
-        <h3 className="text-[16px] font-semibold">{w.decideAd}</h3>
-        {chips(w.decideAdItems, AD_ICONS)}
-      </div>
+      {config.features.ads && (
+        <div className="rounded-card bg-surface p-6 shadow-card">
+          <h3 className="text-[16px] font-semibold">{w.decideAd}</h3>
+          {chips(w.decideAdItems, AD_ICONS)}
+        </div>
+      )}
       <p className="text-center text-[14px] text-muted lg:col-span-2">{w.decideNote}</p>
     </div>
   );

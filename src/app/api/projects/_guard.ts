@@ -13,3 +13,10 @@ export async function readJson<T>(request: Request): Promise<T | null> {
     return null;
   }
 }
+
+/** While ads are off (config.features.ads), every route that would start one answers 403 with one plain message. */
+export const ADS_COMING_SOON = "Ads from a photo or a link are coming soon. Translating a video works today.";
+export function adsEnabledOnly(): Response | null {
+  if (config.features.ads) return null;
+  return Response.json({ error: ADS_COMING_SOON, code: "coming_soon" }, { status: 403 });
+}

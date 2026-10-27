@@ -1,3 +1,5 @@
+import { config } from "@/lib/config";
+
 /**
  * Use-case pages (/solutions/[slug]). Every "how Clipelle helps" item names a real feature; the example
  * flow is an illustration of the steps (titled per step since 25 Oct 2026), labelled as an example, never a customer story.
@@ -13,7 +15,7 @@ export type Solution = {
   faq: { q: string; a: string }[];
 };
 
-export const solutions: Solution[] = [
+const allSolutions: Solution[] = [
   {
     slug: "ecommerce-brands",
     title: "A steady flow of product ads without a studio day",
@@ -132,5 +134,55 @@ export const solutions: Solution[] = [
     ],
   },
 ];
+
+/**
+ * While ads are off (config.features.ads, 27 Oct 2026) the ad-centred pages leave the site and two of
+ * them are told from the translation side instead. The originals above stay for when ads return.
+ */
+const translationSolutions: Solution[] = [
+  {
+    slug: "ecommerce-brands",
+    title: "One product video, in the language of every market you sell in",
+    eyebrow: "E-commerce brands",
+    intro: "A shop that sells in several countries needs the same product video in several languages. Clipelle translates a video you own with the speaker's own voice and matching lips, checks every line, and burns in captions per language.",
+    problem: { title: "The problem", points: ["A product video is made once, in one language; every other market gets subtitles at best.", "Re-recording per language costs a shoot per market.", "Dubbing with another voice changes who is speaking, and names and numbers slip."] },
+    helps: [
+      { title: "Your voice, every market", text: "The translation keeps the speaker's own voice and matches the lips to the new language, in Speed or Precision quality." },
+      { title: "Several languages in one go", text: "Pick every market at once; each version renders in parallel and gets its own captions." },
+      { title: "Brand names stay", text: "Put your brand and product names under Words to keep, and they are read exactly as they are." },
+      { title: "Every line checked", text: "Each translated line is compared with the original for missing words, numbers and names, and corrected before the render." },
+      { title: "Costs before you click", text: "The form shows the credits per language before you start; a version that fails costs nothing." },
+    ],
+    example: { title: "One launch video, four markets", stepTitles: ["Upload the video", "Pick the markets", "Check the corrections", "Download four versions"], steps: ["Upload the 45-second launch video; leave the spoken language on Detect automatically.", "Pick German, French, Spanish and Italian; keep Speed; add the brand name to Words to keep.", "The quality check lists the corrected lines per language; read them on the project page.", "Download four videos with captions, one per shop, ready to post."] },
+    faq: [
+      { q: "Does the product name stay the same in every language?", a: "Yes, when you add it under Words to keep. The check also flags names and numbers that changed." },
+      { q: "Can I keep the original size instead of 9:16?", a: "Yes. Pick the original format on the form; captions are placed the same way." },
+      { q: "Can I translate with a different voice?", a: "The speaker's own voice is used. Translate with a presenter lets an AI presenter speak the translated lines instead." },
+    ],
+  },
+  {
+    slug: "agencies",
+    title: "Many clients, one process, every video in several languages",
+    eyebrow: "Agencies",
+    intro: "An agency runs the same localisation steps for every client. Clipelle keeps that process fixed, shows the credits per language before a video starts, and delivers one checked version per language in the client's workspace.",
+    problem: { title: "The problem", points: ["Every client video goes through translation, voice, lip sync and captions, by hand, in several tools.", "Names, numbers and brand terms need a check per language.", "Clients want to know the cost before the work, not after."] },
+    helps: [
+      { title: "A fixed process", text: "Upload, translation, voice and lip sync, check, captions: always in that order, with the same quality check." },
+      { title: "A workspace per client", text: "A team workspace shares projects and credits; one per client keeps their videos and usage apart." },
+      { title: "Credits on every form", text: "The credits per language before you click; the project page shows what each version used." },
+      { title: "The API for volume", text: "Translate from your own tooling with an API key; projects stay per workspace." },
+      { title: "Words to keep per client", text: "Brand names and catchphrases stay as they are, per project." },
+    ],
+    example: { title: "One client video, three languages", stepTitles: ["Upload the client's video", "Pick the languages", "Read the check", "Deliver three versions"], steps: ["Upload the client's 60-second video into their workspace.", "Pick German, French and Portuguese; add the client's brand terms to Words to keep.", "Read the corrected lines and warnings per language on the project page.", "Share a viewing link for approval, then download the three versions."] },
+    faq: [
+      { q: "Can several people work in one account?", a: "Yes. A team workspace shares projects and credits; the owner manages the plan, credits and members. One team workspace per client or per agency." },
+      { q: "Can we white-label Clipelle?", a: "No. The finished videos carry no Clipelle branding; the app itself is Clipelle." },
+      { q: "How do we bill clients?", a: "The project page shows the credits per language version; the Usage page shows spend per project for your own invoicing." },
+    ],
+  },
+  allSolutions.find((s) => s.slug === "creators-and-localization")!,
+];
+
+export const solutions: Solution[] = config.features.ads ? allSolutions : translationSolutions;
 
 export const solutionBySlug = (slug: string) => solutions.find((s) => s.slug === slug);

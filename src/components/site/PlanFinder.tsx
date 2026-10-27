@@ -8,6 +8,7 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Button } from "@/components/ui/Button";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
+import { config } from "@/lib/config";
 
 /** "Find your plan": sliders for ads and translation minutes, length and quality → credits, best plan, monthly cost, and the visitor's own per-video cost next to it. */
 export function PlanFinder({ locale = "en" }: { locale?: Locale }) {
@@ -51,7 +52,7 @@ export function PlanFinder({ locale = "en" }: { locale?: Locale }) {
             <p className="mt-2 text-[13px] text-muted">{f.yourNumber.replace("{per}", formatPrice(current)).replace("{month}", formatPrice(current * ads)).replace("{diff}", r.fit.monthlyUsd <= current * ads ? f.less.replace("{n}", formatPrice(current * ads - r.fit.monthlyUsd)) : f.more.replace("{n}", formatPrice(r.fit.monthlyUsd - current * ads)))}</p>
           )}
         </div>
-        <div className="mt-5"><Button href="/signup" variant="accent">{d.common.createFirstAd}</Button><p className="mt-2 text-[13px] text-muted">{d.common.noCard}</p></div>
+        <div className="mt-5"><Button href="/signup" variant="accent">{config.features.ads ? d.common.createFirstAd : d.common.translateFirst}</Button><p className="mt-2 text-[13px] text-muted">{d.common.noCard}</p></div>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import type { AdLanguageCode, SpeedKey } from "@/lib/voiceOptions";
 import { AdBody, TranslateBody } from "@/lib/data/schemas";
 import { createDraft, dataErrorResponse, listProjects } from "@/lib/data/server";
 import { requireScope } from "@/lib/auth";
-import { databaseModeOnly, readJson } from "./_guard";
+import { adsEnabledOnly, databaseModeOnly, readJson } from "./_guard";
 
 /** List all projects (newest first) with signed URLs for their videos. */
 export async function GET() {
@@ -29,6 +29,8 @@ export async function POST(request: Request) {
   try {
     const scope = await requireScope();
     if (body.workflow === "ad") {
+      const off = adsEnabledOnly();
+      if (off) return off;
       const a = AdBody.parse(body);
       const row = await createDraft(scope, { workflow: "ad", ad: { parentId: a.parentId, format: a.format, name: a.name, seconds: a.seconds, engine: a.engine, lookId: a.lookId, language: a.language as AdLanguageCode, accent: a.accent || undefined, voiceId: a.voiceId || undefined, speed: a.speed as SpeedKey, offer: a.offer || undefined, direction: a.direction || undefined, tone: a.tone, backgroundColor: a.backgroundColor, brand: a.brand, reviewScript: a.reviewScript, productName: a.productName, productUrl: a.productUrl || undefined, description: a.description, script: a.script || undefined } });
       return Response.json({ id: row.id, status: row.status }, { status: 201 });

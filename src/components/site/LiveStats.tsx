@@ -1,5 +1,6 @@
 import type { Locale } from "@/lib/i18n";
 import { dict } from "@/content/i18n";
+import { config } from "@/lib/config";
 import { measured } from "@/content/measured";
 import { TRANSLATE_LANGUAGES } from "@/lib/translateLanguages";
 import { cachedPublicStats, publicStatsMin, statColumns } from "@/lib/publicStats";
@@ -13,7 +14,7 @@ import { CountUp } from "@/components/motion/CountUp";
  */
 export async function LiveStats({ locale }: { locale: Locale }) {
   const s = dict(locale).home.liveStats;
-  const columns = statColumns(await cachedPublicStats(), publicStatsMin(), { measuredAdMinutes: measured.adMinutes, languageCount: TRANSLATE_LANGUAGES.length });
+  const columns = statColumns(await cachedPublicStats(), publicStatsMin(), { measuredAdMinutes: config.features.ads ? measured.adMinutes : null, languageCount: TRANSLATE_LANGUAGES.length });
   const anyLive = columns.some((c) => c.kind === "number");
   // 26 Oct 2026: without a real number the facts only repeated the blocks around it, so the row waits for real numbers.
   if (!anyLive) return null;

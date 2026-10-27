@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LogIn } from "lucide-react";
 import { getUser } from "@/lib/auth";
+import { config } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { WorkflowChooser } from "@/components/WorkflowChooser";
@@ -24,7 +25,7 @@ export default async function NewVideoPage() {
   }
   return (
     <div className="mx-auto max-w-5xl space-y-10">
-      <CreateHeader eyebrow="New video" title="What do you want to make?" text="Translate a video you own, or make a new ad. Everything runs on its own after you click start." />
+      <CreateHeader eyebrow="New video" title="What do you want to make?" text={config.features.ads ? "Translate a video you own, or make a new ad. Everything runs on its own after you click start." : "Translate a video you own, with the speaker's own voice or an AI presenter. Everything runs on its own after you click start."} />
       <WorkflowChooser />
     </div>
   );

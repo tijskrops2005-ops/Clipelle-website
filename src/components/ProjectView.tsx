@@ -164,14 +164,18 @@ function ResultHero({ project }: { project: AdProject }) {
                   <Languages className="size-4" aria-hidden />
                   Translate this ad
                 </Button>
-                <Button href={`/new/ad?from=${project.id}`} variant="secondary">
-                  <Copy className="size-4" aria-hidden />
-                  Make another version
-                </Button>
-                <Button href={`/new/ad?from=${project.id}&variations=1`} variant="secondary">
-                  <LayoutGrid className="size-4" aria-hidden />
-                  Make variations
-                </Button>
+                {config.features.ads && (
+                  <>
+                    <Button href={`/new/ad?from=${project.id}`} variant="secondary">
+                      <Copy className="size-4" aria-hidden />
+                      Make another version
+                    </Button>
+                    <Button href={`/new/ad?from=${project.id}&variations=1`} variant="secondary">
+                      <LayoutGrid className="size-4" aria-hidden />
+                      Make variations
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -311,9 +315,9 @@ function ResultCard({ project }: { project: AdProject }) {
               <Download className="size-[18px]" aria-hidden />
               Download video
             </Button>
-            <Button href="/new/ad" variant="primary">
+            <Button href={config.features.ads ? "/new/ad" : "/new/translate"} variant="primary">
               <Plus className="size-4" aria-hidden />
-              Make another
+              {config.features.ads ? "Make another" : "Translate a video"}
             </Button>
             <Button href="/dashboard" variant="ghost">
               <ArrowLeft className="size-4" aria-hidden />

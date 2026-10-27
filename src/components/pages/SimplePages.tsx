@@ -3,7 +3,7 @@ import { ArrowRight, Clock3 } from "lucide-react";
 import { faq } from "@/content/faq";
 import { faqFor } from "@/content/faqI18n";
 import { changelogFor } from "@/content/changelog";
-import { guides } from "@/content/guides";
+import { listedGuides } from "@/content/guides";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/site";
@@ -74,7 +74,7 @@ export function GuidesIndexPage({ locale }: { locale: Locale }) {
       <SectionIntro eyebrow={t.guidesIndex.metaTitle} title={t.guidesIndex.title} text={t.guidesIndex.text} />
       {locale !== "en" && <p className="text-center text-[13px] text-muted">{t.common.articlesEnglish}</p>}
       <ul className="grid gap-5 md:grid-cols-3">
-        {guides.map((g) => (
+        {listedGuides.map((g) => (
           <li key={g.slug}>
             <Link href={`/resources/guides/${g.slug}`} className="focus-ring group flex h-full flex-col rounded-card bg-surface p-6 shadow-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
               <span className="label-mono flex items-center gap-1.5 text-muted"><Clock3 className="size-3.5" aria-hidden /> {g.minutes} min</span>

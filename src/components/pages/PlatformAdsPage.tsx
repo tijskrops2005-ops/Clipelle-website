@@ -1,4 +1,7 @@
 import { ArrowRight } from "lucide-react";
+import { config } from "@/lib/config";
+import { IntegrationPage } from "@/components/site/IntegrationPage";
+import { WaitlistForm } from "@/components/site/WaitlistForm";
 import { firstExample } from "@/lib/examples";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
@@ -18,6 +21,14 @@ export async function PlatformAdsPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
   const p = t.platformAds;
   const L = (x: string) => localizePath(x, locale);
+  // 27 Oct 2026: while ads are off the page announces them and takes a waitlist e-mail.
+  if (!config.features.ads) {
+    return (
+      <IntegrationPage locale={locale} soon eyebrow={p.eyebrow} title={p.title} intro={p.intro} steps={p.steps} does={p.doneForYouItems} doesNot={p.soon.doesNot} secondary={{ href: L("/platform/translate"), label: p.soon.translateInstead }}>
+        <div className="mt-8 rounded-card bg-surface p-6 shadow-card"><p className="text-[15px] font-semibold text-ink">{t.integrations.waitlistTitle}</p><p className="mb-4 mt-1 text-[13px] text-muted">{t.integrations.waitlistText}</p><WaitlistForm feature="ads" label={p.soon.label} locale={locale} /></div>
+      </IntegrationPage>
+    );
+  }
   const sample = firstExample("ad");
   const table = await cachedAdCreditTable();
   return (

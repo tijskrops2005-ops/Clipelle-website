@@ -8,6 +8,7 @@ import { planFit } from "@/lib/pricingHelpers";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { config } from "@/lib/config";
 
 /**
  * "Which plan fits?" (26 Oct 2026): the one calculator on /pricing, replacing the credit table, the
@@ -19,7 +20,7 @@ export function PlanCalculator({ locale = "en", currency, annual }: { locale?: L
   const t = dict(locale).pricing;
   const c = t.calc;
   const [minutes, setMinutes] = useState(10);
-  const [ads, setAds] = useState(5);
+  const [ads, setAds] = useState(config.features.ads ? 5 : 0);
   const [premium, setPremium] = useState(false);
   const fmt = (n: number) => n.toLocaleString(locale === "nl" ? "nl-NL" : "en-US");
 
@@ -45,7 +46,7 @@ export function PlanCalculator({ locale = "en", currency, annual }: { locale?: L
       <div className="mx-auto mt-8 grid max-w-4xl gap-5 rounded-card bg-surface p-6 shadow-card sm:p-7 md:grid-cols-[1.2fr_1fr]">
         <div className="space-y-6">
           <Slider id="calc-min" label={c.minutes} value={minutes} min={0} max={240} step={5} onChange={setMinutes} display={`${minutes} min`} />
-          <Slider id="calc-ads" label={c.ads} value={ads} min={0} max={60} step={1} onChange={setAds} display={String(ads)} />
+          {config.features.ads && <Slider id="calc-ads" label={c.ads} value={ads} min={0} max={60} step={1} onChange={setAds} display={String(ads)} />}
           <label className="flex cursor-pointer items-start justify-between gap-4">
             <span>
               <span className="block text-sm font-medium text-ink">{c.premium}</span>

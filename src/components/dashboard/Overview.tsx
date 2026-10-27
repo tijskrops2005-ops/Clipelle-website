@@ -9,6 +9,7 @@ import { CountUp } from "@/components/motion/CountUp";
 import { ProgressRing } from "@/components/motion/ProgressRing";
 import { DemoBadge } from "@/components/DemoModeBadge";
 import { cn } from "@/lib/utils";
+import { config } from "@/lib/config";
 
 /** One credit is one second of translated video (Speed); a 30-second Standard ad uses 60 (src/lib/plans.ts). */
 const REFERENCE_AD_SECONDS = 30;
@@ -73,7 +74,7 @@ export function Overview({ credits, plan, demo }: Props) {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="text-[34px] font-semibold leading-none tracking-[-0.02em] text-ink">{credits === null ? "—" : <CountUp value={credits} />}</p>
-              <p className="mt-2 text-[12.5px] text-muted">{credits === null ? "Not connected in demo mode" : paid ? `of ${plan!.creditsPerMonth.toLocaleString("en-US")} included each month` : `one minute of translation uses 60; a ${REFERENCE_AD_SECONDS}-second ad ${REFERENCE_AD_CREDITS}`}</p>
+              <p className="mt-2 text-[12.5px] text-muted">{credits === null ? "Not connected in demo mode" : paid ? `of ${plan!.creditsPerMonth.toLocaleString("en-US")} included each month` : config.features.ads ? `one minute of translation uses 60; a ${REFERENCE_AD_SECONDS}-second ad ${REFERENCE_AD_CREDITS}` : "one minute of translation uses 60 per language"}</p>
             </div>
             <ProgressRing value={ringValue} size={58} stroke={6} label={credits === null ? "Credits not available" : `${credits} credits`}>
               <Coins className="size-4 text-accent" aria-hidden />

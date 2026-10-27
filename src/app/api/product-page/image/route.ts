@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
 import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
 import { fetchPublicResource, UrlError } from "@/lib/safeUrl";
-import { readJson } from "@/app/api/projects/_guard";
+import { adsEnabledOnly, readJson } from "@/app/api/projects/_guard";
 
 const Body = z.object({ url: z.string().trim().min(1).max(2000) });
 /** Serverless responses stay well under the platform's body limit. */
@@ -11,6 +11,8 @@ const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 
 /** Downloads one product image the customer confirmed, with the same safety rules, and hands the bytes to the browser. */
 export async function POST(request: Request) {
+  const off = adsEnabledOnly();
+  if (off) return off;
   try {
     const user = await requireUser();
     const parsed = Body.safeParse(await readJson(request));

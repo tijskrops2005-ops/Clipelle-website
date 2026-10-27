@@ -154,16 +154,20 @@ function plan(key: PlanKey, name: string, tagline: string, monthlyUsd: number, b
   };
 }
 
-/** "7 minutes of translation a month, or seven 30-second ads": a 30-second Standard ad costs exactly one minute of translation. */
+/**
+ * "7 minutes of translation a month, or seven 30-second ads": a 30-second Standard ad costs exactly one
+ * minute of translation. The ad line shows only while ads are on (27 Oct 2026).
+ */
+const ADS_ON = process.env.NEXT_PUBLIC_ADS_ENABLED === "true";
 function minutesBullets(key: PlanKey, extra: string) {
   const m = PLAN_MINUTES[key] ?? 0;
-  return [`${m} minutes of translation a month`, `Or ${m} ads of 30 seconds (Standard)`, extra, "Credits never expire"];
+  return [`${m} minutes of translation a month`, ...(ADS_ON ? [`Or ${m} ads of 30 seconds (Standard)`] : []), extra, "Credits never expire"];
 }
 
 export const PLANS: Plan[] = [
-  plan("free", "Free", "Try it once", 0, ["30 free credits after e-mail verification", "Half a minute of translation, or one 10-second ad", "No card; use them within 30 days"], { creditsNote: "30 free credits" }),
+  plan("free", "Free", "Try it once", 0, ["30 free credits after e-mail verification", ADS_ON ? "Half a minute of translation, or one 10-second ad" : "Half a minute of translation", "No card; use them within 30 days"], { creditsNote: "30 free credits" }),
   plan("starter", "Starter", "For a shop translating its first videos", 19, minutesBullets("starter", "Every language, Speed translation")),
-  plan("pro", "Pro", "For a brand selling in several languages", 59, minutesBullets("pro", "Precision, the Premium presenter, variations and the API"), { recommended: true }),
+  plan("pro", "Pro", "For a brand selling in several languages", 59, minutesBullets("pro", ADS_ON ? "Precision, the Premium presenter, variations and the API" : "Precision, the AI presenter and the API"), { recommended: true }),
   plan("scale", "Scale", "For agencies and several brands", 159, minutesBullets("scale", "Everything in Pro, plus picture enhancement")),
   plan("enterprise", "Enterprise", "Custom volume and terms", 0, ["Custom credits and billing", "Onboarding and a direct line", "Book a demo to talk"], { creditsNote: "Custom", stripeLookup: undefined }),
 ];

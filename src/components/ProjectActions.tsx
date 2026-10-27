@@ -48,7 +48,7 @@ export function ProjectActions({ project }: { project: Project }) {
           <Tag className="size-4" aria-hidden />
           Tags{project.tags?.length ? ` (${project.tags.length})` : ""}
         </Button>
-        {project.workflow === "ad" && (
+        {project.workflow === "ad" && config.features.ads && (
           <Button href={`/new/ad?from=${project.id}`} variant="ghost" size="sm">
             <Copy className="size-4" aria-hidden />
             Duplicate

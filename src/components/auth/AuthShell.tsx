@@ -16,8 +16,8 @@ const PANELS = {
     points: ["Every finished video stays in your projects", "Credits never expire", "The cost is shown before anything starts"],
   },
   signup: {
-    title: "From one product photo to a finished 9:16 ad.",
-    points: ["30 free credits after you verify your e-mail", "No credit card required", "Captions are the only text on screen"],
+    title: "Your video, in every language, with your own voice.",
+    points: ["30 free credits after you verify your e-mail", "No credit card required", "Every translated line is checked before the render"],
   },
 } as const;
 

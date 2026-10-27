@@ -2,7 +2,8 @@ import { z } from "zod";
 import { AdBody } from "@/lib/data/schemas";
 import { createDraft, getProject, startProject } from "@/lib/data/server";
 import { ApiError, apiErrorResponse, authenticateApi, json, toApiProject, withIdempotency } from "@/lib/api/v1";
-import { readJson } from "@/app/api/projects/_guard";
+import { ADS_COMING_SOON, readJson } from "@/app/api/projects/_guard";
+import { config } from "@/lib/config";
 import { attachFromUrl } from "../_shared";
 import type { AdLanguageCode, SpeedKey } from "@/lib/voiceOptions";
 
@@ -22,6 +23,7 @@ const Body = AdBody.omit({ workflow: true, engine: true, reviewScript: true }).e
 export async function POST(request: Request) {
   try {
     const caller = await authenticateApi(request);
+    if (!config.features.ads) throw new ApiError("coming_soon", ADS_COMING_SOON, 403);
     const raw = await readJson(request);
     if (!raw) throw new ApiError("validation_error", "Send a JSON body.", 400);
     const a = Body.parse(raw);

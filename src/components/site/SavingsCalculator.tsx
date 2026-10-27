@@ -1,5 +1,6 @@
 "use client";
 
+import { config } from "@/lib/config";
 import { useMemo, useState } from "react";
 import { measured } from "@/content/measured";
 import { AD_LENGTHS, type AdLength, type PresenterEngine } from "@/lib/pricing";
@@ -62,7 +63,7 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
       <div className="rounded-card bg-surface p-6 shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-[17px] font-semibold text-ink">{c.yourNumbers}</p>
-          <SegmentedControl label={c.modeLabel} size="sm" options={[{ key: "translate", label: c.modeTranslate }, { key: "ad", label: c.modeAds }]} value={mode} onChange={(k) => setMode(k as "translate" | "ad")} />
+          {config.features.ads && <SegmentedControl label={c.modeLabel} size="sm" options={[{ key: "translate", label: c.modeTranslate }, { key: "ad", label: c.modeAds }]} value={mode} onChange={(k) => setMode(k as "translate" | "ad")} />}
         </div>
         <p className="mt-2 text-[13px] leading-relaxed text-muted">{translating ? c.yourNumbersTextTranslate : c.yourNumbersText}</p>
         <div className="mt-5 space-y-5">

@@ -5,7 +5,7 @@ import { BatchBody } from "@/lib/data/schemas";
 import { dataErrorResponse } from "@/lib/data/server";
 import { createBatch, listBatches } from "@/lib/data/batches";
 import { requireScope } from "@/lib/auth";
-import { databaseModeOnly, readJson } from "@/app/api/projects/_guard";
+import { adsEnabledOnly, databaseModeOnly, readJson } from "@/app/api/projects/_guard";
 
 /** The workspace's batches, newest first. */
 export async function GET() {
@@ -21,7 +21,7 @@ export async function GET() {
 
 /** "Make variations": creates the batch and one draft project per variant. Files are uploaded to each, then /start. */
 export async function POST(request: Request) {
-  const blocked = databaseModeOnly();
+  const blocked = databaseModeOnly() ?? adsEnabledOnly();
   if (blocked) return blocked;
   const body = await readJson<unknown>(request);
   if (!body) return Response.json({ error: "Invalid JSON body." }, { status: 400 });

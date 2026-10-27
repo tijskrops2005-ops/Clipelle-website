@@ -132,7 +132,7 @@ export function MidCta({ locale = "en" }: { locale?: Locale }) {
       <h2 className="relative text-[clamp(1.75rem,3.5vw,2.5rem)] font-semibold tracking-[-0.02em] text-champagne">{t.midCta.title}</h2>
       <p className="mx-auto mt-3 max-w-md text-[15px] text-surface/70">{t.midCta.text}</p>
       <div className="mt-7 flex justify-center">
-        <Button href="/signup" variant="accent" size="lg">{t.common.createFirstAd} <ArrowRight className="size-5" aria-hidden /></Button>
+        <Button href="/signup" variant="accent" size="lg">{t.common.translateFirst} <ArrowRight className="size-5" aria-hidden /></Button>
       </div>
       <p className="mt-3 text-[13px] text-surface/60">{t.common.noCard}</p>
       <p className="mt-6 text-[13px] text-surface/60"><Link href={localizePath("/examples", locale)} className="underline decoration-surface/30 underline-offset-4 hover:decoration-surface">{t.midCta.examplesFirst}</Link></p>

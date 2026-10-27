@@ -13,6 +13,14 @@ export const config = {
    * and the real orchestrator instead (Stage 8). Default: on.
    */
   demoMode: process.env.NEXT_PUBLIC_DEMO_MODE !== "false",
+  /**
+   * What the product offers today (27 Oct 2026, Tijs: translation first). With `ads` off, "Ad from a
+   * photo" and "Ad from a link" are announced as coming soon everywhere (app, site, API) and the
+   * server refuses to start one; nothing is deleted. NEXT_PUBLIC_ADS_ENABLED=true turns them back on.
+   */
+  features: {
+    ads: process.env.NEXT_PUBLIC_ADS_ENABLED === "true",
+  },
   /** Placeholder clip served from /public while no real final-edit output exists. */
   demoVideoUrl: "/demo/sample-video.mp4",
   /**

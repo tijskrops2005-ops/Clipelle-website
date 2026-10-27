@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 import { ArrowRight, Building2, Check, ChevronDown, Lock, Minus, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { config } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { BillingSwitch } from "@/components/ui/BillingSwitch";
 import { CreditsSelect } from "@/components/ui/CreditsSelect";
@@ -321,16 +322,18 @@ function CreditTable({ wide, t, m }: { wide?: boolean; t: T; m: Money }) {
   const usd = (c: number) => formatPrice(Math.round(c * rate * 100) / 100);
   return (
     <div className={cn("grid gap-5", wide && "md:grid-cols-2")}>
-      <div className="overflow-hidden rounded-card bg-surface shadow-card">
-        <table className="w-full text-left text-[15px]">
-          <thead className="bg-surface-muted text-[13px] text-muted"><tr><th className="px-5 py-3 font-medium">{t.creditTable.adLength}</th><th className="px-5 py-3 font-medium">Standard</th><th className="px-5 py-3 font-medium">Premium</th></tr></thead>
-          <tbody className="divide-y divide-divider">
-            {table.map((r) => (
-              <tr key={r.seconds}><td className="px-5 py-3 font-medium text-ink">{r.seconds} s</td><td className="px-5 py-3">{r.standard} credits <span className="text-muted">≈ {usd(r.standard)}</span></td><td className="px-5 py-3">{r.premium} credits <span className="text-muted">≈ {usd(r.premium)}</span></td></tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {config.features.ads && (
+        <div className="overflow-x-auto rounded-card bg-surface shadow-card">
+          <table className="w-full text-left text-[15px]">
+            <thead className="bg-surface-muted text-[13px] text-muted"><tr><th className="px-5 py-3 font-medium">{t.creditTable.adLength}</th><th className="px-5 py-3 font-medium">Standard</th><th className="px-5 py-3 font-medium">Premium</th></tr></thead>
+            <tbody className="divide-y divide-divider">
+              {table.map((r) => (
+                <tr key={r.seconds}><td className="px-5 py-3 font-medium text-ink">{r.seconds} s</td><td className="px-5 py-3">{r.standard} credits <span className="text-muted">≈ {usd(r.standard)}</span></td><td className="px-5 py-3">{r.premium} credits <span className="text-muted">≈ {usd(r.premium)}</span></td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       <div className="overflow-hidden rounded-card bg-surface shadow-card">
         <table className="w-full text-left text-[15px]">
           <thead className="bg-surface-muted text-[13px] text-muted"><tr><th className="px-5 py-3 font-medium">{t.creditTable.translation}</th><th className="px-5 py-3 font-medium">{t.creditTable.credits}</th></tr></thead>
@@ -352,23 +355,25 @@ function CompareTable({ t, locale }: { t: T; locale: Locale }) {
     const l = planLevels(p.family);
     return `${l[0].creditsPerMonth.toLocaleString("en-US")} – ${l[l.length - 1].creditsPerMonth.toLocaleString("en-US")}`;
   };
-  const rows: [string, (p: Plan) => string | boolean][] = [
+  const ads = config.features.ads;
+  const allRows: ([string, (p: Plan) => string | boolean] | null)[] = [
     [R.credits, (p) => (p.key === "free" ? R.freeAd : range(p))],
     [R.trial, (p) => (p.key === "free" ? false : R.trialValue.replace("{n}", String(TRIAL.days)))],
-    [R.lengths, (p) => (p.key === "free" ? R.tenOnly : R.tenToSixty)],
+    ads ? [R.lengths, (p) => (p.key === "free" ? R.tenOnly : R.tenToSixty)] : null,
     [R.translations, () => true],
     [R.precision, (p) => hasFeature(p.key, "precision")],
     [R.premium, (p) => hasFeature(p.key, "premium")],
-    [R.variations, (p) => hasFeature(p.key, "variations")],
+    ads ? [R.variations, (p) => hasFeature(p.key, "variations")] : null,
     [R.removeText, (p) => hasFeature(p.key, "removeText")],
     [R.enhance, (p) => hasFeature(p.key, "enhance")],
-    [R.brand, () => true],
+    ads ? [R.brand, () => true] : null,
     [R.api, (p) => hasFeature(p.key, "api")],
     [R.team, (p) => hasFeature(p.key, "team")],
     [R.perMember, (p) => hasFeature(p.key, "team")],
     [R.expire, (p) => (p.key === "free" ? R.freeDays.replace("{n}", String(CREDIT_EXPIRY.freeAdDays)) : R.never)],
     [R.support, () => R.supportValue],
   ];
+  const rows = allRows.filter((r): r is [string, (p: Plan) => string | boolean] => r !== null);
   return (
     <div className="mt-8 overflow-x-auto rounded-card bg-surface shadow-card">
       <table className="w-full min-w-[720px] text-left text-[15px]">

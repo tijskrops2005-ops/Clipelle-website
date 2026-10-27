@@ -70,7 +70,7 @@ export default function McpDocsPage() {
       <section id="tools" className="space-y-4">
         <h2>Tools</h2>
         <ul className="list-disc space-y-2 pl-5">
-          <li><code className="font-mono">create_ad</code>: product name, description, public image links, length, quality, language and the optional choices; returns the project id and status.</li>
+          <li><code className="font-mono">create_ad</code>: product name, description, public image links, length, quality, language and the optional choices; returns the project id and status.{!config.features.ads && <> <em>Coming soon: answers <code className="font-mono">403 coming_soon</code> while ads are switched off.</em></>}</li>
           <li><code className="font-mono">translate_video</code>: a public video link, its length in seconds, the target languages and the rights confirmation; returns the project.</li>
           <li><code className="font-mono">get_project</code>: status, steps and the result link of one project.</li>
           <li><code className="font-mono">list_projects</code>: your most recent projects.</li>

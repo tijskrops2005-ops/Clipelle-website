@@ -72,16 +72,19 @@ export function HomePage({ locale }: { locale: Locale }) {
       {/* 26 Oct 2026: ads as one story. The section title, the big self-playing ad form (Tijs's
           favourite cursor demo) as the photo example, then the link row. The smaller photo demo
           (AdsDemo) told the same story twice and is kept in code only (docs/removed-blocks.md). */}
-      <Reveal as="section">
-        <SectionIntro eyebrow={h.moreEyebrow} title={h.moreTitle} text={h.moreText} />
-        <ProductDemo locale={locale} bare />
-        <FeatureRows
-          className="mt-16"
-          rows={[
-            { key: "url", label: h.tabs.url.label, title: h.tabs.url.title, text: h.tabs.url.text, points: h.tabs.url.points, link: { href: L("/platform/url-to-video"), label: h.tabs.url.link }, icon: Link2, panel: <UrlDemo locale={locale} /> },
-          ]}
-        />
-      </Reveal>
+      {/* 27 Oct 2026: the ads story shows only while ads are on (config.features.ads); the code stays. */}
+      {config.features.ads && (
+        <Reveal as="section">
+          <SectionIntro eyebrow={h.moreEyebrow} title={h.moreTitle} text={h.moreText} />
+          <ProductDemo locale={locale} bare />
+          <FeatureRows
+            className="mt-16"
+            rows={[
+              { key: "url", label: h.tabs.url.label, title: h.tabs.url.title, text: h.tabs.url.text, points: h.tabs.url.points, link: { href: L("/platform/url-to-video"), label: h.tabs.url.link }, icon: Link2, panel: <UrlDemo locale={locale} /> },
+            ]}
+          />
+        </Reveal>
+      )}
 
       {/* 25 Oct 2026: outcomes, choices and the trust grid in one swipeable block; "Who it is for" and
           "Made with Clipelle" are off the page (code kept, see docs/removed-blocks.md). */}

@@ -4,7 +4,8 @@ import { dataErrorResponse } from "@/lib/data/server";
 import { addNotifyWish, getOrCreateProfile, listNotifyWishes } from "@/lib/data/profile";
 import { databaseModeOnly, readJson } from "@/app/api/projects/_guard";
 
-export const CONNECTION_FEATURES = ["publish_tiktok", "publish_instagram", "publish_youtube", "shopify_import"] as const;
+/** Wishes a signed-in customer can leave: the connections, and the two ad tools while they are off (27 Oct 2026). */
+export const CONNECTION_FEATURES = ["publish_tiktok", "publish_instagram", "publish_youtube", "shopify_import", "ads_photo", "ads_url"] as const;
 const Body = z.object({ feature: z.enum(CONNECTION_FEATURES) });
 
 export async function GET() {

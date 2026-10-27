@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import type { Solution } from "@/content/solutions";
+import { config } from "@/lib/config";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/Button";
@@ -24,7 +25,7 @@ export function SolutionPage({ s, locale }: { s: Solution; locale: Locale }) {
         <h1 className="mt-5 max-w-3xl text-[clamp(2.25rem,5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">{s.title}</h1>
         <p className="mt-6 max-w-2xl text-subtitle text-muted">{s.intro}</p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Button href="/signup" variant="accent" size="lg">{t.common.createFirstAd} <ArrowRight className="size-5" aria-hidden /></Button>
+          <Button href={config.features.ads ? "/signup" : `/signup?next=${encodeURIComponent("/new/translate")}`} variant="accent" size="lg">{config.features.ads ? t.common.createFirstAd : t.common.translateFirst} <ArrowRight className="size-5" aria-hidden /></Button>
           <Button href={L("/demo")} variant="secondary" size="lg">{t.common.bookDemo}</Button>
         </div>
         <p className="mt-3 text-[13px] text-muted">{t.common.noCard}</p>

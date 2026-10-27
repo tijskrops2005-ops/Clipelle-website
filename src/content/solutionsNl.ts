@@ -1,7 +1,8 @@
 import type { Solution } from "./solutions";
+import { config } from "@/lib/config";
 
 /** Dutch use-case pages, same shape and the same real features as the English ones; keyed by slug. */
-export const solutionsNl: Record<string, Solution> = {
+const solutionsNlWithAds: Record<string, Solution> = {
   "ecommerce-brands": {
     slug: "ecommerce-brands", eyebrow: "E-commercemerken", title: "Een vaste stroom productadvertenties zonder studiodag",
     intro: "Een winkel met een catalogus heeft elke week een nieuwe advertentie nodig, voor producten die veranderen. Clipelle maakt van één productfoto en een paar zinnen een afgeronde 9:16-advertentie met presentator en ondertitels, tegen kosten die je vooraf ziet.",
@@ -108,5 +109,48 @@ export const solutionsNl: Record<string, Solution> = {
     ],
   },
 };
+
+/** The translation-first pages while ads are off (27 Oct 2026); same slugs as solutions.ts. */
+const solutionsNlTranslation: Record<string, Solution> = {
+  "ecommerce-brands": {
+    slug: "ecommerce-brands", eyebrow: "E-commercemerken", title: "Eén productvideo, in de taal van elke markt waarin je verkoopt",
+    intro: "Een winkel die in meerdere landen verkoopt, heeft dezelfde productvideo in meerdere talen nodig. Clipelle vertaalt een video van jezelf met de eigen stem van de spreker en kloppende lippen, controleert elke regel en brandt per taal ondertitels in.",
+    problem: { title: "Het probleem", points: ["Een productvideo wordt één keer gemaakt, in één taal; elke andere markt krijgt hooguit ondertitels.", "Opnieuw opnemen per taal kost een shoot per markt.", "Nasynchroniseren met een andere stem verandert wie er spreekt, en namen en getallen schuiven."] },
+    helps: [
+      { title: "Jouw stem, elke markt", text: "De vertaling behoudt de eigen stem van de spreker en laat de lippen de nieuwe taal volgen, in Speed- of Precision-kwaliteit." },
+      { title: "Meerdere talen in één keer", text: "Kies alle markten tegelijk; elke versie wordt parallel gemaakt en krijgt eigen ondertitels." },
+      { title: "Merknamen blijven", text: "Zet je merk- en productnamen bij Words to keep en ze worden precies zo uitgesproken." },
+      { title: "Elke regel gecontroleerd", text: "Elke vertaalde regel wordt vergeleken met het origineel op ontbrekende woorden, getallen en namen, en vóór de render gecorrigeerd." },
+      { title: "Kosten voordat je klikt", text: "Het formulier toont de credits per taal voordat je begint; een versie die mislukt kost niets." },
+    ],
+    example: { title: "Eén lanceervideo, vier markten", stepTitles: ["Upload de video", "Kies de markten", "Controleer de correcties", "Download vier versies"], steps: ["Upload de lanceervideo van 45 seconden; laat de gesproken taal op Detect automatically.", "Kies Duits, Frans, Spaans en Italiaans; houd Speed; zet de merknaam bij Words to keep.", "De kwaliteitscontrole toont de gecorrigeerde regels per taal; lees ze op de projectpagina.", "Download vier video's met ondertitels, één per winkel, klaar om te plaatsen."] },
+    faq: [
+      { q: "Blijft de productnaam in elke taal hetzelfde?", a: "Ja, als je hem bij Words to keep zet. De controle markeert ook namen en getallen die veranderden." },
+      { q: "Kan ik het originele formaat houden in plaats van 9:16?", a: "Ja. Kies het originele formaat op het formulier; de ondertitels worden op dezelfde manier geplaatst." },
+      { q: "Kan ik met een andere stem vertalen?", a: "De eigen stem van de spreker wordt gebruikt. Met Vertalen met een presentator spreekt een AI-presentator de vertaalde regels." },
+    ],
+  },
+  agencies: {
+    slug: "agencies", eyebrow: "Bureaus", title: "Veel klanten, één proces, elke video in meerdere talen",
+    intro: "Een bureau doorloopt dezelfde lokalisatiestappen voor elke klant. Clipelle houdt dat proces vast, toont de credits per taal voordat een video start, en levert per taal één gecontroleerde versie in de workspace van de klant.",
+    problem: { title: "Het probleem", points: ["Elke klantvideo gaat door vertaling, stem, lipsync en ondertitels, met de hand, in meerdere tools.", "Namen, getallen en merktermen vragen een controle per taal.", "Klanten willen de kosten vooraf weten, niet achteraf."] },
+    helps: [
+      { title: "Een vast proces", text: "Upload, vertaling, stem en lipsync, controle, ondertitels: altijd in die volgorde, met dezelfde kwaliteitscontrole." },
+      { title: "Een workspace per klant", text: "Een teamworkspace deelt projecten en credits; één per klant houdt hun video's en verbruik gescheiden." },
+      { title: "Credits op elk formulier", text: "De credits per taal voordat je klikt; de projectpagina toont wat elke versie gebruikte." },
+      { title: "De API voor volume", text: "Vertaal vanuit je eigen tooling met een API-sleutel; projecten blijven per workspace." },
+      { title: "Te behouden woorden per klant", text: "Merknamen en vaste uitspraken blijven zoals ze zijn, per project." },
+    ],
+    example: { title: "Eén klantvideo, drie talen", stepTitles: ["Upload de video van de klant", "Kies de talen", "Lees de controle", "Lever drie versies"], steps: ["Upload de video van 60 seconden van de klant in hun workspace.", "Kies Duits, Frans en Portugees; zet de merktermen van de klant bij Words to keep.", "Lees de gecorrigeerde regels en waarschuwingen per taal op de projectpagina.", "Deel een kijklink ter goedkeuring en download daarna de drie versies."] },
+    faq: [
+      { q: "Kunnen meerdere mensen in één account werken?", a: "Ja. Een teamworkspace deelt projecten en credits; de eigenaar beheert plan, credits en leden. Eén teamworkspace per klant of per bureau." },
+      { q: "Kunnen we Clipelle white-labelen?", a: "Nee. De afgeronde video's dragen geen Clipelle-merk; de app zelf is Clipelle." },
+      { q: "Hoe factureren we klanten?", a: "De projectpagina toont de credits per taalversie; de pagina Usage toont de uitgaven per project voor je eigen facturatie." },
+    ],
+  },
+  "creators-and-localization": solutionsNlWithAds["creators-and-localization"],
+};
+
+export const solutionsNl: Record<string, Solution> = config.features.ads ? solutionsNlWithAds : solutionsNlTranslation;
 
 export const solutionFor = (slug: string, locale: "en" | "nl", fallback: Solution | undefined) => (locale === "nl" ? solutionsNl[slug] ?? fallback : fallback);

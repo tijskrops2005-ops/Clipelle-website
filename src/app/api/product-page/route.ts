@@ -4,7 +4,7 @@ import { dataErrorResponse } from "@/lib/data/server";
 import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
 import { fetchPublicResource, UrlError } from "@/lib/safeUrl";
 import { parseProductPage } from "@/lib/productPage";
-import { readJson } from "@/app/api/projects/_guard";
+import { adsEnabledOnly, readJson } from "@/app/api/projects/_guard";
 
 const Body = z.object({ url: z.string().trim().min(1).max(2000) });
 
@@ -15,6 +15,8 @@ const Body = z.object({ url: z.string().trim().min(1).max(2000) });
  * (POST /api/product-page/image).
  */
 export async function POST(request: Request) {
+  const off = adsEnabledOnly();
+  if (off) return off;
   try {
     const user = await requireUser();
     const parsed = Body.safeParse(await readJson(request));

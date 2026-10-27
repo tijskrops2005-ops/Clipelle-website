@@ -1,3 +1,5 @@
+import { config } from "@/lib/config";
+
 export type Guide = { slug: string; title: string; summary: string; minutes: number; sections: { heading: string; paragraphs: string[] }[] };
 
 /** Three guides in our own words. Each is a page under /resources/guides/[slug]. */
@@ -81,6 +83,10 @@ export const guides: Guide[] = [
     ],
   },
 ];
+
+/** The guides the index and the sitemap show: the ad guides only while ads are on (27 Oct 2026); their pages stay reachable. */
+const AD_GUIDES = new Set(["product-description-that-makes-a-good-script", "standard-or-premium-presenter", "your-first-ad-step-by-step", "brand-style-colour-captions-font-logo"]);
+export const listedGuides: Guide[] = guides.filter((g) => config.features.ads || !AD_GUIDES.has(g.slug));
 
 export function guideBySlug(slug: string) {
   return guides.find((g) => g.slug === slug);

@@ -43,7 +43,7 @@ export default async function DashboardPage() {
     <div className="space-y-8 lg:space-y-10">
       <PageHeader
         title={first ? `Welcome back, ${first}` : "Welcome back"}
-        description="Translate a video you own into other languages, or turn a product photo into a finished 9:16 ad. Every finished video lands here."
+        description={config.features.ads ? "Translate a video you own into other languages, or turn a product photo into a finished 9:16 ad. Every finished video lands here." : "Translate a video you own into other languages. Every finished video lands here."}
         actions={
           <Button href="/new" variant="accent" size="lg">
             <Plus className="size-5" aria-hidden />
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-8">
           <QuickActions />
-          <FormatPicks day={day} />
+          {config.features.ads && <FormatPicks day={day} />}
           <RecentProjects />
         </div>
         <aside className="min-w-0 space-y-4" aria-label="Plan, activity and tip">

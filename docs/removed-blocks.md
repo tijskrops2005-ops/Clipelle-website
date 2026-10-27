@@ -52,3 +52,26 @@ Wat op verzoek van Tijs van de site is gehaald, waarom, en hoe het terug kan. De
 | Drie vaste creditpakketten op /pricing | Vervangen door een schuifregelaar: elk aantal van 100 tot 10.000 credits (per 50), zelfde prijs per credit. | `CreditsSlider.tsx`, `CUSTOM_CREDITS` in `plans.ts` | — |
 
 Tegelijk is de rekenkern realistischer gemaakt (`planFit`): geen "plan + eenmalig pakket" meer als maandbedrag, en alleen plannen die de gekozen functies hebben (Premium en Precision vanaf Pro).
+
+## 27 oktober 2026: advertenties "Coming soon" (focus op vertalen, op verzoek van Tijs)
+
+Eén schakelaar: `NEXT_PUBLIC_ADS_ENABLED` (`config.features.ads`, standaard uit). Met de schakelaar aan komt alles hieronder vanzelf terug; er is geen code verwijderd.
+
+| Onderdeel | Zonder de schakelaar | Code |
+|---|---|---|
+| Sidebar, ⌘K, snelle acties | "Ad from a photo" en "Ad from a link" staan onder **Coming soon**; "Brand style" is weg uit de lijst | `src/components/tools.ts` |
+| `/new` | Twee grote kaarten (vertalen, vertalen met presentator), de ad-kaarten klein onder "Coming soon" | `WorkflowChooser.tsx` |
+| `/new/ad`, `/new/url` | Een uitleg met "Notify me" (`ComingSoonPanel`) en een knop naar vertalen | de twee `page.tsx` |
+| Server | `POST /api/projects` (ad), `/api/batches`, `/api/product-page*`, `/api/v1/ads` antwoorden 403 `coming_soon` | `adsEnabledOnly` in `_guard.ts` |
+| Dashboard | Geen formats-blok, geen ad-rij in "How it works", vertaaltips, checklist zonder ad-items | `dashboard/*` |
+| Projectpagina | Geen "Make another version", "Make variations", "Duplicate"; "Make another" wijst naar vertalen | `ProjectView.tsx`, `ProjectActions.tsx` |
+| Settings | "Brand" niet in het menu (vult alleen het ad-formulier) | `SettingsNav.tsx` |
+| Site-menu | Image to video en URL to video met "Soon"; solutions alleen e-commerce, agencies, creators (vertaling-first herschreven) | `siteNav.ts`, `solutions.ts`, `solutionsNl.ts` |
+| `/platform/ads`, `/platform/url-to-video` | Aankondiging met wachtlijst (`WaitlistForm`, features `ads` en `url-to-video`) | `PlatformAdsPage.tsx`, `PlatformUrlPage.tsx` |
+| Homepage | Het ad-blok (`ProductDemo` + link-rij), de ad-chips en de ad-statistiek in "Why Clipelle", de ad-stand van de rekenhulp | `HomePage.tsx`, `WhyClipelle.tsx`, `SavingsCalculator.tsx` |
+| Prijzen | Geen ad-tabel, geen ad-schuif, geen ad-rijen in de vergelijking; plan-bullets en FAQ zonder advertenties | `PricingTable.tsx`, `PlanCalculator.tsx`, `plans.ts`, `pricingFaq.ts` |
+| Examples, gidsen, FAQ | Alleen vertalingen; ad-gidsen niet in de lijst (pagina's blijven bereikbaar); FAQ-antwoorden vertaling-only (`translateOnly`) | `ExamplesPage.tsx`, `guides.ts`, `faq.ts`, `faqI18n.ts` |
+| Beheerde dienst | "Translations, made for you" in plaats van "Winning ads" | `service`/`servicePage` in `en.ts`, `nl.ts` |
+| Docs | API- en MCP-docs melden dat `create_ad` 403 geeft | `docs/api`, `docs/mcp` |
+
+Vaste teksten die zonder schakelaar zijn herschreven (blijven zo, ook als ads terugkomen, tenzij Tijs anders wil): `brand.description`, `home.metaDescription`, `builtForText`, `faqPage.metaDescription`, `pricing.text`, de signup-tekst in `AuthShell`.
