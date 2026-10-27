@@ -206,10 +206,11 @@ export function planFamily(key: string | null | undefined): PlanFamily {
 
 /**
  * Free trial (26 Oct 2026, Tijs): 7 days on every paid plan, card required, once per workspace.
- * During the trial the workspace gets TRIAL.credits; the plan's monthly credits come with the first
- * real payment. Nothing is charged before the trial ends; the customer can cancel any time before.
+ * No extra credits during the trial (27 Oct 2026, Tijs: they only invited trying and quitting); the
+ * plan's credits come with the first payment, at the end of the trial or straight away when the
+ * customer starts the plan early under Billing. Nothing is charged before; cancel any time before.
  */
-export const TRIAL = { days: 7, credits: 30 } as const;
+export const TRIAL = { days: 7 } as const;
 
 /**
  * What each plan unlocks (26 Oct 2026, Tijs approved). The family decides, the level only adds credits.

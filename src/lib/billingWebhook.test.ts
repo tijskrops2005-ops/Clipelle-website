@@ -90,10 +90,11 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     // A mid-period plan change bills a proration invoice: no second month of credits.
     expect((await applyStripeEvent(invoice("evt_test_inv_1", "subscription_update"), deps)).note).toMatch(/no plan credits/);
     expect(await getCreditBalance(wsId)).toBe(before);
-    // The renewal grants the plan the price belongs to (Pro), not the stale metadata (Starter), once.
+    // The renewal grants the plan the price belongs to (Pro), not the stale metadata (Starter), once;
+    // the price is annual, so it brings twelve months of credits (27 Oct 2026).
     expect((await applyStripeEvent(invoice("evt_test_inv_2", "subscription_cycle"), deps)).note).toMatch(/pro/);
     await applyStripeEvent(invoice("evt_test_inv_2", "subscription_cycle"), deps);
-    expect(await getCreditBalance(wsId)).toBe(before + pro.creditsPerMonth);
+    expect(await getCreditBalance(wsId)).toBe(before + pro.creditsPerMonth * 12);
   });
 
   it("marks a failed renewal and a cancellation at period end, without touching credits", async () => {
@@ -121,11 +122,11 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     vi.unstubAllEnvs();
   });
 
-  it("runs the free trial: 30 credits once at the start, no plan credits on the €0 invoice, plan credits at the first payment", async () => {
+  it("runs the free trial: no extra credits, no plan credits on the €0 invoice, plan credits at the first payment", async () => {
     const { applyStripeEvent } = await import("./billingWebhook");
     const { getCreditBalance } = await import("./credits");
     const { trialAvailable } = await import("./billing");
-    const { PLANS, TRIAL } = await import("./plans");
+    const { PLANS } = await import("./plans");
     const { db, workspaces } = await import("@/lib/db");
     const { eq } = await import("drizzle-orm");
     const pro = PLANS.find((p) => p.key === "pro")!;
@@ -137,7 +138,7 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     const created = { id: "evt_test_trial_1", type: "customer.subscription.created", data: { object: sub } } as unknown as import("stripe").Stripe.Event;
     await applyStripeEvent(created);
     await applyStripeEvent({ ...created, id: "evt_test_trial_2", type: "customer.subscription.updated" } as unknown as import("stripe").Stripe.Event);
-    expect(await getCreditBalance(wsId)).toBe(before + TRIAL.credits);
+    expect(await getCreditBalance(wsId)).toBe(before);
     [w] = await db().select().from(workspaces).where(eq(workspaces.id, wsId));
     expect(w.planKey).toBe("pro");
     expect(w.trialStartedAt).not.toBeNull();
@@ -145,9 +146,34 @@ describe.skipIf(!hasDb)("stripe webhook applier", () => {
     const deps = { lookupKeyOfPrice: async () => "reelay_pro_monthly", subscriptionStatus: async () => "trialing" };
     const invoice = (id: string, reason: string, paid: number) => ({ id, type: "invoice.paid", data: { object: { id: `in_${id}`, billing_reason: reason, amount_paid: paid, customer: "cus_test_trial", parent: { subscription_details: { subscription: "sub_trial", metadata: {} } }, lines: { data: [{ metadata: {}, pricing: { price_details: { price: "price_x", product: "prod_x" } } }] } } } }) as unknown as import("stripe").Stripe.Event;
     expect((await applyStripeEvent(invoice("evt_test_trial_inv0", "subscription_create", 0), deps)).note).toMatch(/trial started/);
-    expect(await getCreditBalance(wsId)).toBe(before + TRIAL.credits);
+    expect(await getCreditBalance(wsId)).toBe(before);
     await applyStripeEvent(invoice("evt_test_trial_inv1", "subscription_cycle", 5900), { ...deps, subscriptionStatus: async () => "active" });
-    expect(await getCreditBalance(wsId)).toBe(before + TRIAL.credits + pro.creditsPerMonth);
+    expect(await getCreditBalance(wsId)).toBe(before + pro.creditsPerMonth);
+  });
+
+  it("gives the plan's credits when the trial is ended early, twelve months on an annual price, never on a proration (27 Oct 2026)", async () => {
+    const { applyStripeEvent, isFullPeriodUpdate } = await import("./billingWebhook");
+    const { getCreditBalance } = await import("./credits");
+    const { PLANS } = await import("./plans");
+    const { db, workspaces } = await import("@/lib/db");
+    const { eq } = await import("drizzle-orm");
+    const starter = PLANS.find((p) => p.key === "starter")!;
+    await db().update(workspaces).set({ stripeCustomerId: "cus_test_startnow", planKey: "starter" }).where(eq(workspaces.id, wsId));
+    const before = await getCreditBalance(wsId);
+    const line = (proration: boolean) => ({ metadata: {}, parent: { subscription_item_details: { proration } }, pricing: { price_details: { price: "price_x", product: "prod_x" } } });
+    const invoice = (id: string, paid: number, proration: boolean) => ({ id, type: "invoice.paid", data: { object: { id: `in_${id}`, billing_reason: "subscription_update", amount_paid: paid, customer: "cus_test_startnow", parent: { subscription_details: { subscription: "sub_sn", metadata: {} } }, lines: { data: [line(proration)] } } } }) as unknown as import("stripe").Stripe.Event;
+    // "Start my plan now" on a monthly price: one month of credits, once even when Stripe sends it twice.
+    const monthly = { lookupKeyOfPrice: async () => "reelay_starter_monthly", subscriptionStatus: async () => "active" };
+    await applyStripeEvent(invoice("evt_test_sn_1", 1900, false), monthly);
+    await applyStripeEvent(invoice("evt_test_sn_1", 1900, false), monthly);
+    expect(await getCreditBalance(wsId)).toBe(before + starter.creditsPerMonth);
+    // A proration or an unpaid update brings nothing.
+    expect(isFullPeriodUpdate({ billing_reason: "subscription_update", amount_paid: 900, lines: { data: [line(true)] } } as never)).toBe(false);
+    expect(isFullPeriodUpdate({ billing_reason: "subscription_update", amount_paid: 0, lines: { data: [line(false)] } } as never)).toBe(false);
+    // An annual price pays for twelve months of credits.
+    const annual = { lookupKeyOfPrice: async () => "reelay_starter_annual", subscriptionStatus: async () => "active" };
+    await applyStripeEvent(invoice("evt_test_sn_2", 19200, false), annual);
+    expect(await getCreditBalance(wsId)).toBe(before + starter.creditsPerMonth * 13);
   });
 
   it("moves a cancelled subscription back to free on the workspace", async () => {

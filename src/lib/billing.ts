@@ -1,7 +1,7 @@
 import "server-only";
 import { count, eq, gte, sql } from "drizzle-orm";
 import { db, profiles } from "@/lib/db";
-import { ALL_PLANS, CREDIT_EXPIRY, FREE_AD, FREE_AD_CREDITS, TOPUPS, TRIAL, planByKey } from "@/lib/plans";
+import { ALL_PLANS, CREDIT_EXPIRY, FREE_AD, FREE_AD_CREDITS, TOPUPS, planByKey } from "@/lib/plans";
 import { grantCredits } from "@/lib/credits";
 import { updateWorkspaceBilling, workspaceByCustomer } from "@/lib/workspaces";
 import type { AppUser } from "@/lib/auth";
@@ -60,16 +60,15 @@ export function trialAvailable(w: { trialStartedAt: Date | null; stripeSubscript
   return !w.trialStartedAt && !w.stripeSubscriptionId && w.planKey === "free";
 }
 
-/** The trial's credits (TRIAL.credits), once per subscription; they expire like the free credits. */
-export async function grantTrialCredits(workspaceId: string, userId: string, subscriptionId: string) {
-  await grantCredits({ workspaceId, userId, credits: TRIAL.credits, kind: "grant_trial", note: `Free trial (${TRIAL.credits} credits)`, expiresAt: freeAdExpiry(new Date()), reference: `trial:${subscriptionId}` });
-}
-
-/** Credits for a plan period, on an invoice paid event. Idempotent on the invoice id. They never expire. */
-export async function grantPlanCredits(workspaceId: string, userId: string, planKey: string, invoiceId: string) {
+/**
+ * Credits for a plan period, on an invoice paid event. Idempotent on the invoice id. They never expire.
+ * An annual invoice pays for twelve months, so it brings twelve months of credits at once (27 Oct 2026;
+ * before, a year's payment brought one month's credits).
+ */
+export async function grantPlanCredits(workspaceId: string, userId: string, planKey: string, invoiceId: string, months = 1) {
   const plan = planByKey(planKey);
   if (!plan || plan.creditsPerMonth === 0) return;
-  await grantCredits({ workspaceId, userId, credits: plan.creditsPerMonth, kind: "grant_subscription", note: `${plan.name} plan`, expiresAt: null, reference: `invoice:${invoiceId}` });
+  await grantCredits({ workspaceId, userId, credits: plan.creditsPerMonth * months, kind: "grant_subscription", note: months === 12 ? `${plan.name} plan, 12 months` : `${plan.name} plan`, expiresAt: null, reference: `invoice:${invoiceId}` });
 }
 
 export async function grantTopupCredits(workspaceId: string, userId: string, topupKey: string, sessionId: string, customCredits?: number) {

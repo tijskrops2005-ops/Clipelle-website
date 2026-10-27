@@ -5,8 +5,8 @@ export type Interval = "monthly" | "annual";
 /**
  * What the "You're upgrading to …" window shows before anyone leaves for Stripe (26 Oct 2026, after
  * Creatify's confirm step, our own words). Pure, so a test can check every number:
- * - "trial": the first subscription of a workspace that never had a trial: nothing today, TRIAL.credits
- *   now, the plan's price and credits with the first payment after TRIAL.days;
+ * - "trial": the first subscription of a workspace that never had a trial: nothing today, the plan's
+ *   price and credits with the first payment after TRIAL.days (or earlier with "Start my plan now");
  * - "new": a first subscription without a trial: the price today, the credits once it is paid;
  * - "change": a current subscriber picks another plan or level: the billing portal confirms it and
  *   shows the exact amount (upgrades apply now without proration, downgrades at the renewal).
@@ -28,7 +28,6 @@ export function planChange(input: { from: Plan; to: Plan; interval: Interval; cu
     /** The recurring price: per month, or the year's total on annual billing. */
     amount,
     trialEnds,
-    trialCredits: mode === "trial" ? TRIAL.credits : null,
     creditsBefore: from.creditsPerMonth,
     creditsAfter: to.creditsPerMonth,
     direction: to.monthlyUsd > from.monthlyUsd ? ("upgrade" as const) : to.monthlyUsd < from.monthlyUsd ? ("downgrade" as const) : ("same" as const),

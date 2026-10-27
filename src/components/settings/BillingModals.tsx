@@ -53,20 +53,56 @@ export function PlanConfirmModal({ change, busy, onConfirm, onClose }: { change:
             {c.mode === "trial" && c.trialEnds && (
               <>
                 <Row label="Due today"><strong className="text-ink">{money(0)}</strong></Row>
-                <Row label="During the trial">{n(c.trialCredits ?? 0)} credits to try it</Row>
-                <Row label={`On ${date(c.trialEnds)}`}>{money(c.amount)}, then {n(c.creditsAfter)} credits{c.interval === "annual" ? " a month" : ""}</Row>
+                <Row label="During the trial">Your free credits; start the plan early any time under Billing to get its credits at once</Row>
+                <Row label={`On ${date(c.trialEnds)}`}>{money(c.amount)}, then {c.interval === "annual" ? `${n(c.creditsAfter * 12)} credits, a year's worth at once` : `${n(c.creditsAfter)} credits`}</Row>
               </>
             )}
             {c.mode === "new" && c.dueToday !== null && (
               <>
                 <Row label="Due today"><strong className="text-ink">{money(c.dueToday)}</strong></Row>
-                <Row label="Credits">{n(c.creditsAfter)} as soon as the payment is confirmed</Row>
+                <Row label="Credits">{c.interval === "annual" ? `${n(c.creditsAfter * 12)}, a year's worth,` : n(c.creditsAfter)} as soon as the payment is confirmed</Row>
               </>
             )}
             {c.mode === "change" && <Row label="When">{c.direction === "downgrade" ? "From your next renewal; your credits stay" : "Right away; the new credits come with your next renewal"}</Row>}
           </dl>
           {c.mode === "trial" && c.trialEnds && <p className="rounded-panel bg-success/10 px-4 py-3 text-[13px] text-ink">Cancel any time before {date(c.trialEnds)} under Billing and you pay nothing. One free trial per account; a card is needed to start it.</p>}
           <p className="text-[13px] text-muted">Credits never expire. Cancel any time from the billing portal.</p>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+export type StartNowQuote = { amountCents: number | null; currency: string; interval: "monthly" | "annual"; credits: number | null; planKey: string };
+
+/**
+ * "Start my plan now" (27 Oct 2026): ends the free trial today. The price comes from the subscription
+ * itself (excluding VAT), the credits from the plan: a month's worth, or twelve months on an annual price.
+ */
+export function StartNowModal({ quote, planName, busy, onConfirm, onClose }: { quote: StartNowQuote | null; planName: string; busy: boolean; onConfirm: () => void; onClose: () => void }) {
+  const q = quote;
+  const money = q?.amountCents != null ? formatMoney(q.amountCents / 100, q.currency === "eur" ? "eur" : "usd") : null;
+  return (
+    <Modal
+      open={Boolean(q)}
+      onClose={onClose}
+      title={`Start ${planName} now`}
+      description="Your free trial ends today and your plan starts right away."
+      footer={
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>Keep my trial</Button>
+          <Button type="button" variant="accent" onClick={onConfirm} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}{money ? `Pay ${money} and start` : "Start my plan"}</Button>
+        </div>
+      }
+    >
+      {q && (
+        <div className="space-y-4">
+          <dl className="divide-y divide-divider text-[14px]">
+            <Row label="Due today"><strong className="text-ink">{money ?? "Your plan's price"}</strong>{q.interval === "annual" ? " for the year" : ""}</Row>
+            <Row label="Credits">{q.credits ? `${n(q.credits)} credits` : "Your plan's credits"}, as soon as the payment is confirmed</Row>
+            <Row label="Next payment">{q.interval === "annual" ? "In a year" : "In a month"}, then every {q.interval === "annual" ? "year" : "month"}</Row>
+          </dl>
+          <p className="text-[13px] text-muted">We charge the card you added for the trial. Prices exclude VAT where it applies. Credits never expire; cancel any time from the billing portal.</p>
         </div>
       )}
     </Modal>

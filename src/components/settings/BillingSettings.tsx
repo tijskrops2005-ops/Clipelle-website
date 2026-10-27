@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
-import { Coins, CreditCard, Gift, Loader2 } from "lucide-react";
+import { Coins, CreditCard, Gift, Loader2, Zap } from "lucide-react";
 import { config } from "@/lib/config";
 import { CUSTOM_CREDITS, PLANS, planByKey, planLabel, customCreditsPrice, formatMoney, validCustomCredits, type Currency, type Plan } from "@/lib/plans";
 import { planChange, type Interval, type PlanChange } from "@/lib/planChange";
-import { PlanConfirmModal } from "@/components/settings/BillingModals";
+import { PlanConfirmModal, StartNowModal, type StartNowQuote } from "@/components/settings/BillingModals";
 import { AutoReloadSettings } from "@/components/settings/AutoReloadSettings";
 import type { AutoReload } from "@/lib/autoReload";
 import { CreditsSlider } from "@/components/site/CreditsSlider";
@@ -110,6 +110,33 @@ export function BillingSettings() {
       setBusy(null);
     }
   }
+  // "Start my plan now" during the free trial (27 Oct 2026): the quote first, then one confirmed charge.
+  const [startNow, setStartNow] = useState<StartNowQuote | null>(null);
+  async function openStartNow() {
+    setBusy("start-now");
+    setError(null);
+    try {
+      setStartNow(await api<StartNowQuote>("/api/billing/start-now"));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not read your plan.");
+    } finally {
+      setBusy(null);
+    }
+  }
+  async function confirmStartNow() {
+    setBusy("start-now");
+    setError(null);
+    try {
+      await api<{ ok: true }>("/api/billing/start-now", { method: "POST" });
+      setStartNow(null);
+      // The credits arrive with the paid invoice (webhook); show the new balance once it is in.
+      window.location.replace(`${window.location.pathname}?checkout=started`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not start your plan.");
+      setStartNow(null);
+      setBusy(null);
+    }
+  }
   async function portal() {
     setBusy("portal");
     setError(null);
@@ -129,6 +156,7 @@ export function BillingSettings() {
     <>
       {checkout === "success" && <p role="status" className="rounded-chip bg-success/10 px-4 py-2.5 text-sm text-ink">Thanks. Your credits appear here as soon as the payment is confirmed (usually within a minute).</p>}
       {checkout === "changed" && <p role="status" className="rounded-chip bg-success/10 px-4 py-2.5 text-sm text-ink">Plan change confirmed. It shows here within a minute.</p>}
+      {checkout === "started" && <p role="status" className="rounded-chip bg-success/10 px-4 py-2.5 text-sm text-ink">Your plan has started. Its credits appear here within a minute; refresh if you do not see them yet.</p>}
       {checkout === "cancelled" && <p role="status" className="rounded-chip bg-surface-muted px-4 py-2.5 text-sm text-muted">Checkout cancelled. Nothing was charged.</p>}
       {error && <p role="alert" className="rounded-chip bg-danger/10 px-4 py-2.5 text-sm text-danger">{error}</p>}
 
@@ -157,6 +185,18 @@ export function BillingSettings() {
             <p className="text-[13px] text-muted">{status?.freeAd.reason === "cap" ? "All free credits for today are given out; you are on the list for tomorrow." : "30 credits per verified e-mail address: half a minute of translation or one 10-second ad."}</p>
           </div>
         </div>
+        {enabled && status?.subscriptionStatus === "trialing" && (
+          <div className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[15px] font-semibold text-ink">Ready to start?</p>
+              <p className="text-[13px] text-muted">Start your plan now and get its credits straight away, instead of after the free trial.</p>
+            </div>
+            <Button type="button" variant="primary" className="shrink-0" onClick={openStartNow} disabled={busy !== null}>
+              {busy === "start-now" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Zap className="size-4" aria-hidden />}
+              Start my plan now
+            </Button>
+          </div>
+        )}
         <div className="mt-2 flex flex-wrap gap-2">
           {enabled && (
             <Button type="button" variant="primary" onClick={() => document.getElementById("add-credits")?.scrollIntoView({ behavior: "smooth", block: "center" })} disabled={busy !== null}>
@@ -213,6 +253,7 @@ export function BillingSettings() {
         <p className="mt-4 text-[13px] text-muted">What each plan includes: <a href="/pricing" target="_blank" rel="noopener" className="focus-ring rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">compare the plans</a>.</p>
       </SectionCard>
 
+      <StartNowModal quote={startNow} planName={planLabel(plan)} busy={busy === "start-now"} onClose={() => setStartNow(null)} onConfirm={confirmStartNow} />
       <PlanConfirmModal change={shown} busy={busy !== null} onConfirm={confirm} onClose={closeConfirm} />
     </>
   );

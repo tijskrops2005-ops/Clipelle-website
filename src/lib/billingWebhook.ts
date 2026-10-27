@@ -1,9 +1,9 @@
 import "server-only";
 import type Stripe from "stripe";
-import { grantAutoReloadCredits, grantPlanCredits, grantTopupCredits, grantTrialCredits, setPlan, workspaceByCustomer } from "@/lib/billing";
+import { grantAutoReloadCredits, grantPlanCredits, grantTopupCredits, setPlan, workspaceByCustomer } from "@/lib/billing";
 import { disableAutoReload } from "@/lib/billingAutoReload";
 import { PLAN_KEYS } from "@/lib/billing";
-import { CUSTOM_CREDITS, planByLookupKey, validCustomCredits } from "@/lib/plans";
+import { CUSTOM_CREDITS, planByKey, planByLookupKey, validCustomCredits } from "@/lib/plans";
 import { notifyAddress, sendEmail } from "@/lib/email";
 
 /** Looks up a price's lookup key at Stripe (an invoice line carries only the price id). */
@@ -30,6 +30,17 @@ const defaultDeps: BillingDeps = {
 
 /** Invoices that start a plan period: the first one and every renewal. A mid-period plan change does not. */
 const PERIOD_INVOICES = new Set(["subscription_create", "subscription_cycle"]);
+
+/**
+ * A trial ended early ("Start my plan now" in Billing, or "End trial" in Stripe) bills the first period
+ * on a `subscription_update` invoice (27 Oct 2026). It holds a full-period line (not a proration) and
+ * was paid, so it brings the plan's credits like a renewal. Plan changes never make such an invoice:
+ * the portal changes plans without proration and without an invoice.
+ */
+export function isFullPeriodUpdate(invoice: Pick<Stripe.Invoice, "billing_reason" | "amount_paid" | "lines">) {
+  if (invoice.billing_reason !== "subscription_update" || (invoice.amount_paid ?? 0) <= 0) return false;
+  return (invoice.lines?.data ?? []).some((l) => l.parent?.subscription_item_details?.proration === false);
+}
 
 /**
  * Applies one verified Stripe event to a WORKSPACE. Pure of HTTP so it can be tested with constructed
@@ -87,7 +98,7 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
         await grantAutoReloadCredits(ws.id, ws.ownerUserId, credits, invoice.id!);
         return { handled: true, note: "auto-reload credits granted" };
       }
-      if (!PERIOD_INVOICES.has(invoice.billing_reason ?? "")) return { handled: true, note: `no plan credits for a ${invoice.billing_reason ?? "unknown"} invoice` };
+      if (!PERIOD_INVOICES.has(invoice.billing_reason ?? "") && !isFullPeriodUpdate(invoice)) return { handled: true, note: `no plan credits for a ${invoice.billing_reason ?? "unknown"} invoice` };
       // The €0 invoice that opens a free trial: the trial credits come with the subscription event,
       // the plan's credits with the first real payment after the trial.
       const subId = invoice.parent?.subscription_details?.subscription;
@@ -100,7 +111,9 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
       const lookup = typeof price === "string" ? await deps.lookupKeyOfPrice(price) : price?.lookup_key ?? null;
       const planKey = planByLookupKey(lookup)?.key ?? (line?.metadata?.planKey as string | undefined) ?? (invoice.parent?.subscription_details?.metadata?.planKey as string | undefined) ?? ws.planKey;
       if (PLAN_KEYS.includes(planKey as (typeof PLAN_KEYS)[number]) && planKey !== "free") {
-        await grantPlanCredits(ws.id, ws.ownerUserId, planKey, invoice.id);
+        // An annual price pays for twelve months of credits (27 Oct 2026).
+        const months = lookup && planByKey(planKey)?.stripeLookup?.annual === lookup ? 12 : 1;
+        await grantPlanCredits(ws.id, ws.ownerUserId, planKey, invoice.id, months);
         await setPlan(ws.id, { planKey, subscriptionStatus: "active" });
         return { handled: true, note: `plan credits for ${planKey}` };
       }
@@ -114,11 +127,8 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
       if (!ws) return { handled: false, note: "unknown customer" };
       const planKey = planByLookupKey(sub.items.data[0]?.price?.lookup_key)?.key ?? (sub.metadata?.planKey as string | undefined) ?? ws.planKey;
       const periodEnd = sub.items.data[0]?.current_period_end;
-      // The free trial: 30 credits now (once per subscription), and the workspace has used its trial.
-      if (sub.status === "trialing") {
-        await grantTrialCredits(ws.id, ws.ownerUserId, sub.id);
-        if (!ws.trialStartedAt) await setPlan(ws.id, { trialStartedAt: new Date() });
-      }
+      // The free trial: the workspace has used its trial (no extra credits since 27 Oct 2026).
+      if (sub.status === "trialing" && !ws.trialStartedAt) await setPlan(ws.id, { trialStartedAt: new Date() });
       // Cancelled in the portal for the end of the period: still active until then, shown as "ends on".
       const status = sub.status === "active" && (sub.cancel_at_period_end || sub.cancel_at) ? "canceling" : sub.status;
       await setPlan(ws.id, { planKey: sub.status === "active" || sub.status === "trialing" ? planKey : ws.planKey, stripeSubscriptionId: sub.id, subscriptionStatus: status, currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null });

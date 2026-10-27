@@ -170,6 +170,6 @@ describe("plan levels, features and the trial (26 Oct 2026)", () => {
   });
 
   it("offers a 7-day trial with 30 credits", () => {
-    expect(TRIAL).toEqual({ days: 7, credits: 30 });
+    expect(TRIAL).toEqual({ days: 7 });
   });
 });
