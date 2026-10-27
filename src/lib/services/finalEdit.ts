@@ -267,6 +267,11 @@ export type CaptionEditInput = {
   captionPosition?: "low" | "middle";
   /** The customer's caption choices (26 Oct 2026); missing = the original look (box, red, medium, capitals). */
   captionStyle?: Partial<CaptionStyleChoice>;
+  /**
+   * Where the old (removed) caption text was, as fractions of the frame (27 Oct 2026): our captions
+   * go exactly there, on a soft dark bar that covers the smudge the removal leaves.
+   */
+  coverBox?: { top: number; bottom: number; left: number; right: number };
 };
 
 /** The words' own colour and outline: dark text gets a light outline (26 Oct 2026). */
@@ -302,6 +307,8 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const look = captionStyleOf({ color: accent as CaptionStyleChoice["color"], ...input.captionStyle });
   const active = activeWord(look.highlight, look.color, light, ink, look);
   const words = captionText(look, light, ink);
+  const frame = input.size ? fitSize(input.size) : { width: 1080, height: 1920 };
+  const cover = look.show && input.coverBox ? coverBar(input.coverBox, frame, CAPTION_SIZE_PX[look.size]) : null;
 
   const captions = {
     clips: [
@@ -323,7 +330,8 @@ export function buildCaptionEdit(input: CaptionEditInput) {
         width: 900,
         height: 500,
         // "low": the caption box sits roughly between 18% and 32% from the bottom, clear of the bottom 15%.
-        offset: { x: 0, y: input.captionPosition === "middle" ? 0 : -0.18 },
+        // Over removed text: centred on where that text was.
+        offset: { x: 0, y: cover ? cover.offsetY : input.captionPosition === "middle" ? 0 : -0.18 },
       },
     ],
   };
@@ -344,9 +352,11 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const output = input.size
     ? { format: "mp4", size: fitSize(input.size), fps: 25 }
     : { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 };
+  // The soft bar over the removed text sits between the captions and the video.
+  const bar = cover ? { clips: [{ asset: { type: "shape", shape: "rectangle", width: cover.width, height: cover.height, fill: { color: ink, opacity: 0.6 }, rectangle: { width: cover.width, height: cover.height, cornerRadius: 22 } }, start: 0, length: total, offset: { x: 0, y: cover.offsetY } }] } : null;
   return {
     // Captions off: only the video track (still cropped or resized, silence still trimmed).
-    timeline: { background: ink, tracks: look.show ? [captions, video] : [video] },
+    timeline: { background: ink, tracks: look.show ? (bar ? [captions, bar, video] : [captions, video]) : [video] },
     output,
     meta: { totalSeconds: total, trimStart, trimEnd },
   };
@@ -446,6 +456,20 @@ export function buildRemuxEdit(input: { pictureUrl: string; soundUrl: string; se
     output: input.size ? { format: "mp4", size: fitSize(input.size), fps: 25 } : { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 },
     meta: { totalSeconds: total },
   };
+}
+
+/**
+ * The bar over removed text: as wide as the caption area, at least two caption lines high, centred
+ * on the old text. Shotstack's offset y is a fraction of the frame height from the centre, up positive.
+ */
+export function coverBar(box: { top: number; bottom: number }, frame: { width: number; height: number }, fontPx: number) {
+  const centre = (box.top + box.bottom) / 2;
+  const minHeight = Math.round(fontPx * 2.6 + 40);
+  const height = Math.max(minHeight, Math.round((box.bottom - box.top) * frame.height + 40));
+  const half = height / 2 / frame.height;
+  // Keep the whole bar inside the frame.
+  const clamped = Math.min(1 - half, Math.max(half, centre));
+  return { width: Math.round(frame.width * 0.92), height, offsetY: Math.round((0.5 - clamped) * 1000) / 1000 };
 }
 
 /** Shotstack renders at most 1920 px per side and wants even numbers. */

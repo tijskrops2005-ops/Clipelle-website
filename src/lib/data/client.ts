@@ -299,6 +299,7 @@ export type TranslateProjectDraft = {
   removeMusic?: boolean;
   cleanVoice?: boolean;
   removeText?: boolean;
+  captionCover?: boolean;
   speaker?: "original" | "presenter";
   presenter?: PresenterTranslate;
   format: "original" | "9:16";

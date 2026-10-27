@@ -77,3 +77,27 @@ describe("text removal: the original sound back under the cleaned picture (26 Oc
     expect(e.output).toMatchObject({ size: { width: 1080, height: 1920 } });
   });
 });
+
+describe("captions over removed text (27 Oct 2026)", () => {
+  it("centres the captions and a soft bar on where the old text was", async () => {
+    const { buildCaptionEdit } = await import("./finalEdit");
+    const e = buildCaptionEdit({ ...base, coverBox: { top: 0.7, bottom: 0.78, left: 0.1, right: 0.9 } });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tracks = (e.timeline as any).tracks;
+    expect(tracks).toHaveLength(3);
+    expect(tracks[0].clips[0].offset.y).toBeCloseTo(-0.24, 2);
+    expect(tracks[1].clips[0].asset).toMatchObject({ type: "shape", shape: "rectangle", fill: { opacity: 0.6 } });
+    expect(tracks[1].clips[0].offset.y).toBe(tracks[0].clips[0].offset.y);
+  });
+  it("keeps the bar inside the frame and at least two caption lines high", async () => {
+    const { coverBar } = await import("./finalEdit");
+    const b = coverBar({ top: 0.96, bottom: 0.99 }, { width: 1080, height: 1920 }, 62);
+    expect(b.height).toBeGreaterThanOrEqual(Math.round(62 * 2.6 + 40));
+    expect(0.5 - b.offsetY + b.height / 2 / 1920).toBeLessThanOrEqual(1.001);
+  });
+  it("leaves the normal place when no old text was found", () => {
+    const e = buildCaptionEdit(base);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((e.timeline as any).tracks).toHaveLength(2);
+  });
+});

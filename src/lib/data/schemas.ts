@@ -74,6 +74,7 @@ export const TranslateFields = z.object({
   /** Sound (26 Oct 2026): strip the background music, clean up the speech. */
   /** Remove text burned into the picture before translating (Pro, 26 Oct 2026). */
   removeText: z.boolean().optional(),
+  captionCover: z.boolean().optional(),
   /** Who speaks the translation (26 Oct 2026): the original speaker (lip-synced, default) or an AI presenter. */
   speaker: z.enum(["original", "presenter"]).optional(),
   presenter: z.object({ engine: z.enum(["avatar_iii", "avatar_iv"]), lookId: z.string().max(100).optional(), voiceId: z.string().max(100).optional(), accent: z.string().max(40).optional(), speed: z.enum(["slower", "normal", "faster"]).optional(), layout: z.enum(PRESENTER_LAYOUTS) }).optional(),

@@ -30,6 +30,8 @@ export type TranslateFormState = {
   removeMusic?: boolean;
   cleanVoice?: boolean;
   removeText?: boolean;
+  /** With removeText: captions where the old text was, on a soft bar (default on; sent only when off). */
+  captionCover?: boolean;
   speaker?: "original" | "presenter";
   presenter?: PresenterTranslate;
 };
@@ -41,6 +43,7 @@ function extras(s: TranslateFormState) {
     ...(s.removeMusic ? { removeMusic: true } : {}),
     ...(s.cleanVoice ? { cleanVoice: true } : {}),
     ...(s.removeText ? { removeText: true } : {}),
+    ...(s.removeText && s.captionCover === false ? { captionCover: false } : {}),
     ...(s.speaker === "presenter" && s.presenter ? { speaker: "presenter" as const, presenter: s.presenter } : {}),
   };
 }

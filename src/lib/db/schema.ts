@@ -121,6 +121,10 @@ export type TranslateInput = {
   cleanVoice?: boolean;
   /** Remove text burned into the picture before translating (once per project). */
   removeText?: boolean;
+  /** With removeText: put our captions where the old text was, on a soft bar (default on); false = normal position. */
+  captionCover?: boolean;
+  /** Where the old caption text was (fractions of the frame), found once before the text removal; null = none found. */
+  oldTextBox?: { top: number; bottom: number; left: number; right: number } | null;
   /** "original" (lip-synced, default) or "presenter": an AI presenter speaks the translation. */
   speaker?: "original" | "presenter";
   presenter?: PresenterTranslate;

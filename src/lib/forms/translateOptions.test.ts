@@ -37,3 +37,11 @@ describe("translate with an AI presenter: what the server accepts (26 Oct 2026)"
     expect(translateCredits({ seconds: 30, quality: "speed", enhance: false, presenterEngine: "avatar_iv", removeText: true })).toBe(210);
   });
 });
+
+describe("captions over removed text in the draft (27 Oct 2026)", () => {
+  it("sends captionCover only when it is switched off, and only with text removal", () => {
+    expect(draft({ removeText: true, captionCover: true })).not.toHaveProperty("captionCover");
+    expect(draft({ removeText: true, captionCover: false })).toMatchObject({ captionCover: false });
+    expect(draft({ removeText: false, captionCover: false })).not.toHaveProperty("captionCover");
+  });
+});

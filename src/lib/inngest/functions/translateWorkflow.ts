@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
 import { assets, db, projects, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
+import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, type TextBox } from "@/lib/services/textLocate";
 import { downloadTextRemovalOutput, estimateTextRemovalUsd, getTextRemoval, startTextRemoval, TEXT_REMOVAL_MODEL, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
 import { languageCodeForName, languageOf } from "@/lib/languages";
 import { checkTranslation, estimateCheckUsd } from "@/lib/services/translationCheck";
@@ -87,6 +88,8 @@ export const translateWorkflow = inngest.createFunction(
     const input = project.input as TranslateInput;
 
     /* ---------- 0. optional: remove the on-screen text from the source (once per project) ---------- */
+    // Before the text is removed: where was it? Our captions go there later, on a bar (27 Oct 2026).
+    const oldTextBox = input.removeText && input.captionCover !== false ? await locateOldText(projectId, input, step) : null;
     const sourceAssetId = input.removeText ? await runTextRemoval(projectId, input, step) : input.sourceAssetId;
 
     /* ---------- 1. upload ---------- */
@@ -121,7 +124,7 @@ export const translateWorkflow = inngest.createFunction(
     const sessions = await runTranslate(projectId, input, upload, step);
 
     /* ---------- 4. render + enhance + captions, per language ---------- */
-    const results = await runCaptions(projectId, input, upload, sessions, step);
+    const results = await runCaptions(projectId, { ...input, oldTextBox }, upload, sessions, step);
     await step.run("complete", async () => {
       await db().update(projects).set({ status: "completed", updatedAt: new Date() }).where(eq(projects.id, projectId));
       await settleProjectCredits(projectId);
@@ -338,6 +341,48 @@ async function checkLanguage(projectId: string, stepId: string, t: TranslationRo
     // The check is a safety net, never a blocker: keep the literal translation and tell the customer.
     return { segments: t.segments, qa: { changes: [], warnings: [`The automatic check could not run (${plainMessage(error)}); the literal translation was used.`], costUsd: 0 } };
   }
+}
+
+/* ---------- where the old caption text was (27 Oct 2026) ---------- */
+
+/**
+ * Two frames of the source (first, middle) and one vision check: the box of the burned-in caption
+ * text, stored on the project so a retry does not pay again. Any failure only means the captions
+ * keep their normal place; the translation never stops for this.
+ */
+async function locateOldText(projectId: string, input: TranslateInput, step: StepTools): Promise<TextBox | null> {
+  if (input.oldTextBox !== undefined) return input.oldTextBox;
+  return step.run("locate-old-text", () => withDeadline("Finding the old text", 3, async () => {
+    let box: TextBox | null = null;
+    try {
+      const row = await loadStep(projectId, "upload");
+      const source = await loadAsset(input.sourceAssetId);
+      const url = await providerUrl(source);
+      const reservedFrames = await reserveSpend({ service: "fal", action: "extract_frame", estimatedUsd: EXTRACT_FRAME_USD * 2, fingerprintInput: { projectId, source: source.id }, projectId, stepId: row.id, languageCount: Math.max(1, input.targetLanguages.length) });
+      let frames: string[] = [];
+      try {
+        frames = await Promise.all([extractFrame(url, "first"), extractFrame(url, "middle")]);
+        await settleSpend(reservedFrames.entryId, { status: "completed", actualUsd: EXTRACT_FRAME_USD * 2, basis: "list" });
+      } catch (error) {
+        await settleSpend(reservedFrames.entryId, { status: "failed", actualUsd: 0 });
+        throw error;
+      }
+      const reservedLook = await reserveSpend({ service: "anthropic", action: "locate_text", estimatedUsd: LOCATE_TEXT_USD, fingerprintInput: { projectId, frames: frames.length }, projectId, stepId: row.id, languageCount: Math.max(1, input.targetLanguages.length) });
+      try {
+        const found = await locateBurnedCaptions(frames);
+        box = found.box;
+        await settleSpend(reservedLook.entryId, { status: "completed", actualUsd: found.costUsd, basis: "tokens" });
+      } catch (error) {
+        await settleSpend(reservedLook.entryId, { status: "failed", actualUsd: 0 });
+        throw error;
+      }
+    } catch (error) {
+      console.error("[locate old text]", error instanceof Error ? error.message : error);
+      box = null;
+    }
+    await db().update(projects).set({ input: sql`${projects.input} || ${JSON.stringify({ oldTextBox: box })}::jsonb`, updatedAt: new Date() }).where(eq(projects.id, projectId));
+    return box;
+  }));
 }
 
 /* ---------- optional: remove the on-screen text ---------- */
@@ -758,7 +803,13 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         const estimate = estimateEnhanceUsd(asset.seconds ?? input.sourceSeconds);
         const reserved = await reserveSpend({ service: "fal", action: "enhance_video", estimatedUsd: estimate, fingerprintInput: { projectId, code, asset: asset.id }, projectId, stepId: stepRow.id, language: code, languageCount });
         try {
-          const job = await withRetries("Starting the enhancement", async () => submitEnhance({ videoUrl: await providerUrl(asset) }));
+          // Upscale to 1080p when the translated video is smaller (27 Oct 2026: a 720×1280 source stayed 720p and
+          // was only stretched to 1080 by the caption step); the factor is read from the real size (free probe).
+          const videoUrl = await providerUrl(asset);
+          const probed = await withRetries("Reading the video size", () => ingestFromUrl(videoUrl)).catch(() => null);
+          const short = probed?.width && probed?.height ? Math.min(probed.width, probed.height) : 0;
+          const upscaleFactor = short > 0 && short < 1000 ? Math.min(2, Math.round((1080 / short) * 100) / 100) : 1;
+          const job = await withRetries("Starting the enhancement", async () => submitEnhance({ videoUrl, upscaleFactor }));
           return { requestId: job.requestId, entryId: reserved.entryId, estimate, stepId: stepRow.id };
         } catch (error) {
           await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
@@ -834,6 +885,8 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         trimEnd,
         captionPosition: input.captionPosition ?? "low",
         captionStyle: input.captionStyle,
+        // Over removed text, the captions sit where that text was (only when the frame keeps the source's height).
+        coverBox: input.oldTextBox ?? undefined,
       });
       // Counted as $0.10 per 30 s even in the sandbox, so budgets match production.
       const estimate = Math.round(edit.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000;
