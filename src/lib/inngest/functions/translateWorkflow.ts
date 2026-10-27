@@ -635,6 +635,11 @@ async function restoreSound(projectId: string, input: TranslateInput, pictureAss
 
 /* ---------- render + enhance + captions, per language ---------- */
 
+/** The translation service holding a video for its own review: a wait, not an error. */
+function isModerationHold(message: string | null | undefined) {
+  return /moderation|under review|in review/i.test(message ?? "");
+}
+
 /** Thrown inside a language's sub-flow: that language stops, the others continue. */
 class LanguageFailure extends Error {
   constructor(message: string) {
@@ -717,6 +722,16 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         }
       }
       const estimate = estimateGenerateUsd(input.sourceSeconds, input.quality);
+      // A render that already exists (a retry after a moderation hold or a timeout) is picked up again
+      // instead of ordering, and paying for, a second one (27 Oct 2026).
+      if (t.translationId) {
+        const existing = await getTranslation(t.translationId).catch(() => null);
+        if (existing && (existing.status !== "failed" || isModerationHold(existing.failure_message))) {
+          const reservedAgain = await reserveSpend({ service: "heygen", action: "translate_generate", estimatedUsd: estimate, fingerprintInput: { projectId, code, attempt: stepRow.attempt, resumed: t.translationId }, projectId, stepId: stepRow.id, language: code, languageCount, meta: { language: code, mode: input.quality, resumed: true } });
+          await db().update(translations).set({ status: "processing", error: null, updatedAt: new Date() }).where(eq(translations.id, t.id));
+          return { translationId: t.translationId, entryId: reservedAgain.entryId, estimate, done: false };
+        }
+      }
       const reserved = await reserveSpend({ service: "heygen", action: "translate_generate", estimatedUsd: estimate, fingerprintInput: { projectId, code, attempt: stepRow.attempt }, projectId, stepId: stepRow.id, language: code, languageCount, meta: { language: code, mode: input.quality } });
       try {
         const created = await withRetries("Starting the translated video", () => generateFromProofread(proofreadId, { idempotencyKey: reserved.fingerprint, callbackUrl: callbackUrlFor("heygen") }));
@@ -776,6 +791,13 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         }
         break;
       }
+      // "Pending moderation" (27 Oct 2026): the service holds the video for its own review and then goes on
+      // ("running" again a little later). That is waiting, not a failure: keep checking.
+      if (tr.status === "failed" && isModerationHold(tr.failure_message)) {
+        await step.run(`${code}-moderation-${i}`, () => db().update(translations).set({ error: null, status: "processing", updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, code))));
+        await waitForJob(step, `${code}-wait-${i}`, "heygen", gen.translationId, cfg.pollSeconds);
+        continue;
+      }
       if (tr.status === "failed") {
         await step.run(`${code}-failed`, async () => {
           if (gen.entryId) await settleSpend(gen.entryId, { status: "failed", actualUsd: 0 });
@@ -784,7 +806,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
       }
       await waitForJob(step, `${code}-wait-${i}`, "heygen", gen.translationId, cfg.pollSeconds);
     }
-    if (!finished) return fail(`The ${lang} video took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`);
+    if (!finished) return fail(`The ${lang} video took longer than ${cfg.maxWaitMinutes} minutes (the translation service may still be reviewing it). Retry the step later: it picks up the same video, without paying again.`);
   } else {
     const t = await step.run(`${code}-reload`, async () => {
       const [row] = await db().select().from(translations).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).limit(1);
