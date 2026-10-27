@@ -79,7 +79,10 @@ export const translateWorkflow = inngest.createFunction(
     id: "workflow-translate",
     name: "Workflow B: translate an existing video",
     retries: 0,
-    concurrency: 3,
+    // One run per project (27 Oct 2026, Tijs: everyone can start the next video while one runs). The
+    // limit was 3 for all customers together, which queued customer B behind customer A. Paid calls
+    // stay bounded by the cost guard and the credits, not by a queue.
+    concurrency: { limit: 1, key: "event.data.projectId" },
     triggers: [translateProjectCreated, stepRetry],
   },
   async ({ event, step }) => {

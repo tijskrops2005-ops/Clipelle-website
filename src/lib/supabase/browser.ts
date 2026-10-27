@@ -19,8 +19,53 @@ export function supabaseBrowser(): SupabaseClient {
   return client;
 }
 
-/** Uploads a File straight from the browser to our storage, bypassing our server. The bucket name comes with the signed URL. */
-export async function uploadToSignedUrl(bucket: string, path: string, token: string, file: File) {
-  const { error } = await supabaseBrowser().storage.from(bucket).uploadToSignedUrl(path, token, file, { contentType: file.type || undefined });
-  if (error) throw new Error(error.message);
+/**
+ * Uploads a File straight from the browser to our storage, bypassing our server. The bucket name
+ * comes with the signed URL. With `onProgress` (27 Oct 2026) the same request supabase-js makes
+ * (PUT /storage/v1/object/upload/sign/<bucket>/<path>?token=…, multipart body with cacheControl and
+ * the file, the publishable key as apikey) goes through XMLHttpRequest, the one browser API that
+ * reports upload progress; without it the library call is used as before.
+ */
+export async function uploadToSignedUrl(bucket: string, path: string, token: string, file: File, onProgress?: (fraction: number) => void) {
+  if (!onProgress) {
+    const { error } = await supabaseBrowser().storage.from(bucket).uploadToSignedUrl(path, token, file, { contentType: file.type || undefined });
+    if (error) throw new Error(error.message);
+    return;
+  }
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!base || !key) throw new Error("Storage is not configured (NEXT_PUBLIC_SUPABASE_URL / _PUBLISHABLE_KEY).");
+  const url = new URL(`${base.replace(/\/$/, "")}/storage/v1/object/upload/sign/${bucket}/${path.replace(/^\/+/, "").split("/").map(encodeURIComponent).join("/")}`);
+  url.searchParams.set("token", token);
+  const body = new FormData();
+  body.append("cacheControl", "3600");
+  body.append("", file);
+  await new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url.toString());
+    xhr.setRequestHeader("apikey", key);
+    xhr.setRequestHeader("Authorization", `Bearer ${key}`);
+    xhr.setRequestHeader("x-upsert", "false");
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.min(1, e.loaded / e.total));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress(1);
+        resolve();
+        return;
+      }
+      let message = `Upload failed (${xhr.status}).`;
+      try {
+        const j = JSON.parse(xhr.responseText) as { message?: string; error?: string };
+        message = j.message ?? j.error ?? message;
+      } catch {
+        /* keep the status message */
+      }
+      reject(new Error(message));
+    };
+    xhr.onerror = () => reject(new Error("The upload was interrupted. Check your connection and try again."));
+    xhr.onabort = () => reject(new Error("The upload was cancelled."));
+    xhr.send(body);
+  });
 }

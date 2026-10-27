@@ -99,6 +99,8 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
   const withPresenter = speaker === "presenter";
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+  /** 0–100 while the video is on its way to storage (27 Oct 2026); null before and after. */
+  const [uploadPct, setUploadPct] = useState<number | null>(null);
   /** Second step of the submit: the form is valid and the customer sees the cost once more before anything starts. */
   const [confirming, setConfirming] = useState(false);
   const submitLock = useRef(false);
@@ -184,11 +186,12 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
     submitLock.current = true;
     setSubmitting(true);
     try {
-      const { id } = await createTranslateProject(sourceAd ? buildTranslateDraft({ ...formState, sourceAd }) : buildTranslateDraft({ ...formState, video: video! }));
+      const { id } = await createTranslateProject(sourceAd ? buildTranslateDraft({ ...formState, sourceAd }) : buildTranslateDraft({ ...formState, video: video! }), (f) => setUploadPct(Math.round(f * 100)));
       router.push(`/projects/${id}`);
     } catch (error) {
       submitLock.current = false;
       setSubmitting(false);
+      setUploadPct(null);
       setConfirming(false);
       setErrors({ form: error instanceof Error ? error.message : "Something went wrong while starting the translation. Please try again." });
     }
@@ -539,8 +542,13 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
             <div className="mt-4 flex flex-col gap-2">
               <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || !rights || overBudget || shortOfCredits}>
                 {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
-                {submitting ? "Starting…" : `Start now · ${totalCredits} credits`}
+                {submitting ? (uploadPct !== null && uploadPct < 100 ? `Uploading ${uploadPct}%` : "Starting…") : `Start now · ${totalCredits} credits`}
               </Button>
+              {submitting && uploadPct !== null && (
+                <div className="h-1.5 overflow-hidden rounded-full bg-surface-muted" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={uploadPct} aria-label="Upload">
+                  <div className="h-full w-full origin-left rounded-full bg-accent transition-transform duration-300" style={{ transform: `scaleX(${uploadPct / 100})` }} />
+                </div>
+              )}
               <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={submitting}>
                 Back
               </Button>

@@ -309,7 +309,7 @@ export type TranslateProjectDraft = {
   rightsConfirmed: boolean;
 };
 
-export async function createTranslateProject(draft: TranslateProjectDraft): Promise<{ id: string }> {
+export async function createTranslateProject(draft: TranslateProjectDraft, onUploadProgress?: (fraction: number) => void): Promise<{ id: string }> {
   if (config.demoMode) {
     const now = new Date().toISOString();
     const sourceAd = draft.sourceProjectId ? mockStore.getProjectsSnapshot().find((p): p is AdProject => p.workflow === "ad" && p.id === draft.sourceProjectId) : undefined;
@@ -342,7 +342,7 @@ export async function createTranslateProject(draft: TranslateProjectDraft): Prom
   }
   const { video, ...rest } = draft;
   const { id } = await api<{ id: string }>("/api/projects", { method: "POST", body: JSON.stringify({ workflow: "translate", ...rest, sourceFileName: video?.name ?? "generated-ad.mp4" }) });
-  if (video) await uploadAndAttach(id, "source", video, draft.sourceSeconds);
+  if (video) await uploadAndAttach(id, "source", video, draft.sourceSeconds, onUploadProgress);
   await startWithClearMessage(id);
   await refresh();
   return { id };
@@ -375,12 +375,12 @@ async function startWithClearMessage(id: string) {
 }
 
 /** Browser → signed URL → storage, then tell the server which object belongs to the project. */
-async function uploadAndAttach(projectId: string, kind: UploadKind, file: File, seconds?: number) {
+async function uploadAndAttach(projectId: string, kind: UploadKind, file: File, seconds?: number, onProgress?: (fraction: number) => void) {
   const signed = await api<{ path: string; token: string; bucket: string }>("/api/uploads/sign", {
     method: "POST",
     body: JSON.stringify({ projectId, kind, fileName: file.name, bytes: file.size, mime: file.type }),
   });
-  await uploadToSignedUrl(signed.bucket, signed.path, signed.token, file);
+  await uploadToSignedUrl(signed.bucket, signed.path, signed.token, file, onProgress);
   await api(`/api/projects/${projectId}/assets`, { method: "POST", body: JSON.stringify({ kind, storagePath: signed.path, fileName: file.name, seconds }) });
 }
 

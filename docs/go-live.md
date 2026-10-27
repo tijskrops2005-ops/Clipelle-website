@@ -139,6 +139,7 @@ Het huidige project is al ingesteld; het nieuwe project moet hetzelfde krijgen.
 1. ☐ **Tijs:** maak een account op inngest.com met de omgeving Production.
 2. ☐ **Tijs:** zet `INNGEST_EVENT_KEY` en `INNGEST_SIGNING_KEY` in `.env.prod`. Zet `INNGEST_DEV` nooit in productie.
 3. ☐ **Claude via Chrome, na fase 11:** synchroniseer de app met `https://www.clipelle.com/api/inngest`, en controleer dat de functies zichtbaar zijn.
+4. ☑ **Gelijktijdigheid (27 okt 2026):** de workflows hebben geen globale limiet meer (`concurrency: { limit: 1, key: "event.data.projectId" }`: één run per project, elke klant kan meteen de volgende video starten). Inngest telt daarbij alleen stappen die code uitvoeren, niet runs die slapen of wachten (docs, 27 okt 2026); het accountmaximum hangt van het Inngest-plan af en staat in app.inngest.com → Billing. Wordt dat maximum bereikt, dan wacht een stap even in de wachtrij van Inngest; niets mislukt.
 
 ## Fase 10. Productiesleutels
 

@@ -61,7 +61,7 @@ export const adWorkflow = inngest.createFunction(
     id: "workflow-ad",
     name: "Workflow A: ad from a product photo",
     retries: 0, // our own retry policy: withRetries() per call, Retry button per step
-    concurrency: 3,
+    concurrency: { limit: 1, key: "event.data.projectId" }, // one run per project; no global queue (27 Oct 2026)
     triggers: [adProjectCreated, stepRetry],
   },
   async ({ event, step }) => {
