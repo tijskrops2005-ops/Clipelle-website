@@ -39,6 +39,8 @@ const TRANSLATE_DURATION_MS: Record<TranslateStepKey, number> = {
   translate: 10_000,
   captions: 6_000,
 };
+/** Demo phases per language after the translation (27 Oct 2026): voice, then captions, then done, each language a little later than the one before. */
+const DEMO_PHASE_MS = { captions: 3_000, done: 6_000, perLanguage: 2_000 };
 
 const AD_FAIL_MESSAGE =
   "The presenter video could not be generated. The script was rejected by the voice service. Check the script for unsupported characters and try again.";
@@ -193,6 +195,22 @@ function tickTranslate(project: TranslateProject, now: number, nowIso: string) {
   const step = project.steps[key];
 
   const startedAt = step.startedAt ? Date.parse(step.startedAt) : NaN;
+  // The captions step: every language moves through its phases on its own clock, then the project completes.
+  if (key === "captions" && !Number.isNaN(startedAt)) {
+    const elapsed = now - startedAt;
+    let changed = false;
+    const translations = project.translations.map((t, i) => {
+      const at = new Date(startedAt + Math.min(elapsed, DEMO_PHASE_MS.done + i * DEMO_PHASE_MS.perLanguage)).toISOString();
+      const want: "voice" | "captions" | "done" = elapsed >= DEMO_PHASE_MS.done + i * DEMO_PHASE_MS.perLanguage ? "done" : elapsed >= DEMO_PHASE_MS.captions + i * DEMO_PHASE_MS.perLanguage ? "captions" : "voice";
+      if (t.phase?.key === want) return t;
+      changed = true;
+      return want === "done" ? { ...t, status: "completed" as const, videoUrl: config.demoVideoUrl, phase: { key: want, at } } : { ...t, status: "processing" as const, phase: { key: want, at } };
+    });
+    if (!changed) return;
+    const allDone = translations.every((t) => t.status === "completed");
+    updateProject(project.id, (p) => (p.workflow === "translate" ? { ...p, translations, status: allDone ? "completed" : p.status, steps: allDone ? { ...p.steps, captions: { ...p.steps.captions, status: "completed", finishedAt: nowIso } } : p.steps } : p));
+    return;
+  }
   if (Number.isNaN(startedAt) || now - startedAt > TRANSLATE_DURATION_MS[key] * 3) {
     updateProject(project.id, (p) =>
       p.workflow === "translate"
@@ -239,19 +257,12 @@ function tickTranslate(project: TranslateProject, now: number, nowIso: string) {
               ...t,
               status: "processing" as const,
               segments,
-              qa: first ? { changes: [{ index: first.index, before: first.text, after: first.text, reason: "Demo: a missing word was restored." }], warnings: [], summary: "Demo: the translation reads naturally and matches the original." } : { changes: [], warnings: [] },
+              qa: first ? { changes: [{ index: first.index, before: first.text.replace(/\s+\S+$/, ""), after: first.text, reason: "Demo: a missing word was restored." }], warnings: [], summary: "Demo: the translation reads naturally and matches the original." } : { changes: [], warnings: [] },
             };
           }),
           steps: { ...p.steps, translate: done, captions: { status: "processing", startedAt: nowIso, attempt: 1 } },
         };
       }
-      case "captions":
-        return {
-          ...p,
-          status: "completed",
-          translations: p.translations.map((t) => ({ ...t, status: "completed", videoUrl: config.demoVideoUrl })),
-          steps: { ...p.steps, captions: done },
-        };
       default:
         return p;
     }

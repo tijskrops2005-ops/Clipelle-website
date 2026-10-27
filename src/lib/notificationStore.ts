@@ -8,7 +8,7 @@ import { useSyncExternalStore } from "react";
  * latest ones, and the browser tab title carries the count. Persisted per browser so a reload
  * keeps the badge; cleared when the Projects page is opened.
  */
-export type AppNotice = { id: string; projectId: string; name: string; status: "completed" | "failed"; at: number; href: string };
+export type AppNotice = { id: string; projectId: string; name: string; status: "completed" | "failed"; at: number; href: string; /** One language version of a translation (27 Oct 2026); absent for the whole project. */ language?: string };
 
 const KEY = "clipelle.notices.v1";
 let notices: AppNotice[] = [];
@@ -44,8 +44,8 @@ function subscribe(l: () => void) {
 
 export function pushNotice(n: Omit<AppNotice, "id" | "at">) {
   load();
-  const notice: AppNotice = { ...n, id: `${n.projectId}:${n.status}:${Date.now()}`, at: Date.now() };
-  if (notices.some((x) => x.projectId === n.projectId && x.status === n.status)) return;
+  const notice: AppNotice = { ...n, id: `${n.projectId}:${n.language ?? ""}:${n.status}:${Date.now()}`, at: Date.now() };
+  if (notices.some((x) => x.projectId === n.projectId && x.status === n.status && (x.language ?? "") === (n.language ?? ""))) return;
   notices = [notice, ...notices];
   toasts = [notice, ...toasts].slice(0, 3);
   save();

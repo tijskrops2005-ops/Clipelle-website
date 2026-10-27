@@ -5,11 +5,15 @@ import { cn, formatDate } from "@/lib/utils";
 import { projectLengthLabel, projectMonogram, projectPosterUrl, projectSubtitle, projectVideoCount } from "@/lib/projectMeta";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Poster } from "@/components/Poster";
+import { translateProgress } from "@/lib/translateProgress";
 
 /** Vertical 9:16 video tile — the eye-catcher of the dashboard and the projects grid. */
 export function ProjectTile({ project, selectable, selected, onToggle }: { project: Project; selectable?: boolean; selected?: boolean; onToggle?: () => void }) {
   const isCompleted = project.status === "completed";
   const posterUrl = projectPosterUrl(project);
+  // A translation being made shows its one progress on the tile too (27 Oct 2026).
+  const progress = project.workflow === "translate" && project.status === "processing" ? translateProgress(project) : null;
+  const format = project.workflow === "translate" && project.format === "original" ? "original size" : "9:16";
   // A translation has no product photo: its first frame is the poster (26 Oct 2026), the result or else the source.
   const frameVideo = !posterUrl && project.workflow === "translate" ? project.translations.find((t) => t.videoUrl)?.videoUrl ?? project.sourceVideoUrl : undefined;
 
@@ -54,13 +58,25 @@ export function ProjectTile({ project, selectable, selected, onToggle }: { proje
           </span>
         )}
 
+        {progress && (
+          <div className="absolute inset-x-3 bottom-3 rounded-[10px] bg-surface/92 p-2.5 shadow-card backdrop-blur-[2px]">
+            <div className="flex items-center justify-between text-[12px] font-medium text-ink">
+              <span className="truncate pr-2">{progress.current}</span>
+              <span className="shrink-0 tabular-nums">{progress.percent}%</span>
+            </div>
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-muted" aria-hidden>
+              <div className="h-full w-full origin-left rounded-full bg-accent transition-transform duration-700" style={{ transform: `scaleX(${progress.percent / 100})` }} />
+            </div>
+          </div>
+        )}
+
         {isCompleted && (
           <>
             <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-ink/60 to-transparent" />
             <div className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-3 text-surface">
               <div className="min-w-0">
                 <p className="label-mono opacity-90">
-                  {projectVideoCount(project) > 1 ? `${projectVideoCount(project)} videos · 9:16` : `${projectLengthLabel(project)} · 9:16`}
+                  {projectVideoCount(project) > 1 ? `${projectVideoCount(project)} videos · ${format}` : `${projectLengthLabel(project)} · ${format}`}
                 </p>
               </div>
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-surface text-ink shadow-card transition-transform group-hover:scale-105">

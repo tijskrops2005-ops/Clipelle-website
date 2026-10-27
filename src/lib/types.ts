@@ -142,6 +142,8 @@ export interface Segment {
 export interface Translation {
   language: LanguageCode;
   status: StepStatus;
+  /** Where this language version is while it renders (27 Oct 2026): voice → enhance → captions → done, with when it got there. */
+  phase?: { key: "voice" | "enhance" | "captions" | "done"; at: string };
   segments: Segment[];
   /** Finished video with captions for this language. */
   videoUrl?: string;
@@ -167,6 +169,10 @@ export interface TranslateProject extends ProjectBase {
   quality: TranslationQuality;
   /** Picture enhancement before the captions (+1 credit per second). */
   enhance?: boolean;
+  /** The chosen output size: vertical, or the source's own size. Missing on older projects = 9:16. */
+  format?: "9:16" | "original";
+  /** Captions on screen (the default) or the translated video alone. */
+  captionsOn?: boolean;
   /** On-screen text removed from the source before translating (+1 credit per second). */
   removeText?: boolean;
   /** Who speaks: the original speaker (lip-synced) or an AI presenter (26 Oct 2026). */

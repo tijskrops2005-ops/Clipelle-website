@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { useProjects, useProjectsReady } from "@/lib/data/client";
 import type { Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { translateProgress } from "@/lib/translateProgress";
 
 /** The latest thing that happened to each project, newest first: from the project's own status and step times. */
 function lastEvent(p: Project) {
@@ -14,7 +15,7 @@ function lastEvent(p: Project) {
   const text =
     p.status === "completed" ? `${kind} “${p.name}” is ready` :
     p.status === "failed" ? `${kind} “${p.name}” stopped` :
-    p.status === "processing" ? `${kind} “${p.name}” is being made` :
+    p.status === "processing" ? (p.workflow === "translate" ? `“${p.name}”: ${translateProgress(p).current.toLowerCase()}` : `${kind} “${p.name}” is being made`) :
     p.status === "review" ? `${kind} “${p.name}” is waiting for you` :
     `${kind} “${p.name}” saved as a draft`;
   return { at, text, tone: p.status };

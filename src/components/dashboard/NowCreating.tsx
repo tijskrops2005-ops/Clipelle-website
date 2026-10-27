@@ -6,6 +6,7 @@ import { ArrowRight, Languages, Sparkles } from "lucide-react";
 import { useProjects } from "@/lib/data/client";
 import type { Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { translateProgress } from "@/lib/translateProgress";
 
 /**
  * "Now creating" on the dashboard (25 Oct 2026): every video that is being made right now, with
@@ -19,14 +20,14 @@ const AD_STEPS: { key: string; title: string }[] = [
   { key: "presenter", title: "AI presenter" },
   { key: "finalEdit", title: "Final edit" },
 ];
-const TRANSLATE_STEPS: { key: string; title: string }[] = [
-  { key: "upload", title: "Upload" },
-  { key: "translate", title: "Translate" },
-  { key: "captions", title: "Captions and 9:16" },
-];
-
-function progressOf(p: Project) {
-  const order = p.workflow === "ad" ? AD_STEPS : TRANSLATE_STEPS;
+function progressOf(p: Project): { percent: number; label: string; waiting: boolean; since: number } {
+  if (p.workflow === "translate") {
+    // The same numbers as the project page (27 Oct 2026): one percentage and what happens now.
+    const g = translateProgress(p);
+    const started = Object.values(p.steps).map((s) => s?.startedAt).filter((t): t is string => Boolean(t)).map((t) => Date.parse(t));
+    return { percent: g.percent, label: g.overdue ? `${g.current} · taking a little longer` : g.minutesLeft != null && g.minutesLeft > 1 ? `${g.current} · about ${g.minutesLeft} min left` : g.current, waiting: false, since: started.length ? Math.min(...started) : Date.parse(p.createdAt) };
+  }
+  const order = AD_STEPS;
   const steps = p.steps as Record<string, { status: string; startedAt?: string } | undefined>;
   const done = order.filter((s) => steps[s.key]?.status === "completed").length;
   // The step to show: one waiting for the customer first, then the running ones (product clip and presenter run side by side).
@@ -35,7 +36,7 @@ function progressOf(p: Project) {
   const current = waiting ?? running[running.length - 1] ?? order[Math.min(done, order.length - 1)];
   const label = waiting ? `${waiting.title} · waiting for you` : running.length > 1 ? running.map((s) => s.title).join(" + ") : current.title;
   const started = Object.values(steps).map((s) => s?.startedAt).filter((t): t is string => Boolean(t)).map((t) => Date.parse(t));
-  return { done, total: order.length, step: order.indexOf(current) + 1, label, waiting: Boolean(waiting), since: started.length ? Math.min(...started) : Date.parse(p.createdAt) };
+  return { percent: Math.max(6, Math.round((done / order.length) * 100)), label: `Step ${order.indexOf(current) + 1} of ${order.length} · ${label}`, waiting: Boolean(waiting), since: started.length ? Math.min(...started) : Date.parse(p.createdAt) };
 }
 
 function running(ms: number) {
@@ -82,13 +83,13 @@ export function NowCreating() {
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline justify-between gap-3">
                     <span className="truncate text-[15px] font-semibold text-ink">{p.name}</span>
-                    <span className="shrink-0 text-[12.5px] text-muted">{p.workflow === "ad" ? "Ad" : "Translation"} · {running(now - g.since)}</span>
+                    <span className="shrink-0 text-[12.5px] text-muted">{p.workflow === "ad" ? "Ad" : `${g.percent}%`} · {running(now - g.since)}</span>
                   </span>
                   <span className={cn("mt-0.5 block truncate text-[13px]", g.waiting ? "text-warning" : "text-muted")}>
-                    Step {g.step} of {g.total} · {g.label}
+                    {g.label}
                   </span>
                   <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-surface-muted" aria-hidden>
-                    <span className="block h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${Math.max(6, (g.done / g.total) * 100)}%` }} />
+                    <span className="block h-full w-full origin-left rounded-full bg-accent transition-transform duration-500" style={{ transform: `scaleX(${g.percent / 100})` }} />
                   </span>
                 </span>
                 <ArrowRight className="size-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" aria-hidden />

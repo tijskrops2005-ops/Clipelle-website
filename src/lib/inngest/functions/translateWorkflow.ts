@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
 import { chunkCues, CHUNK_CHARS, fillGaps } from "@/lib/captionChunks";
 import { captionStyleOf } from "@/lib/captionOptions";
-import { assets, db, projects, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
+import { assets, db, projects, steps, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
 import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, measureRemovedText, type TextBox } from "@/lib/services/textLocate";
 import { downloadTextRemovalOutput, estimateTextRemovalUsd, getTextRemoval, startTextRemoval, TEXT_REMOVAL_MODEL, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
 import { languageCodeForName, languageOf } from "@/lib/languages";
@@ -536,6 +536,7 @@ async function processPresenterLanguage(projectId: string, input: TranslateInput
     }
   }));
   if ("error" in job) return fail(job.error);
+  if (!job.done) await step.run(`${code}-phase-voice`, () => setLanguagePhase(projectId, code, "voice"));
   if (job.done) return { ok: true, assetId: job.assetId };
 
   let presenterAssetId = "";
@@ -591,6 +592,7 @@ async function processPresenterLanguage(projectId: string, input: TranslateInput
     }
   }));
   if ("error" in render) return fail(render.error);
+  await step.run(`${code}-phase-captions`, () => setLanguagePhase(projectId, code, "captions"));
 
   for (let i = 0; i < MAX_POLLS; i++) {
     const r = await step.run(`${code}-presenter-edit-status-${i}`, async () => {
@@ -603,6 +605,7 @@ async function processPresenterLanguage(projectId: string, input: TranslateInput
           const asset = await storeFromUrl({ projectId, stepId: render.stepId, kind: "captioned", url: r.url!, fileName: `final-${code}.mp4`, language: code, seconds: r.duration ?? render.seconds, fallbackMime: "video/mp4" });
           await db().update(translations).set({ captionedAssetId: asset.id, status: "completed", error: null, updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, code)));
           await settleSpend(render.entryId, { status: "completed", actualUsd: render.estimate });
+          await setLanguagePhase(projectId, code, "done");
           return { assetId: asset.id };
         } catch (error) {
           return { error: budgetMessage(error) };
@@ -725,6 +728,24 @@ async function runCaptions(projectId: string, input: TranslateInput, upload: Upl
 
 type LanguageOutcome = { ok: true; assetId: string } | { ok: false; error: string };
 
+/**
+ * Where a language version is (27 Oct 2026, one progress for the customer): voice → enhance →
+ * captions → done, stored on the captions step as `output.phases[code] = { key, at }` with one atomic
+ * jsonb merge, so the project page can show a percentage per language without a migration. A write
+ * that fails never fails the step: the bar then simply moves on at the next phase.
+ */
+async function setLanguagePhase(projectId: string, code: LanguageCode, key: "voice" | "enhance" | "captions" | "done") {
+  try {
+    const patch = JSON.stringify({ phases: { [code]: { key, at: new Date().toISOString() } } });
+    await db()
+      .update(steps)
+      .set({ output: sql`jsonb_set(coalesce(${steps.output}, '{}'::jsonb), '{phases}', coalesce(${steps.output} -> 'phases', '{}'::jsonb) || (${patch}::jsonb -> 'phases'))`, updatedAt: new Date() })
+      .where(and(eq(steps.projectId, projectId), eq(steps.key, "captions")));
+  } catch (error) {
+    console.error("[translate] phase write failed", error instanceof Error ? error.message : error);
+  }
+}
+
 /** Every step of one language version. A LanguageFailure (incl. its budget) ends only this language. */
 async function processLanguage(projectId: string, input: TranslateInput, upload: UploadOutput, code: LanguageCode, proofreadId: string, languageCount: number, step: StepTools): Promise<LanguageOutcome> {
   const lang = languageOf(code).tag;
@@ -786,6 +807,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
     }
   }));
   if ("error" in gen) return fail(gen.error);
+  if (!gen.done) await step.run(`${code}-phase-voice`, () => setLanguagePhase(projectId, code, "voice"));
 
   // b. Wait for the translated video; copy it and its SRT into our storage.
   let translatedAssetId = "";
@@ -883,6 +905,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
       }
     }));
     if ("error" in enh) return fail(enh.error);
+    await step.run(`${code}-phase-enhance`, () => setLanguagePhase(projectId, code, "enhance"));
     let enhanced = "";
     for (let i = 0; i < MAX_POLLS && !enhanced; i++) {
       const st = await step.run(`${code}-enhance-status-${i}`, () => getEnhanceStatus(enh.requestId));
@@ -985,6 +1008,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
     }
   }));
   if ("error" in render) return fail(render.error);
+  await step.run(`${code}-phase-captions`, () => setLanguagePhase(projectId, code, "captions"));
 
   for (let i = 0; i < MAX_POLLS; i++) {
     const r = await step.run(`${code}-captions-status-${i}`, async () => {
@@ -997,6 +1021,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
           const asset = await storeFromUrl({ projectId, stepId: render.stepId, kind: "captioned", url: r.url!, fileName: `final-${code}.mp4`, language: code, seconds: r.duration ?? render.seconds, fallbackMime: "video/mp4" });
           await db().update(translations).set({ captionedAssetId: asset.id, status: "completed", error: null, updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, code)));
           await settleSpend(render.entryId, { status: "completed", actualUsd: shotstackEnv() === "v1" ? render.estimate : render.estimate });
+          await setLanguagePhase(projectId, code, "done");
           return { assetId: asset.id };
         } catch (error) {
           return { error: budgetMessage(error) };

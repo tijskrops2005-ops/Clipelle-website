@@ -11,3 +11,19 @@ export const measured = {
   adMinutes: 6 as number | null,
   adNote: "one measured run, a 30-second Standard ad, 19 October 2026",
 };
+
+/**
+ * Expected seconds per stage of a translation, for the progress bar on the project page (27 Oct
+ * 2026): `base + perSecond × source seconds`. Calibrated on the measured run above (an 8-second
+ * video, 271 s in all) and the step times in the database; the bar never claims to be exact and
+ * says "taking a little longer" when a stage runs past 1.5× its expectation.
+ */
+export const translateStages = {
+  upload: { base: 10, perSecond: 0.3 },
+  removeText: { base: 40, perSecond: 3 },
+  translate: { base: 45, perSecond: 1.5 },
+  voice: { base: 90, perSecond: 5 },
+  enhance: { base: 40, perSecond: 3 },
+  captions: { base: 50, perSecond: 1.5 },
+} as const;
+

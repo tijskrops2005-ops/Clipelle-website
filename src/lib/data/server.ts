@@ -46,6 +46,15 @@ function generatedScriptOf(step: StepRow | undefined, seconds: number) {
   return { hooks, presenterScript: script.presenterScript, maxWords: maxSpokenWords(seconds) };
 }
 
+/** The phase of one language version, as the workflow wrote it on the captions step (`output.phases[code]`). */
+function languagePhase(captions: StepRow | undefined, code: string): TranslateProject["translations"][number]["phase"] {
+  const phases = captions?.output?.phases as Record<string, { key?: string; at?: string }> | undefined;
+  const p = phases?.[code];
+  if (!p || typeof p.key !== "string" || typeof p.at !== "string") return undefined;
+  if (p.key !== "voice" && p.key !== "enhance" && p.key !== "captions" && p.key !== "done") return undefined;
+  return { key: p.key, at: p.at };
+}
+
 function toStep(row: StepRow | undefined): Step {
   if (!row) return { status: "waiting" };
   return {
@@ -179,6 +188,8 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     quality: input.quality,
     enhance: input.enhance,
     removeText: input.removeText,
+    format: input.format ?? "9:16",
+    captionsOn: input.captionStyle?.show !== false,
     speaker: input.speaker ?? "original",
     presenter: input.presenter,
     rightsConfirmedAt: (row.rightsConfirmedAt ?? row.createdAt).toISOString(),
@@ -188,8 +199,11 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       translationRows.map(async (t) => ({
         language: t.language,
         status: t.status,
+        // Where the version is while it renders (27 Oct 2026): written by the workflow on the captions step.
+        phase: languagePhase(stepsByKey.get("captions"), t.language),
         segments: t.segments,
-        videoUrl: await urlFor(assetsById.get(t.captionedAssetId ?? t.enhancedAssetId ?? t.videoAssetId ?? "")),
+        // The finished file only: a half-made version never shows as the result (27 Oct 2026).
+        videoUrl: t.status === "completed" ? await urlFor(assetsById.get(t.captionedAssetId ?? t.enhancedAssetId ?? t.videoAssetId ?? "")) : undefined,
         error: t.error ?? undefined,
         qa: t.qa ? { changes: t.qa.changes, warnings: t.qa.warnings, summary: t.qa.summary } : undefined,
         spentUsd: creativeSpent(spend, t.language, input.targetLanguages.length),

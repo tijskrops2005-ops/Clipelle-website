@@ -13,8 +13,8 @@ import { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { DemoBadge } from "@/components/DemoModeBadge";
 import { formatDuration } from "@/components/ui/VideoDropzone";
-import { TranslatePipeline } from "./TranslatePipeline";
-import { TRANSLATE_STEPS, translateStepMeta } from "./translateSteps";
+import { TranslateProgress } from "./TranslateProgress";
+import { translateProgress } from "@/lib/translateProgress";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { projectDurationMs } from "@/lib/projectMeta";
 import { chargedCredits, creditsPerLanguage, projectCredits } from "@/lib/projectCredits";
@@ -68,14 +68,6 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
         <>
           {/* The result first: one card per language with the facts and the download; the rest folds away. */}
           <ResultSection project={project} sourceLanguage={sourceLanguage} />
-          <Collapsible title="Pipeline" summary={summary(project)}>
-            <div className="grid gap-8 xl:grid-cols-3">
-              <div className="xl:col-span-2">
-                <TranslatePipeline project={project} />
-              </div>
-              <StatusCard project={project} />
-            </div>
-          </Collapsible>
           {/* Open by default (26 Oct 2026): the check of every line is what sets the translation apart. */}
           {project.translations.some((t) => t.qa) && (
             <section className="space-y-5">
@@ -84,31 +76,29 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
             </section>
           )}
           <Collapsible title="Project details" summary="Your source video, file, languages and rights confirmation.">
-            <div className="max-w-md">
+            <div className="grid gap-6 md:grid-cols-2">
               <DetailsCard project={project} sourceLanguage={sourceLanguage} />
+              <StatusCard project={project} />
             </div>
           </Collapsible>
         </>
       ) : (
         <>
-          <div className="grid gap-8 xl:grid-cols-3">
-            <section className="space-y-5 xl:col-span-2">
-              <SectionHeader title="Pipeline" description={summary(project)} />
-              <TranslatePipeline project={project} />
-            </section>
-
-            <aside className="grid gap-6 md:grid-cols-2 xl:sticky xl:top-6 xl:block xl:self-start xl:space-y-6">
-              <StatusCard project={project} />
-              <DetailsCard project={project} sourceLanguage={sourceLanguage} />
-            </aside>
-          </div>
+          {/* One progress (27 Oct 2026): one card for the whole build, not three technical steps. */}
+          <TranslateProgress project={project} />
 
           {project.translations.some((t) => t.qa) && (
             <section className="space-y-5">
-              <SectionHeader title="Quality check" description="Every line was compared with the original and corrected where needed. Nothing waits for you." aside={<DemoBadge>Demo check</DemoBadge>} />
+              <SectionHeader title="Quality check" description="Every line was compared with the original before the final render." aside={<DemoBadge>Demo check</DemoBadge>} />
               <QualityCheck project={project} />
             </section>
           )}
+          <Collapsible title="Project details" summary="Your source video, file, languages and rights confirmation.">
+            <div className="grid gap-6 md:grid-cols-2">
+              <DetailsCard project={project} sourceLanguage={sourceLanguage} />
+              <StatusCard project={project} />
+            </div>
+          </Collapsible>
         </>
       )}
     </div>
@@ -173,7 +163,7 @@ function ResultSection({ project, sourceLanguage }: { project: TranslateProject;
           </div>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-divider pt-6 text-sm sm:grid-cols-5">
             <Fact label="Length" value={formatDuration(project.sourceSeconds)} />
-            <Fact label="Format" value="9:16 · captions" />
+            <Fact label="Format" value={`${project.format === "original" ? "Original size" : "9:16"}${project.captionsOn === false ? "" : " · captions"}`} />
             <Fact label="Quality" value={project.quality === "precision" ? "Precision" : "Speed"} />
             <Fact label="Ready in" value={took !== undefined ? formatTook(took) : "—"} />
             <Fact label="Credits used" value={`${config.demoMode ? projectCredits(project) : chargedCredits(project)}${config.demoMode ? " · demo" : ""}`} />
@@ -227,25 +217,9 @@ function QualityCheck({ project }: { project: TranslateProject }) {
   );
 }
 
-function summary(project: TranslateProject) {
-  const done = TRANSLATE_STEPS.filter((k) => project.steps[k].status === "completed").length;
-  switch (project.status) {
-    case "completed":
-      return "All three steps finished. Your videos are above.";
-    case "review":
-      return "Waiting.";
-    case "failed": {
-      const failed = TRANSLATE_STEPS.find((k) => project.steps[k].status === "failed");
-      return failed ? `Step ${translateStepMeta[failed].number} stopped. Read the message in the card and retry when ready.` : "A step stopped.";
-    }
-    case "processing":
-      return `${done} of 3 steps done. You can leave this page; progress continues.`;
-    default:
-      return "This project has not been started yet.";
-  }
-}
-
+/** Per language and the credits, under "Project details": the same words as the progress card, no technical steps. */
 function StatusCard({ project }: { project: TranslateProject }) {
+  const p = translateProgress(project);
   return (
     <Card>
       <CardHeader>
@@ -253,13 +227,10 @@ function StatusCard({ project }: { project: TranslateProject }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <ul className="space-y-2">
-          {project.translations.map((t) => (
-            <li key={t.language} className="flex items-center justify-between gap-3 text-sm">
-              <span className="text-ink">
-                {languageOf(t.language).label}
-
-              </span>
-              <StatusBadge status={t.status} />
+          {p.languages.map((l) => (
+            <li key={l.code} className="flex items-center justify-between gap-3 text-sm">
+              <span className="text-ink">{languageOf(l.code).label}</span>
+              <span className="text-[13px] text-muted">{l.state === "ready" ? "Ready" : l.state === "failed" ? "Stopped" : `${l.percent}%`}</span>
             </li>
           ))}
         </ul>
@@ -270,16 +241,6 @@ function StatusCard({ project }: { project: TranslateProject }) {
             <span className="text-muted"> · {creditsPerLanguage(project)} per language</span>
           </span>
         </p>
-        <ul className="space-y-2 border-t border-divider pt-4">
-          {TRANSLATE_STEPS.map((k) => (
-            <li key={k} className="flex items-center justify-between text-sm">
-              <span className="text-ink">
-                {translateStepMeta[k].number}. {translateStepMeta[k].title}
-              </span>
-              <StatusBadge status={project.steps[k].status} />
-            </li>
-          ))}
-        </ul>
       </CardContent>
     </Card>
   );
