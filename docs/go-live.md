@@ -27,7 +27,7 @@ Vink af wat klaar is: ☐ wordt ☑.
 | 1 | Domein | Tijs | ☑ clipelle.com bij GoDaddy, wijst naar Vercel |
 | 2 | Echte tests (≈ $1) | Claude | ☑ beide gelukt, zie het verslag onderaan |
 | 3 | Inhoud verzamelen | Tijs | ☐ |
-| 4 | Supabase productie | Tijs + Claude | ☐ |
+| 4 | Supabase productie | Tijs + Claude | ☑ project `clipelle-prod` (27 okt), tabellen en voorbeeldvideo's erin, beveiligingstest groen |
 | 5 | Resend (e-mail) | Tijs | ◐ DNS-records staan er al |
 | 6 | Supabase Auth in het nieuwe project | Tijs + Claude | ☐ |
 | 7 | Stripe testmodus | Tijs + Claude | ☐ |
@@ -69,19 +69,19 @@ Je bedrijfsgegevens (Tijs Krops, Sluitgatweg 10, Nagele, KvK 97223344, btw NL005
 
 ## Fase 4. Supabase productie
 
-1. ☐ **Tijs:** maak in Supabase een nieuw project aan in Frankfurt (eu-central-1), met een sterk databasewachtwoord uit je wachtwoordmanager.
+1. ☑ **Tijs:** maak in Supabase een nieuw project aan in Frankfurt (eu-central-1), met een sterk databasewachtwoord uit je wachtwoordmanager. (`clipelle-prod`, Data API uit, automatische RLS aan.)
 2. ☐ **Tijs:** zet het project op Pro (ongeveer $25 per maand), zodat het niet pauzeert.
-3. ☐ **Tijs:** maak `.env.prod` door `.env.example` te kopiëren: `cp .env.example .env.prod`. Vul deze waarden in:
+3. ☑ **Tijs:** maak `.env.prod` door `.env.example` te kopiëren: `cp .env.example .env.prod`. Vul deze waarden in:
    - `DATABASE_URL`: Connect → Transaction pooler (poort 6543).
    - `DIRECT_DATABASE_URL`: Connect → Session pooler (poort 5432).
    - `NEXT_PUBLIC_SUPABASE_URL`: Project Settings → API → Project URL.
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: Project Settings → API Keys → Publishable key.
    - `SUPABASE_SECRET_KEY`: Project Settings → API Keys → Secret key.
    - Laat `STORAGE_BUCKET` leeg; het nieuwe project krijgt de privébucket `clipelle`.
-4. ☐ **Claude:** `npm run db:migrate:prod`. Dat maakt alle tabellen aan, met RLS standaard dicht.
-5. ☐ **Claude:** `npm run examples:upload:prod`. Dat maakt de openbare bucket `examples` aan en zet de voorbeeldvideo's erin.
-6. ☐ **Claude:** de beveiligingstest (`src/lib/db/security.test.ts`) draaien tegen productie. Alle tabellen moeten dicht zijn voor de publieke sleutel.
-7. ☐ **Tijs of Claude via Chrome:** haal `public` weg onder Settings → Data API → Exposed schemas.
+4. ☑ **Claude:** `npm run db:migrate:prod`. Dat maakt alle tabellen aan, met RLS standaard dicht.
+5. ☑ **Claude:** `npm run examples:upload:prod`. Dat maakt de openbare bucket `examples` aan en zet de voorbeeldvideo's erin.
+6. ☑ **Claude:** de beveiligingstest (`src/lib/db/security.test.ts`) draaien tegen productie. Alle tabellen moeten dicht zijn voor de publieke sleutel.
+7. ☑ Niet nodig: de Data API staat in dit project helemaal uit.
 
 **Klaar als:** de tabellen bestaan en de beveiligingstest groen is.
 
