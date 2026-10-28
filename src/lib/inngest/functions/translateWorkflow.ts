@@ -1,6 +1,8 @@
 import { and, eq, gte, ne, sql } from "drizzle-orm";
 import { inngest, qualityCheckRequested, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
 import { chunkCharsFor, chunkCues, fillGaps } from "@/lib/captionChunks";
+import { firstChange } from "@/lib/sceneCut";
+import { buildEndProbeEdit, gifFrames } from "@/lib/services/endProbe";
 import { captionStyleOf } from "@/lib/captionOptions";
 import { assets, db, projects, steps, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
 import { glossaryPronunciations, glossaryReplacements, mergeGlossaries, replacementsFor, type GlossaryEntries, type LocalizedReplacements } from "@/lib/localizedTerms";
@@ -811,6 +813,46 @@ type LanguageOutcome = { ok: true; assetId: string } | { ok: false; error: strin
  * that fails never fails the step: the bar then simply moves on at the next phase.
  */
 /**
+ * When the captions start and end (shared by the end probe and the captions step, so both use the
+ * same times): the video's real length, the cues (checked lines on the delivered timing), and how much
+ * silence is cut at the start and end.
+ */
+async function captionTiming(projectId: string, input: TranslateInput, code: LanguageCode, videoAssetId: string, srtAssetId: string) {
+  const video = await loadAsset(videoAssetId);
+  const srt = srtAssetId ? await loadAsset(srtAssetId) : null;
+  let seconds = video.seconds ?? input.sourceSeconds;
+  // Silence at the start and end, read from the subtitle cue times (no audio analysis needed):
+  // more than 0.3 s before the first line or after the last line is cut, keeping a 0.3 s breath.
+  const [t] = await db().select().from(translations).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).limit(1);
+  let cues = t?.segments ?? [];
+  if (input.naturalPace) {
+    // Natural pace (27 Oct 2026): the delivered video may be a little shorter or longer than the source,
+    // so its real length is read (free probe) and the captions follow the delivered subtitle times,
+    // keeping the checked words when the lines match one to one.
+    const probed = await withRetries("Reading the video length", async () => ingestFromUrl(await providerUrl(video))).catch(() => null);
+    if (probed?.duration) seconds = probed.duration;
+    if (srt) {
+      const delivered = parseSrt(await fetchSrtText(await providerUrl(srt))).filter((c) => c.text.trim());
+      if (delivered.length) {
+        cues = delivered.length === cues.length
+          ? delivered.map((c, i) => ({ ...cues[i], start: c.start, end: c.end }))
+          : delivered.map((c) => ({ index: c.index, start: c.start, end: c.end, original: "", translated: c.text, text: c.text }));
+      }
+    }
+  }
+  let trimStart = 0;
+  let trimEnd = 0;
+  if ((input.trimSilence ?? true) && cues.length > 0) {
+    const first = Math.min(...cues.map((c) => c.start));
+    const last = Math.max(...cues.map((c) => c.end));
+    if (first > 0.6) trimStart = Math.round((first - 0.3) * 10) / 10;
+    if (seconds - last > 0.6) trimEnd = Math.round((seconds - last - 0.3) * 10) / 10;
+  }
+  const lastEnd = cues.length ? Math.max(...cues.map((c) => c.end)) : seconds;
+  return { video, srt, seconds, cues, trimStart, trimEnd, lastEnd };
+}
+
+/**
  * Asks for the admin-only quality report of a finished language version (28 Oct 2026). Sent from its
  * own step and never allowed to fail the video; QUALITY_REPORTS=off switches it off.
  */
@@ -1030,41 +1072,70 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
     sourceForCaptions = enhanced;
   }
 
+  // c2. The silent end (28 Oct 2026): a tiny GIF of the last half second of speech and the silence after it
+  // shows whether the picture changes there. A new picture (an end card, an outro) is kept; dead air is cut.
+  // About a cent; any problem simply keeps the old rule. END_PROBE=off switches it off.
+  let keepTail = false;
+  if ((input.trimSilence ?? true) && process.env.END_PROBE !== "off") {
+    const probe = await step.run(`${code}-end-probe-submit`, () => withDeadline("Looking at the end", 5, async (): Promise<{ renderId: string; entryId: string; estimate: number } | { skip: string }> => {
+      try {
+        const timing = await captionTiming(projectId, input, code, sourceForCaptions, srtAssetId);
+        if (timing.trimEnd <= 0) return { skip: "no silent end" };
+        const from = Math.max(timing.trimStart, timing.lastEnd - 0.5);
+        const length = Math.min(12, timing.seconds - from);
+        if (length < 0.8) return { skip: "too short" };
+        const estimate = Math.round(length * SHOTSTACK_USD_PER_SECOND * 1000) / 1000;
+        const reserved = await reserveSpend({ service: "shotstack", action: "end_probe", estimatedUsd: estimate, fingerprintInput: { projectId, code, video: sourceForCaptions, from }, projectId, stepId: (await loadStep(projectId, "captions")).id, language: code, languageCount, meta: { env: shotstackEnv(), seconds: length } });
+        try {
+          const r = await withRetries("Looking at the end", async () => startRender(buildEndProbeEdit({ videoUrl: await providerUrl(timing.video), from, length })));
+          return { renderId: r.renderId, entryId: reserved.entryId, estimate };
+        } catch (error) {
+          await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+          throw error;
+        }
+      } catch (error) {
+        console.error("[end-probe] skipped", error);
+        return { skip: "error" };
+      }
+    }));
+    if ("renderId" in probe) {
+      let finished = false;
+      for (let i = 0; i < 24 && !finished; i++) {
+        await step.sleep(`${code}-end-probe-wait-${i}`, "5s");
+        const r = await step.run(`${code}-end-probe-status-${i}`, async () => {
+          const x = await getRender(probe.renderId).catch(() => null);
+          return { status: x?.status ?? "unknown", url: x?.url ?? null };
+        });
+        if (r.status === "done" && r.url) {
+          keepTail = await step.run(`${code}-end-probe-read`, async () => {
+            try {
+              return firstChange(await gifFrames(r.url!)) !== null;
+            } catch (error) {
+              console.error("[end-probe] could not read", error);
+              return false;
+            } finally {
+              await settleSpend(probe.entryId, { status: "completed", actualUsd: probe.estimate });
+            }
+          });
+          finished = true;
+        } else if (r.status === "failed") {
+          await step.run(`${code}-end-probe-failed`, () => settleSpend(probe.entryId, { status: "failed", actualUsd: 0 }));
+          finished = true;
+        }
+      }
+      if (!finished) await step.run(`${code}-end-probe-timeout`, () => settleSpend(probe.entryId, { status: "completed", actualUsd: probe.estimate }));
+    }
+  }
+
   // d. Captions and format via Shotstack.
   const render = await step.run(`${code}-captions-submit`, () => withDeadline("Starting the captions", 10, async (): Promise<{ renderId: string; entryId: string; estimate: number; stepId: string; seconds: number } | { error: string }> => {
     try {
       const stepRow = await loadStep(projectId, "captions");
-      const video = await loadAsset(sourceForCaptions);
-      const srt = srtAssetId ? await loadAsset(srtAssetId) : null;
-      let seconds = video.seconds ?? input.sourceSeconds;
-      // Silence at the start and end, read from the subtitle cue times (no audio analysis needed):
-      // more than 0.3 s before the first line or after the last line is cut, keeping a 0.3 s breath.
-      const [t] = await db().select().from(translations).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).limit(1);
-      let cues = t?.segments ?? [];
-      if (input.naturalPace) {
-        // Natural pace (27 Oct 2026): the delivered video may be a little shorter or longer than the source,
-        // so its real length is read (free probe) and the captions follow the delivered subtitle times,
-        // keeping the checked words when the lines match one to one.
-        const probed = await withRetries("Reading the video length", async () => ingestFromUrl(await providerUrl(video))).catch(() => null);
-        if (probed?.duration) seconds = probed.duration;
-        if (srt) {
-          const delivered = parseSrt(await fetchSrtText(await providerUrl(srt))).filter((c) => c.text.trim());
-          if (delivered.length) {
-            cues = delivered.length === cues.length
-              ? delivered.map((c, i) => ({ ...cues[i], start: c.start, end: c.end }))
-              : delivered.map((c) => ({ index: c.index, start: c.start, end: c.end, original: "", translated: c.text, text: c.text }));
-          }
-        }
-      }
-      let trimStart = 0;
-      let trimEnd = 0;
+      const timing = await captionTiming(projectId, input, code, sourceForCaptions, srtAssetId);
+      const { video, srt, seconds, cues, trimStart } = timing;
+      // A new picture after the last line (an end card, an outro) stays (28 Oct 2026); dead air is cut.
+      const trimEnd = keepTail ? 0 : timing.trimEnd;
       let srtUrl = srt ? await providerUrl(srt) : undefined;
-      if ((input.trimSilence ?? true) && cues.length > 0) {
-        const first = Math.min(...cues.map((c) => c.start));
-        const last = Math.max(...cues.map((c) => c.end));
-        if (first > 0.6) trimStart = Math.round((first - 0.3) * 10) / 10;
-        if (seconds - last > 0.6) trimEnd = Math.round((seconds - last - 0.3) * 10) / 10;
-      }
       if (cues.length > 0) {
         // The captions are always the checked lines (25 Oct 2026; before, only when trimming), shifted
         // with the picture when silence is cut. The service's own SRT is the fallback without lines.
