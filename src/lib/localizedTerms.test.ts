@@ -28,3 +28,12 @@ describe("words to replace, per language", () => {
     expect(replacementsFor("de", replace, localized)).toEqual(localized.de);
   });
 });
+
+describe("one way to say a name, per language", () => {
+  it("gives one pronunciation per name and base language", async () => {
+    const { glossaryPronunciations } = await import("./localizedTerms");
+    const p = { nl: [{ term: "Ritual", pronunciation: "Ritsjoeal" }], "dutch-belgium": [{ term: "ritual", pronunciation: "Rietsjoeal" }], de: [] };
+    expect(glossaryPronunciations(p, ["nl", "dutch-belgium", "de"])).toEqual([{ term: "Ritual", pronunciation: "Ritsjoeal", code: "nl" }]);
+    expect(glossaryPronunciations(null, ["nl"])).toEqual([]);
+  });
+});

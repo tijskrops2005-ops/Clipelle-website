@@ -103,12 +103,15 @@ export function matchLanguages(live: string[]): Record<LanguageCode, string | nu
  * create answers 409 "already has a glossary"). Before each translation its lists are replaced with
  * this project's words (PATCH replaces a list in full), then it is attached to the proofread.
  */
-export async function applyBrandGlossary(input: { doNotTranslate: string[]; replace?: { from: string; to: string; code?: string }[] }): Promise<string> {
+export async function applyBrandGlossary(input: { doNotTranslate: string[]; replace?: { from: string; to: string; code?: string }[]; pronounce?: { term: string; pronunciation: string; code: string }[] }): Promise<string> {
   // A replacement with a base language code applies to that language only (verified 28 Oct 2026:
   // `target_language: { scope: "specific", code: "nl" }`; locales such as "nl-BE" are refused).
   const body = {
     do_not_translate_terms: input.doNotTranslate.map((term) => ({ term })),
     forced_translations: (input.replace ?? []).map((r) => ({ term: r.from, translation: r.to, target_language: r.code ? { scope: "specific", code: r.code } : { scope: "all" } })),
+    // One way to say a name per language (28 Oct 2026): `terms[].pronunciation` is handed to the voice in
+    // place of the term; captions keep the written spelling (verified 28 Oct 2026).
+    terms: (input.pronounce ?? []).map((p) => ({ term: p.term, pronunciation: p.pronunciation, pronunciation_language: { scope: "specific", code: p.code } })),
   };
   const list = await heygenFetch<{ brand_glossary_id: string; name: string }[]>("/v3/brand-glossaries");
   const existing = (Array.isArray(list) ? list : []).find((g) => g.name === GLOSSARY_NAME) ?? (Array.isArray(list) ? list[0] : undefined);

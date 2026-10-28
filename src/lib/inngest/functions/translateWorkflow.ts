@@ -3,8 +3,8 @@ import { inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/clien
 import { chunkCues, CHUNK_CHARS, fillGaps } from "@/lib/captionChunks";
 import { captionStyleOf } from "@/lib/captionOptions";
 import { assets, db, projects, steps, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
-import { glossaryReplacements, replacementsFor, type LocalizedReplacements } from "@/lib/localizedTerms";
-import { localizeReplacements, LOCALIZE_TERMS_USD } from "@/lib/services/localizeTerms";
+import { glossaryPronunciations, glossaryReplacements, replacementsFor, type LocalizedReplacements } from "@/lib/localizedTerms";
+import { localizeReplacements, LOCALIZE_TERMS_USD, type Pronunciations } from "@/lib/services/localizeTerms";
 import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, measureRemovedText, type TextBox } from "@/lib/services/textLocate";
 import { downloadTextRemovalOutput, estimateTextRemovalUsd, getTextRemoval, startTextRemoval, TEXT_REMOVAL_MODEL, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
 import { languageCodeForName, languageOf } from "@/lib/languages";
@@ -174,10 +174,17 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       const keepTerms = (input.keepTerms ?? []).map((x) => x.trim()).filter(Boolean);
       const replaceTerms = input.replaceTerms ?? [];
       const targetCodes = outputs.filter((o) => o.code !== "transcript").map((o) => o.code);
-      const localized = replaceTerms.length ? await localizeReplacementTerms(projectId, row.id, input, targetCodes) : null;
+      const prepared = keepTerms.length || replaceTerms.length ? await prepareTerms(projectId, row.id, input, targetCodes) : { localized: null, pronunciations: null };
       if (keepTerms.length || replaceTerms.length) {
         try {
-          brandGlossaryId = await withRetries("Saving the terms to keep", () => applyBrandGlossary({ doNotTranslate: keepTerms, replace: glossaryReplacements(replaceTerms, localized, targetCodes) }));
+          const replace = glossaryReplacements(replaceTerms, prepared.localized, targetCodes);
+          const pronounce = glossaryPronunciations(prepared.pronunciations, targetCodes);
+          // A refused pronunciation list must never cost the replacements: try once more without it.
+          brandGlossaryId = await withRetries("Saving the terms to keep", () => applyBrandGlossary({ doNotTranslate: keepTerms, replace, pronounce })).catch((error) => {
+            if (!pronounce.length) throw error;
+            console.error("[glossary] pronunciations refused, saving without them", error instanceof Error ? error.message : error);
+            return withRetries("Saving the terms to keep", () => applyBrandGlossary({ doNotTranslate: keepTerms, replace }));
+          });
         } catch (error) {
           // The provider's words stay in the log; the customer gets a plain line.
           console.error("[glossary]", error instanceof Error ? error.message : error);
@@ -339,28 +346,29 @@ async function addLanguageWarning(translationId: string, warning: string) {
 
 /**
  * The customer's replacements said in every target language (brand and product names stay as
- * written), stored on the project so a retry does not pay again. Any failure falls back to the
- * customer's own text for every language, as before.
+ * written) and one fixed way to say each name per language, stored on the project so a retry does
+ * not pay again. Any failure falls back to the customer's own text and no pronunciations.
  */
-async function localizeReplacementTerms(projectId: string, stepId: string, input: TranslateInput, targets: LanguageCode[]): Promise<LocalizedReplacements | null> {
-  if (input.replaceTermsLocalized !== undefined) return input.replaceTermsLocalized;
+async function prepareTerms(projectId: string, stepId: string, input: TranslateInput, targets: LanguageCode[]): Promise<{ localized: LocalizedReplacements | null; pronunciations: Pronunciations | null }> {
+  if (input.replaceTermsLocalized !== undefined && input.termPronunciations !== undefined) return { localized: input.replaceTermsLocalized ?? null, pronunciations: input.termPronunciations ?? null };
   let localized: LocalizedReplacements | null = null;
+  let pronunciations: Pronunciations | null = null;
   try {
-    const reserved = await reserveSpend({ service: "anthropic", action: "localize_terms", estimatedUsd: LOCALIZE_TERMS_USD, fingerprintInput: { projectId, terms: input.replaceTerms, targets }, projectId, stepId, languageCount: Math.max(1, targets.length), meta: { model: cfg.rewriteModel, terms: input.replaceTerms?.length ?? 0 } });
+    const reserved = await reserveSpend({ service: "anthropic", action: "localize_terms", estimatedUsd: LOCALIZE_TERMS_USD, fingerprintInput: { projectId, terms: input.replaceTerms, keep: input.keepTerms, targets }, projectId, stepId, languageCount: Math.max(1, targets.length), meta: { model: cfg.rewriteModel, terms: input.replaceTerms?.length ?? 0, keep: input.keepTerms?.length ?? 0 } });
     try {
-      const result = await withRetries("Translating your replacement words", () => localizeReplacements({ replace: input.replaceTerms ?? [], targets }));
+      const result = await withRetries("Preparing your words", () => localizeReplacements({ replace: input.replaceTerms ?? [], keep: input.keepTerms, targets }));
       await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens" });
-      localized = result.localized;
+      localized = input.replaceTerms?.length ? result.localized : null;
+      pronunciations = result.pronunciations;
     } catch (error) {
       await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
       throw error;
     }
   } catch (error) {
-    console.error("[localize terms]", error instanceof Error ? error.message : error);
-    localized = null;
+    console.error("[prepare terms]", error instanceof Error ? error.message : error);
   }
-  await db().update(projects).set({ input: sql`${projects.input} || ${JSON.stringify({ replaceTermsLocalized: localized })}::jsonb`, updatedAt: new Date() }).where(eq(projects.id, projectId));
-  return localized;
+  await db().update(projects).set({ input: sql`${projects.input} || ${JSON.stringify({ replaceTermsLocalized: localized, termPronunciations: pronunciations })}::jsonb`, updatedAt: new Date() }).where(eq(projects.id, projectId));
+  return { localized, pronunciations };
 }
 
 /* ---------- quality check (replaces the manual review, 2026-10-20) ---------- */
@@ -1014,7 +1022,9 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         const size = captionStyleOf(input.captionStyle).size;
         const chunks = chunkCues(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })), CHUNK_CHARS[size]);
         // Over removed text the bar never leaves the screen, so the cleaned spot never shows.
-        const shifted = buildSrt(input.oldTextBox ? fillGaps(chunks, Math.max(1, seconds - trimStart - trimEnd)) : chunks);
+        // The last line runs a second past the end (28 Oct 2026): the edit rounds its length up to a tenth of a
+        // second, so a cue that stops exactly at the end left the final frame (the one that stays on screen) bare.
+        const shifted = buildSrt(input.oldTextBox ? fillGaps(chunks, Math.max(1, seconds - trimStart - trimEnd) + 1) : chunks);
         const asset = await storeBytes({ projectId, stepId: stepRow.id, kind: "srt", data: new TextEncoder().encode(shifted), mime: "application/x-subrip", fileName: `captions-${code}${trimStart > 0 ? "-trimmed" : "-checked"}.srt`, language: code });
         srtUrl = await providerUrl(asset);
       }

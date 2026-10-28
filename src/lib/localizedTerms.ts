@@ -40,3 +40,20 @@ export function glossaryReplacements(replace: Replacement[], localized: Localize
 export function replacementsFor(code: LanguageCode, replace: Replacement[] | undefined, localized: LocalizedReplacements | null | undefined): Replacement[] {
   return localized?.[code]?.length ? localized[code] : replace ?? [];
 }
+
+/** Pronunciation entries for the glossary: one per name and base language, the first one wins. */
+export function glossaryPronunciations(pronunciations: Record<string, { term: string; pronunciation: string }[]> | null | undefined, targets: LanguageCode[]) {
+  if (!pronunciations) return [];
+  const out: { term: string; pronunciation: string; code: string }[] = [];
+  const seen = new Set<string>();
+  for (const code of targets) {
+    const base = glossaryLanguageCode(code);
+    for (const p of pronunciations[code] ?? []) {
+      const key = `${p.term.toLowerCase()}|${base}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ term: p.term, pronunciation: p.pronunciation, code: base });
+    }
+  }
+  return out;
+}

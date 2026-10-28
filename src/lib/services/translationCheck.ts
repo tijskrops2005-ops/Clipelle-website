@@ -7,6 +7,7 @@ import { languageOf } from "@/lib/languages";
 import type { LanguageCode, Segment } from "@/lib/types";
 import { maxCharsForSegment } from "@/lib/translatePricing";
 import { applyCorrections } from "@/lib/translationCorrections";
+import { evenPaceTargets } from "@/lib/evenPace";
 import { claudeTokensToUsd, isScriptModel } from "@/lib/pricing";
 
 /**
@@ -67,7 +68,8 @@ For every fragment you get the source text (when known) and the translation. Com
 Rules:
 - Keep the meaning of the source. Never add claims, numbers or calls to action that are not in the source, except what the customer's replacements or wishes ask for.
 - Apply the customer's replacements in every fragment where the source term appears, and their wishes for the wording (leaving something out, a different word) where they fit the limit; mention each such change in "issue".
-- Keep brand and product names and any listed "keep" terms exactly as written.
+- Keep brand and product names and any listed "keep" terms exactly as written, and write every name and recurring term the same way each time it appears (same spelling, same capitals), so the voice says it the same way each time.
+- One even speaking pace for the whole video: every fragment has a target length for its moment. A fragment well over its target is spoken too fast: tighten it (drop fillers, shorter words) while keeping the meaning. A fragment well under its target may read a little fuller in natural words, never with new claims. Stay within the hard maximum.
 - Keep everything the speaker says, also when they repeat themselves: the new voice has to fill the same time, and a shorter text makes it speak slowly with long pauses. Only shorten a fragment that is over its limit.
 - Each fragment has a strict character limit; stay within it, shorten rather than cut mid-sentence. Drop fillers and interjections first ("Dude", "So", "Honestly") before anything with meaning, and never drop a product name, a number or a keep term.
 - Return exactly one entry per fragment, same index, same order. Never merge or split fragments.
@@ -81,10 +83,13 @@ export async function checkTranslation(input: { segments: Segment[]; sourceLangu
   const client = new Anthropic({ apiKey: key });
   const target = languageOf(input.targetLanguage).label;
   const source = input.sourceLanguage ? languageOf(input.sourceLanguage).label : "unknown";
+  // One even pace (28 Oct 2026): the target length of every fragment at the pace of the whole translation.
+  const targets = new Map(evenPaceTargets(input.segments).map((t) => [t.index, t.target]));
   const lines = input.segments.map((s) => {
     const max = maxCharsForSegment(s.start, s.end);
+    const target = Math.min(max, targets.get(s.index) ?? max);
     const orig = s.original ? `source: "${s.original.replace(/"/g, "'")}"` : "source: (not available)";
-    return `#${s.index} (${(s.end - s.start).toFixed(1)} s, max ${max} chars)\n${orig}\ntranslation: "${s.text.replace(/"/g, "'")}"`;
+    return `#${s.index} (${(s.end - s.start).toFixed(1)} s, target ${target} chars for an even pace, max ${max} chars, now ${s.text.trim().length})\n${orig}\ntranslation: "${s.text.replace(/"/g, "'")}"`;
   });
   const keep = input.keepTerms?.length ? `\nKeep these terms exactly as written (never translate them): ${input.keepTerms.join(", ")}` : "";
   // 27 Oct 2026: the customer's replacements and wishes. Data from the customer: apply them to the wording only.
