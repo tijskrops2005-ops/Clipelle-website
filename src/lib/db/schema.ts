@@ -1,6 +1,7 @@
 import type { CaptionStyleChoice } from "@/lib/captionOptions";
 import type { PresenterTranslate } from "@/lib/presenterTranslate";
 import type { AutoReload } from "@/lib/autoReload";
+import type { QualityCheck } from "@/lib/quality/report";
 import {
   bigint,
   boolean,
@@ -633,4 +634,32 @@ export const serviceRequests = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("service_requests_created_idx").on(t.createdAt)],
+).enableRLS();
+
+/**
+ * Quality reports (28 Oct 2026): one row per check run of a finished language version, admin only.
+ * The automatic checks live in `checks`; Tijs's own verdict (good/bad, labels, a note) sits next to
+ * them, so patterns over many test videos can be read back later.
+ */
+export const qualityReports = pgTable(
+  "quality_reports",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    language: text("language").notNull(),
+    score: integer("score"),
+    /** running | completed | failed */
+    status: text("status").default("running").notNull(),
+    checks: jsonb("checks").$type<QualityCheck[]>().default([]).notNull(),
+    facts: jsonb("facts").$type<Record<string, unknown>>().default({}).notNull(),
+    error: text("error"),
+    costUsd: doublePrecision("cost_usd"),
+    /** good | bad, set by Tijs on /admin/quality */
+    rating: text("rating"),
+    labels: text("labels").array().default([]).notNull(),
+    note: text("note"),
+    ratedAt: timestamp("rated_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [index("quality_reports_project_idx").on(t.projectId, t.language, t.createdAt), index("quality_reports_created_idx").on(t.createdAt)],
 ).enableRLS();
