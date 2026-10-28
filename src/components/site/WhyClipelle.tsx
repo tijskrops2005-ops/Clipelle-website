@@ -1,7 +1,7 @@
 import { BadgeCheck, Captions, CircleDollarSign, Infinity as InfinityIcon, ListChecks, LockKeyhole, RotateCcw, ShieldCheck, Smartphone, Sparkles, VideoOff, type LucideIcon } from "lucide-react";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
-import { PLANS, currencyFor, formatMoney, usdPerTranslateMinute } from "@/lib/plans";
+import { PLANS, currencyFor, formatMoney, planPrice } from "@/lib/plans";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
 
@@ -10,7 +10,7 @@ import { SectionIntro } from "@/components/site/SectionIntro";
  * card beside an even grid and Creatify's icon-title-line cards, our own content): one bento block
  * instead of three tabs. The price per translated minute on ink with gold, four small facts, and the
  * promises as a calm list with one short line each, then the choices on the form as one row of chips.
- * Every number is real: the price from plans.ts (Pro, monthly), the rest product facts.
+ * Every number is real: the price from plans.ts (a minute on Pro, yearly), the rest product facts.
  */
 const STAT_ICONS: LucideIcon[] = [VideoOff, InfinityIcon, Sparkles, Smartphone];
 const PROMISE_ICONS: LucideIcon[] = [CircleDollarSign, RotateCcw, ListChecks, ShieldCheck, LockKeyhole, Captions];
@@ -19,7 +19,10 @@ export function WhyClipelle({ locale }: { locale: Locale }) {
   const w = dict(locale).home.why;
   const pro = PLANS.find((p) => p.key === "pro")!;
   const currency = currencyFor(locale);
-  const price = formatMoney(usdPerTranslateMinute(pro, currency), currency, locale);
+  // One minute of video (60 credits) inside the Pro plan billed yearly (28 Oct 2026, Tijs: what a
+  // minute costs on the plan most people take, not loose credits). Real numbers from plans.ts.
+  const perMinute = Math.round((planPrice(pro, currency).annualMonthly / pro.creditsPerMonth) * 60 * 100) / 100;
+  const price = formatMoney(perMinute, currency, locale);
 
   return (
     <Reveal as="section">
