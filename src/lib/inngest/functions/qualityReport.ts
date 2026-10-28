@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { assets, projects, qualityReports, translations, type TranslateInput } from "@/lib/db/schema";
 import { signedDownloadUrl } from "@/lib/storage";
 import { reserveSpend, settleSpend, type ReserveInput } from "@/lib/services/costGuard";
-import { extractFrame, EXTRACT_FRAME_USD } from "@/lib/services/textLocate";
+import { framesAt, FRAME_AT_USD } from "@/lib/services/frameAt";
 import { REVIEW_FRAMES_USD, REVIEW_MEANING_USD, reviewFrames, reviewMeaning, transcribeVideo, TRANSCRIBE_USD_PER_SECOND } from "@/lib/services/qualityReview";
 import { lengthCheck, scoreReport, skipped, spokenCheck, type QualityCheck } from "@/lib/quality/report";
 import { captionStyleOf } from "@/lib/captionOptions";
@@ -21,6 +21,8 @@ import type { Segment } from "@/lib/types";
 type Loaded = {
   reportId: string;
   finalPath: string;
+  sourcePath: string | null;
+  finalSeconds: number | null;
   lines: { index: number; source: string; final: string; start: number; end: number }[];
   wishes: string | null;
   captionsOn: boolean;
@@ -59,14 +61,17 @@ export const qualityReport = inngest.createFunction(
       if (t.status !== "completed") return { skip: `The language version is ${t.status}.` };
       const assetId = t.captionedAssetId ?? t.enhancedAssetId ?? t.videoAssetId;
       if (!assetId) return { skip: "No finished video." };
-      const [a] = await db().select({ path: assets.storagePath }).from(assets).where(eq(assets.id, assetId)).limit(1);
+      const [a] = await db().select({ path: assets.storagePath, seconds: assets.seconds }).from(assets).where(eq(assets.id, assetId)).limit(1);
       if (!a) return { skip: "No finished video." };
       const input = p.input as TranslateInput;
       const segments = (t.segments ?? []) as Segment[];
+      const [src] = input.sourceAssetId ? await db().select({ path: assets.storagePath }).from(assets).where(eq(assets.id, input.sourceAssetId)).limit(1) : [];
       const [row] = await db().insert(qualityReports).values({ projectId, language, status: "running" }).returning({ id: qualityReports.id });
       return {
         reportId: row.id,
         finalPath: a.path,
+        sourcePath: src?.path ?? null,
+        finalSeconds: a.seconds ?? null,
         lines: segments.map((s) => ({ index: s.index, source: s.original ?? "", final: s.text, start: s.start, end: s.end })),
         wishes: input.instructions?.trim() || null,
         captionsOn: captionStyleOf(input.captionStyle).show,
@@ -80,9 +85,18 @@ export const qualityReport = inngest.createFunction(
 
     const frames = await step.run("frames", async () => {
       const url = await signedDownloadUrl(loaded.finalPath, 3600);
-      const grabbed = await paid<{ first: string; middle: string; last: string }>({ ...base, service: "fal", action: "quality_frames", estimatedUsd: EXTRACT_FRAME_USD * 3, fingerprintInput: { report: loaded.reportId, frames: true } }, async () => {
-        const [first, middle, last] = await Promise.all((["first", "middle", "last"] as const).map((f) => extractFrame(url, f)));
-        return { value: { first, middle, last }, actualUsd: EXTRACT_FRAME_USD * 3 };
+      // Exact moments (Shotstack, 28 Oct 2026): the start, the middle and just before the end of the
+      // translation, and the same moments of the original (its timing can differ a little).
+      type Three = { first: string; middle: string; last: string };
+      const duration = loaded.finalSeconds ?? loaded.sourceSeconds;
+      const moments = [0.2, duration / 2, Math.max(0.2, duration - 0.12)];
+      const sourceUrl = loaded.sourcePath ? await signedDownloadUrl(loaded.sourcePath, 3600) : null;
+      const count = sourceUrl ? 6 : 3;
+      const grabbed = await paid<Three & { original: Three | null }>({ ...base, service: "shotstack", action: "quality_frames", estimatedUsd: FRAME_AT_USD * count, fingerprintInput: { report: loaded.reportId, frames: true } }, async () => {
+        const [final, original] = await Promise.all([framesAt(url, moments, "crop"), sourceUrl ? framesAt(sourceUrl, moments.map((m) => Math.min(m, Math.max(0.2, loaded.sourceSeconds - 0.12))), "contain") : Promise.resolve(null)]);
+        if (final.some((f) => !f)) throw new Error("Not every frame of the translated video could be taken.");
+        const originalThree = original && original.every(Boolean) ? { first: original[0]!, middle: original[1]!, last: original[2]! } : null;
+        return { value: { first: final[0]!, middle: final[1]!, last: final[2]!, original: originalThree }, actualUsd: FRAME_AT_USD * count };
       });
       if ("error" in grabbed) return { checks: [skipped("ending", `Frames could not be taken: ${grabbed.error}`)], costUsd: 0 };
       const reviewed = await paid<QualityCheck[]>({ ...base, service: "anthropic", action: "quality_frames_review", estimatedUsd: REVIEW_FRAMES_USD, fingerprintInput: { report: loaded.reportId, review: "frames" } }, async () => {

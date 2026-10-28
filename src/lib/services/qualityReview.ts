@@ -71,13 +71,18 @@ const Verdict = z.object({ status: z.enum(["pass", "warn", "fail"]), detail: z.s
 const FramesOutput = z.object({
   oldText: Verdict.describe("Is any old burned-in text left (other than the new captions on their bar or outline): leftover letters, a smudge, half a word? fail when readable old text is visible, warn for a visible smudge"),
   captions: Verdict.describe("Are the new captions readable, at most two lines, not cut off at the edges, the same size in every frame?"),
-  ending: Verdict.describe("Look at the LAST frame: is it a clean picture, or is it caught mid-transition (washed out, half faded, a different scene bleeding in, blurred)? warn when slightly off, fail when clearly broken"),
-  framing: Verdict.describe("Are the speaker's face and the product fully in the frame after the vertical crop (not cut off at the top or sides)?"),
+  ending: Verdict.describe("Look at the LAST frame of the translated video: is it caught mid-transition (washed out, half faded, a different scene bleeding in) because of our cut? warn when slightly off, fail when clearly broken; pass when it matches how the original ends"),
+  framing: Verdict.describe("Did the vertical crop cut off the speaker's face or the product where the original shows them fully? pass when the original frames them the same way"),
 });
 
-export async function reviewFrames(input: { first: string; middle: string; last: string; captionsOn: boolean; overRemovedText: boolean }): Promise<{ checks: QualityCheck[]; costUsd: number }> {
+export async function reviewFrames(input: { first: string; middle: string; last: string; captionsOn: boolean; overRemovedText: boolean; original?: { first: string; middle: string; last: string } | null }): Promise<{ checks: QualityCheck[]; costUsd: number }> {
   const model = workflowSettings.rewriteModel;
-  const context = `The video is a translated short vertical video. ${input.captionsOn ? "New captions are drawn by us" + (input.overRemovedText ? " on a bar placed where old burned-in text was removed." : ".") : "Captions are off."} The three images are the first, the middle and the last frame, in that order.`;
+  // The same moments of the original upload (28 Oct 2026): a source that starts on an empty kitchen or
+  // ends on a blurry close-up is how it was filmed, not something the translation did.
+  const original = input.original
+    ? " The next three images are the first, middle and last frame of the ORIGINAL video before translation (its timing can differ slightly, and it may still show old text). Judge only problems the translation, the vertical crop or the cut caused: anything the original already shows the same way (an empty first shot, a blurry last shot, a product half out of frame) is a pass, and say so."
+    : "";
+  const context = `The video is a translated short vertical video. ${input.captionsOn ? "New captions are drawn by us" + (input.overRemovedText ? " on a bar placed where old burned-in text was removed." : ".") : "Captions are off."} The first three images are the first, the middle and the last frame of the TRANSLATED video, in that order.${original}`;
   const response = await client().messages.parse({
     model,
     max_tokens: 800,
@@ -86,7 +91,7 @@ export async function reviewFrames(input: { first: string; middle: string; last:
       {
         role: "user",
         content: [
-          ...[input.first, input.middle, input.last].map((url) => ({ type: "image" as const, source: { type: "url" as const, url } })),
+          ...[input.first, input.middle, input.last, ...(input.original ? [input.original.first, input.original.middle, input.original.last] : [])].map((url) => ({ type: "image" as const, source: { type: "url" as const, url } })),
           { type: "text" as const, text: context },
         ],
       },
