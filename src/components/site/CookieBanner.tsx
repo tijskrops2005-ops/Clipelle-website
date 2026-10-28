@@ -42,12 +42,12 @@ export function CookieBanner({ locale = "en" }: { locale?: Locale }) {
 
   if (!open) return null;
   return (
-    <div role="dialog" aria-labelledby={`${id}-title`} aria-describedby={`${id}-text`} className="fold-in fixed inset-x-3 bottom-3 z-[60] mx-auto max-w-2xl rounded-card bg-surface p-5 shadow-card-hover sm:inset-x-6 sm:bottom-6 sm:p-6">
+    <div role="dialog" aria-labelledby={`${id}-title`} aria-describedby={`${id}-text`} className="fold-in fixed inset-x-3 bottom-3 z-[60] mx-auto max-w-2xl rounded-card bg-surface p-4 shadow-card-hover sm:inset-x-6 sm:bottom-6 sm:p-6">
       <div className="flex items-start gap-3">
         <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft text-accent"><Cookie className="size-4" aria-hidden /></span>
         <div className="min-w-0 flex-1">
           <p id={`${id}-title`} className="text-[15px] font-semibold text-ink">{t.title}</p>
-          <p id={`${id}-text`} className="mt-1 text-[14px] leading-relaxed text-muted">
+          <p id={`${id}-text`} className="mt-1 text-[13px] leading-relaxed text-muted sm:text-[14px]">
             {t.text} <Link href={localizePath("/legal/cookies", locale)} className="underline">{t.policy}</Link>.
           </p>
           {customize && (

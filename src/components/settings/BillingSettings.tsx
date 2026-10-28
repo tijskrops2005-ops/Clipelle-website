@@ -182,7 +182,7 @@ export function BillingSettings() {
           <div className="panel p-4">
             <p className="label-mono text-muted">Free credits</p>
             <p className="mt-1 flex items-center gap-2 text-[17px] font-semibold text-ink"><Gift className="size-4 text-accent" aria-hidden />{status?.freeAd.granted ? "Granted" : status?.freeAd.reason === "unverified" ? "After verification" : status?.freeAd.reason === "cap" ? "Daily cap reached" : "…"}</p>
-            <p className="text-[13px] text-muted">{status?.freeAd.reason === "cap" ? "All free credits for today are given out; you are on the list for tomorrow." : "30 credits per verified e-mail address: half a minute of translation or one 10-second ad."}</p>
+            <p className="text-[13px] text-muted">{status?.freeAd.reason === "cap" ? "All free credits for today are given out; you are on the list for tomorrow." : "30 credits per verified e-mail address: half a minute of translation."}</p>
           </div>
         </div>
         {enabled && status?.subscriptionStatus === "trialing" && (

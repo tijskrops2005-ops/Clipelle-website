@@ -23,7 +23,8 @@ export function RealOutput({ data, kind, locale = "en" }: { data: RealOutputData
   const sourcePoster = data.sourceVideoFile ? resolveExampleFile(data.sourceVideoFile.replace(/\.mp4$/i, ".jpg")) : null;
   // The input panel shows only with something real in it; no "coming soon" box (25 Oct 2026).
   const hasInput = Boolean(photo || source);
-  const cost = data.costUsd !== undefined ? `$${data.costUsd.toFixed(2)}${data.credits ? ` · ${data.credits} credits` : ""}` : null;
+  // Credits only on the site too (27 Oct 2026): the measured dollar cost stays in the content file for our own records.
+  const cost = data.credits ? `${data.credits} credits` : null;
   const time = data.durationSeconds !== undefined ? `${Math.round(data.durationSeconds / 60)} min` : null;
   return (
     <Reveal as="section">

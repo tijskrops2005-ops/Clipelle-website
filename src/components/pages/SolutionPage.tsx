@@ -49,7 +49,7 @@ export function SolutionPage({ s, locale }: { s: Solution; locale: Locale }) {
         <SectionIntro eyebrow={t.common.faq} title={p.faqTitle.replace("{who}", s.eyebrow.toLowerCase())} />
         <Accordion items={s.faq} className="mx-auto mt-10 max-w-3xl" />
       </Reveal>
-      <LatestPosts locale={locale} categories={["product-video", "costs-and-process"]} />
+      <LatestPosts locale={locale} categories={config.features.ads ? ["product-video", "costs-and-process"] : ["translation", "costs-and-process"]} />
       <FinalCta locale={locale} />
     </div>
   );

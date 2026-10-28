@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,18 @@ export function SwipeTabs({ tabs, hint, className }: { tabs: { key: string; labe
   const [active, setActive] = useState(0);
   const track = useRef<HTMLDivElement>(null);
   const base = useId();
+  // The track is as tall as the panel in view (27 Oct 2026): before, every panel got the height of
+  // the tallest one, which left a screen of empty space under the shorter panels on phones.
+  const [height, setHeight] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    const panel = document.getElementById(`${base}-panel-${active}`);
+    if (!panel) return;
+    const measure = () => setHeight(panel.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(panel);
+    return () => ro.disconnect();
+  }, [active, base]);
 
   function go(i: number) {
     const el = track.current;
@@ -70,7 +82,7 @@ export function SwipeTabs({ tabs, hint, className }: { tabs: { key: string; labe
         </button>
       </div>
 
-      <div ref={track} onScroll={onScroll} className="-mx-3 mt-8 flex snap-x snap-mandatory items-start overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div ref={track} onScroll={onScroll} style={height ? { height } : undefined} className="-mx-3 mt-8 flex snap-x snap-mandatory items-start overflow-x-auto overflow-y-hidden overscroll-x-contain transition-[height] duration-300 ease-out motion-reduce:transition-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((t, i) => (
           <div key={t.key} id={`${base}-panel-${i}`} role="tabpanel" aria-labelledby={`${base}-tab-${i}`} className="w-full shrink-0 snap-start px-3 pb-4 pt-1">
             {t.content}

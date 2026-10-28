@@ -123,7 +123,7 @@ export function ProofChips({ items, className }: { items: string[]; className?: 
 /** The hero phone with two illustrated cards tilted behind it, on soft colour fields. */
 export function HeroStage({ children, className, variant = "ads", label = "Illustration" }: { children: React.ReactNode; className?: string; variant?: "ads" | "translate"; label?: string }) {
   return (
-    <div className={cn("relative mx-auto flex h-[560px] w-full max-w-[520px] items-center justify-center", className)}>
+    <div className={cn("relative mx-auto flex h-[480px] w-full max-w-[520px] items-center justify-center overflow-hidden sm:h-[560px]", className)}>
       <div className="glow-field accent left-[-10%] top-[10%] h-72 w-72" />
       <div className="glow-field warm bottom-[0%] right-[-8%] h-64 w-64" />
       {variant === "ads" ? (

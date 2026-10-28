@@ -536,6 +536,8 @@
   .glow-field { filter: blur(36px); animation: none; }
   .stage-glow { filter: blur(28px); }
 }
+/* No sideways scroll on phones from a decoration that pokes out (27 Oct 2026); clip keeps sticky working. */
+body { overflow-x: clip; }
 /* Loops only run on screen: PauseOffscreen marks what left the viewport. */
 [data-paused], [data-paused] *, [data-paused]::after { animation-play-state: paused !important; }
 .glow-field.warm { background: color-mix(in srgb, var(--warning) 14%, white); animation-delay: -6s; }

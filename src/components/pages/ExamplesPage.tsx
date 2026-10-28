@@ -23,7 +23,7 @@ export function ExamplesPage({ locale }: { locale: Locale }) {
           </section>
         </>
       )}
-      <LatestPosts locale={locale} categories={["captions-and-formats", "scripts-and-hooks"]} />
+      <LatestPosts locale={locale} categories={["translation", "captions-and-formats"]} />
       <FinalCta locale={locale} />
     </div>
   );

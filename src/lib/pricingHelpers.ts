@@ -141,7 +141,9 @@ const FAMILY_ORDER: { family: PlanFamily; key: string; name: string }[] = [
   { family: "business", key: "business_249", name: "Business" },
 ];
 const FEATURE_ORDER: PlanFeature[] = ["precision", "premium", "variations", "api", "removeText", "aiPresenter", "enhance", "team"];
-const featuresOf = (key: string) => FEATURE_ORDER.filter((f) => hasFeature(key, f));
+/** Variations belong to ads: they leave the plan cards while ads are off (27 Oct 2026). */
+const ADS_ON = process.env.NEXT_PUBLIC_ADS_ENABLED === "true";
+const featuresOf = (key: string) => FEATURE_ORDER.filter((f) => hasFeature(key, f) && (ADS_ON || f !== "variations"));
 
 /**
  * For a plan card (26 Oct 2026): the plan below it ("Everything in Starter, plus"), the features this
