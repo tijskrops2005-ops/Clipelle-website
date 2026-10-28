@@ -19,8 +19,8 @@ export function WhyClipelle({ locale }: { locale: Locale }) {
   const w = dict(locale).home.why;
   const pro = PLANS.find((p) => p.key === "pro")!;
   const currency = currencyFor(locale);
-  // One minute of video (60 credits) inside the Pro plan billed yearly (28 Oct 2026, Tijs: what a
-  // minute costs on the plan most people take, not loose credits). Real numbers from plans.ts.
+  // "From" one minute of video (60 credits) on Pro: its lowest price, billed yearly (28 Oct 2026, Tijs:
+  // what a minute costs on the plan most people take, not loose credits). Real numbers from plans.ts.
   const perMinute = Math.round((planPrice(pro, currency).annualMonthly / pro.creditsPerMonth) * 60 * 100) / 100;
   const price = formatMoney(perMinute, currency, locale);
 
@@ -32,6 +32,7 @@ export function WhyClipelle({ locale }: { locale: Locale }) {
         {/* The one dark card: the price, in gold on ink (gold only ever on ink). */}
         <div className="relative col-span-2 flex flex-col justify-end overflow-hidden rounded-card bg-ink p-7 text-champagne shadow-card sm:p-9 lg:row-span-2">
           <div className="glow-field gold -right-16 -top-20 h-72 w-72" aria-hidden />
+          <p className="relative mb-2 text-[15px] font-medium text-champagne/70">{w.price.from}</p>
           <p className="relative text-[clamp(3.2rem,7vw,5.25rem)] font-semibold leading-none tracking-[-0.045em] text-gold-light">{price}</p>
           <p className="relative mt-3 text-[20px] font-semibold text-champagne">{w.price.title}</p>
           <p className="relative mt-2 max-w-sm text-[15px] leading-relaxed text-champagne/70">{w.price.text}</p>
