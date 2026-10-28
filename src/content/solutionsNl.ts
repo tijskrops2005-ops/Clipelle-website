@@ -10,7 +10,7 @@ const solutionsNlWithAds: Record<string, Solution> = {
     helps: [
       { title: "Eén formulier per product", text: "Foto, naam, twee zinnen, lengte. Het script wordt geschreven, de productclip gegenereerd, de presentator spreekt, de montage wordt gemaakt met ondertitels." },
       { title: "Merkstandaarden", text: "Accentkleur, ondertitelstijl, lettertype en logo één keer opgeslagen in Settings en toegepast op elke nieuwe advertentie." },
-      { title: "Kosten voordat je klikt", text: "Het formulier toont credits en dollars voor jouw keuzes; de projectpagina toont achteraf het werkelijke bedrag." },
+      { title: "Kosten voordat je klikt", text: "Het formulier toont de credits voor jouw keuzes; de projectpagina toont achteraf de werkelijk gebruikte credits." },
       { title: "Een productpagina-link", text: "Van link naar video leest naam, omschrijving en foto's van je productpagina, zodat het formulier ingevuld begint." },
       { title: "Vanuit je eigen code", text: "De API maakt dezelfde advertenties uit een productfeed of een synchronisatie, met dezelfde credits en limieten." },
     ],
@@ -62,7 +62,7 @@ const solutionsNlWithAds: Record<string, Solution> = {
     helps: [
       { title: "Een vast proces", text: "Script, productclip, presentator, montage, altijd in die volgorde, met dezelfde kwaliteitscontroles." },
       { title: "Merkstijl per video", text: "Accentkleur, ondertitelstijl, lettertype en logo per advertentie; de standaarden van een klant kunnen in de workspace voor die klant worden opgeslagen." },
-      { title: "Schattingen op elk formulier", text: "Credits en dollars voordat je klikt; het werkelijke bedrag op de projectpagina voor je eigen administratie." },
+      { title: "Schattingen op elk formulier", text: "Credits voordat je klikt; de werkelijk gebruikte credits op de projectpagina voor je eigen administratie." },
       { title: "De API voor volume", text: "Maak advertenties en vertalingen vanuit je eigen tooling met een API-sleutel; projecten blijven per workspace." },
       { title: "Vertalingen voor internationale klanten", text: "De video van een klant in meerdere talen met de eigen stem van de spreker, elke versie met ondertitels." },
     ],

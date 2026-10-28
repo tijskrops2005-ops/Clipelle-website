@@ -25,7 +25,7 @@ const allSolutions: Solution[] = [
     helps: [
       { title: "One form per product", text: "Photo, name, two sentences, length. The script is written, the product clip is generated, the presenter speaks, the edit is cut with captions." },
       { title: "Brand defaults", text: "Accent colour, caption look, font and logo saved once in Settings and applied to every new ad." },
-      { title: "Costs before you click", text: "The form shows credits and dollars for your choices; the project page shows the real amount afterwards." },
+      { title: "Costs before you click", text: "The form shows the credits for your choices; the project page shows the credits really used afterwards." },
       { title: "A product page link", text: "URL to video reads name, description and photos from your product page so the form starts filled in." },
       { title: "From your own code", text: "The API creates the same ads from a product feed or a sync job, with the same credits and limits." },
     ],
@@ -83,7 +83,7 @@ const allSolutions: Solution[] = [
     helps: [
       { title: "A fixed process", text: "Script, product clip, presenter, final edit, always in that order, with the same quality checks." },
       { title: "Brand style per video", text: "Accent colour, caption look, font and logo per ad; a client's defaults can be saved in the workspace used for that client." },
-      { title: "Estimates on every form", text: "Credits and dollars before you click; the real amount on the project page for your own records." },
+      { title: "Estimates on every form", text: "Credits before you click; the credits really used on the project page for your own records." },
       { title: "The API for volume", text: "Create ads and translations from your own tooling with an API key; projects stay per workspace." },
       { title: "Translations for international clients", text: "A client's video in several languages with the speaker's own voice, each version with captions." },
     ],

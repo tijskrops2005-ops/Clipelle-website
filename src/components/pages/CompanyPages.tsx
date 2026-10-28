@@ -128,7 +128,8 @@ export function TrustPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
   const r = t.trust;
   const L = (x: string) => localizePath(x, locale);
-  const linkFor = (i: number) => (i === 2 ? { href: L("/legal/data"), label: r.links.data } : i === 4 ? { href: L("/pricing"), label: r.links.pricing } : i === 8 ? { href: L("/legal/cookies"), label: r.links.cookies } : null);
+  // Files (2), costs (3) and cookies (the last card) carry a link; the order of r.facts is the same in both languages.
+  const linkFor = (i: number) => (i === 2 ? { href: L("/legal/data"), label: r.links.data } : i === 3 ? { href: L("/pricing"), label: r.links.pricing } : i === r.facts.length - 1 ? { href: L("/legal/cookies"), label: r.links.cookies } : null);
   return (
     <div className="space-y-24 pt-16 sm:pt-24 sm:space-y-32">
       <SectionIntro eyebrow={r.eyebrow} title={r.title} text={r.text} />

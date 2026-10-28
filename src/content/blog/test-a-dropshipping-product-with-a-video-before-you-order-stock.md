@@ -47,7 +47,7 @@ The order matters. You spent the price of a sample and a few short ads to learn 
 
 ## Keeping the test cheap
 
-Clipelle counts in credits: an ad with the Standard presenter uses 2 credits per second, at least 30. A 20-second Standard ad is 40 credits. Three hook variations at 20 seconds are 3 × 40 = 120 credits. A 30-second version is 60 credits. The form shows the estimate in credits and dollars before you start, and the project page shows the real amount afterward, so your test log can carry exact costs.
+Clipelle counts in credits: an ad with the Standard presenter uses 2 credits per second, at least 30. A 20-second Standard ad is 40 credits. Three hook variations at 20 seconds are 3 × 40 = 120 credits. A 30-second version is 60 credits. The form shows the estimate in credits before you start, and the project page shows the credits really used afterward, so your test log can carry exact costs.
 
 After you verify your e-mail you get 30 free credits, no card: enough for one 10-second Standard ad. Ten seconds is about 25 words: hook, product, call to action, nothing else. It is too short to test a product properly, but it is the right way to see the process once before you spend credits. The full picture of where the money goes is in [what a video ad costs in time and money](/blog/what-a-video-ad-costs-in-time-and-money).
 

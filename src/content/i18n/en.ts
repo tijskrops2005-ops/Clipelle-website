@@ -118,7 +118,7 @@ export const en = {
     outcomesText: "Only what the product does today.",
     outcomes: [
       { title: "Minutes of input, not days of production", text: "A photo, two sentences and a few choices. Script, product clip, presenter and edit run on their own while you do something else." },
-      { title: "Costs visible before you start", text: "Credits and dollars on the form, one confirmation, the real amount on the project page afterwards." },
+      { title: "Costs visible before you start", text: "Credits on the form, one confirmation, the credits really used on the project page afterwards." },
       { title: "9:16, 1080p, ready for TikTok, Reels and Shorts", text: "Vertical by design. Download and post; nothing to crop or re-export." },
       { title: "Captions of every spoken word", text: "The only text on screen, in a style you pick, with your accent colour on the word being said." },
       { title: "190 languages for a video you own", text: "Several at once, each with its own captions, with an automatic check of every translated line." },
@@ -626,12 +626,11 @@ export const en = {
     eyebrow: "Trust", title: "What we do with your videos, data and money", text: "Only what is true in the product today. No certifications we do not have, no numbers we cannot show.",
     facts: [
       { title: "Rights before any translation", text: "A video is translated only after you confirm: \"{rights}\" Without that confirmation the button stays disabled and the server refuses the request. The confirmation is stored with the project." },
-      { title: "Your own products and photos", text: "Image to video and URL to video ask you to use only products and photos you own or have the rights to use. Photos read from a product page are copied only after you confirm them." },
       { title: "Data separated per workspace", text: "Every project, file, credit entry and cost entry belongs to one workspace. The server checks the workspace on every request; another workspace's project is not found, not forbidden." },
       { title: "Files in private storage, signed links", text: "Uploads and finished videos live in a private bucket. Viewing or downloading uses a signed link that expires after about an hour. We never publish a permanent public link to your files." },
-      { title: "Costs visible before you start", text: "Every form shows the estimate in credits and dollars. One confirmation step repeats it. The project page shows the real amount afterwards, next to the estimate." },
+      { title: "Costs visible before you start", text: "Every form shows the credits a video will use. One confirmation step repeats the number. The project page shows the credits really used afterwards." },
       { title: "Deleting your data", text: "Deleting a project removes its files and records. Deleting your account in Settings removes projects, files, credits and profile; it cannot be undone." },
-      { title: "Processors behind each step", text: "The script, the product clip, the presenter, the translation and the edit are made by specialised services that receive only the inputs that step needs. They are replaceable and are not named in the product; the step names describe what happens." },
+      { title: "Processors behind each step", text: "The translation, the new voice and lips, the quality check and the captions are made by specialised services that receive only the inputs their step needs. They are replaceable and are not named in the product; the step names describe what happens." },
       { title: "Accounts and sign-in", text: "E-mail with a verification link, a password or a magic link. Sign-in attempts are rate limited per address and per e-mail. API keys are stored as hashes and can be revoked at any time." },
       { title: "Cookies only with consent", text: "Optional analytics and partner-tracking scripts load only after you allow them in the cookie banner, and only when a provider is configured." },
     ],

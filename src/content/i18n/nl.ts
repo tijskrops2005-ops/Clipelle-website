@@ -116,7 +116,7 @@ export const nl: SiteDict = {
     outcomesText: "Alleen wat het product vandaag doet.",
     outcomes: [
       { title: "Minuten invoer, geen dagen productie", text: "Een foto, twee zinnen en een paar keuzes. Script, productclip, presentator en montage lopen vanzelf terwijl jij iets anders doet." },
-      { title: "Kosten zichtbaar voordat je begint", text: "Credits en dollars op het formulier, één bevestiging, het werkelijke bedrag daarna op de projectpagina." },
+      { title: "Kosten zichtbaar voordat je begint", text: "Credits op het formulier, één bevestiging, de werkelijk gebruikte credits daarna op de projectpagina." },
       { title: "9:16, 1080p, klaar voor TikTok, Reels en Shorts", text: "Verticaal van ontwerp. Downloaden en plaatsen; niets bijsnijden of opnieuw exporteren." },
       { title: "Ondertitels van elk gesproken woord", text: "De enige tekst in beeld, in een stijl die jij kiest, met je accentkleur op het woord dat wordt gezegd." },
       { title: "190 talen voor een video van jezelf", text: "Meerdere tegelijk, elk met eigen ondertitels, met een automatische controle van elke vertaalde regel." },
@@ -618,12 +618,11 @@ export const nl: SiteDict = {
     eyebrow: "Vertrouwen", title: "Wat we doen met je video's, gegevens en geld", text: "Alleen wat vandaag waar is in het product. Geen certificeringen die we niet hebben, geen cijfers die we niet kunnen laten zien.",
     facts: [
       { title: "Rechten vóór elke vertaling", text: "Een video wordt pas vertaald nadat je bevestigt: \"{rights}\" Zonder die bevestiging blijft de knop uitgeschakeld en weigert de server het verzoek. De bevestiging wordt bij het project bewaard." },
-      { title: "Je eigen producten en foto's", text: "Van foto naar video en van link naar video vragen je om alleen producten en foto's te gebruiken waarvan je de rechten hebt. Foto's van een productpagina worden pas gekopieerd nadat je ze bevestigt." },
       { title: "Gegevens gescheiden per workspace", text: "Elk project, bestand, creditboeking en kostenregel hoort bij één workspace. De server controleert de workspace bij elk verzoek; een project van een andere workspace wordt niet gevonden, niet geweigerd." },
       { title: "Bestanden in afgeschermde opslag, gesigneerde links", text: "Uploads en afgeronde video's staan in een afgeschermde bucket. Bekijken of downloaden gaat via een gesigneerde link die na ongeveer een uur verloopt. We publiceren nooit een permanente openbare link naar je bestanden." },
-      { title: "Kosten zichtbaar voordat je begint", text: "Elk formulier toont de schatting in credits en dollars. Eén bevestigingsstap herhaalt die. De projectpagina toont achteraf het werkelijke bedrag, naast de schatting." },
+      { title: "Kosten zichtbaar voordat je begint", text: "Elk formulier toont hoeveel credits een video gebruikt. Eén bevestigingsstap herhaalt dat getal. De projectpagina toont achteraf de werkelijk gebruikte credits." },
       { title: "Je gegevens verwijderen", text: "Een project verwijderen verwijdert de bestanden en gegevens. Je account verwijderen in Settings verwijdert projecten, bestanden, credits en profiel; dat kan niet ongedaan worden gemaakt." },
-      { title: "Verwerkers achter elke stap", text: "Het script, de productclip, de presentator, de vertaling en de montage worden gemaakt door gespecialiseerde diensten die alleen de invoer krijgen die hun stap nodig heeft. Ze zijn vervangbaar en worden niet bij naam genoemd in het product; de stapnamen beschrijven wat er gebeurt." },
+      { title: "Verwerkers achter elke stap", text: "De vertaling, de nieuwe stem en lippen, de kwaliteitscheck en de ondertitels worden gemaakt door gespecialiseerde diensten die alleen de invoer krijgen die hun stap nodig heeft. Ze zijn vervangbaar en worden niet bij naam genoemd in het product; de stapnamen beschrijven wat er gebeurt." },
       { title: "Accounts en inloggen", text: "E-mail met een bevestigingslink, een wachtwoord of een inloglink. Inlogpogingen zijn begrensd per adres en per e-mailadres. API-sleutels worden als hash opgeslagen en zijn altijd in te trekken." },
       { title: "Cookies alleen met toestemming", text: "Optionele analyse- en partnertrackingscripts laden pas als je ze in de cookiebanner toestaat, en alleen als er een provider is ingesteld." },
     ],

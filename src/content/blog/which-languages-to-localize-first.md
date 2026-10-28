@@ -63,7 +63,7 @@ Here is a sequence that works for most small and mid-sized shops:
 
 Clipelle offers two lip-sync modes. Speed is standard lip-sync; Precision redraws the mouth and is slower and pricier. Which to pick can depend on the language pair. Languages with a rhythm and mouth shapes close to the source often look fine in Speed. A pair where the new language runs much longer or uses very different sounds can benefit from Precision, especially in close-up footage where the mouth is large on screen.
 
-A sensible rule: use Speed for the first pass in every language, watch the results, and re-render in Precision only the languages and the videos where the mouth draws attention to itself. The form shows the estimate for each mode before you start, and the project page shows the real amount afterwards, so you can see what the upgrade costs per language.
+A sensible rule: use Speed for the first pass in every language, watch the results, and re-render in Precision only the languages and the videos where the mouth draws attention to itself. The form shows the estimate for each mode before you start, and the project page shows the credits really used afterwards, so you can see what the upgrade costs per language.
 
 ## Keep one video, many versions
 

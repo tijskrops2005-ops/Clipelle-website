@@ -53,7 +53,7 @@ Within that set, regional variants are worth a thought. A language spoken in sev
 
 The cost multiplies by the number of languages, so the Speed or Precision choice is worth making deliberately. Speed is standard lipsync and suits head-and-shoulders footage from a normal distance. Precision redraws the mouth, is slower and costs more, and shows its value when the face is large in the frame.
 
-A sensible pattern: Precision for the one or two markets that will carry most of the budget, Speed for the markets you are testing. If a test market takes off, re-run that one language on Precision. The estimate for the whole set, in credits and dollars, is on the form before you start, and the real amount per version is on the project page afterwards.
+A sensible pattern: Precision for the one or two markets that will carry most of the budget, Speed for the markets you are testing. If a test market takes off, re-run that one language on Precision. The estimate for the whole set, in credits, is on the form before you start, and the credits really used per version is on the project page afterwards.
 
 ## The quality check at scale
 

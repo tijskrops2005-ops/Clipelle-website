@@ -62,7 +62,7 @@ Tick "Review script first" and the process pauses after the script is written. Y
 
 ### 6. Generate and come back later
 
-The form shows the estimate in credits and dollars before you start. Click Generate, and the project page shows each step as it moves from Waiting to Processing to Completed. You can leave the page. A typical ad is ready in minutes, and the project page shows what it really cost afterwards.
+The form shows the estimate in credits before you start. Click Generate, and the project page shows each step as it moves from Waiting to Processing to Completed. You can leave the page. A typical ad is ready in minutes, and the project page shows the credits really used afterwards.
 
 ## A worked example
 

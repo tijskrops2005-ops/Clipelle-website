@@ -81,6 +81,6 @@ For most shops the choices resolve in a few minutes in this order:
 6. **Speed:** normal.
 7. **Background:** own, unless your brand has a reason for a color.
 
-The form shows the estimate in credits and dollars as you change the length and quality, and the project page shows the real amount afterwards. A first 10-second Standard ad is free after e-mail verification, which is a reasonable way to hear how a presenter and voice sound together before any of this costs anything.
+The form shows the estimate in credits as you change the length and quality, and the project page shows the credits really used afterwards. A first 10-second Standard ad is free after e-mail verification, which is a reasonable way to hear how a presenter and voice sound together before any of this costs anything.
 
 Pick the person your customer would listen to, let that person speak at a normal pace in the customer's own accent, and spend on movement only when the face is the whole picture. That is most of the decision.

@@ -79,3 +79,9 @@ Vaste teksten die zonder schakelaar zijn herschreven (blijven zo, ook als ads te
 ## 28 oktober 2026: "Why Clipelle" opnieuw opgebouwd (op verzoek van Tijs)
 
 De drie tabbladen (What you get / What you decide / What we promise) met swipe zijn vervangen door één blok zonder tabs: een donkere prijskaart (prijs per vertaalde minuut op Pro), vier kleine feiten (0 reshoots, credits vervallen nooit, 30 gratis credits, 9:16), de beloftes als één rustige lijst en de keuzes op het formulier als één rij chips. "Credits never expire" stond eerst twee keer; "credits en dollars" klopte niet meer (klanten zien alleen credits). Het swipe-onderdeel `SwipeTabs.tsx` bestaat nog in de code. Terugzetten: de vorige versie van `WhyClipelle.tsx` en `home.why` in `en.ts`/`nl.ts` staat in git vóór commit van 28 okt 2026 ("Why Clipelle as one bento").
+
+## 28 Oct 2026: /trust cleaned up (Tijs: "nog steeds veel test dingen")
+
+- **Example trust layout** (logos "Example brand", "0 example number", example reviews, "As seen in") is no longer shown in development or demo mode either. To judge the design, start the dev server with `NEXT_PUBLIC_TRUST_PREVIEW=true`. Real content still comes only from `src/content/trust.ts`.
+- **Trust fact "Your own products and photos" / "Je eigen producten en foto's"** removed from `trust.facts` in both dictionaries while ads are off. Restore when `NEXT_PUBLIC_ADS_ENABLED=true`: "Image to video and URL to video ask you to use only products and photos you own or have the rights to use. Photos read from a product page are copied only after you confirm them."
+- Site copy no longer says "credits and dollars": customers see credits only (trust, home outcomes, solutions, the ad guide and six blog posts).

@@ -37,7 +37,7 @@ There is a short guide on writing a [product description that makes a good scrip
 
 Lengths are 10, 20, 30, 45 or 60 seconds. The script has a word limit of about 2.5 words per second, so 10 seconds is 25 words, 30 is 75 and 60 is 150. Shorter is cheaper and harder to write; longer is easier to write and harder to keep interesting.
 
-The form shows the estimate for each length in credits and dollars before you start. A Standard ad uses 2 credits per second of video, so the arithmetic is visible.
+The form shows the estimate for each length in credits before you start. A Standard ad uses 2 credits per second of video, so the arithmetic is visible.
 
 **Default:** 30 seconds. Enough for a hook, a problem, the product, two benefits and a call to action. See [a spoken ad script in 75 words](/blog/a-spoken-ad-script-in-75-words).
 
@@ -81,7 +81,7 @@ For a first ad, turn it on. You learn what the script step does with your descri
 
 ## 10. The estimate and the confirmation
 
-Before anything starts, the summary panel shows your choices and the estimate in credits and dollars. Read it. Then the confirmation repeats the length, quality, language and the same number. Once you confirm, the project page shows each step (Waiting, Processing, Completed, Failed) and, when it is done, the real amount spent next to the estimate.
+Before anything starts, the summary panel shows your choices and the estimate in credits. Read it. Then the confirmation repeats the length, quality, language and the same number. Once you confirm, the project page shows each step (Waiting, Processing, Completed, Failed) and, when it is done, the credits really used.
 
 A typical ad is ready in minutes, and you can leave the page. If a step fails, the page shows a plain-language reason and a Retry button that resumes at the failed step, not from the start.
 

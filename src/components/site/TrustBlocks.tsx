@@ -1,5 +1,4 @@
 import { Star } from "lucide-react";
-import { config } from "@/lib/config";
 import { hasTrustContent, trust, type TrustContent } from "@/content/trust";
 import { trustExample } from "@/content/trust.example";
 import { Marquee } from "@/components/site/Marquee";
@@ -7,12 +6,13 @@ import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
 
 /**
- * Logo row, reviews, numbers and press. Rendered from src/content/trust.ts only. In production an
- * empty list hides its block; in development and demo mode the example layout is shown with a
- * clear label so the design can be judged. The product facts block was removed on 25 Oct 2026: it repeated the cards on /trust.
+ * Logo row, reviews, numbers and press. Rendered from src/content/trust.ts only; an empty list hides
+ * its block everywhere (28 Oct 2026, Tijs: the example layout looked like test content in
+ * development too). To judge the design with the labelled example layout, start the dev server with
+ * NEXT_PUBLIC_TRUST_PREVIEW=true. The product facts block was removed on 25 Oct 2026: it repeated the cards on /trust.
  */
 export function TrustBlocks() {
-  const showExample = !hasTrustContent() && (process.env.NODE_ENV === "development" || config.demoMode);
+  const showExample = !hasTrustContent() && process.env.NEXT_PUBLIC_TRUST_PREVIEW === "true";
   const content: TrustContent | null = hasTrustContent() ? trust : showExample ? trustExample : null;
 
   return (

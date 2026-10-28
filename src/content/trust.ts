@@ -1,8 +1,8 @@
 /**
  * Trust content for the marketing site: logos, reviews, numbers, press. ONE rule: everything here
- * must be real and approved by Tijs. While a list is empty, its block is not rendered in
- * production; in development and demo mode an example layout is shown with a clear
- * "Example layout, replace with real content" label (src/content/trust.example.ts).
+ * must be real and approved by Tijs. While a list is empty, its block is not rendered anywhere;
+ * NEXT_PUBLIC_TRUST_PREVIEW=true shows the labelled example layout (src/content/trust.example.ts)
+ * for judging the design.
  *
  * Facts that are true today and may always be shown live in `facts` below.
  */
