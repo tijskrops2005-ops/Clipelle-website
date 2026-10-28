@@ -36,13 +36,21 @@ export function adCredits(input: { seconds: number; engine: PresenterEngine; spe
   return Math.max(CREDIT_RULES.adMinimum[input.engine], seconds * CREDIT_RULES.ad[input.engine]);
 }
 
+/**
+ * The seconds a translation is billed on: the same rounding the screens show (28 Oct 2026, Tijs: a
+ * 31.3 s video showed "0:31" but was billed as 32 s, 64 credits instead of 62).
+ */
+export function billedSeconds(seconds: number) {
+  return Math.max(1, Math.round(seconds));
+}
+
 /** Credits per language version of a translation: seconds × the quality's rate (+1 per second with enhancement). */
 export function translateCredits(input: { seconds: number; quality: TranslationQuality; enhance: boolean; removeText?: boolean; /** "Translate with an AI presenter" (26 Oct 2026): priced like an ad of that quality. */ presenterEngine?: PresenterEngine; languages?: number; hasSourceTranscript?: boolean }) {
   const extra = (input.enhance ? CREDIT_RULES.translate.enhance : 0) + (input.removeText ? CREDIT_RULES.translate.removeText : 0);
   if (input.presenterEngine) {
-    return Math.max(CREDIT_RULES.adMinimum[input.presenterEngine], Math.ceil(input.seconds) * (CREDIT_RULES.ad[input.presenterEngine] + extra));
+    return Math.max(CREDIT_RULES.adMinimum[input.presenterEngine], billedSeconds(input.seconds) * (CREDIT_RULES.ad[input.presenterEngine] + extra));
   }
-  return Math.max(CREDIT_RULES.translateMinimum, Math.ceil(input.seconds) * (CREDIT_RULES.translate[input.quality] + extra));
+  return Math.max(CREDIT_RULES.translateMinimum, billedSeconds(input.seconds) * (CREDIT_RULES.translate[input.quality] + extra));
 }
 
 /**

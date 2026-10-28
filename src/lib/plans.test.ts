@@ -36,7 +36,8 @@ describe("credits: one second of finished video", () => {
     expect(translateCredits({ seconds: 60, quality: "speed", enhance: false })).toBe(60);
     expect(translateCredits({ seconds: 60, quality: "precision", enhance: false })).toBe(120);
     expect(translateCredits({ seconds: 60, quality: "speed", enhance: true })).toBe(120);
-    expect(translateCredits({ seconds: 12.4, quality: "speed", enhance: false })).toBe(13);
+    // The rounded second the form shows (28 Oct 2026; was every started second).
+    expect(translateCredits({ seconds: 12.4, quality: "speed", enhance: false })).toBe(12);
     // Short clips have a minimum: the quality check has a fixed part per video.
     expect(translateCredits({ seconds: 8, quality: "speed", enhance: false })).toBe(10);
   });
@@ -171,5 +172,15 @@ describe("plan levels, features and the trial (26 Oct 2026)", () => {
 
   it("offers a 7-day trial with 30 credits", () => {
     expect(TRIAL).toEqual({ days: 7 });
+  });
+});
+
+describe("billed seconds match the screen (28 Oct 2026)", () => {
+  it("bills the rounded second the form shows", async () => {
+    const { translateCredits, billedSeconds } = await import("./plans");
+    expect(billedSeconds(31.3)).toBe(31);
+    expect(billedSeconds(31.6)).toBe(32);
+    expect(translateCredits({ seconds: 31.3, quality: "speed", enhance: false, removeText: true })).toBe(62);
+    expect(translateCredits({ seconds: 31.3, quality: "speed", enhance: false })).toBe(31);
   });
 });
