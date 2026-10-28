@@ -26,3 +26,20 @@ describe("captions over removed text never leave the screen (27 Oct 2026)", () =
     expect(out.map((c) => c.text)).toEqual(["a", "b", "c"]);
   });
 });
+
+describe("chunks sized to the real caption box (28 Oct 2026)", () => {
+  it("makes chunks smaller for the narrower bar over removed text", async () => {
+    const { chunkCharsFor } = await import("./captionChunks");
+    expect(chunkCharsFor("medium", 900)).toBe(32);
+    expect(chunkCharsFor("medium", 756)).toBe(27);
+    expect(chunkCharsFor("large", 300)).toBe(14);
+  });
+
+  it("never lets a sentence end push a chunk past two lines of the narrow bar (the selenium line)", async () => {
+    const { chunkCharsFor } = await import("./captionChunks");
+    const max = chunkCharsFor("medium", 756);
+    const out = chunkCues([{ index: 1, start: 14.7, end: 17.76, text: "Rijk aan selenium, essentieel voor een gezonde schildklier." }], max);
+    for (const c of out) expect(c.text.length).toBeLessThanOrEqual(max + Math.round(max * 0.15));
+    expect(out.map((c) => c.text).join(" ")).toBe("Rijk aan selenium, essentieel voor een gezonde schildklier.");
+  });
+});

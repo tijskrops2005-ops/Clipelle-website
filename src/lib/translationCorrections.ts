@@ -1,6 +1,18 @@
 import { maxCharsForSegment } from "@/lib/translatePricing";
 import type { Segment } from "@/lib/types";
 
+/**
+ * The character limit of one line (28 Oct 2026). The base is a calm 15 characters per second; a fast
+ * speaker gets room for what they really said (the source line plus 10%, since most languages run
+ * a little longer than English), and natural pace stretches it further. Before, a fast speaker's
+ * lines were cut to half and lost whole clauses.
+ */
+export function lineLimit(s: Pick<Segment, "start" | "end" | "original">, stretch = 1) {
+  const calm = Math.round(maxCharsForSegment(s.start, s.end) * stretch);
+  const spoken = s.original?.trim() ? Math.round(s.original.trim().length * 1.1) : 0;
+  return Math.max(calm, spoken);
+}
+
 /** One fragment as the quality check returns it. */
 export type CheckedFragment = { index: number; ok: boolean; corrected: string | null; issue: string | null };
 
@@ -9,8 +21,9 @@ export type CheckedFragment = { index: number; ok: boolean; corrected: string | 
  * taken when it fits the fragment's timing, or when it is shorter than the current text: then it is
  * better on both counts even if still long (the old rule kept the original, which on test A kept a
  * wrong word in a line that was even longer). A correction that is longer than both is not taken.
+ * `stretch` widens the limit when the video may stretch to the new language (natural pace, 28 Oct 2026).
  */
-export function applyCorrections(segments: Segment[], fragments: CheckedFragment[]) {
+export function applyCorrections(segments: Segment[], fragments: CheckedFragment[], stretch = 1) {
   const byIndex = new Map(fragments.map((f) => [f.index, f]));
   const changes: { index: number; before: string; after: string; reason: string }[] = [];
   const warnings: string[] = [];
@@ -21,7 +34,7 @@ export function applyCorrections(segments: Segment[], fragments: CheckedFragment
       return s;
     }
     const corrected = f.corrected.replace(/\s+/g, " ").trim();
-    const max = maxCharsForSegment(s.start, s.end);
+    const max = lineLimit(s, stretch);
     if (!corrected || corrected === s.text) return s;
     const fits = corrected.length <= max;
     if (!fits && corrected.length >= s.text.length) {

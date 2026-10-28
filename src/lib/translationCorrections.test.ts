@@ -50,3 +50,33 @@ describe("plainQa", () => {
     expect(plainQa("Over the 38-character limit (55 chars); shortened while keeping the meaning.")).toBe("Shortened to fit the timing while keeping the meaning.");
   });
 });
+
+describe("natural pace keeps meaning (28 Oct 2026)", () => {
+  it("takes a fuller correction within the stretched limit, without a warning", () => {
+    const s = [{ ...seg(2, 1.34, 5.1, "Darmgezondheid is dit jaar een prioriteit voor me geworden."), original: "Gut health has become such a priority for me this year, especially with everything my body's been through." }];
+    const full = "Darmgezondheid is dit jaar echt een prioriteit voor me geworden, zeker na alles wat mijn lichaam heeft meegemaakt.";
+    expect(full.length).toBeGreaterThan(maxCharsForSegment(1.34, 5.1) * 1.3);
+    const r = applyCorrections(s, [{ index: 2, ok: false, corrected: full, issue: "Restored what was left out." }], 1.3);
+    expect(r.segments[0].text).toBe(full);
+    expect(r.warnings).toHaveLength(0);
+  });
+});
+
+describe("groupWarnings", () => {
+  it("turns the same warning on several lines into one", async () => {
+    const { groupWarnings } = await import("./plainQa");
+    const msg = "shortened as far as the timing allows; it is still a little long and may be spoken slightly faster.";
+    expect(groupWarnings([2, 3, 4, 5, 6, 7].map((n) => `Line ${n}: ${msg}`))).toEqual([`Lines 2–7: ${msg}`]);
+    expect(groupWarnings([`Line 2: ${msg}`, `Line 5: ${msg}`, "Something else."])).toEqual([`Lines 2 and 5: ${msg}`, "Something else."]);
+    expect(groupWarnings([`Line 1: ${msg}`])).toEqual([`Line 1: ${msg}`]);
+  });
+});
+
+describe("lineLimit", () => {
+  it("gives a fast speaker room for what they said, and a calm speaker the usual limit", async () => {
+    const { lineLimit } = await import("./translationCorrections");
+    expect(lineLimit({ start: 0, end: 4, original: "" })).toBe(60);
+    expect(lineLimit({ start: 0, end: 4, original: "" }, 1.3)).toBe(78);
+    expect(lineLimit({ start: 0, end: 4, original: "x".repeat(100) })).toBe(110);
+  });
+});

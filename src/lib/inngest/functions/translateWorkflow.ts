@@ -1,6 +1,6 @@
 import { and, eq, gte, ne, sql } from "drizzle-orm";
-import { inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
-import { chunkCues, CHUNK_CHARS, fillGaps } from "@/lib/captionChunks";
+import { inngest, qualityCheckRequested, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
+import { chunkCharsFor, chunkCues, fillGaps } from "@/lib/captionChunks";
 import { captionStyleOf } from "@/lib/captionOptions";
 import { assets, db, projects, steps, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
 import { glossaryPronunciations, glossaryReplacements, mergeGlossaries, replacementsFor, type GlossaryEntries, type LocalizedReplacements } from "@/lib/localizedTerms";
@@ -35,7 +35,7 @@ import {
   parseDirectSession,
 } from "@/lib/services/translate";
 import { estimateEnhanceUsd, getEnhanceStatus, submitEnhance } from "@/lib/services/enhance";
-import { buildCaptionEdit, buildPresenterTranslateEdit, buildRemuxEdit, getRender, ingestFromUrl, shotstackEnv, startRender } from "@/lib/services/finalEdit";
+import { buildCaptionEdit, buildPresenterTranslateEdit, captionBoxWidth, buildRemuxEdit, getRender, ingestFromUrl, shotstackEnv, startRender } from "@/lib/services/finalEdit";
 import { createAvatarVideo, estimateCostUsd, estimateSeconds, getVideo } from "@/lib/services/heygen";
 import { pickPresenter } from "@/lib/inngest/functions/adWorkflow";
 import { speedValue } from "@/lib/voiceOptions";
@@ -303,11 +303,16 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       await step.run("translate-store", () => withDeadline("Saving the translation", 10, async () => {
         try {
           const cuesBy: Record<string, SrtCue[]> = {};
+          let originalCues: SrtCue[] = [];
           for (const [code, id] of Object.entries(sessionMap)) {
             const srt = await withRetries("Downloading the subtitles", () => downloadProofreadSrt(id));
             cuesBy[code] = parseSrt(await fetchSrtText(srt.srt_url));
+            // The service also returns the source-language subtitles of every session, free and on the same
+            // timing (28 Oct 2026). With "Detect automatically" there is no transcript session, so without
+            // this the quality check never saw the source and could not tell what was left out.
+            if (!originalCues.length && srt.original_srt_url) originalCues = parseSrt(await fetchSrtText(srt.original_srt_url)).filter((c) => c.text.trim());
           }
-          const transcript = cuesBy.transcript ?? [];
+          const transcript = cuesBy.transcript?.length ? cuesBy.transcript : originalCues;
           const detected = statuses.find((s) => s.input_language)?.input_language ?? null;
           const detectedCode = languageCodeForName(detected);
           const sourceLanguage = detectedCode ?? (input.sourceLanguage !== "auto" ? input.sourceLanguage : null);
@@ -407,7 +412,7 @@ async function checkLanguage(projectId: string, stepId: string, t: TranslationRo
     // The replacements in this language (stored by the translate step, read fresh: the run's input is older).
     const [fresh] = input.replaceTerms?.length ? await db().select({ input: projects.input }).from(projects).where(eq(projects.id, projectId)).limit(1) : [];
     const localized = (fresh?.input as TranslateInput | undefined)?.replaceTermsLocalized;
-    const result = await withRetries("Checking the translation", () => checkTranslation({ segments: t.segments, sourceLanguage, targetLanguage: t.language, keepTerms: input.keepTerms, replaceTerms: replacementsFor(t.language, input.replaceTerms, localized), instructions: input.instructions }));
+    const result = await withRetries("Checking the translation", () => checkTranslation({ segments: t.segments, sourceLanguage, targetLanguage: t.language, keepTerms: input.keepTerms, replaceTerms: replacementsFor(t.language, input.replaceTerms, localized), instructions: input.instructions, naturalPace: input.naturalPace }));
     await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens", meta: { usage: result.usage, changes: result.changes.length } });
     return { segments: result.segments, qa: { changes: result.changes, warnings: result.warnings, summary: result.summary, costUsd: result.costUsd } };
   } catch (error) {
@@ -682,6 +687,7 @@ async function processPresenterLanguage(projectId: string, input: TranslateInput
         }
       }));
       if ("error" in stored) return fail(stored.error);
+      await requestQualityReport(step, projectId, code);
       return { ok: true, assetId: stored.assetId };
     }
     if (r.status === "failed") {
@@ -804,6 +810,23 @@ type LanguageOutcome = { ok: true; assetId: string } | { ok: false; error: strin
  * jsonb merge, so the project page can show a percentage per language without a migration. A write
  * that fails never fails the step: the bar then simply moves on at the next phase.
  */
+/**
+ * Asks for the admin-only quality report of a finished language version (28 Oct 2026). Sent from its
+ * own step and never allowed to fail the video; QUALITY_REPORTS=off switches it off.
+ */
+async function requestQualityReport(step: StepTools, projectId: string, code: LanguageCode) {
+  if (process.env.QUALITY_REPORTS === "off") return;
+  await step.run(`${code}-quality-request`, async () => {
+    try {
+      await inngest.send(qualityCheckRequested.create({ projectId, language: code }));
+      return { sent: true };
+    } catch (error) {
+      console.error("[quality] report request failed", error);
+      return { sent: false };
+    }
+  });
+}
+
 async function setLanguagePhase(projectId: string, code: LanguageCode, key: "voice" | "enhance" | "captions" | "done") {
   try {
     const patch = JSON.stringify({ phases: { [code]: { key, at: new Date().toISOString() } } });
@@ -1047,7 +1070,8 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         // with the picture when silence is cut. The service's own SRT is the fallback without lines.
         // Short chunks of a few words, at most two caption lines (27 Oct 2026): a whole sentence at once read as a block.
         const size = captionStyleOf(input.captionStyle).size;
-        const chunks = chunkCues(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })), CHUNK_CHARS[size]);
+        const boxWidth = captionBoxWidth({ coverBox: input.oldTextBox ?? undefined, size: input.format === "original" && upload.width && upload.height ? { width: upload.width, height: upload.height } : undefined, captionStyle: input.captionStyle });
+        const chunks = chunkCues(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })), chunkCharsFor(size, boxWidth));
         // Over removed text the bar never leaves the screen, so the cleaned spot never shows.
         // The last line runs a second past the end (28 Oct 2026): the edit rounds its length up to a tenth of a
         // second, so a cue that stops exactly at the end left the final frame (the one that stays on screen) bare.
@@ -1103,6 +1127,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         }
       }));
       if ("error" in stored) return fail(stored.error);
+      await requestQualityReport(step, projectId, code);
       return { ok: true, assetId: stored.assetId };
     }
     if (r.status === "failed") {

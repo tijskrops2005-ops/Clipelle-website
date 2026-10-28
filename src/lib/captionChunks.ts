@@ -6,8 +6,16 @@
  */
 export type Cue = { index: number; start: number; end: number; text: string };
 
-/** Characters per chunk by caption size: about two lines on a 1080-wide frame. */
+/** Characters per chunk by caption size: about two lines on a 1080-wide frame (a 900 px caption box). */
 export const CHUNK_CHARS: Record<"small" | "medium" | "large", number> = { small: 40, medium: 32, large: 26 };
+
+/**
+ * Characters per chunk for the real caption box (28 Oct 2026): the bar over removed text is narrower
+ * than 900 px, and a chunk sized for 900 px overflowed it, so the edit service shrank that one caption.
+ */
+export function chunkCharsFor(size: "small" | "medium" | "large", boxWidthPx: number) {
+  return Math.max(14, Math.round((CHUNK_CHARS[size] * boxWidthPx) / 900));
+}
 
 export function chunkCues(cues: Cue[], maxChars = CHUNK_CHARS.medium): Cue[] {
   const out: Cue[] = [];
@@ -19,8 +27,8 @@ export function chunkCues(cues: Cue[], maxChars = CHUNK_CHARS.medium): Cue[] {
     const length = (ws: string[]) => ws.join(" ").length;
     for (const word of words) {
       const sentenceEnd = /[.!?…]$/.test(word);
-      // The word that ends a sentence may run a few characters over, so the sentence ends in this chunk.
-      if (current.length && length([...current, word]) > maxChars && !(sentenceEnd && length([...current, word]) <= maxChars + 8)) {
+      // The word that ends a sentence may run a little over (15%, still inside two lines), so the sentence ends in this chunk.
+      if (current.length && length([...current, word]) > maxChars && !(sentenceEnd && length([...current, word]) <= maxChars + Math.round(maxChars * 0.15))) {
         chunks.push(current.join(" "));
         current = [];
       }
@@ -34,7 +42,7 @@ export function chunkCues(cues: Cue[], maxChars = CHUNK_CHARS.medium): Cue[] {
     if (current.length) {
       // A single short word left over joins the previous chunk when that still fits.
       const last = chunks[chunks.length - 1];
-      if (last && current.length === 1 && (last + " " + current[0]).length <= maxChars + 6) chunks[chunks.length - 1] = `${last} ${current[0]}`;
+      if (last && current.length === 1 && (last + " " + current[0]).length <= maxChars + Math.round(maxChars * 0.15)) chunks[chunks.length - 1] = `${last} ${current[0]}`;
       else chunks.push(current.join(" "));
     }
     const total = chunks.reduce((n, c) => n + c.length, 0);

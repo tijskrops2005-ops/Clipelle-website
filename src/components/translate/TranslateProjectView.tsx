@@ -18,7 +18,7 @@ import { translateProgress } from "@/lib/translateProgress";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { projectDurationMs } from "@/lib/projectMeta";
 import { chargedCredits, creditsPerLanguage, projectCredits } from "@/lib/projectCredits";
-import { plainQa } from "@/lib/plainQa";
+import { groupWarnings, plainQa } from "@/lib/plainQa";
 import { downloadHref, useProjects } from "@/lib/data/client";
 import { sourceAdOf } from "@/lib/versions";
 import { ProjectActions } from "@/components/ProjectActions";
@@ -205,7 +205,7 @@ function QualityCheck({ project }: { project: TranslateProject }) {
             ))}
             {t.qa!.warnings.length > 0 && (
               <ul className="space-y-1 rounded-[10px] bg-warning/10 p-3 text-[13px] text-ink">
-                {t.qa!.warnings.map((w, i) => (
+                {groupWarnings(t.qa!.warnings).map((w, i) => (
                   <li key={i}>{plainQa(w)}</li>
                 ))}
               </ul>

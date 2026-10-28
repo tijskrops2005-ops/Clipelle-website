@@ -57,3 +57,8 @@ export const stepRetry = eventType("project/step.retry", {
 export const autoReloadCheck = eventType("billing/auto-reload.check", {
   schema: z.object({ workspaceId: z.string().uuid() }),
 });
+
+/** A language version is finished: make its quality report (admin only, 28 Oct 2026). */
+export const qualityCheckRequested = eventType("quality/check.requested", {
+  schema: z.object({ projectId: z.string().uuid(), language: z.string().min(1) }),
+});

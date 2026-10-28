@@ -296,6 +296,14 @@ function activeWord(highlight: CaptionHighlight, color: string, light: string, i
   }
 }
 
+/** Width of the caption box in pixels, the same rule buildCaptionEdit uses (for sizing the caption chunks). */
+export function captionBoxWidth(input: Pick<CaptionEditInput, "coverBox" | "size" | "captionStyle">) {
+  const base = captionStyleOf({ ...input.captionStyle });
+  const bar = CAPTION_BAR_META[base.show ? effectiveBar(base, Boolean(input.coverBox)) : "none"];
+  const frame = input.size ? fitSize(input.size) : { width: 1080, height: 1920 };
+  return input.coverBox && bar.color ? coverWidthFor(input.coverBox, frame.width) : Math.round(frame.width * 0.833);
+}
+
 /** One video track plus TikTok-style captions, output 1080×1920. Same caption style as the ad. */
 export function buildCaptionEdit(input: CaptionEditInput) {
   const accent = input.colors?.accent ?? "#D43F1B";
@@ -364,6 +372,9 @@ export function buildCaptionEdit(input: CaptionEditInput) {
         start: 0,
         length: total,
         fit: input.fit ?? "crop",
+        // A cut end fades out briefly (28 Oct 2026): the cut can land on the first frames of the source's own
+        // transition (a fade to an end card), and the last frame then showed a washed-out picture.
+        ...(trimEnd > 0 ? { transition: { out: "fadeFast" } } : {}),
       },
     ],
   };
