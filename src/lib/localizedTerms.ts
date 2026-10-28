@@ -57,3 +57,38 @@ export function glossaryPronunciations(pronunciations: Record<string, { term: st
   }
   return out;
 }
+
+/**
+ * One glossary for every project running at the same time (28 Oct 2026). The service allows one
+ * glossary per account, and each project used to overwrite it, so two translations with their own
+ * words at once took each other's words away. Now the glossary holds the words of every running
+ * project that has words (projects without words do not attach it), this project's own entries first:
+ * where two projects disagree on the same term and language, this project's wish wins.
+ */
+export type GlossaryEntries = { keep: string[]; replace: { from: string; to: string; code?: string }[]; pronounce: { term: string; pronunciation: string; code: string }[] };
+
+export function mergeGlossaries(own: GlossaryEntries, others: GlossaryEntries[]): GlossaryEntries {
+  const out: GlossaryEntries = { keep: [], replace: [], pronounce: [] };
+  const seen = { keep: new Set<string>(), replace: new Set<string>(), pronounce: new Set<string>() };
+  for (const g of [own, ...others]) {
+    for (const k of g.keep) {
+      const key = k.trim().toLowerCase();
+      if (!key || seen.keep.has(key)) continue;
+      seen.keep.add(key);
+      out.keep.push(k.trim());
+    }
+    for (const r of g.replace) {
+      const key = `${r.from.trim().toLowerCase()}|${r.code ?? "all"}`;
+      if (seen.replace.has(key)) continue;
+      seen.replace.add(key);
+      out.replace.push(r);
+    }
+    for (const p of g.pronounce) {
+      const key = `${p.term.trim().toLowerCase()}|${p.code}`;
+      if (seen.pronounce.has(key)) continue;
+      seen.pronounce.add(key);
+      out.pronounce.push(p);
+    }
+  }
+  return out;
+}

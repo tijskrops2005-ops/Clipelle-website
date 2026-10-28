@@ -37,3 +37,15 @@ describe("one way to say a name, per language", () => {
     expect(glossaryPronunciations(null, ["nl"])).toEqual([]);
   });
 });
+
+describe("one glossary for every running project", () => {
+  it("keeps the words of all projects, this project first on a conflict", async () => {
+    const { mergeGlossaries } = await import("./localizedTerms");
+    const own = { keep: ["Clipelle"], replace: [{ from: "RYZE", to: "Clipelle", code: "nl" }], pronounce: [{ term: "Ritual", pronunciation: "Ritsjoeal", code: "nl" }] };
+    const other = { keep: ["clipelle", "Senvi"], replace: [{ from: "ryze", to: "Iets anders", code: "nl" }, { from: "Old price", to: "New price" }], pronounce: [{ term: "Senvi", pronunciation: "Senvie", code: "de" }] };
+    const m = mergeGlossaries(own, [other]);
+    expect(m.keep).toEqual(["Clipelle", "Senvi"]);
+    expect(m.replace).toEqual([{ from: "RYZE", to: "Clipelle", code: "nl" }, { from: "Old price", to: "New price" }]);
+    expect(m.pronounce.map((p) => p.term)).toEqual(["Ritual", "Senvi"]);
+  });
+});

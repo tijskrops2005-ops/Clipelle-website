@@ -154,7 +154,47 @@ export async function withRetries<T>(label: string, fn: () => Promise<T>, attemp
       await new Promise((r) => setTimeout(r, 1500 * 2 ** i));
     }
   }
+  // A full provider (429 after the short retries) is not a failure: the run waits its turn (28 Oct 2026).
+  const busy = busySeconds(last);
+  if (busy !== null) throw new ProviderBusy(label, busy);
   throw new StepFailure(`${label} failed: ${plainMessage(last)}`, last);
+}
+
+/**
+ * The provider is at its limit of jobs running at once (28 Oct 2026: HeyGen runs 10 translations and
+ * presenter videos at a time for the whole account, and answers 429 to the eleventh). The step that
+ * starts a job returns `{ busy }` instead of failing, and `untilFree` sleeps and starts it again, so a
+ * customer's second or tenth video waits in line instead of stopping.
+ */
+export class ProviderBusy extends Error {
+  constructor(label: string, public readonly retryAfterSeconds: number) {
+    super(`${label}: the service is busy`);
+    this.name = "ProviderBusy";
+  }
+}
+
+/** Seconds to wait when the error is a rate or concurrency limit (429), else null. */
+export function busySeconds(error: unknown): number | null {
+  if (error instanceof ProviderBusy) return error.retryAfterSeconds;
+  const e = error as { status?: number; retryAfterSeconds?: number; cause?: unknown };
+  if (e?.status === 429) return Math.min(300, Math.max(30, Number(e.retryAfterSeconds) || 60));
+  if (e?.cause) return busySeconds(e.cause);
+  return null;
+}
+
+export type Busy = { busy: number };
+export const isBusy = (x: unknown): x is Busy => typeof x === "object" && x !== null && typeof (x as Busy).busy === "number";
+
+/** Waits up to `maxMinutes` for a free slot: `run(i)` is one step; a `{ busy }` result sleeps and tries again. */
+export async function untilFree<T>(step: StepTools, id: string, run: (attempt: number) => Promise<T | Busy>, maxMinutes = 45): Promise<T> {
+  let waited = 0;
+  for (let i = 0; ; i++) {
+    const result = await run(i);
+    if (!isBusy(result)) return result;
+    if (waited >= maxMinutes * 60) throw new StepFailure("The video service stayed fully booked for a long time. Retry in a few minutes; no credits were used for this wait.");
+    await step.sleep(`${id}-busy-${i}`, `${result.busy}s`);
+    waited += result.busy;
+  }
 }
 
 /* ---------- waiting on a provider: webhook first, polling as the fallback ---------- */

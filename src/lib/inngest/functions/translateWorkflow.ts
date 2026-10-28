@@ -1,9 +1,9 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, gte, ne, sql } from "drizzle-orm";
 import { inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
 import { chunkCues, CHUNK_CHARS, fillGaps } from "@/lib/captionChunks";
 import { captionStyleOf } from "@/lib/captionOptions";
 import { assets, db, projects, steps, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
-import { glossaryPronunciations, glossaryReplacements, replacementsFor, type LocalizedReplacements } from "@/lib/localizedTerms";
+import { glossaryPronunciations, glossaryReplacements, mergeGlossaries, replacementsFor, type GlossaryEntries, type LocalizedReplacements } from "@/lib/localizedTerms";
 import { localizeReplacements, LOCALIZE_TERMS_USD, type Pronunciations } from "@/lib/services/localizeTerms";
 import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, measureRemovedText, type TextBox } from "@/lib/services/textLocate";
 import { downloadTextRemovalOutput, estimateTextRemovalUsd, getTextRemoval, startTextRemoval, TEXT_REMOVAL_MODEL, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
@@ -58,7 +58,7 @@ import {
   storeBytes,
   storeFromUrl,
   withDeadline,
-  withRetries, waitForJob } from "@/lib/workflow/steps";
+  withRetries, waitForJob, untilFree, busySeconds, type Busy } from "@/lib/workflow/steps";
 import { callbackUrlFor } from "@/lib/webhooks/incoming";
 
 /**
@@ -102,7 +102,8 @@ export const translateWorkflow = inngest.createFunction(
     const coverBox = input.removeText ? ((await measureRemovedTextStep(projectId, input, step)) ?? oldTextBox) : null;
 
     /* ---------- 1. upload ---------- */
-    const upload = await step.run("upload", () => withDeadline("Uploading the video", 10, async () => {
+    // Every step that starts a job at the video service waits its turn when the service is full (28 Oct 2026).
+    const upload = await untilFree<UploadOutput>(step, "upload", (wait) => step.run(wait === 0 ? "upload" : `upload-${wait}`, () => withDeadline("Uploading the video", 10, async (): Promise<UploadOutput | Busy> => {
       const existing = await loadStep(projectId, "upload");
       if (existing.status === "completed" && typeof existing.output?.heygenAssetId === "string") return existing.output as UploadOutput;
       const row = await markProcessing(projectId, "upload");
@@ -125,9 +126,11 @@ export const translateWorkflow = inngest.createFunction(
         void row;
         return output;
       } catch (error) {
+        const busy = busySeconds(error);
+        if (busy !== null) return { busy };
         return failStep(projectId, "upload", error);
       }
-    }));
+    })));
 
     /* ---------- 2. translate (proofread sessions) ---------- */
     const sessions = await runTranslate(projectId, input, upload, step);
@@ -154,7 +157,8 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
   const existing = await step.run("translate-check", () => loadStep(projectId, key));
   if (existing.status === "completed" && existing.output?.sessions) return existing.output.sessions as SessionMap;
 
-  const started = await step.run("translate-submit", () => withDeadline("Starting the translation", 5, async () => {
+  type Started = { direct: boolean; sessions: SessionMap; entryIds: string[]; estimate: number; perLanguage: number; stepId: string; glossaryWarning: string | null };
+  const started = await untilFree<Started>(step, "translate-submit", (wait) => step.run(wait === 0 ? "translate-submit" : `translate-submit-${wait}`, () => withDeadline("Starting the translation", 5, async (): Promise<Started | Busy> => {
     const row = await markProcessing(projectId, key);
     try {
       const matched = matchLanguages(await withRetries("Listing languages", () => listTranslationLanguages()));
@@ -177,13 +181,13 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       const prepared = keepTerms.length || replaceTerms.length ? await prepareTerms(projectId, row.id, input, targetCodes) : { localized: null, pronunciations: null };
       if (keepTerms.length || replaceTerms.length) {
         try {
-          const replace = glossaryReplacements(replaceTerms, prepared.localized, targetCodes);
-          const pronounce = glossaryPronunciations(prepared.pronunciations, targetCodes);
+          // The account's one glossary holds the words of every project running now (28 Oct 2026), so videos made at the same time never take each other's words away.
+          const merged = mergeGlossaries({ keep: keepTerms, replace: glossaryReplacements(replaceTerms, prepared.localized, targetCodes), pronounce: glossaryPronunciations(prepared.pronunciations, targetCodes) }, await runningGlossaries(projectId));
           // A refused pronunciation list must never cost the replacements: try once more without it.
-          brandGlossaryId = await withRetries("Saving the terms to keep", () => applyBrandGlossary({ doNotTranslate: keepTerms, replace, pronounce })).catch((error) => {
-            if (!pronounce.length) throw error;
+          brandGlossaryId = await withRetries("Saving the terms to keep", () => applyBrandGlossary({ doNotTranslate: merged.keep, replace: merged.replace, pronounce: merged.pronounce })).catch((error) => {
+            if (!merged.pronounce.length) throw error;
             console.error("[glossary] pronunciations refused, saving without them", error instanceof Error ? error.message : error);
-            return withRetries("Saving the terms to keep", () => applyBrandGlossary({ doNotTranslate: keepTerms, replace }));
+            return withRetries("Saving the terms to keep", () => applyBrandGlossary({ doNotTranslate: merged.keep, replace: merged.replace }));
           });
         } catch (error) {
           // The provider's words stay in the log; the customer gets a plain line.
@@ -215,7 +219,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       }
       try {
         const created = await withRetries("Starting the translation", () =>
-          createProofread({ video: { assetId: upload.heygenAssetId }, outputLanguages: outputs.map((o) => o.heygen), mode: input.quality, title: `Clipelle ${projectId.slice(0, 8)}`, brandGlossaryId, removeMusic: input.removeMusic, cleanVoice: input.cleanVoice, naturalPace: input.naturalPace, idempotencyKey: `${projectId}:proofread:${row.attempt}` }),
+          createProofread({ video: { assetId: upload.heygenAssetId }, outputLanguages: outputs.map((o) => o.heygen), mode: input.quality, title: `Clipelle ${projectId.slice(0, 8)}`, brandGlossaryId, removeMusic: input.removeMusic, cleanVoice: input.cleanVoice, naturalPace: input.naturalPace, idempotencyKey: `${projectId}:proofread:${row.attempt}${wait ? `:${wait}` : ""}` }),
         );
         const sessions: SessionMap = {};
         outputs.forEach((o, i) => {
@@ -245,7 +249,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       }
       try {
         const created = await withRetries("Starting the translation", () =>
-          createDirectTranslation({ video: { assetId: upload.heygenAssetId }, outputLanguages: targets.map((o) => o.heygen), mode: input.quality, title: `Clipelle ${projectId.slice(0, 8)}`, inputLanguage: source ? (matched[source] ?? undefined) : undefined, brandGlossaryId, removeMusic: input.removeMusic, cleanVoice: input.cleanVoice, callbackUrl: callbackUrlFor("heygen"), idempotencyKey: `${projectId}:direct:${row.attempt}` }),
+          createDirectTranslation({ video: { assetId: upload.heygenAssetId }, outputLanguages: targets.map((o) => o.heygen), mode: input.quality, title: `Clipelle ${projectId.slice(0, 8)}`, inputLanguage: source ? (matched[source] ?? undefined) : undefined, brandGlossaryId, removeMusic: input.removeMusic, cleanVoice: input.cleanVoice, callbackUrl: callbackUrlFor("heygen"), idempotencyKey: `${projectId}:direct:${row.attempt}${wait ? `:${wait}` : ""}` }),
         );
         const sessions: SessionMap = {};
         targets.forEach((o, i) => {
@@ -263,9 +267,11 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
         throw error;
       }
     } catch (error) {
+      const busy = busySeconds(error);
+      if (busy !== null) return { busy };
       return failStep(projectId, key, error);
     }
-  }));
+  })));
 
   // Direct fallback: no proofread sessions to wait for; the render and the check happen per language.
   if (started.direct) {
@@ -369,6 +375,21 @@ async function prepareTerms(projectId: string, stepId: string, input: TranslateI
   }
   await db().update(projects).set({ input: sql`${projects.input} || ${JSON.stringify({ replaceTermsLocalized: localized, termPronunciations: pronunciations })}::jsonb`, updatedAt: new Date() }).where(eq(projects.id, projectId));
   return { localized, pronunciations };
+}
+
+/** The glossary entries of every other translation running now that has words of its own. */
+async function runningGlossaries(projectId: string): Promise<GlossaryEntries[]> {
+  const since = new Date(Date.now() - 3 * 3600_000);
+  const rows = await db()
+    .select({ id: projects.id, input: projects.input })
+    .from(projects)
+    .where(and(eq(projects.workflow, "translate"), eq(projects.status, "processing"), gte(projects.updatedAt, since), ne(projects.id, projectId)));
+  return rows.flatMap((r) => {
+    const i = r.input as TranslateInput;
+    const keep = (i.keepTerms ?? []).map((x) => x.trim()).filter(Boolean);
+    if (!keep.length && !i.replaceTerms?.length) return [];
+    return [{ keep, replace: glossaryReplacements(i.replaceTerms ?? [], i.replaceTermsLocalized, i.targetLanguages), pronounce: glossaryPronunciations(i.termPronunciations, i.targetLanguages) }];
+  });
 }
 
 /* ---------- quality check (replaces the manual review, 2026-10-20) ---------- */
@@ -553,7 +574,8 @@ async function processPresenterLanguage(projectId: string, input: TranslateInput
   const p = input.presenter!;
 
   // a. The presenter video, from the checked lines.
-  const job = await step.run(`${code}-presenter-submit`, () => withDeadline("Starting the presenter video", 5, async (): Promise<{ done: true; assetId: string } | { done: false; videoId: string; entryId: string; estimate: number; stepId: string } | { error: string }> => {
+  type Job = { done: true; assetId: string } | { done: false; videoId: string; entryId: string; estimate: number; stepId: string } | { error: string };
+  const job = await untilFree<Job>(step, `${code}-presenter-submit`, (wait) => step.run(wait === 0 ? `${code}-presenter-submit` : `${code}-presenter-submit-${wait}`, () => withDeadline("Starting the presenter video", 5, async (): Promise<Job | Busy> => {
     try {
       const [t] = await db().select().from(translations).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).limit(1);
       if (!t) throw new LanguageFailure(`No translation row for ${lang}.`);
@@ -565,7 +587,7 @@ async function processPresenterLanguage(projectId: string, input: TranslateInput
       const { lookId, voiceId } = await pickPresenter(p.engine, p.lookId, { language: code, accent: p.accent, voiceId: p.voiceId } as AdInput);
       const seconds = estimateSeconds(script);
       const estimate = estimateCostUsd(p.engine, seconds);
-      const reserved = await reserveSpend({ service: "heygen", action: "avatar_video", estimatedUsd: estimate, fingerprintInput: { projectId, code, attempt: stepRow.attempt }, projectId, stepId: stepRow.id, language: code, languageCount, meta: { engine: p.engine, resolution: cfg.heygenResolution, seconds } });
+      const reserved = await reserveSpend({ service: "heygen", action: "avatar_video", estimatedUsd: estimate, fingerprintInput: { projectId, code, attempt: stepRow.attempt, ...(wait ? { wait } : {}) }, projectId, stepId: stepRow.id, language: code, languageCount, meta: { engine: p.engine, resolution: cfg.heygenResolution, seconds } });
       try {
         const speed = speedValue(p.speed);
         const created = await withRetries("Starting the presenter video", () =>
@@ -578,9 +600,11 @@ async function processPresenterLanguage(projectId: string, input: TranslateInput
         throw error;
       }
     } catch (error) {
+      const busy = busySeconds(error);
+      if (busy !== null) return { busy };
       return { error: budgetMessage(error) };
     }
-  }));
+  })));
   if ("error" in job) return fail(job.error);
   if (!job.done) await step.run(`${code}-phase-voice`, () => setLanguagePhase(projectId, code, "voice"));
   if (job.done) return { ok: true, assetId: job.assetId };
@@ -809,7 +833,8 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
   if (input.speaker === "presenter" && input.presenter) return processPresenterLanguage(projectId, input, code, proofreadId, languageCount, step, budgetMessage);
 
   // a. Approved subtitles back to HeyGen and the paid render.
-  const gen = await step.run(`${code}-generate`, () => withDeadline("Starting the video render", 5, async (): Promise<{ translationId: string; entryId: string; estimate: number; done: boolean; direct?: boolean } | { error: string }> => {
+  type Gen = { translationId: string; entryId: string; estimate: number; done: boolean; direct?: boolean } | { error: string };
+  const gen = await untilFree<Gen>(step, `${code}-generate`, (wait) => step.run(wait === 0 ? `${code}-generate` : `${code}-generate-${wait}`, () => withDeadline("Starting the video render", 5, async (): Promise<Gen | Busy> => {
     try {
       const [t] = await db().select().from(translations).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).limit(1);
       if (!t) throw new LanguageFailure(`No translation row for ${lang}.`);
@@ -839,7 +864,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
           return { translationId: t.translationId, entryId: reservedAgain.entryId, estimate, done: false };
         }
       }
-      const reserved = await reserveSpend({ service: "heygen", action: "translate_generate", estimatedUsd: estimate, fingerprintInput: { projectId, code, attempt: stepRow.attempt }, projectId, stepId: stepRow.id, language: code, languageCount, meta: { language: code, mode: input.quality } });
+      const reserved = await reserveSpend({ service: "heygen", action: "translate_generate", estimatedUsd: estimate, fingerprintInput: { projectId, code, attempt: stepRow.attempt, ...(wait ? { wait } : {}) }, projectId, stepId: stepRow.id, language: code, languageCount, meta: { language: code, mode: input.quality } });
       try {
         const created = await withRetries("Starting the translated video", () => generateFromProofread(proofreadId, { idempotencyKey: reserved.fingerprint, callbackUrl: callbackUrlFor("heygen") }));
         await db().update(translations).set({ translationId: created.video_translation_id, status: "processing", error: null, updatedAt: new Date() }).where(eq(translations.id, t.id));
@@ -849,9 +874,11 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         throw error;
       }
     } catch (error) {
+      const busy = busySeconds(error);
+      if (busy !== null) return { busy };
       return { error: budgetMessage(error) };
     }
-  }));
+  })));
   if ("error" in gen) return fail(gen.error);
   if (!gen.done) await step.run(`${code}-phase-voice`, () => setLanguagePhase(projectId, code, "voice"));
 
