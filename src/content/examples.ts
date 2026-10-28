@@ -20,13 +20,30 @@ export type Example = {
 };
 
 export const examples: Example[] = [
+  // Translations first (28 Oct 2026, translation-first site): Tijs's own videos, translated with Clipelle.
   {
-    id: "dress-standard-30",
-    title: "Long-sleeve dress",
-    kind: "ad",
-    file: "ad-dress-30s-standard.mp4",
-    poster: "ad-dress-30s-standard.jpg",
-    note: "30 s · Dutch · Standard presenter · first real run",
+    id: "unboxing-nl",
+    title: "Unboxing, translated",
+    kind: "translate",
+    file: "translate-unboxing-nl.mp4",
+    poster: "translate-unboxing-nl.jpg",
+    note: "8 s · into Dutch · own voice, lip sync, captions",
+  },
+  {
+    id: "coffee-gift-nl",
+    title: "Gift story, translated",
+    kind: "translate",
+    file: "translate-coffee-gift-nl.mp4",
+    poster: "translate-coffee-gift-nl.jpg",
+    note: "11 s · into Dutch · own voice, lip sync, captions",
+  },
+  {
+    id: "lounge-chair-nl",
+    title: "Product review, translated",
+    kind: "translate",
+    file: "translate-lounge-chair-nl.mp4",
+    poster: "translate-lounge-chair-nl.jpg",
+    note: "30 s · into Dutch · own voice, lip sync, captions",
   },
   {
     id: "senvia-nl",
@@ -35,6 +52,14 @@ export const examples: Example[] = [
     file: "translate-senvia-nl.mp4",
     poster: "translate-senvia-nl.jpg",
     note: "8 s · English to Dutch · Speed · captions",
+  },
+  {
+    id: "dress-standard-30",
+    title: "Long-sleeve dress",
+    kind: "ad",
+    file: "ad-dress-30s-standard.mp4",
+    poster: "ad-dress-30s-standard.jpg",
+    note: "30 s · Dutch · Standard presenter · first real run",
   },
 ];
 
