@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Bell, Search } from "lucide-react";
 import { useUnseenCount } from "@/lib/notificationStore";
 import { navItems, settingsNavItem } from "@/components/nav";
-import { SOON_TOOLS, STUDIO_TOOLS, openToolSearch } from "@/components/tools";
+import { SOON_TOOLS, STUDIO_TOOLS, activeToolKey, openToolSearch } from "@/components/tools";
 
-/** Where you are, by the longest matching link (tools, sections), for the top bar's left side. */
-function sectionOf(pathname: string) {
-  const all = [...STUDIO_TOOLS, ...SOON_TOOLS, ...navItems, settingsNavItem, { href: "/new", label: "New video" }];
+/** Where you are: the active tool (path and query, 28 Oct 2026), else the longest matching link, for the top bar's left side. */
+function sectionOf(pathname: string, search: string) {
+  const tool = activeToolKey(pathname, search, STUDIO_TOOLS);
+  if (tool) return STUDIO_TOOLS.find((t) => t.key === tool)!.label;
+  const all = [...SOON_TOOLS, ...navItems, settingsNavItem, { href: "/new", label: "New video" }];
   const match = all.filter((i) => i.href !== "/" && (pathname === i.href || pathname.startsWith(`${i.href}/`))).sort((a, b) => b.href.length - a.href.length)[0];
   return match?.label ?? "";
 }
@@ -21,11 +23,12 @@ function sectionOf(pathname: string) {
  */
 export function TopBar() {
   const pathname = usePathname();
+  const search = useSearchParams();
   const unseen = useUnseenCount();
   return (
     <div className="sticky top-0 z-30 border-b border-divider/70 bg-bg/95">
       <div className="mx-auto flex h-14 w-full max-w-[1180px] items-center justify-between gap-4 px-8 lg:px-10">
-        <p className="truncate text-[13px] font-medium text-muted">{sectionOf(pathname)}</p>
+        <p className="truncate text-[13px] font-medium text-muted">{sectionOf(pathname, search.toString())}</p>
         <div className="flex items-center gap-2">
           <button
             type="button"

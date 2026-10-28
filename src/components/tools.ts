@@ -33,6 +33,24 @@ export const STUDIO_TOOLS: Tool[] = config.features.ads ? [...TRANSLATE_TOOLS, .
 
 export const SOON_TOOLS: Tool[] = config.features.ads ? PUBLISH_TOOLS : [...AD_TOOLS.map((t) => ({ ...t, soon: true })), ...PUBLISH_TOOLS];
 
+/**
+ * Which tool is the current page (28 Oct 2026): a tool whose link has a query (`?speaker=presenter`)
+ * is active only with that query; a tool without one is active on its path unless another tool on the
+ * same path matches the query better.
+ */
+export function activeToolKey(pathname: string, search: string, tools: Tool[]): string | null {
+  const params = new URLSearchParams(search);
+  const candidates = tools.filter((t) => !t.soon).map((t) => {
+    const url = new URL(t.href, "http://x");
+    const wanted = [...url.searchParams.entries()];
+    const onPath = pathname === url.pathname || pathname.startsWith(`${url.pathname}/`);
+    const queryOk = wanted.every(([k, v]) => params.get(k) === v);
+    return { key: t.key, ok: onPath && queryOk, score: wanted.length };
+  });
+  const best = candidates.filter((c) => c.ok).sort((a, b) => b.score - a.score)[0];
+  return best?.key ?? null;
+}
+
 /** Opens the tool search from anywhere (sidebar, top bar, dashboard); the menu listens for it. */
 export const OPEN_TOOLS_EVENT = "clipelle:open-tools";
 export function openToolSearch() {

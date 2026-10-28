@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { LayoutGrid, Plus, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { planByKey } from "@/lib/plans";
@@ -10,7 +10,7 @@ import { Brand } from "@/components/Brand";
 import { UserMenu } from "@/components/UserMenu";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { isActivePath, navItems, adminNavItem, settingsNavItem, type NavItem } from "@/components/nav";
-import { SOON_TOOLS, STUDIO_TOOLS, openToolSearch, type Tool } from "@/components/tools";
+import { SOON_TOOLS, STUDIO_TOOLS, activeToolKey, openToolSearch, type Tool } from "@/components/tools";
 import { UnseenBadge } from "@/components/StatusWatcher";
 
 export type ShellUser = { email: string; name?: string; credits: number | null; planKey?: string; workspace: { id: string; name: string; kind: string; role: string }; workspaces: { id: string; name: string; kind: string; role: string }[]; isAdmin?: boolean } | null;
@@ -51,6 +51,9 @@ export function Sidebar({ user }: { user: ShellUser }) {
 /** The link groups, shared by the sidebar and the mobile drawer. */
 export function SidebarLinks({ isAdmin, onNavigate }: { isAdmin?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const search = useSearchParams();
+  // "Translate with a presenter" lives on the same path as "Translate a video": the query decides (28 Oct 2026).
+  const activeTool = activeToolKey(pathname, search.toString(), STUDIO_TOOLS);
   return (
     <nav aria-label="Main" className="flex flex-col gap-0.5">
       {navItems.map((item) => (
@@ -71,7 +74,7 @@ export function SidebarLinks({ isAdmin, onNavigate }: { isAdmin?: boolean; onNav
 
       <p className="label-mono mb-1.5 mt-6 px-3 text-muted">Studio tools</p>
       {STUDIO_TOOLS.map((t) => (
-        <ToolRow key={t.key} tool={t} active={isActivePath(pathname, t.href)} onNavigate={onNavigate} />
+        <ToolRow key={t.key} tool={t} active={t.key === activeTool} onNavigate={onNavigate} />
       ))}
 
       <p className="label-mono mb-1.5 mt-6 px-3 text-muted">Coming soon</p>

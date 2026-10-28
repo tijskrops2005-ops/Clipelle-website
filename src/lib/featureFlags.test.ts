@@ -45,3 +45,12 @@ describe("ads feature flag (off)", () => {
     for (const p of PLANS) for (const b of p.bullets) expect(b).not.toMatch(/\bads?\b/i);
   });
 });
+
+describe("the active tool in the menu", () => {
+  it("tells the presenter tool from the plain translation by the query", async () => {
+    const { activeToolKey, STUDIO_TOOLS } = await import("@/components/tools");
+    expect(activeToolKey("/new/translate", "", STUDIO_TOOLS)).toBe("translate");
+    expect(activeToolKey("/new/translate", "speaker=presenter", STUDIO_TOOLS)).toBe("presenter");
+    expect(activeToolKey("/dashboard", "", STUDIO_TOOLS)).toBeNull();
+  });
+});

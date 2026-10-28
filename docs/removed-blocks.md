@@ -75,3 +75,7 @@ Eén schakelaar: `NEXT_PUBLIC_ADS_ENABLED` (`config.features.ads`, standaard uit
 | Docs | API- en MCP-docs melden dat `create_ad` 403 geeft | `docs/api`, `docs/mcp` |
 
 Vaste teksten die zonder schakelaar zijn herschreven (blijven zo, ook als ads terugkomen, tenzij Tijs anders wil): `brand.description`, `home.metaDescription`, `builtForText`, `faqPage.metaDescription`, `pricing.text`, de signup-tekst in `AuthShell`.
+
+## 28 oktober 2026: "Why Clipelle" opnieuw opgebouwd (op verzoek van Tijs)
+
+De drie tabbladen (What you get / What you decide / What we promise) met swipe zijn vervangen door één blok zonder tabs: een donkere prijskaart (prijs per vertaalde minuut op Pro), vier kleine feiten (0 reshoots, credits vervallen nooit, 30 gratis credits, 9:16), de beloftes als één rustige lijst en de keuzes op het formulier als één rij chips. "Credits never expire" stond eerst twee keer; "credits en dollars" klopte niet meer (klanten zien alleen credits). Het swipe-onderdeel `SwipeTabs.tsx` bestaat nog in de code. Terugzetten: de vorige versie van `WhyClipelle.tsx` en `home.why` in `en.ts`/`nl.ts` staat in git vóór commit van 28 okt 2026 ("Why Clipelle as one bento").
