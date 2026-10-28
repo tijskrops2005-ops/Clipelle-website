@@ -1,5 +1,5 @@
 import "server-only";
-import { CAPTION_BAR_META, CAPTION_SIZE_PX, DEFAULT_CAPTION_STYLE as DEFAULT_TRANSLATE_LOOK, captionStyleOf, effectiveBar, isLightColor, type CaptionHighlight, type CaptionStyleChoice, readableOn } from "@/lib/captionOptions";
+import { CAPTION_BAR_META, CAPTION_SIZE_PX, DEFAULT_CAPTION_STYLE as DEFAULT_TRANSLATE_LOOK, captionStyleOf, effectiveBar, isLightColor, outlineFor, type CaptionHighlight, type CaptionStyleChoice, readableOn } from "@/lib/captionOptions";
 import { adLayout } from "@/lib/adLayout";
 import { DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, type CaptionStyle } from "@/lib/adOptions";
 
@@ -274,10 +274,10 @@ export type CaptionEditInput = {
   coverBox?: { top: number; bottom: number; left: number; right: number };
 };
 
-/** The words' own colour and outline: dark text gets a light outline (26 Oct 2026). */
+/** The words' own colour and outline: a black outline for every colour, white only for black words (28 Oct 2026). */
 function captionText(look: CaptionStyleChoice, light: string, ink: string) {
   const text = look.textColor ?? light;
-  return { text, stroke: { width: 7, color: isLightColor(text) ? ink : light, opacity: 1 } };
+  return { text, stroke: { width: 8, color: outlineFor(text) === "#FFFFFF" ? light : ink, opacity: 1 } };
 }
 
 /** The active-word styling per highlight choice (Shotstack RichCaptionActive, checked 26 Oct 2026). */
@@ -288,9 +288,9 @@ function activeWord(highlight: CaptionHighlight, color: string, light: string, i
       // Text inside a light box (yellow, white) turns dark so it stays readable.
       return isLightColor(color) ? { font: { color: ink, background: color }, stroke: "none" as const } : { font: { color: text, background: color }, stroke };
     case "color":
-      return { font: { color }, stroke: { ...stroke, color: isLightColor(color) ? ink : light } };
+      return { font: { color }, stroke: { ...stroke, color: outlineFor(color) === "#FFFFFF" ? light : ink } };
     case "underline":
-      return { font: { color, textDecoration: "underline" }, stroke: { ...stroke, color: isLightColor(color) ? ink : light } };
+      return { font: { color, textDecoration: "underline" }, stroke: { ...stroke, color: outlineFor(color) === "#FFFFFF" ? light : ink } };
     case "none":
       return undefined;
   }

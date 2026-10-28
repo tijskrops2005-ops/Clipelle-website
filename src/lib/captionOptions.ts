@@ -46,7 +46,35 @@ export const CAPTION_TEXT_COLOR_VALUES = CAPTION_TEXT_COLORS.map((c) => c.value)
 
 /** The text colour on a background: the chosen one when it reads there, else black or white. */
 export function readableOn(text: string, background: string) {
-  return isLightColor(text) !== isLightColor(background) ? text : isLightColor(background) ? "#111114" : "#FFFFFF";
+  // Real contrast (28 Oct 2026): green on a white bar passed the old light/dark test and was hard to read.
+  // Bold caption text needs at least 3:1 (WCAG for large text); otherwise black or white, whichever reads best.
+  if (contrastRatio(text, background) >= 3) return text;
+  return contrastRatio("#111114", background) >= contrastRatio("#FFFFFF", background) ? "#111114" : "#FFFFFF";
+}
+
+/** WCAG relative luminance of a #rrggbb colour, 0 (black) to 1 (white). */
+export function luminance(hex: string) {
+  const n = parseInt(hex.slice(1), 16);
+  const lin = (c: number) => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+}
+
+/** WCAG contrast ratio of two colours, 1 to 21. */
+export function contrastRatio(a: string, b: string) {
+  const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+}
+
+/**
+ * The outline around caption words without a bar (28 Oct 2026, Tijs: red, green, blue and pink were
+ * hard to read; only yellow was clear). Every colour gets a black outline, the way short-video
+ * captions are read on any picture; only (near-)black words get a white one.
+ */
+export function outlineFor(text: string) {
+  return luminance(text) < 0.05 ? "#FFFFFF" : "#111114";
 }
 
 /** True for colours where dark text reads better on top (yellow, white). */

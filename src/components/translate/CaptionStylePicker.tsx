@@ -3,7 +3,7 @@
 import { Check, Slash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { CAPTION_BARS, CAPTION_BAR_META, effectiveBar, type CaptionBar, CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, CAPTION_TEXT_COLORS, isLightColor, readableOn, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { CAPTION_BARS, CAPTION_BAR_META, effectiveBar, type CaptionBar, CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, CAPTION_TEXT_COLORS, isLightColor, outlineFor, readableOn, type CaptionStyleChoice } from "@/lib/captionOptions";
 
 /**
  * The caption choices of a translation (26 Oct 2026): on or off, how the spoken word stands out, its
@@ -84,7 +84,7 @@ function CaptionPreview({ style, position, bar, overOldText }: { style: CaptionS
         <div className={cn("absolute inset-x-2 flex justify-center", position === "middle" && !overOldText ? "top-1/2 -translate-y-1/2" : "bottom-[22%]")}>
           <p
             className={cn("inline-flex max-w-full flex-wrap justify-center gap-x-1 gap-y-0.5 text-center font-black leading-tight", box.color && "rounded-[7px] px-2 py-1.5", box.color && overOldText && "w-[86%]")}
-            style={{ fontSize: `${Math.round(13 * scale)}px`, color: text, background: box.color ? hexAlpha(box.color, box.opacity) : undefined, textShadow: box.color ? "none" : isLightColor(text) ? "0 0 3px var(--ink), 0 0 2px var(--ink)" : "0 0 3px #fff, 0 0 2px #fff" }}
+            style={{ fontSize: `${Math.round(13 * scale)}px`, color: text, background: box.color ? hexAlpha(box.color, box.opacity) : undefined, ...(box.color ? {} : outlined(text, scale)) }}
           >
             {words.map((w, i) => {
               const spoken = i === 1 && style.highlight !== "none";
@@ -93,7 +93,7 @@ function CaptionPreview({ style, position, bar, overOldText }: { style: CaptionS
                 <span
                   key={w}
                   className={cn("rounded-[3px] px-0.5", spoken && style.highlight === "underline" && "underline decoration-2 underline-offset-2")}
-                  style={spoken ? (style.highlight === "box" ? { background: highlight, color: isLightColor(highlight) ? "#111114" : "#FFFFFF", textShadow: "none" } : { color: highlight }) : undefined}
+                  style={spoken ? (style.highlight === "box" ? { background: highlight, color: isLightColor(highlight) ? "#111114" : "#FFFFFF", WebkitTextStroke: "0", textShadow: "none" } : { color: highlight, ...(box.color ? {} : outlined(highlight, scale)) }) : undefined}
                 >
                   {label}
                 </span>
@@ -125,6 +125,11 @@ function Swatches({ label, options, value, onPick, disabled, hint }: { label: st
       {hint && <p className="text-[13px] text-muted">{hint}</p>}
     </fieldset>
   );
+}
+
+/** The same outline as the real captions: black around every colour, white around black words; drawn outside the letters. */
+function outlined(color: string, scale: number) {
+  return { WebkitTextStroke: `${Math.max(2, Math.round(3 * scale))}px ${outlineFor(color)}`, paintOrder: "stroke fill", textShadow: "0 1px 2px rgba(0,0,0,0.35)" } as const;
 }
 
 function hexAlpha(hex: string, alpha: number) {
