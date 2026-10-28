@@ -3,6 +3,8 @@ import { inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/clien
 import { chunkCues, CHUNK_CHARS, fillGaps } from "@/lib/captionChunks";
 import { captionStyleOf } from "@/lib/captionOptions";
 import { assets, db, projects, steps, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
+import { glossaryReplacements, replacementsFor, type LocalizedReplacements } from "@/lib/localizedTerms";
+import { localizeReplacements, LOCALIZE_TERMS_USD } from "@/lib/services/localizeTerms";
 import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, measureRemovedText, type TextBox } from "@/lib/services/textLocate";
 import { downloadTextRemovalOutput, estimateTextRemovalUsd, getTextRemoval, startTextRemoval, TEXT_REMOVAL_MODEL, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
 import { languageCodeForName, languageOf } from "@/lib/languages";
@@ -171,9 +173,11 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       let glossaryWarning: string | undefined;
       const keepTerms = (input.keepTerms ?? []).map((x) => x.trim()).filter(Boolean);
       const replaceTerms = input.replaceTerms ?? [];
+      const targetCodes = outputs.filter((o) => o.code !== "transcript").map((o) => o.code);
+      const localized = replaceTerms.length ? await localizeReplacementTerms(projectId, row.id, input, targetCodes) : null;
       if (keepTerms.length || replaceTerms.length) {
         try {
-          brandGlossaryId = await withRetries("Saving the terms to keep", () => applyBrandGlossary({ doNotTranslate: keepTerms, replace: replaceTerms }));
+          brandGlossaryId = await withRetries("Saving the terms to keep", () => applyBrandGlossary({ doNotTranslate: keepTerms, replace: glossaryReplacements(replaceTerms, localized, targetCodes) }));
         } catch (error) {
           // The provider's words stay in the log; the customer gets a plain line.
           console.error("[glossary]", error instanceof Error ? error.message : error);
@@ -331,6 +335,34 @@ async function addLanguageWarning(translationId: string, warning: string) {
   await db().update(translations).set({ qa: { ...qa, warnings: [...qa.warnings, warning] }, updatedAt: new Date() }).where(eq(translations.id, translationId));
 }
 
+/* ---------- words to replace, in each target language (28 Oct 2026) ---------- */
+
+/**
+ * The customer's replacements said in every target language (brand and product names stay as
+ * written), stored on the project so a retry does not pay again. Any failure falls back to the
+ * customer's own text for every language, as before.
+ */
+async function localizeReplacementTerms(projectId: string, stepId: string, input: TranslateInput, targets: LanguageCode[]): Promise<LocalizedReplacements | null> {
+  if (input.replaceTermsLocalized !== undefined) return input.replaceTermsLocalized;
+  let localized: LocalizedReplacements | null = null;
+  try {
+    const reserved = await reserveSpend({ service: "anthropic", action: "localize_terms", estimatedUsd: LOCALIZE_TERMS_USD, fingerprintInput: { projectId, terms: input.replaceTerms, targets }, projectId, stepId, languageCount: Math.max(1, targets.length), meta: { model: cfg.rewriteModel, terms: input.replaceTerms?.length ?? 0 } });
+    try {
+      const result = await withRetries("Translating your replacement words", () => localizeReplacements({ replace: input.replaceTerms ?? [], targets }));
+      await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens" });
+      localized = result.localized;
+    } catch (error) {
+      await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+      throw error;
+    }
+  } catch (error) {
+    console.error("[localize terms]", error instanceof Error ? error.message : error);
+    localized = null;
+  }
+  await db().update(projects).set({ input: sql`${projects.input} || ${JSON.stringify({ replaceTermsLocalized: localized })}::jsonb`, updatedAt: new Date() }).where(eq(projects.id, projectId));
+  return localized;
+}
+
 /* ---------- quality check (replaces the manual review, 2026-10-20) ---------- */
 
 /**
@@ -343,7 +375,10 @@ async function checkLanguage(projectId: string, stepId: string, t: TranslationRo
   const estimate = Math.max(0.005, estimateCheckUsd(t.segments));
   const reserved = await reserveSpend({ service: "anthropic", action: "translate_check", estimatedUsd: estimate, fingerprintInput: { projectId, language: t.language, text: t.segments.map((s) => s.text) }, projectId, stepId, language: t.language, languageCount, meta: { model: cfg.rewriteModel, lines: t.segments.length } });
   try {
-    const result = await withRetries("Checking the translation", () => checkTranslation({ segments: t.segments, sourceLanguage, targetLanguage: t.language, keepTerms: input.keepTerms, replaceTerms: input.replaceTerms, instructions: input.instructions }));
+    // The replacements in this language (stored by the translate step, read fresh: the run's input is older).
+    const [fresh] = input.replaceTerms?.length ? await db().select({ input: projects.input }).from(projects).where(eq(projects.id, projectId)).limit(1) : [];
+    const localized = (fresh?.input as TranslateInput | undefined)?.replaceTermsLocalized;
+    const result = await withRetries("Checking the translation", () => checkTranslation({ segments: t.segments, sourceLanguage, targetLanguage: t.language, keepTerms: input.keepTerms, replaceTerms: replacementsFor(t.language, input.replaceTerms, localized), instructions: input.instructions }));
     await settleSpend(reserved.entryId, { status: "completed", actualUsd: result.costUsd, basis: "tokens", meta: { usage: result.usage, changes: result.changes.length } });
     return { segments: result.segments, qa: { changes: result.changes, warnings: result.warnings, summary: result.summary, costUsd: result.costUsd } };
   } catch (error) {

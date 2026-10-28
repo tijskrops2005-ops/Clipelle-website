@@ -1,9 +1,9 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, Slash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { CAPTION_BARS, CAPTION_BAR_META, effectiveBar, type CaptionBar, CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, CAPTION_TEXT_COLORS, isLightColor, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { CAPTION_BARS, CAPTION_BAR_META, effectiveBar, type CaptionBar, CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, CAPTION_TEXT_COLORS, isLightColor, readableOn, type CaptionStyleChoice } from "@/lib/captionOptions";
 
 /**
  * The caption choices of a translation (26 Oct 2026): on or off, how the spoken word stands out, its
@@ -13,13 +13,12 @@ import { CAPTION_BARS, CAPTION_BAR_META, effectiveBar, type CaptionBar, CAPTION_
 export function CaptionStylePicker({ value, onChange, position, onPosition, overOldText = false, disabled }: { value: CaptionStyleChoice; onChange: (next: CaptionStyleChoice) => void; position: "low" | "middle"; onPosition: (p: "low" | "middle") => void; /** With text removal: the captions sit where the old text was, on a bar (27 Oct 2026). */ overOldText?: boolean; disabled?: boolean }) {
   const set = (patch: Partial<CaptionStyleChoice>) => onChange({ ...value, ...patch });
   const bar = effectiveBar(value, overOldText);
-  const onBox = bar !== "none";
   return (
     <div className="space-y-5">
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium text-ink">Captions</legend>
         <SegmentedControl label="Captions" size="sm" options={[{ key: "on", label: "On" }, { key: "off", label: "Off" }]} value={value.show ? "on" : "off"} onChange={(k) => set({ show: k === "on" })} disabled={disabled} />
-        <p className="text-[13px] text-muted">{value.show ? "What is said appears on screen, word by word. Most people watch without sound." : "No captions: you get the translated video only."}</p>
+        {!value.show && <p className="text-[13px] text-muted">The translated video without captions.</p>}
       </fieldset>
 
       {value.show && (
@@ -28,47 +27,21 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, over
             <fieldset className="space-y-2">
               <legend className="text-sm font-medium text-ink">Spoken word</legend>
               <SegmentedControl label="Spoken word" size="sm" options={CAPTION_HIGHLIGHTS.map((h) => ({ key: h, label: CAPTION_HIGHLIGHT_META[h].label }))} value={value.highlight} onChange={(h) => set({ highlight: h })} disabled={disabled} />
-              <p className="text-[13px] text-muted">{CAPTION_HIGHLIGHT_META[value.highlight].blurb}</p>
             </fieldset>
 
+            {/* Colours as swatches (28 Oct 2026): highlight, words and background, each one tap. */}
             {value.highlight !== "none" && (
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-medium text-ink">Colour</legend>
-                <div role="radiogroup" aria-label="Colour" className="flex flex-wrap gap-2">
-                  {CAPTION_COLORS.map((c) => {
-                    const active = c.value === value.color;
-                    return (
-                      <button key={c.key} type="button" role="radio" aria-checked={active} aria-label={c.label} title={c.label} disabled={disabled} onClick={() => set({ color: c.value })} className={cn("focus-ring grid size-9 place-items-center rounded-full border-2 transition-transform duration-150 hover:scale-105", active ? "border-ink" : "border-border")} style={{ background: c.value }}>
-                        {active && <Check className={cn("size-4", c.key === "white" || c.key === "yellow" ? "text-ink" : "text-surface")} aria-hidden />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </fieldset>
+              <Swatches label="Highlight colour" options={CAPTION_COLORS.map((c) => ({ key: c.key, label: c.label, color: c.value }))} value={value.color} onPick={(c) => set({ color: c as CaptionStyleChoice["color"] })} disabled={disabled} />
             )}
-
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-ink">Background</legend>
-              <SegmentedControl label="Background" size="sm" options={CAPTION_BARS.map((b) => ({ key: b, label: CAPTION_BAR_META[b].label }))} value={bar} onChange={(b) => set({ bar: b })} disabled={disabled} />
-              <p className="text-[13px] text-muted">
-                {onBox ? "A box that fits snugly around each caption line and only shows while it is on screen; the text colour follows the box." : "The words float over the picture with an outline."}
-                {overOldText ? (onBox ? " Your captions go exactly where the old text was, on one bar that stays from the first second to the last, so nothing of the old text shows." : " Your captions go exactly where the old text was.") : ""}
-              </p>
-            </fieldset>
-
-            {!onBox && (<fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-ink">Text colour</legend>
-              <div role="radiogroup" aria-label="Text colour" className="flex flex-wrap gap-2">
-                {CAPTION_TEXT_COLORS.map((c) => {
-                  const active = c.value === (value.textColor ?? "#FFFFFF");
-                  return (
-                    <button key={c.key} type="button" role="radio" aria-checked={active} aria-label={c.label} title={c.label} disabled={disabled} onClick={() => set({ textColor: c.value })} className={cn("focus-ring grid size-9 place-items-center rounded-full border-2 transition-transform duration-150 hover:scale-105", active ? "border-ink" : "border-border")} style={{ background: c.value }}>
-                      {active && <Check className={cn("size-4", isLightColor(c.value) ? "text-ink" : "text-surface")} aria-hidden />}
-                    </button>
-                  );
-                })}
-              </div>
-            </fieldset>)}
+            <Swatches label="Text colour" options={CAPTION_TEXT_COLORS.map((c) => ({ key: c.key, label: c.label, color: c.value }))} value={value.textColor ?? "#FFFFFF"} onPick={(c) => set({ textColor: c as CaptionStyleChoice["textColor"] })} disabled={disabled} />
+            <Swatches
+              label="Background"
+              options={CAPTION_BARS.map((b) => ({ key: b, label: CAPTION_BAR_META[b].label, color: CAPTION_BAR_META[b].color }))}
+              value={CAPTION_BAR_META[bar].color}
+              onPick={(_, key) => set({ bar: key as CaptionBar })}
+              disabled={disabled}
+              hint={overOldText ? "Sits where the old text was, the whole video long." : undefined}
+            />
 
             <div className="flex flex-wrap gap-x-6 gap-y-4">
               <fieldset className="space-y-2">
@@ -102,7 +75,7 @@ function CaptionPreview({ style, position, bar, overOldText }: { style: CaptionS
   const scale = CAPTION_SIZE_PX[style.size] / 62;
   const box = CAPTION_BAR_META[bar];
   // In a box the words take the contrasting colour and lose their outline, as in the real edit.
-  const text = box.color ? (isLightColor(box.color) ? "#111114" : "#FFFFFF") : style.textColor ?? "#FFFFFF";
+  const text = box.color ? readableOn(style.textColor ?? (isLightColor(box.color) ? "#111114" : "#FFFFFF"), box.color) : style.textColor ?? "#FFFFFF";
   const highlight = box.color && style.color.toLowerCase() === box.color.toLowerCase() ? "#D43F1B" : style.color;
   return (
     <figure className="mx-auto w-[9.5rem]">
@@ -131,6 +104,26 @@ function CaptionPreview({ style, position, bar, overOldText }: { style: CaptionS
       </div>
       <figcaption className="mt-1.5 text-center text-[11.5px] text-muted">Preview</figcaption>
     </figure>
+  );
+}
+
+/** One row of round colour swatches; `color: null` is "none" (a slashed circle). */
+function Swatches({ label, options, value, onPick, disabled, hint }: { label: string; options: { key: string; label: string; color: string | null }[]; value: string | null; onPick: (color: string | null, key: string) => void; disabled?: boolean; hint?: string }) {
+  return (
+    <fieldset className="space-y-2">
+      <legend className="text-sm font-medium text-ink">{label}</legend>
+      <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2">
+        {options.map((o) => {
+          const active = (o.color ?? null) === (value ?? null) || (o.color !== null && value !== null && o.color.toLowerCase() === value.toLowerCase());
+          return (
+            <button key={o.key} type="button" role="radio" aria-checked={active} aria-label={o.label} title={o.label} disabled={disabled} onClick={() => onPick(o.color, o.key)} className={cn("focus-ring grid size-9 place-items-center rounded-full border-2 transition-transform duration-150 hover:scale-105", active ? "border-ink" : "border-border", !o.color && "bg-surface")} style={o.color ? { background: o.color } : undefined}>
+              {active ? <Check className={cn("size-4", !o.color || isLightColor(o.color) ? "text-ink" : "text-surface")} aria-hidden /> : !o.color ? <Slash className="size-4 text-muted" aria-hidden /> : null}
+            </button>
+          );
+        })}
+      </div>
+      {hint && <p className="text-[13px] text-muted">{hint}</p>}
+    </fieldset>
   );
 }
 

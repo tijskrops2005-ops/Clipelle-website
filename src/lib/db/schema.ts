@@ -112,6 +112,8 @@ export type TranslateInput = {
   keepTerms?: string[];
   /** Words to say instead of others (glossary forced translations, kept by the check). */
   replaceTerms?: { from: string; to: string }[];
+  /** The replacements said in each target language (28 Oct 2026), stored so a retry does not pay again. */
+  replaceTermsLocalized?: Record<string, { from: string; to: string }[]> | null;
   /** The customer's wishes for the wording, applied by the check within the timing. */
   instructions?: string;
   /** Cut silence longer than ~0.3 s at the start and the end (default on); lip-sync is untouched. */

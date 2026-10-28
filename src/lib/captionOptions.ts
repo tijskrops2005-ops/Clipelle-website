@@ -27,14 +27,27 @@ export const CAPTION_COLORS = [
 export type CaptionColor = (typeof CAPTION_COLORS)[number]["value"];
 export const CAPTION_COLOR_VALUES = CAPTION_COLORS.map((c) => c.value) as unknown as readonly [CaptionColor, ...CaptionColor[]];
 
-/** Colour of the words themselves (26 Oct 2026); dark text gets a light outline so it stays readable. */
+/**
+ * Colour of the words themselves (26 Oct 2026; every colour since 28 Oct 2026, also on a background).
+ * Dark text gets a light outline. On a background a colour that would not read (white on white) turns
+ * to the contrasting one: `readableOn`.
+ */
 export const CAPTION_TEXT_COLORS = [
   { key: "white", label: "White", value: "#FFFFFF" },
-  { key: "yellow", label: "Yellow", value: "#FFD400" },
   { key: "black", label: "Black", value: "#111114" },
+  { key: "yellow", label: "Yellow", value: "#FFD400" },
+  { key: "red", label: "Red", value: "#D43F1B" },
+  { key: "green", label: "Green", value: "#22C55E" },
+  { key: "blue", label: "Blue", value: "#2563EB" },
+  { key: "pink", label: "Pink", value: "#EC4899" },
 ] as const;
 export type CaptionTextColor = (typeof CAPTION_TEXT_COLORS)[number]["value"];
 export const CAPTION_TEXT_COLOR_VALUES = CAPTION_TEXT_COLORS.map((c) => c.value) as unknown as readonly [CaptionTextColor, ...CaptionTextColor[]];
+
+/** The text colour on a background: the chosen one when it reads there, else black or white. */
+export function readableOn(text: string, background: string) {
+  return isLightColor(text) !== isLightColor(background) ? text : isLightColor(background) ? "#111114" : "#FFFFFF";
+}
 
 /** True for colours where dark text reads better on top (yellow, white). */
 export function isLightColor(hex: string) {
@@ -68,6 +81,7 @@ export type CaptionStyleChoice = {
 export const CAPTION_BARS = ["none", "white", "cream", "yellow", "dark"] as const;
 export type CaptionBar = (typeof CAPTION_BARS)[number];
 export const CAPTION_BAR_META: Record<CaptionBar, { label: string; color: string | null; opacity: number }> = {
+  // (28 Oct 2026) shown as colour swatches on the form; the labels are their accessible names.
   none: { label: "None", color: null, opacity: 0 },
   white: { label: "White", color: "#FFFFFF", opacity: 0.92 },
   cream: { label: "Cream", color: "#F6F1E7", opacity: 0.94 },

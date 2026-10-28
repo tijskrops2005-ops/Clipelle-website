@@ -29,7 +29,7 @@ import { CaptionStylePicker } from "@/components/translate/CaptionStylePicker";
 import { DEFAULT_PRESENTER_TRANSLATE, PresenterSetup } from "@/components/translate/PresenterSetup";
 import { PRESENTER_LANGUAGES, type PresenterTranslate } from "@/lib/presenterTranslate";
 import { AD_LANGUAGES, type AdLanguageCode } from "@/lib/voiceOptions";
-import { DEFAULT_CAPTION_STYLE, describeCaptionStyle, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { DEFAULT_CAPTION_STYLE, type CaptionStyleChoice } from "@/lib/captionOptions";
 import { CREDIT_RULES, FEATURE_PLAN, hasFeature, translateCredits, type PlanFeature } from "@/lib/plans";
 import { PlanHint } from "@/components/PlanHint";
 import { getAccountStatus } from "@/lib/data/settingsClient";
@@ -44,21 +44,9 @@ type Errors = TranslateFormErrors;
  * side angles, partly covered mouths and more than one speaker; slower. Customers see credits
  * only (26 Oct 2026): 1 per second for Speed, 2 for Precision, per language (plans.ts).
  */
-const QUALITY: Array<{ key: TranslationQuality; title: string; text: string; bestFor: string; wait: string }> = [
-  {
-    key: "speed",
-    title: "Speed",
-    text: "Standard lip sync and a straightforward translation.",
-    bestFor: "For one person facing the camera, and for quick drafts.",
-    wait: "A few minutes.",
-  },
-  {
-    key: "precision",
-    title: "Precision",
-    text: "The mouth is redrawn for the new language: noticeably more real lip sync.",
-    bestFor: "For faces that move, side angles, several speakers, and final ads.",
-    wait: "About twice as long.",
-  },
+const QUALITY: Array<{ key: TranslationQuality; title: string; text: string }> = [
+  { key: "speed", title: "Speed", text: "Fast. Best for one person facing the camera." },
+  { key: "precision", title: "Precision", text: "Most real lip sync. For movement and side angles; twice as long." },
 ];
 
 /**
@@ -67,7 +55,19 @@ const QUALITY: Array<{ key: TranslationQuality; title: string; text: string; bes
  * Demo: simulated project; database: upload + real workflow. What it sends is built by
  * buildTranslateDraft and covered by src/lib/forms/forms.test.ts.
  */
-export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?: AdProject; /** `?speaker=presenter` opens the AI presenter flow. */ initialSpeaker?: "original" | "presenter" } = {}) {
+type TranslateFormProps = { fromAd?: AdProject; /** `?speaker=presenter` opens the AI presenter flow. */ initialSpeaker?: "original" | "presenter" };
+
+/**
+ * The form starts empty after every start (28 Oct 2026, Tijs): the app keeps pages alive between
+ * navigations, so "Translate another" used to bring back the last video and choices. A new key after
+ * each start gives a fresh form, so the next video can be started at once while the first one runs.
+ */
+export function TranslateForm(props: TranslateFormProps = {}) {
+  const [round, setRound] = useState(0);
+  return <TranslateFormFields key={round} {...props} onStarted={() => setRound((r) => r + 1)} />;
+}
+
+function TranslateFormFields({ fromAd, initialSpeaker = "original", onStarted }: TranslateFormProps & { onStarted: () => void }) {
   const router = useRouter();
   const [video, setVideo] = useState<UploadedVideo | null>(null);
   const [projectName, setProjectName] = useState(fromAd ? `${fromAd.name} — translation` : "");
@@ -185,6 +185,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
     try {
       const { id } = await createTranslateProject(sourceAd ? buildTranslateDraft({ ...formState, sourceAd }) : buildTranslateDraft({ ...formState, video: video! }), (f) => setUploadPct(Math.round(f * 100)));
       router.push(`/projects/${id}`);
+      onStarted();
     } catch (error) {
       submitLock.current = false;
       setSubmitting(false);
@@ -200,17 +201,15 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
   const totalCredits = creditsPerLanguage * languageCount;
   const shortOfCredits = balance !== null && balance < totalCredits;
   const knownLength = Boolean(fromAd || video);
+  // Short and calm (28 Oct 2026): what was picked in a word or two; the extras on one line.
+  const extras = [removeText && "Text removed", cleanReplace(replaceRows).length > 0 && "Words replaced", removeMusic && "No music", cleanVoice && "Clean voice", enhance && "Enhanced"].filter(Boolean) as string[];
   const summaryRows = [
-    { label: "Video", value: fromAd ? `${fromAd.name} · ${formatDuration(Math.round(seconds))}` : video ? formatDuration(Math.round(video.seconds ?? 30)) : "Not added yet", muted: !video && !fromAd },
-    { label: "From", value: source === "auto" ? "Detected automatically" : languageOf(source).label },
+    { label: "Video", value: fromAd ? formatDuration(Math.round(seconds)) : video ? formatDuration(Math.round(video.seconds ?? 30)) : "Not added", muted: !video && !fromAd },
     { label: "Into", value: targets.length === 0 ? "Pick a language" : targets.map((t) => languageOf(t).tag).join(", "), muted: targets.length === 0 },
-    withPresenter ? { label: "Speaker", value: `AI presenter · ${presenterSetup.engine === "avatar_iv" ? "Premium" : "Standard"}` } : { label: "Quality", value: qualityTitle },
-    { label: "Format", value: format === "9:16" ? "Vertical 9:16" : "Original" },
-    { label: "Captions", value: captionStyle.show ? `${captionPosition === "middle" ? "Middle" : "Low"} · ${describeCaptionStyle(captionStyle)}` : "Off" },
-    ...(cleanReplace(replaceRows).length ? [{ label: "Words replaced", value: String(cleanReplace(replaceRows).length) }] : []),
-    ...(removeText ? [{ label: "On-screen text", value: withPresenter ? "Removed" : "Removed · captions over it" }] : []),
-    ...(removeMusic || cleanVoice ? [{ label: "Sound", value: [removeMusic && "No music", cleanVoice && "Clean voice"].filter(Boolean).join(" · ") }] : []),
-    ...(enhance ? [{ label: "Enhancement", value: "On" }] : []),
+    withPresenter ? { label: "Speaker", value: presenterSetup.engine === "avatar_iv" ? "Presenter · Premium" : "Presenter" } : { label: "Quality", value: qualityTitle },
+    { label: "Format", value: format === "9:16" ? "9:16" : "Original" },
+    { label: "Captions", value: captionStyle.show ? "On" : "Off" },
+    ...(extras.length ? [{ label: "Extras", value: extras.join(" · ") }] : []),
   ];
 
   return (
@@ -360,22 +359,14 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
                         lockedTo={q.key === "precision" && !can("precision") ? FEATURE_PLAN.precision : undefined}
                         title={q.title}
                         badge={q.key === "speed" ? <Badge tone="success">Recommended</Badge> : undefined}
-                        meta={<span className="label-mono text-muted">{perLanguage} credits / language</span>}
-                        description={
-                          <>
-                            <span className="block text-ink/90">{q.text}</span>
-                            <span className="mt-1 block">{q.bestFor}</span>
-                          </>
-                        }
-                        footnote={`${CREDIT_RULES.translate[q.key]} ${CREDIT_RULES.translate[q.key] === 1 ? "credit" : "credits"} per second, per language · ${q.wait}`}
+                        meta={<span className="label-mono text-muted">{perLanguage} credits</span>}
+                        description={q.text}
                       />
                     );
                   })}
                 </OptionGrid>
                 {!can("precision") && <PlanHint feature="precision" text="Precision comes with Pro and up." />}
-                <p className="text-[13px] text-muted">
-                  {knownLength ? `For your ${Math.round(seconds)}-second video.` : "For 30 seconds until you add your video."} Translation, the check of every line, lip sync and captions are included; at least {CREDIT_RULES.translateMinimum} credits per language.
-                </p>
+                <p className="text-[13px] text-muted">Per language{knownLength ? `, for your ${Math.round(seconds)} s video` : ", for 30 s until you add your video"}. Check, lip sync and captions included.</p>
               </fieldset>
             </>
           )}
@@ -389,7 +380,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
           <Disclosure title="Change the wording" summary={[cleanReplace(replaceRows).length ? `${cleanReplace(replaceRows).length} ${cleanReplace(replaceRows).length === 1 ? "word" : "words"} replaced` : null, instructions.trim() ? "instructions added" : null].filter(Boolean).join(" · ") || "Replace words, or ask for a change"}>
           <fieldset className="space-y-2">
             <legend className="flex w-full items-center justify-between text-sm font-medium text-ink">Words to replace <span className="label-mono text-muted">Optional</span></legend>
-            <p className="text-[13px] text-muted">Say something else than the video does: another brand becomes yours, an old price the new one.</p>
+            <p className="text-[13px] text-muted">Say something else than the video does. Write it once; it is said in each language you picked, names stay as written.</p>
             <div className="space-y-2">
               {replaceRows.map((row, i) => (
                 <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2">
@@ -476,15 +467,11 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
           value: `${totalCredits}`,
           tone: overBudget || shortOfCredits ? "danger" : "neutral",
           note: [
-            targets.length > 1 ? `${creditsPerLanguage} per language.` : knownLength ? null : "For 30 seconds; follows your video.",
-            balance !== null ? (shortOfCredits ? `You have ${balance.toLocaleString("en-US")}: ${(totalCredits - balance).toLocaleString("en-US")} short.` : `You have ${balance.toLocaleString("en-US")}; ${(balance - totalCredits).toLocaleString("en-US")} left after this.`) : null,
+            targets.length > 1 ? `${creditsPerLanguage} per language.` : null,
+            balance !== null ? (shortOfCredits ? `${(totalCredits - balance).toLocaleString("en-US")} short.` : `${(balance - totalCredits).toLocaleString("en-US")} left after this.`) : null,
           ].filter(Boolean).join(" ") || undefined,
         }}
-        footnote={
-          config.demoMode
-            ? "Demo mode: this starts a simulated run. No video is uploaded or translated yet."
-            : "Credits are reserved when you start and settled when the videos are ready. You only pay for the languages that are delivered."
-        }
+        footnote={config.demoMode ? "Demo mode: a simulated run." : "You only pay for the languages that are delivered."}
       >
         {overBudget && (
           <p role="status" className="rounded-chip bg-danger/10 p-3 text-[13px] font-medium leading-relaxed text-danger">
@@ -529,7 +516,7 @@ export function TranslateForm({ fromAd, initialSpeaker = "original" }: { fromAd?
             {errors.rights}
           </p>
         ) : (
-          <p id="rights-note" className="text-[13px] text-muted">The voice and face in this video are cloned for the translation, so we need your confirmation first.</p>
+          <p id="rights-note" className="sr-only">The voice and face in this video are cloned for the translation, so we need your confirmation first.</p>
         )}
         {confirming ? (
           <div className="fold-in rounded-panel border border-ink bg-surface p-4" role="group" aria-labelledby="confirm-title">

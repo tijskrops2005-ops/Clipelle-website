@@ -1,5 +1,5 @@
 import "server-only";
-import { CAPTION_BAR_META, CAPTION_SIZE_PX, DEFAULT_CAPTION_STYLE as DEFAULT_TRANSLATE_LOOK, captionStyleOf, effectiveBar, isLightColor, type CaptionHighlight, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { CAPTION_BAR_META, CAPTION_SIZE_PX, DEFAULT_CAPTION_STYLE as DEFAULT_TRANSLATE_LOOK, captionStyleOf, effectiveBar, isLightColor, type CaptionHighlight, type CaptionStyleChoice, readableOn } from "@/lib/captionOptions";
 import { adLayout } from "@/lib/adLayout";
 import { DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, type CaptionStyle } from "@/lib/adOptions";
 
@@ -310,8 +310,9 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const bar = CAPTION_BAR_META[barKey];
   const darkWords = bar.color !== null && isLightColor(bar.color);
   // On a box the words need no outline; a highlight in the box's own colour would vanish, so it turns red (or white on red).
+  // The customer's text colour stays when it reads on the box (28 Oct 2026); otherwise black or white.
   const look: CaptionStyleChoice = bar.color
-    ? { ...base, textColor: darkWords ? "#111114" : "#FFFFFF", color: base.color.toLowerCase() === bar.color.toLowerCase() ? (bar.color === "#D43F1B" ? "#FFFFFF" : "#D43F1B") : base.color }
+    ? { ...base, textColor: (base.textColor ? readableOn(base.textColor, bar.color) : darkWords ? "#111114" : "#FFFFFF") as CaptionStyleChoice["textColor"], color: base.color.toLowerCase() === bar.color.toLowerCase() ? (bar.color === "#D43F1B" ? "#FFFFFF" : "#D43F1B") : base.color }
     : base;
   const activeBase = activeWord(look.highlight, look.color, light, ink, look);
   const active = activeBase && bar.color ? { ...activeBase, stroke: "none" as const } : activeBase;
