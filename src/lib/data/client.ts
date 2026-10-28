@@ -43,7 +43,12 @@ async function refresh() {
     try {
       const r = await fetch("/api/projects", { cache: "no-store" });
       if (r.ok) {
-        cache = (await r.json()) as Project[];
+        const list = (await r.json()) as Project[];
+        // A list that left before a project was just started must not drop it (see showStarted).
+        const now = Date.now();
+        for (const [id, at] of justStarted) if (now - at > 60_000) justStarted.delete(id);
+        const kept = cache.filter((p) => justStarted.has(p.id) && !list.some((q) => q.id === p.id));
+        cache = [...kept, ...list];
         hydrated = true;
         emit();
       }
@@ -54,6 +59,29 @@ async function refresh() {
     }
   })();
   return inFlight;
+}
+
+/** Projects started in this tab in the last minute, kept in the list until the server's list has them. */
+const justStarted = new Map<string, number>();
+
+/**
+ * After a start: fetch only the new project (one quick request) and put it at the top of the list, so
+ * the project page can open at once (28 Oct 2026: waiting for the whole list kept "Starting…" on screen
+ * for seconds with many projects). The full list follows in the background.
+ */
+async function showStarted(id: string) {
+  justStarted.set(id, Date.now());
+  try {
+    const r = await fetch(`/api/projects/${id}`, { cache: "no-store" });
+    if (r.ok) {
+      const project = (await r.json()) as Project;
+      cache = [project, ...cache.filter((p) => p.id !== id)];
+      emit();
+    }
+  } catch {
+    /* the background refresh brings it */
+  }
+  void refresh();
 }
 
 function schedule() {
@@ -225,7 +253,7 @@ export async function createAdProject(draft: AdProjectDraft): Promise<{ id: stri
   if (background?.type === "image") await uploadAndAttach(id, "background", background.file);
   if (brand?.logo) await uploadAndAttach(id, "logo", brand.logo);
   await startWithClearMessage(id);
-  await refresh();
+  await showStarted(id);
   return { id };
 }
 
@@ -344,7 +372,7 @@ export async function createTranslateProject(draft: TranslateProjectDraft, onUpl
   const { id } = await api<{ id: string }>("/api/projects", { method: "POST", body: JSON.stringify({ workflow: "translate", ...rest, sourceFileName: video?.name ?? "generated-ad.mp4" }) });
   if (video) await uploadAndAttach(id, "source", video, draft.sourceSeconds, onUploadProgress);
   await startWithClearMessage(id);
-  await refresh();
+  await showStarted(id);
   return { id };
 }
 
