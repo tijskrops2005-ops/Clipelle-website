@@ -19,7 +19,9 @@
     "db:migrate:prod": "node --env-file=.env.prod node_modules/drizzle-kit/bin.cjs migrate",
     "examples:upload:prod": "node --env-file=.env.prod scripts/upload-examples.mjs",
     "heygen:webhook": "node scripts/heygen-webhook.mjs",
-    "vercel:env": "node scripts/vercel-env.mjs"
+    "vercel:env": "node scripts/vercel-env.mjs",
+    "quality:report": "node --import tsx --conditions=react-server --env-file=.env.local scripts/quality-reports.mts",
+    "quality:report:prod": "node --import tsx --conditions=react-server --env-file=.env.prod scripts/quality-reports.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

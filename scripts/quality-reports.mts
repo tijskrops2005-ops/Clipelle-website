@@ -1,7 +1,8 @@
 /**
  * Prints the latest quality reports with Tijs's verdicts (28 Oct 2026), so patterns over many test
  * videos can be read in one go: which checks fail most, which labels come back, the notes.
- *   node --import tsx --conditions=react-server --env-file=.env.local scripts/quality-reports.mts [limit]
+ *   npm run quality:report [-- limit]        (local database)
+ *   npm run quality:report:prod [-- limit]   (production, Tijs runs it)
  * Read-only. Use --env-file=.env.prod only with Tijs's permission (it reads production).
  */
 import { desc, eq } from "drizzle-orm";
