@@ -37,13 +37,13 @@ export const realAd: RealOutput = {
   madeOn: "2026-10-19",
 };
 
+// 28 Oct 2026: the gift story (Tijs's own video) replaced the Senvia run; credits and time were not
+// recorded for it, so those panels stay off until they are.
 export const realTranslation: RealOutput = {
-  videoFile: "translate-senvia-nl.mp4",
-  sourceVideoFile: "translate-senvia-original.mp4",
-  // The checked Dutch lines of that run, as spoken in the result.
-  script: "Mijn dokter zei al jaren: doe Kegels. Ik deed ze al die tijd verkeerd.",
-  costUsd: 0.26,
-  settings: "8 s · English to Dutch · Speed · captions",
-  durationSeconds: 271,
-  madeOn: "2026-10-19",
+  videoFile: "translate-coffee-gift-nl.mp4",
+  sourceVideoFile: "translate-coffee-gift-original.mp4",
+  // The checked Dutch lines, as spoken and shown in the result.
+  script: "Mijn moeder is stiekem een beetje boos op me, omdat ik mijn vader de Coffee Special Deal Ritual Set heb gegeven. Hij kreeg hem van mij en nu kijkt ze me scheef aan, want zijn opgeblazen gevoel verdween sneller dan verwacht.",
+  settings: "11 s · English to Dutch · captions",
+  madeOn: "2026-10-27",
 };

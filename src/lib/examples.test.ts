@@ -23,7 +23,7 @@ describe("example videos", () => {
     delete process.env.NEXT_PUBLIC_EXAMPLES_BASE_URL;
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://abc.supabase.co";
     const { resolvedExamples } = await import("./examples");
-    expect(resolvedExamples("ad")[0]?.src).toMatch(/^https:\/\/abc\.supabase\.co\/storage\/v1\/object\/public\/examples\//);
+    expect(resolvedExamples("translate")[0]?.src).toMatch(/^https:\/\/abc\.supabase\.co\/storage\/v1\/object\/public\/examples\//);
   });
 
   it("falls back to the local folder or to nothing, never to a broken link", async () => {

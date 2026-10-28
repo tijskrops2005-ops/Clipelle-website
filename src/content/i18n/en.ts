@@ -433,6 +433,8 @@ export const en = {
     text: "Every video here is our own output, labelled as such. More samples are added as real customers approve theirs.",
     ads: "Ads from a product photo",
     translations: "Translated videos",
+    pairsTitle: "Before and after",
+    pairsText: "The video as it was uploaded, next to the translation. Turn the sound on to hear the same voice in both.",
     formats: "Eight formats to start from",
     formatsText: "Pick a format in the ad form and the script direction and tone are filled in. The presenter still speaks a script written from your product; captions are the only thing on screen.",
   },

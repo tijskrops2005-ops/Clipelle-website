@@ -425,6 +425,8 @@ export const nl: SiteDict = {
     title: "Gemaakt met Clipelle",
     text: "Elke video hier is ons eigen resultaat, zo gelabeld. Er komen voorbeelden bij zodra echte klanten de hunne goedkeuren.",
     ads: "Advertenties uit een productfoto",
+    pairsTitle: "Voor en na",
+    pairsText: "De video zoals hij werd geüpload, naast de vertaling. Zet het geluid aan en hoor dezelfde stem in beide.",
     translations: "Vertaalde video's",
     formats: "Acht formats om mee te beginnen",
     formatsText: "Kies een format in het advertentieformulier en de scriptrichting en toon worden ingevuld. De presentator spreekt nog steeds een script dat uit jouw product is geschreven; ondertitels zijn het enige in beeld.",

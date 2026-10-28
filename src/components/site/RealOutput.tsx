@@ -46,14 +46,19 @@ export function RealOutput({ data, kind, locale = "en" }: { data: RealOutputData
             <p className="label-mono text-muted">{r.script}</p>
             {data.script ? <p className="mt-3 text-[15px] leading-relaxed text-ink">“{data.script}”</p> : <p className="mt-3">{missing}</p>}
           </div>
-          <div className="panel p-4">
-            <p className="label-mono text-muted">{r.cost}</p>
-            <p className="mt-3 text-[22px] font-semibold text-ink">{cost ?? missing}</p>
-          </div>
-          <div className="panel p-4">
-            <p className="label-mono text-muted">{r.time}</p>
-            <p className="mt-3 text-[22px] font-semibold text-ink">{time ?? missing}</p>
-          </div>
+          {/* A number shows only when it was recorded (28 Oct 2026): no "coming soon" box. */}
+          {cost && (
+            <div className="panel p-4">
+              <p className="label-mono text-muted">{r.cost}</p>
+              <p className="mt-3 text-[22px] font-semibold text-ink">{cost}</p>
+            </div>
+          )}
+          {time && (
+            <div className="panel p-4">
+              <p className="label-mono text-muted">{r.time}</p>
+              <p className="mt-3 text-[22px] font-semibold text-ink">{time}</p>
+            </div>
+          )}
           <div className="sm:col-span-2 flex flex-wrap items-center gap-2 text-[13px] text-muted">
             <Badge tone="success">{t.common.unedited}</Badge>
             {data.settings && <span>{data.settings}</span>}

@@ -6,12 +6,15 @@ import { ExampleGallery } from "@/components/site/ExampleGallery";
 import { FinalCta } from "@/components/site/Persuasion";
 import { FormatCards } from "@/components/site/FormatCards";
 import { LatestPosts } from "@/components/site/HomeSections";
+import { BeforeAfter } from "@/components/site/BeforeAfter";
 
 export function ExamplesPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
   return (
     <div className="space-y-24 pt-16 sm:pt-24">
       <SectionIntro eyebrow={t.home.examplesEyebrow} title={t.examples.title} text={t.examples.text} />
+      {/* 28 Oct 2026: the original next to the result first, then every translated video. */}
+      <BeforeAfter locale={locale} />
       <section className="space-y-6"><h2 className="text-title">{t.examples.translations}</h2><ExampleGallery kind="translate" limit={6} locale={locale} /></section>
       {/* 27 Oct 2026: the ad samples and the formats show only while ads are on. */}
       {config.features.ads && (

@@ -17,25 +17,36 @@ export type Example = {
   poster?: string;
   /** One line: length, language, quality. */
   note: string;
+  /** For a translation: the uploaded source video and its still (same places), for the before-and-after. */
+  original?: string;
+  originalPoster?: string;
+  /** Language codes shown between the two phones, e.g. "EN → NL". */
+  codes?: string;
 };
 
 export const examples: Example[] = [
-  // Translations first (28 Oct 2026, translation-first site): Tijs's own videos, translated with Clipelle.
-  {
-    id: "unboxing-nl",
-    title: "Unboxing, translated",
-    kind: "translate",
-    file: "translate-unboxing-nl.mp4",
-    poster: "translate-unboxing-nl.jpg",
-    note: "8 s · into Dutch · own voice, lip sync, captions",
-  },
+  // 28 Oct 2026: Tijs's own videos, translated with Clipelle (the older samples are off the site).
   {
     id: "coffee-gift-nl",
     title: "Gift story, translated",
     kind: "translate",
     file: "translate-coffee-gift-nl.mp4",
     poster: "translate-coffee-gift-nl.jpg",
-    note: "11 s · into Dutch · own voice, lip sync, captions",
+    original: "translate-coffee-gift-original.mp4",
+    originalPoster: "translate-coffee-gift-original.jpg",
+    codes: "EN → NL",
+    note: "11 s · English to Dutch · own voice, lip sync, captions",
+  },
+  {
+    id: "unboxing-nl",
+    title: "Unboxing, translated",
+    kind: "translate",
+    file: "translate-unboxing-nl.mp4",
+    poster: "translate-unboxing-nl.jpg",
+    original: "translate-unboxing-original.mp4",
+    originalPoster: "translate-unboxing-original.jpg",
+    codes: "EN → NL",
+    note: "8 s · English to Dutch · own voice, lip sync, captions",
   },
   {
     id: "lounge-chair-nl",
@@ -43,23 +54,8 @@ export const examples: Example[] = [
     kind: "translate",
     file: "translate-lounge-chair-nl.mp4",
     poster: "translate-lounge-chair-nl.jpg",
-    note: "30 s · into Dutch · own voice, lip sync, captions",
-  },
-  {
-    id: "senvia-nl",
-    title: "Product explainer, translated",
-    kind: "translate",
-    file: "translate-senvia-nl.mp4",
-    poster: "translate-senvia-nl.jpg",
-    note: "8 s · English to Dutch · Speed · captions",
-  },
-  {
-    id: "dress-standard-30",
-    title: "Long-sleeve dress",
-    kind: "ad",
-    file: "ad-dress-30s-standard.mp4",
-    poster: "ad-dress-30s-standard.jpg",
-    note: "30 s · Dutch · Standard presenter · first real run",
+    codes: "EN → NL",
+    note: "30 s · English to Dutch · own voice, lip sync, captions",
   },
 ];
 
