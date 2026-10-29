@@ -75,6 +75,17 @@ describe.skipIf(!hasDb)("workspaces and teams", () => {
     expect(await credits.getCreditBalance(teamId)).toBe(40);
     await expect(credits.reserveCredits(teamId, member.id, "00000000-0000-0000-0000-00000000ee01", 50, "C")).rejects.toMatchObject({ code: "insufficient_credits" });
     expect((await getWorkspace(teamId))!.planKey).toBe("business_249");
+
+    // A failed project is refunded; a retry reserves again and a delivered retry is charged once (29 Oct 2026).
+    await credits.settleCredits(a.id, 0, "Project failed");
+    expect(await credits.getCreditBalance(teamId)).toBe(70);
+    await credits.reserveForRetry(a.id);
+    expect(await credits.getCreditBalance(teamId)).toBe(40);
+    await credits.reserveForRetry(a.id); // an open reservation is not doubled
+    expect(await credits.getCreditBalance(teamId)).toBe(40);
+    await credits.settleCredits(a.id, 30, "Delivered");
+    expect(await credits.projectCreditsUsed(a.id)).toBe(30);
+    expect(await credits.getCreditBalance(teamId)).toBe(40);
   });
 
   it("gives API keys to the workspace and ends a removed member's access at once", async () => {

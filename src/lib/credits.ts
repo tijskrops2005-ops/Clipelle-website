@@ -41,9 +41,22 @@ export async function grantCredits(input: { workspaceId: string; userId: string;
 }
 
 /** Reserves credits for a project from the workspace balance: throws when too low. Idempotent per project. */
+/**
+ * A project's credit rows as cycles (29 Oct 2026): each reserve opens a cycle, a settle or refund closes
+ * it. A retry after a refund opens a new cycle, so a failed video that is retried and then delivered is
+ * charged once (before, the refund closed the project for good and the retried video was free).
+ */
+async function projectCycle(projectId: string) {
+  const rows = await db().select().from(creditLedger).where(eq(creditLedger.projectId, projectId)).orderBy(creditLedger.createdAt);
+  const reserves = rows.filter((r) => r.kind === "reserve");
+  const closes = rows.filter((r) => r.kind === "settle" || r.kind === "refund");
+  return { reserves, closes, open: reserves.length > closes.length, lastReserve: reserves[reserves.length - 1], lastClose: closes[closes.length - 1] };
+}
+
 export async function reserveCredits(workspaceId: string, userId: string, projectId: string, credits: number, note: string) {
-  const [existing] = await db().select({ id: creditLedger.id }).from(creditLedger).where(and(eq(creditLedger.projectId, projectId), eq(creditLedger.kind, "reserve"))).limit(1);
-  if (existing) return existing.id;
+  const c = await projectCycle(projectId);
+  // Already reserved and not closed, or already charged: nothing new.
+  if (c.open || c.lastClose?.kind === "settle") return (c.lastReserve ?? c.lastClose)!.id;
   const balance = await getCreditBalance(workspaceId);
   if (balance < credits) throw new CreditError(`This needs ${credits} credits and the workspace has ${balance}. Add credits in Billing to start it.`);
   const [row] = await db().insert(creditLedger).values({ workspaceId, userId, projectId, credits: -Math.round(credits), kind: "reserve", note }).returning({ id: creditLedger.id });
@@ -51,17 +64,25 @@ export async function reserveCredits(workspaceId: string, userId: string, projec
 }
 
 /**
+ * Before a retry: a project whose credits were refunded reserves them again (same amount, same balance
+ * check), so the retried video is paid for. A project whose reservation is still open needs nothing.
+ */
+export async function reserveForRetry(projectId: string) {
+  const c = await projectCycle(projectId);
+  if (c.open || !c.lastReserve || c.lastClose?.kind !== "refund") return;
+  await reserveCredits(c.lastReserve.workspaceId ?? "", c.lastReserve.userId, projectId, -c.lastReserve.credits, "Retry");
+}
+
+/**
  * Settles a reservation against what was really used: `usedCredits` replaces the reservation.
  * Unused reserved credits come back; a failed project is refunded in full (usedCredits = 0).
  */
 export async function settleCredits(projectId: string, usedCredits: number, note: string) {
-  const [reserve] = await db().select().from(creditLedger).where(and(eq(creditLedger.projectId, projectId), eq(creditLedger.kind, "reserve"))).limit(1);
-  if (!reserve) return;
-  const [done] = await db().select({ id: creditLedger.id }).from(creditLedger).where(and(eq(creditLedger.projectId, projectId), or(eq(creditLedger.kind, "settle"), eq(creditLedger.kind, "refund")))).limit(1);
-  if (done) return;
-  const reserved = -reserve.credits;
+  const c = await projectCycle(projectId);
+  if (!c.open || !c.lastReserve) return;
+  const reserved = -c.lastReserve.credits;
   const diff = reserved - Math.max(0, Math.round(usedCredits));
-  await db().insert(creditLedger).values({ workspaceId: reserve.workspaceId, userId: reserve.userId, projectId, credits: diff, kind: usedCredits > 0 ? "settle" : "refund", note });
+  await db().insert(creditLedger).values({ workspaceId: c.lastReserve.workspaceId, userId: c.lastReserve.userId, projectId, credits: diff, kind: usedCredits > 0 ? "settle" : "refund", note });
 }
 
 /** Credits charged for one project: the net of its reserve, settle and refund rows; undefined without rows. */

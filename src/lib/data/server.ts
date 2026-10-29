@@ -16,7 +16,7 @@ import { DEFAULT_TONE, isAdTone, type AdTone } from "@/lib/adOptions";
 import { DEFAULT_SPEED, isSpeedKey, speedValue, type AdLanguageCode, type SpeedKey } from "@/lib/voiceOptions";
 import type { UploadKind } from "@/lib/data/uploads";
 import { authErrorResponse } from "@/lib/auth";
-import { CreditError, projectCreditsUsed, reserveCredits } from "@/lib/credits";
+import { CreditError, projectCreditsUsed, reserveCredits, reserveForRetry } from "@/lib/credits";
 import { adCredits, FEATURE_PLAN, FREE_AD, hasFeature, translateCredits } from "@/lib/plans";
 import { DataError } from "@/lib/data/errors";
 import { textRemovalConfigured } from "@/lib/services/textRemoval";
@@ -600,6 +600,13 @@ export async function retryStep(scope: DataScope, projectId: string, stepKey: st
   const [step] = await db().select().from(steps).where(and(eq(steps.projectId, projectId), eq(steps.key, stepKey))).limit(1);
   if (!step) throw new DataError("Unknown step.", 404, "not_found");
   if (step.status !== "failed") throw new DataError("Only a failed step can be retried.", 409, "not_failed");
+  // A failed project got its credits back; a retry reserves them again (29 Oct 2026: retries were free).
+  try {
+    await reserveForRetry(projectId);
+  } catch (error) {
+    if (error instanceof CreditError) throw new DataError(error.message.replace("to start it", "to retry it"), error.status, error.code);
+    throw error;
+  }
   await db().transaction(async (tx) => {
     await tx.update(projects).set({ status: "processing", updatedAt: new Date() }).where(eq(projects.id, projectId));
     await tx

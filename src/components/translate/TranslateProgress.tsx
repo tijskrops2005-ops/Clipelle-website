@@ -157,7 +157,7 @@ function FailedPanel({ project }: { project: TranslateProject }) {
   return (
     <div className="mt-4 space-y-3 rounded-panel border border-danger/30 bg-danger/5 p-4">
       <p className="text-[14.5px] leading-relaxed text-ink">{error ?? "Something went wrong. Retry; if it keeps failing, contact support."}</p>
-      <p className="text-[13px] text-muted">Credits for a stopped video are refunded. Retrying picks up where it stopped.</p>
+      <p className="text-[13px] text-muted">Credits for a stopped video are refunded. Retry uses them again and picks up where it stopped.</p>
       {key && (
         <Button type="button" variant="primary" size="sm" onClick={() => retryStep(project.id, key)}>
           <RotateCcw className="size-4" aria-hidden /> Retry
