@@ -2,13 +2,16 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { r2Copy, r2Delete, r2Enabled, r2Get, r2Head, r2List, r2PresignedGet, r2PresignedPut, r2Put } from "@/lib/r2";
 
 /**
  * Our own file storage (Supabase Storage, one private bucket). Every provider returns
  * temporary URLs, so each result is copied here before the next step and before download.
  *
- * All access goes through this module, so the backend can move to Cloudflare R2 later
- * without touching the rest of the app.
+ * All access goes through this module. Since 29 Oct 2026 the files live in Cloudflare R2 when it is
+ * configured (src/lib/r2.ts; R2 charges nothing for downloads, Supabase blocked the project when its
+ * download quota ran out). New files go to R2; a file that is not in R2 yet is read from Supabase, so
+ * projects made before the move keep working while Supabase is reachable.
  */
 
 /**
@@ -17,8 +20,8 @@ import { supabaseAdmin } from "@/lib/supabase/server";
  * move). ensureBucket() creates it on first use. The public "examples" bucket is separate (examples.ts).
  */
 export const BUCKET = process.env.STORAGE_BUCKET?.trim() || "clipelle";
-/** Free plan: 1 GB of storage. Shown on /dev/storage and in Settings. */
-export const FREE_PLAN_BYTES = 1024 * 1024 * 1024;
+/** Free storage: 10 GB on R2, 1 GB on Supabase's free plan. Shown on /dev/storage and in Settings. */
+export const FREE_PLAN_BYTES = (r2Enabled() ? 10 : 1) * 1024 * 1024 * 1024;
 /** Max object size we accept (free plan allows 50 MB per file). */
 export const MAX_OBJECT_BYTES = 50 * 1024 * 1024;
 
@@ -33,7 +36,7 @@ let bucketReady = false;
 
 /** Creates the private bucket on first use (idempotent). */
 export async function ensureBucket() {
-  if (bucketReady) return;
+  if (bucketReady || r2Enabled()) return;
   const s = supabaseAdmin().storage;
   const { data } = await s.getBucket(BUCKET);
   if (!data) {
@@ -58,11 +61,13 @@ export function objectPath(parts: { projectId: string; kind: string; fileName: s
  * Signed upload URL for the browser (valid 2 hours). The browser PUTs the file straight
  * to Supabase; our server never streams the bytes (Vercel's 4.5 MB request limit).
  */
-export async function createSignedUpload(path: string) {
+export async function createSignedUpload(path: string): Promise<{ path: string; token: string; signedUrl: string; direct: boolean }> {
+  // R2: a presigned PUT the browser sends the raw file to (`direct`).
+  if (r2Enabled()) return { path, token: "", signedUrl: await r2PresignedPut(path), direct: true };
   await ensureBucket();
   const { data, error } = await supabaseAdmin().storage.from(BUCKET).createSignedUploadUrl(path);
   if (error || !data) throw new StorageError(`Could not create an upload URL: ${error?.message ?? "unknown"}`, "sign_failed");
-  return { path: data.path, token: data.token, signedUrl: data.signedUrl };
+  return { path: data.path, token: data.token, signedUrl: data.signedUrl, direct: false };
 }
 
 /** Signed download URL (default 1 hour). Used by the UI and handed to providers as a public input URL. */
@@ -79,6 +84,11 @@ export async function signedDownloadUrl(path: string, expiresInSeconds = 3600, d
   const key = `${path}|${expiresInSeconds}|${download ?? ""}`;
   const hit = signedCache.get(key);
   if (hit && hit.expiresAt - Date.now() > SIGNED_URL_REFRESH_MARGIN_MS) return hit.url;
+  if (r2Enabled() && (await r2Head(path).catch(() => null))) {
+    const url = await r2PresignedGet(path, expiresInSeconds, download);
+    signedCache.set(key, { url, expiresAt: Date.now() + expiresInSeconds * 1000 });
+    return url;
+  }
   const { data, error } = await supabaseAdmin().storage.from(BUCKET).createSignedUrl(path, expiresInSeconds, download ? { download } : undefined);
   if (error || !data) throw new StorageError(`Could not sign a download URL: ${error?.message ?? "unknown"}`, "sign_failed");
   signedCache.set(key, { url: data.signedUrl, expiresAt: Date.now() + expiresInSeconds * 1000 });
@@ -90,6 +100,12 @@ export async function putObject(path: string, data: Uint8Array | Blob, contentTy
   await ensureBucket();
   const body = data instanceof Blob ? data : new Blob([data as BlobPart], { type: contentType });
   if (body.size > MAX_OBJECT_BYTES) throw new StorageError(`File is ${(body.size / 1e6).toFixed(1)} MB; the limit is ${MAX_OBJECT_BYTES / 1e6} MB.`, "too_large", 413);
+  if (r2Enabled()) {
+    await r2Put(path, body, contentType).catch((e: Error) => {
+      throw new StorageError(e.message, "upload_failed");
+    });
+    return { path, bytes: body.size, mime: contentType };
+  }
   const { error } = await supabaseAdmin().storage.from(BUCKET).upload(path, body, { contentType, upsert: true });
   if (error) throw new StorageError(`Upload failed: ${error.message}`, "upload_failed");
   return { path, bytes: body.size, mime: contentType };
@@ -110,6 +126,16 @@ export async function copyFromUrl(url: string, path: string, fallbackMime = "app
 
 /** Copies an object inside the bucket (server side, no download): a finished ad becoming another project's source. */
 export async function copyObject(from: string, to: string) {
+  if (r2Enabled()) {
+    if (await r2Head(from).catch(() => null)) await r2Copy(from, to);
+    else {
+      // A file from before the move: read it from Supabase once and write it to R2.
+      const old = await supabaseDownload(from);
+      if (!old) throw new StorageError("The file to copy was not found.", "copy_failed", 404);
+      await r2Put(to, old, old.type || "application/octet-stream");
+    }
+    return to;
+  }
   await ensureBucket();
   const { error } = await supabaseAdmin().storage.from(BUCKET).copy(from, to);
   if (error) throw new StorageError(`Copy failed: ${error.message}`, "copy_failed");
@@ -117,11 +143,21 @@ export async function copyObject(from: string, to: string) {
 }
 
 export async function deleteObject(path: string) {
+  if (r2Enabled()) {
+    await r2Delete(path);
+    // The old copy, if the file is from before the move; best effort.
+    await supabaseAdmin().storage.from(BUCKET).remove([path]).catch(() => null);
+    return;
+  }
   const { error } = await supabaseAdmin().storage.from(BUCKET).remove([path]);
   if (error) throw new StorageError(`Delete failed: ${error.message}`, "delete_failed");
 }
 
 export async function objectInfo(path: string) {
+  if (r2Enabled()) {
+    const head = await r2Head(path);
+    if (head) return { path, ...head };
+  }
   const folder = path.split("/").slice(0, -1).join("/");
   const name = path.split("/").pop() ?? path;
   const { data, error } = await supabaseAdmin().storage.from(BUCKET).list(folder, { search: name, limit: 1 });
@@ -147,6 +183,17 @@ export type StorageUsage = {
  * under Reports stays the official source, this is our running estimate.
  */
 export async function getStorageUsage(): Promise<StorageUsage> {
+  if (r2Enabled()) {
+    const kinds = new Map<string, { bytes: number; count: number }>();
+    for (const o of await r2List()) {
+      const kind = o.key.split("/")[2] || "(root)";
+      const k = kinds.get(kind) ?? { bytes: 0, count: 0 };
+      kinds.set(kind, { bytes: k.bytes + o.bytes, count: k.count + 1 });
+    }
+    const byKind = [...kinds].map(([kind, v]) => ({ kind, ...v })).sort((a, b) => b.bytes - a.bytes);
+    const usedBytes = byKind.reduce((n, k) => n + k.bytes, 0);
+    return { usedBytes, objectCount: byKind.reduce((n, k) => n + k.count, 0), freePlanBytes: FREE_PLAN_BYTES, fraction: Math.min(1, usedBytes / FREE_PLAN_BYTES), byKind };
+  }
   const rows = await db().execute<{ kind: string; bytes: string; count: string }>(sql`
     select coalesce(split_part(name, '/', 3), '(root)') as kind,
            coalesce(sum((metadata->>'size')::bigint), 0)::text as bytes,
@@ -171,6 +218,15 @@ export function formatBytes(bytes: number) {
 
 /** Reads one object back from storage (small files only, e.g. a brand logo served by our own route). */
 export async function downloadObject(path: string): Promise<Blob | null> {
+  if (r2Enabled()) {
+    const hit = await r2Get(path);
+    if (hit) return hit;
+  }
+  return supabaseDownload(path);
+}
+
+/** Reads a file from Supabase Storage (the backend before R2, and the fallback for older files). */
+async function supabaseDownload(path: string): Promise<Blob | null> {
   const { data, error } = await supabaseAdmin().storage.from(BUCKET).download(path);
   if (error) {
     if (/not found|does not exist|404/i.test(error.message)) return null;

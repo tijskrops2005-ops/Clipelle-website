@@ -26,7 +26,9 @@ export function supabaseBrowser(): SupabaseClient {
  * the file, the publishable key as apikey) goes through XMLHttpRequest, the one browser API that
  * reports upload progress; without it the library call is used as before.
  */
-export async function uploadToSignedUrl(bucket: string, path: string, token: string, file: File, onProgress?: (fraction: number) => void) {
+export async function uploadToSignedUrl(bucket: string, path: string, token: string, file: File, onProgress?: (fraction: number) => void, directUrl?: string) {
+  // R2 (29 Oct 2026): a presigned PUT of the raw file, with progress.
+  if (directUrl) return putWithProgress(directUrl, file, { "Content-Type": file.type || "application/octet-stream" }, onProgress);
   if (!onProgress) {
     const { error } = await supabaseBrowser().storage.from(bucket).uploadToSignedUrl(path, token, file, { contentType: file.type || undefined });
     if (error) throw new Error(error.message);
@@ -40,18 +42,21 @@ export async function uploadToSignedUrl(bucket: string, path: string, token: str
   const body = new FormData();
   body.append("cacheControl", "3600");
   body.append("", file);
-  await new Promise<void>((resolve, reject) => {
+  return putWithProgress(url.toString(), body, { apikey: key, Authorization: `Bearer ${key}`, "x-upsert": "false" }, onProgress);
+}
+
+/** One PUT through XMLHttpRequest, the one browser API that reports upload progress. */
+function putWithProgress(url: string, body: XMLHttpRequestBodyInit, headers: Record<string, string>, onProgress?: (fraction: number) => void) {
+  return new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url.toString());
-    xhr.setRequestHeader("apikey", key);
-    xhr.setRequestHeader("Authorization", `Bearer ${key}`);
-    xhr.setRequestHeader("x-upsert", "false");
+    xhr.open("PUT", url);
+    for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
     xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(Math.min(1, e.loaded / e.total));
+      if (e.lengthComputable) onProgress?.(Math.min(1, e.loaded / e.total));
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        onProgress(1);
+        onProgress?.(1);
         resolve();
         return;
       }

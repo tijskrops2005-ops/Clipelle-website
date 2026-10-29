@@ -404,11 +404,11 @@ async function startWithClearMessage(id: string) {
 
 /** Browser → signed URL → storage, then tell the server which object belongs to the project. */
 async function uploadAndAttach(projectId: string, kind: UploadKind, file: File, seconds?: number, onProgress?: (fraction: number) => void) {
-  const signed = await api<{ path: string; token: string; bucket: string }>("/api/uploads/sign", {
+  const signed = await api<{ path: string; token: string; bucket: string; url?: string }>("/api/uploads/sign", {
     method: "POST",
     body: JSON.stringify({ projectId, kind, fileName: file.name, bytes: file.size, mime: file.type }),
   });
-  await uploadToSignedUrl(signed.bucket, signed.path, signed.token, file, onProgress);
+  await uploadToSignedUrl(signed.bucket, signed.path, signed.token, file, onProgress, signed.url);
   await api(`/api/projects/${projectId}/assets`, { method: "POST", body: JSON.stringify({ kind, storagePath: signed.path, fileName: file.name, seconds }) });
 }
 

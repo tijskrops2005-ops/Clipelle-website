@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     if (body.mime && !allowed.includes(body.mime)) throw new DataError(`File type ${body.mime} is not supported here.`, 415, "bad_type");
     const path = objectPath({ projectId: row.id, kind: body.kind, fileName: body.fileName });
     const signed = await createSignedUpload(path);
-    return Response.json({ path: signed.path, token: signed.token, bucket: BUCKET });
+    return Response.json({ path: signed.path, token: signed.token, bucket: BUCKET, ...(signed.direct ? { url: signed.signedUrl } : {}) });
   } catch (error) {
     return dataErrorResponse(error);
   }
