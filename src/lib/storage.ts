@@ -80,11 +80,29 @@ const SIGNED_URL_REFRESH_MARGIN_MS = 10 * 60 * 1000;
 const signedCache = (globalThis as unknown as { __clipelleSignedUrls?: Map<string, { url: string; expiresAt: number }> }).__clipelleSignedUrls ??= new Map();
 (globalThis as unknown as { __clipelleSignedUrls?: typeof signedCache }).__clipelleSignedUrls = signedCache;
 
+/**
+ * Where a file lives (29 Oct 2026): files never move between R2 and Supabase, so the answer is kept per
+ * process; only an unknown path costs one quick HEAD (5 s at most), so a page with many projects does
+ * not wait on a HEAD per video every time its links are refreshed.
+ */
+const backendCache = (globalThis as unknown as { __clipelleBackend?: Map<string, boolean> }).__clipelleBackend ??= new Map();
+(globalThis as unknown as { __clipelleBackend?: typeof backendCache }).__clipelleBackend = backendCache;
+async function inR2(path: string) {
+  const known = backendCache.get(path);
+  if (known !== undefined) return known;
+  // A definite answer is kept; a timeout or error is not, so a slow moment never sticks.
+  const hit = await Promise.race([r2Head(path).then(Boolean).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 5000))]);
+  if (hit === null) return false;
+  backendCache.set(path, hit);
+  if (backendCache.size > 20000) backendCache.delete(backendCache.keys().next().value as string);
+  return hit;
+}
+
 export async function signedDownloadUrl(path: string, expiresInSeconds = 3600, download?: string) {
   const key = `${path}|${expiresInSeconds}|${download ?? ""}`;
   const hit = signedCache.get(key);
   if (hit && hit.expiresAt - Date.now() > SIGNED_URL_REFRESH_MARGIN_MS) return hit.url;
-  if (r2Enabled() && (await r2Head(path).catch(() => null))) {
+  if (r2Enabled() && (await inR2(path))) {
     const url = await r2PresignedGet(path, expiresInSeconds, download);
     signedCache.set(key, { url, expiresAt: Date.now() + expiresInSeconds * 1000 });
     return url;
@@ -104,6 +122,7 @@ export async function putObject(path: string, data: Uint8Array | Blob, contentTy
     await r2Put(path, body, contentType).catch((e: Error) => {
       throw new StorageError(e.message, "upload_failed");
     });
+    backendCache.set(path, true);
     return { path, bytes: body.size, mime: contentType };
   }
   const { error } = await supabaseAdmin().storage.from(BUCKET).upload(path, body, { contentType, upsert: true });
