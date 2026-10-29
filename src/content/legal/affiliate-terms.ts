@@ -11,7 +11,7 @@ export const affiliateTermsDoc: LegalDoc = {
   title: "Partner program terms",
   summary: "The commission rules of the Clipelle partner program.",
   updated: "2026-10-21",
-  draft: true,
+  draft: false,
   sections: [
     { heading: "Commission", bullets: ["A partner receives 25% commission on the subscription payments of every customer they referred.", "The commission applies for as long as that customer keeps a subscription.", "No commission is paid on separately purchased credit packs."] },
     { heading: "Payout", bullets: ["Commissions are paid out monthly.", "The minimum payout is 50 US dollars; smaller balances carry over to the next month.", "Payouts are made through the external partner platform the program runs on; the partner's details and payout method are managed there."] },
@@ -25,7 +25,7 @@ export const affiliateTermsDocNl: LegalDoc = {
   title: "Voorwaarden partnerprogramma",
   summary: "De commissieregels van het Clipelle-partnerprogramma.",
   updated: "2026-10-21",
-  draft: true,
+  draft: false,
   sections: [
     { heading: "Commissie", bullets: ["Een partner ontvangt 25% commissie op de abonnementsbetalingen van elke klant die hij heeft doorverwezen.", "De commissie geldt zolang die klant een abonnement houdt.", "Op los gekochte creditpakketten wordt geen commissie betaald."] },
     { heading: "Uitbetaling", bullets: ["Commissies worden maandelijks uitbetaald.", "De minimale uitbetaling is 50 Amerikaanse dollar; kleinere saldi schuiven door naar de volgende maand.", "Uitbetalingen lopen via het externe partnerplatform waarop het programma draait; de partner beheert daar zijn gegevens en uitbetaalmethode."] },

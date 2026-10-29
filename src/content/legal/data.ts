@@ -6,7 +6,7 @@ export const dataDoc: LegalDoc = {
   title: "Files and data",
   summary: "How Clipelle stores your uploads and finished videos, who can reach them, and how they are deleted.",
   updated: "2026-10-21",
-  draft: true,
+  draft: false,
   sections: [
     { heading: "Your files", paragraphs: ["Product photos, logos, background images, uploaded videos and finished videos are stored in a private storage bucket that is not reachable from the open web. The app reads and writes it with a server-side key; browsers never get that key."] },
     { heading: "Signed links", paragraphs: ["When you watch or download a video, the server creates a signed link that works for a limited time (about an hour) and then stops working. Links handed to the services that make a video are temporary too. We never publish a permanent public link to your files."] },
@@ -22,7 +22,7 @@ export const dataDocNl: LegalDoc = {
   title: "Bestanden en gegevens",
   summary: "Hoe Clipelle je uploads en afgeronde video's bewaart, wie erbij kan en hoe ze worden verwijderd.",
   updated: "2026-10-21",
-  draft: true,
+  draft: false,
   sections: [
     { heading: "Je bestanden", paragraphs: ["Productfoto's, logo's, achtergrondafbeeldingen, geüploade video's en afgeronde video's staan in een afgeschermde opslag die niet vanaf het open internet bereikbaar is. De app leest en schrijft daar met een serversleutel; browsers krijgen die sleutel nooit."] },
     { heading: "Gesigneerde links", paragraphs: ["Als je een video bekijkt of downloadt, maakt de server een gesigneerde link die beperkte tijd werkt (ongeveer een uur) en daarna stopt. Links die aan de diensten worden gegeven die een video maken, zijn ook tijdelijk. We publiceren nooit een permanente openbare link naar je bestanden."] },

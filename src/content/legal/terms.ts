@@ -7,7 +7,7 @@ export const termsDoc: LegalDoc = {
   title: "Terms of service",
   summary: "What Clipelle does, what you may do with it and what we expect from each other. Short sentences, no surprises.",
   updated: "2026-10-29",
-  draft: true,
+  draft: false,
   sections: [
     { heading: "1. The service", paragraphs: ["Clipelle translates videos you own into other languages, spoken by the original speaker or by an AI presenter; short video ads made from product information are coming soon. The steps run automatically with third-party AI and rendering services behind them. You get the finished files; we keep a copy in your account until you delete it."] },
     { heading: "2. Your account and workspaces", paragraphs: ["You need an account with a verified e-mail address. You are responsible for what happens under your account and for keeping your password to yourself. Every account has a personal workspace; a team workspace can be shared with members you invite. Members act within the workspace; the owner manages its plan, credits and members."] },
@@ -27,7 +27,7 @@ export const termsDocNl: LegalDoc = {
   title: "Algemene voorwaarden",
   summary: "Wat Clipelle doet, wat je ermee mag en wat we van elkaar verwachten. Korte zinnen, geen verrassingen.",
   updated: "2026-10-29",
-  draft: true,
+  draft: false,
   sections: [
     { heading: "1. De dienst", paragraphs: ["Clipelle vertaalt video's van jezelf naar andere talen, uitgesproken door de oorspronkelijke spreker of door een AI-presentator; korte videoadvertenties op basis van productinformatie volgen binnenkort. De stappen lopen automatisch met AI- en renderdiensten van derden erachter. Jij krijgt de afgeronde bestanden; wij bewaren een kopie in je account tot je die verwijdert."] },
     { heading: "2. Je account en workspaces", paragraphs: ["Je hebt een account met een bevestigd e-mailadres nodig. Je bent verantwoordelijk voor wat er onder je account gebeurt en voor het geheim houden van je wachtwoord. Elk account heeft een persoonlijke workspace; een teamworkspace kun je delen met leden die je uitnodigt. Leden werken binnen de workspace; de eigenaar beheert plan, credits en leden."] },

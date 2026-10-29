@@ -6,7 +6,7 @@ export const cookiesDoc: LegalDoc = {
   title: "Cookie policy",
   summary: "Which cookies Clipelle sets, what they do, and how you change your choice.",
   updated: "2026-10-21",
-  draft: true,
+  draft: false,
   sections: [
     { heading: "Necessary cookies", paragraphs: ["These keep the site working and are set without asking."], bullets: ["Sign-in session: keeps you signed in to Studio after you log in. Removed when you sign out or when it expires.", "Consent choice (clipelle_consent): remembers whether you allowed optional cookies, for 180 days.", "Language choice (clipelle_lang): remembers the site language you picked. Set only after you allowed cookies; otherwise the language follows the address you visit."] },
     { heading: "Analytics (optional, off by default)", paragraphs: ["If you allow analytics, a measurement script may load to tell us which pages are visited and how the site is used in aggregate. Which provider, if any, is set by the site's configuration; when none is configured, nothing loads even with your consent."] },
@@ -21,7 +21,7 @@ export const cookiesDocNl: LegalDoc = {
   title: "Cookiebeleid",
   summary: "Welke cookies Clipelle plaatst, wat ze doen en hoe je je keuze aanpast.",
   updated: "2026-10-21",
-  draft: true,
+  draft: false,
   sections: [
     { heading: "Noodzakelijke cookies", paragraphs: ["Deze houden de site werkend en worden zonder vragen geplaatst."], bullets: ["Inlogsessie: houdt je ingelogd in Studio nadat je bent ingelogd. Verwijderd als je uitlogt of als de sessie verloopt.", "Toestemmingskeuze (clipelle_consent): onthoudt of je optionele cookies hebt toegestaan, 180 dagen.", "Taalkeuze (clipelle_lang): onthoudt de sitetaal die je koos. Wordt alleen geplaatst nadat je een cookiekeuze hebt gemaakt; anders volgt de taal het adres dat je bezoekt."] },
     { heading: "Analyse (optioneel, standaard uit)", paragraphs: ["Als je analyse toestaat, kan een meetscript laden dat ons vertelt welke pagina's worden bezocht en hoe de site in het algemeen wordt gebruikt. Welke provider, als die er is, wordt bepaald door de instellingen van de site; zonder ingestelde provider laadt er niets, ook niet met je toestemming."] },
