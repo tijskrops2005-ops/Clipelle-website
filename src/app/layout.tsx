@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { config } from "@/lib/config";
 import { siteUrl } from "@/lib/site";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { VercelMeasurement } from "@/components/VercelMeasurement";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -43,7 +45,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             __html: `try{var s=window.localStorage;for(var i=s.length-1;i>=0;i--){var k=s.key(i);if(k&&(k.indexOf("reelay.")===0||k.indexOf("reelay:")===0)){var n="clipelle"+k.slice(6);if(s.getItem(n)===null)s.setItem(n,s.getItem(k));s.removeItem(k);}}}catch(e){}`,
           }}
         />
+        <GoogleAnalytics />
         {children}
+        <VercelMeasurement />
       </body>
     </html>
   );

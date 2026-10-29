@@ -1,8 +1,9 @@
 /**
  * Cookie consent, browser-safe. One cookie, `clipelle_consent`, holds the visitor's choice; it is a
  * necessary cookie (it only stores the choice). Nothing optional loads before a choice is made.
- * Categories: analytics (a provider script set by NEXT_PUBLIC_ANALYTICS_SCRIPT_SRC) and marketing
- * (partner tracking set by NEXT_PUBLIC_REDITUS_SCRIPT_SRC). Without those variables nothing loads.
+ * Categories: analytics (Google Analytics cookies, see src/components/GoogleAnalytics.tsx, and an
+ * optional script set by NEXT_PUBLIC_ANALYTICS_SCRIPT_SRC) and marketing (partner tracking set by
+ * NEXT_PUBLIC_REDITUS_SCRIPT_SRC). Without those variables nothing loads.
  */
 export type Consent = { v: 1; necessary: true; analytics: boolean; marketing: boolean; at: string };
 
@@ -29,8 +30,26 @@ export function writeConsent(choice: { analytics: boolean; marketing: boolean })
   const consent: Consent = { v: 1, necessary: true, analytics: choice.analytics, marketing: choice.marketing, at: new Date().toISOString() };
   const secure = typeof location !== "undefined" && location.protocol === "https:" ? "; Secure" : "";
   document.cookie = `${CONSENT_COOKIE}=${encodeURIComponent(JSON.stringify(consent))}; Max-Age=${MAX_AGE_DAYS * 24 * 3600}; Path=/; SameSite=Lax${secure}`;
+  updateGoogleConsent(consent.analytics);
   window.dispatchEvent(new CustomEvent(CONSENT_EVENT, { detail: consent }));
   return consent;
+}
+
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
+/** Consent mode v2: Accept grants analytics cookies; Decline or a withdrawal denies them and removes the _ga cookies. */
+function updateGoogleConsent(analytics: boolean) {
+  window.gtag?.("consent", "update", { analytics_storage: analytics ? "granted" : "denied" });
+  if (analytics) return;
+  const parts = location.hostname.split(".");
+  const domains = ["", location.hostname, parts.length > 1 ? `.${parts.slice(-2).join(".")}` : ""].filter((d, i, a) => a.indexOf(d) === i);
+  for (const name of document.cookie.split("; ").map((c) => c.split("=")[0]).filter((n) => n === "_ga" || n.startsWith("_ga_"))) {
+    for (const d of domains) document.cookie = `${name}=; Max-Age=0; Path=/${d ? `; Domain=${d}` : ""}`;
+  }
 }
 
 /** True when the visitor allowed the category (necessary is always allowed). */

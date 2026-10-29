@@ -9,7 +9,7 @@ import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
 
 /**
- * Cookie banner: Reject all, Customize, Accept all. Shown until a choice is stored; reopened from
+ * Cookie banner: Decline, Customize, Accept. Shown until a choice is stored; reopened from
  * the footer's "Cookie settings". Nothing optional loads before Accept or a saved choice.
  */
 export function CookieBanner({ locale = "en" }: { locale?: Locale }) {
