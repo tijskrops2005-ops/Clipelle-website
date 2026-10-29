@@ -1,17 +1,18 @@
 import Script from "next/script";
 import { siteUrl } from "@/lib/site";
 import { CONSENT_COOKIE } from "@/lib/consent";
+import { brand } from "@/lib/brand";
 
 /**
  * Google Analytics 4 with consent mode v2 (29 Oct 2026). Every consent type starts "denied", so
  * before a choice (or after Decline) the tag sends cookieless pings only; Accept in the cookie banner
  * grants `analytics_storage` (src/lib/consent.ts). Advertising types stay denied: the site runs no
- * Google ads. Only on the live domain: a production build on Vercel with NEXT_PUBLIC_GA_MEASUREMENT_ID
- * set, and in the browser only on the site's own host (not on preview or *.vercel.app addresses).
+ * Google ads. Only on the live domain: a production build on Vercel (ID from brand.ts, or
+ * NEXT_PUBLIC_GA_MEASUREMENT_ID), and in the browser only on the site's own host (not on preview or *.vercel.app addresses).
  * Pages whose address carries a token (share links, invites, sign-in callbacks) never load the tag,
  * and sign-in parameters are stripped from the first page address.
  */
-const ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? "";
+const ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || brand.gaMeasurementId;
 
 export function gaEnabled() {
   return process.env.VERCEL_ENV === "production" && /^G-[A-Z0-9]{4,20}$/.test(ID);

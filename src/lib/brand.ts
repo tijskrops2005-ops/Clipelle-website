@@ -17,6 +17,8 @@ export const brand = {
   emailSenderName: "Clipelle",
   /** Author of the blog articles. */
   blogAuthor: "Clipelle Team",
+  /** Google Analytics 4 web stream for https://www.clipelle.com (public; it is in every page's HTML). NEXT_PUBLIC_GA_MEASUREMENT_ID overrides it. */
+  gaMeasurementId: "G-T077VPDRJF",
 } as const;
 
 /** The public site's base URL (no trailing slash): NEXT_PUBLIC_SITE_URL, or the local dev server. */
