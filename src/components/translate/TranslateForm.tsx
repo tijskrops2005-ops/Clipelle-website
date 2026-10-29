@@ -208,7 +208,7 @@ function TranslateFormFields({ fromAd, initialSpeaker = "original", onStarted }:
     { label: "Into", value: targets.length === 0 ? "Pick a language" : targets.map((t) => languageOf(t).tag).join(", "), muted: targets.length === 0 },
     withPresenter ? { label: "Speaker", value: presenterSetup.engine === "avatar_iv" ? "Presenter · Premium" : "Presenter" } : { label: "Quality", value: qualityTitle },
     { label: "Format", value: format === "9:16" ? "9:16" : "Original" },
-    { label: "Captions", value: captionStyle.show ? "On" : "Off" },
+    { label: "Captions", value: captionStyle.show || (removeText && !withPresenter) ? "On" : "Off" },
     ...(extras.length ? [{ label: "Extras", value: extras.join(" · ") }] : []),
   ];
 

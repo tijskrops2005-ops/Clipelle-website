@@ -3,7 +3,7 @@
 import { Check, Slash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { CAPTION_BARS, CAPTION_BAR_META, effectiveBar, type CaptionBar, CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, CAPTION_TEXT_COLORS, isLightColor, outlineFor, readableOn, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { CAPTION_BAR_META, barChoices, effectiveBar, type CaptionBar, CAPTION_COLORS, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, CAPTION_TEXT_COLORS, isLightColor, outlineFor, readableOn, type CaptionStyleChoice } from "@/lib/captionOptions";
 
 /**
  * The caption choices of a translation (26 Oct 2026): on or off, how the spoken word stands out, its
@@ -13,15 +13,23 @@ import { CAPTION_BARS, CAPTION_BAR_META, effectiveBar, type CaptionBar, CAPTION_
 export function CaptionStylePicker({ value, onChange, position, onPosition, overOldText = false, disabled }: { value: CaptionStyleChoice; onChange: (next: CaptionStyleChoice) => void; position: "low" | "middle"; onPosition: (p: "low" | "middle") => void; /** With text removal: the captions sit where the old text was, on a bar (27 Oct 2026). */ overOldText?: boolean; disabled?: boolean }) {
   const set = (patch: Partial<CaptionStyleChoice>) => onChange({ ...value, ...patch });
   const bar = effectiveBar(value, overOldText);
+  // With text removal the captions are always on, on a bar (29 Oct 2026): they hide the cleaned spot.
+  const shown = overOldText || value.show;
   return (
     <div className="space-y-5">
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium text-ink">Captions</legend>
+        {overOldText ? (
+          <p className="text-[13px] text-muted">Always on, on a background: they cover the spot where the old text was.</p>
+        ) : (
+          <>
         <SegmentedControl label="Captions" size="sm" options={[{ key: "on", label: "On" }, { key: "off", label: "Off" }]} value={value.show ? "on" : "off"} onChange={(k) => set({ show: k === "on" })} disabled={disabled} />
         {!value.show && <p className="text-[13px] text-muted">The translated video without captions.</p>}
+          </>
+        )}
       </fieldset>
 
-      {value.show && (
+      {shown && (
         <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_9.5rem] sm:items-start">
           <div className="space-y-5">
             <fieldset className="space-y-2">
@@ -36,11 +44,11 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, over
             <Swatches label="Text colour" options={CAPTION_TEXT_COLORS.map((c) => ({ key: c.key, label: c.label, color: c.value }))} value={value.textColor ?? "#FFFFFF"} onPick={(c) => set({ textColor: c as CaptionStyleChoice["textColor"] })} disabled={disabled} />
             <Swatches
               label="Background"
-              options={CAPTION_BARS.map((b) => ({ key: b, label: CAPTION_BAR_META[b].label, color: CAPTION_BAR_META[b].color }))}
+              options={barChoices(overOldText).map((b) => ({ key: b, label: CAPTION_BAR_META[b].label, color: CAPTION_BAR_META[b].color }))}
               value={CAPTION_BAR_META[bar].color}
               onPick={(_, key) => set({ bar: key as CaptionBar })}
               disabled={disabled}
-              hint={overOldText ? "Sits where the old text was, the whole video long." : undefined}
+              hint={overOldText ? "Sits where the old text was, the whole video long. Pick a colour; no background is not possible here." : undefined}
             />
 
             <div className="flex flex-wrap gap-x-6 gap-y-4">

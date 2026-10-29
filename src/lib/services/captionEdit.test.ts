@@ -94,11 +94,12 @@ describe("captions over removed text, on one fixed bar (27 Oct 2026)", () => {
     expect(clip.asset.stroke.width).toBe(0);
     expect(clip.asset.animation.style).toBe("highlight");
   });
-  it("uses the chosen box colour, light words on dark, and no box when None is chosen", () => {
+  it("uses the chosen box colour, light words on dark, and always a box over removed text", () => {
     const dark = captionAsset(buildCaptionEdit({ ...base, coverBox: box, captionStyle: { bar: "dark" } }));
     expect(dark.background).toMatchObject({ color: "#111114" });
     expect(dark.font.color).toBe("#FFFFFF");
-    expect(captionAsset(buildCaptionEdit({ ...base, coverBox: box, captionStyle: { bar: "none" } }))).not.toHaveProperty("background");
+    // "None" is not possible over removed text (29 Oct 2026): the box covers the cleaned spot.
+    expect(captionAsset(buildCaptionEdit({ ...base, coverBox: box, captionStyle: { bar: "none" } })).background).toMatchObject({ color: "#FFFFFF" });
     // Without removed text there is no box unless one is chosen.
     expect(captionAsset(buildCaptionEdit(base))).not.toHaveProperty("background");
     // Without removed text a chosen box wraps the words.

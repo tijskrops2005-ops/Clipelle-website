@@ -118,7 +118,23 @@ export const CAPTION_BAR_META: Record<CaptionBar, { label: string; color: string
 };
 /** The background in use: the customer's pick, else white over removed text and none otherwise. */
 export function effectiveBar(style: Pick<CaptionStyleChoice, "bar">, overOldText: boolean): CaptionBar {
-  return style.bar ?? (overOldText ? "white" : "none");
+  // Over removed text there is always a bar (29 Oct 2026, Tijs: without one the smudge and leftover letters show).
+  if (overOldText) return style.bar && style.bar !== "none" ? style.bar : "white";
+  return style.bar ?? "none";
+}
+
+/**
+ * The caption style when on-screen text is removed (29 Oct 2026, Tijs): captions always on and always on a
+ * bar, because the new captions are what hides the cleaned spot. Without text removal every choice stays free.
+ */
+export function styleOverRemovedText(style: Partial<CaptionStyleChoice> | null | undefined): Partial<CaptionStyleChoice> {
+  const s: Partial<CaptionStyleChoice> = style ?? {};
+  return { ...s, show: true, bar: s.bar && s.bar !== "none" ? s.bar : "white" };
+}
+
+/** The bars that can be chosen: no "none" over removed text. */
+export function barChoices(overOldText: boolean): readonly CaptionBar[] {
+  return overOldText ? CAPTION_BARS.filter((b) => b !== "none") : CAPTION_BARS;
 }
 
 export const DEFAULT_CAPTION_STYLE: CaptionStyleChoice = { show: true, highlight: "box", color: "#D43F1B", size: "medium", uppercase: true, textColor: "#FFFFFF" };

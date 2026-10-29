@@ -14,3 +14,15 @@ describe("readable caption colours (28 Oct 2026)", () => {
     expect(contrastRatio("#FFFFFF", "#111114")).toBeGreaterThan(18);
   });
 });
+
+describe("captions over removed text (29 Oct 2026)", () => {
+  it("are always on and always on a bar", async () => {
+    const { styleOverRemovedText, effectiveBar, barChoices } = await import("./captionOptions");
+    expect(styleOverRemovedText({ show: false, bar: "none" })).toMatchObject({ show: true, bar: "white" });
+    expect(styleOverRemovedText({ bar: "yellow" })).toMatchObject({ show: true, bar: "yellow" });
+    expect(effectiveBar({ bar: "none" }, true)).toBe("white");
+    expect(effectiveBar({ bar: "none" }, false)).toBe("none");
+    expect(barChoices(true)).not.toContain("none");
+    expect(barChoices(false)).toContain("none");
+  });
+});
