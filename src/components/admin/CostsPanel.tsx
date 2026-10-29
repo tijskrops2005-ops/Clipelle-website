@@ -36,7 +36,8 @@ const basisTone: Record<string, "success" | "warning" | "neutral" | "danger" | "
   "not charged": "neutral",
 };
 
-export function CostsPanel() {
+/** The cost overview; `base` is /api/dev/costs locally and /api/admin/costs on the live site (29 Oct 2026). */
+export function CostsPanel({ base = "/api/dev/costs" }: { base?: string }) {
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -45,7 +46,7 @@ export function CostsPanel() {
   const [falLoading, setFalLoading] = useState(false);
 
   const load = useCallback(() => {
-    return fetch("/api/dev/costs", { cache: "no-store" })
+    return fetch(base, { cache: "no-store" })
       .then(async (r) => {
         const b = await r.json();
         if (!r.ok) throw new Error(b.error ?? `HTTP ${r.status}`);
@@ -56,7 +57,7 @@ export function CostsPanel() {
         setError(null);
       })
       .catch((e: Error) => setError(e.message));
-  }, []);
+  }, [base]);
 
   useEffect(() => {
     void load();
@@ -66,7 +67,7 @@ export function CostsPanel() {
     setFalLoading(true);
     setFalError(null);
     try {
-      const r = await fetch(`/api/dev/costs/fal?period=${period}`, { cache: "no-store" });
+      const r = await fetch(`${base}/fal?period=${period}`, { cache: "no-store" });
       const b = await r.json();
       if (!r.ok) throw new Error(b.error ?? `HTTP ${r.status}`);
       setFal(b);
@@ -104,7 +105,7 @@ export function CostsPanel() {
           <CardTitle>Per service</CardTitle>
           <div className="flex items-center gap-2">
             <Button size="sm" variant="ghost" onClick={() => void load()} aria-label="Refresh"><RefreshCw className="size-4" aria-hidden /></Button>
-            <Button size="sm" variant="secondary" href="/api/dev/costs/export"><Download className="size-4" aria-hidden />Export CSV</Button>
+            <Button size="sm" variant="secondary" href={`${base}/export`}><Download className="size-4" aria-hidden />Export CSV</Button>
           </div>
         </CardHeader>
         <CardContent>

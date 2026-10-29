@@ -54,6 +54,7 @@ export function AdminView({ stats }: { stats: Stats }) {
         description={`Aggregates since ${formatDate(stats.since)}. Read-only, except Retry and Cancel on stuck projects. No customer content is shown here.`}
         actions={
           <div className="flex flex-wrap items-center gap-3">
+            <Button href="/admin/costs" variant="secondary" size="sm">Costs</Button>
             <Button href="/admin/quality" variant="secondary" size="sm">Quality reports</Button>
             <SegmentedControl label="Period" size="sm" options={[{ key: "day", label: "Today" }, { key: "week", label: "7 days" }, { key: "month", label: "30 days" }]} value={stats.period} onChange={(p) => router.push(`/admin?period=${p}`)} />
           </div>

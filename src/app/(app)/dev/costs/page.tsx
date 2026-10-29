@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { CostsPanel } from "./CostsPanel";
+import { CostsPanel } from "@/components/admin/CostsPanel";
 
 export const metadata: Metadata = { title: "Costs" };
 
