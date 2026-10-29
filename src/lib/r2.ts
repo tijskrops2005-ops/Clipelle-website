@@ -60,8 +60,18 @@ export function r2PresignedGet(path: string, expiresInSeconds = 3600, download?:
   return presign("GET", path, expiresInSeconds, download ? { "response-content-disposition": `attachment; filename="${name}"` } : {});
 }
 
-async function call(method: string, path: string, init: { body?: BodyInit; headers?: Record<string, string> } = {}, bucket?: string) {
-  return client().fetch(r2ObjectUrl(path, bucket), { method, body: init.body, headers: init.headers, signal: AbortSignal.timeout(180_000) });
+/**
+ * One signed request. The body is sent as bytes with its length (29 Oct 2026): aws4fetch's own fetch
+ * re-sends the body as a stream, which goes out without a Content-Length on the live server, and R2
+ * answers 411 "Length Required" (a translation stopped at "Upload failed (411)"). A PUT without a body
+ * (a copy) sends an empty body for the same reason.
+ */
+async function call(method: string, path: string, init: { body?: Blob | Uint8Array; headers?: Record<string, string> } = {}, bucket?: string) {
+  const url = r2ObjectUrl(path, bucket);
+  const raw = init.body instanceof Blob ? await init.body.arrayBuffer() : init.body ? init.body.slice().buffer : method === "PUT" ? new ArrayBuffer(0) : undefined;
+  const bytes = raw as ArrayBuffer | undefined;
+  const signed = await client().sign(url, { method, headers: init.headers, ...(bytes ? { body: bytes } : {}) });
+  return fetch(signed.url, { method, headers: signed.headers, ...(bytes ? { body: bytes } : {}), signal: AbortSignal.timeout(180_000), cache: "no-store" });
 }
 
 export async function r2Put(path: string, body: Blob, contentType: string) {
