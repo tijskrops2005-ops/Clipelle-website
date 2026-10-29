@@ -70,6 +70,7 @@ export const nl: SiteDict = {
     links: { pricing: "Prijzen", examples: "Voorbeelden", demo: "Plan een demo", terms: "Algemene voorwaarden", privacy: "Privacy", cookies: "Cookiebeleid", data: "Bestanden en gegevens", partnerTerms: "Partnervoorwaarden", cookieSettings: "Cookie-instellingen" },
     tagline: "Je video's in elke taal, automatisch.",
     copyright: "Video's met het label voorbeeld zijn gemaakt met Clipelle; originelen staan als origineel aangegeven.",
+    googleData: { text: "Inloggen met Google: Clipelle gebruikt alleen je naam, e-mailadres en profielfoto om je account aan te maken en je in te loggen. Nooit voor advertenties, nooit gedeeld.", link: "Privacyverklaring" },
   },
   cookie: {
     title: "Cookies",

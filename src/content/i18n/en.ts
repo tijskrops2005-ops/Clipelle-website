@@ -72,6 +72,8 @@ export const en = {
     links: { pricing: "Pricing", examples: "Examples", demo: "Book a demo", terms: "Terms of service", privacy: "Privacy", cookies: "Cookie policy", data: "Files and data", partnerTerms: "Partner terms", cookieSettings: "Cookie settings" },
     tagline: "Your videos in every language, automatically.",
     copyright: "Videos marked as samples were made with Clipelle; originals are labelled as such.",
+    // How Google sign-in data is used, on every site page (29 Oct 2026: Google's branding check asks the home page to say it).
+    googleData: { text: "Signing in with Google: Clipelle uses only your name, e-mail address and profile picture to create your account and sign you in. Never for ads, never shared.", link: "Privacy statement" },
   },
   cookie: {
     title: "Cookies",

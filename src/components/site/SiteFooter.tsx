@@ -57,6 +57,10 @@ export function SiteFooter({ locale = "en" }: { locale?: Locale }) {
           {company.operator} · {company.city} · KvK {company.kvk} · {locale === "nl" ? "btw" : "VAT"} {company.vat}
         </p>
       </div>
+      <p className="mx-auto mt-3 max-w-6xl text-[13px] leading-relaxed text-muted">
+        {t.footer.googleData.text}{" "}
+        <Link href={localizePath("/legal/privacy", locale)} className="focus-ring rounded-control underline decoration-border underline-offset-4 hover:text-ink hover:decoration-ink">{t.footer.googleData.link}</Link>
+      </p>
     </footer>
   );
 }
