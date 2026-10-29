@@ -72,7 +72,13 @@ export function joinBands(bands: (Band | null)[]): Band | null {
   if (found.length === 0) return null;
   const centres = found.map((b) => (b.top + b.bottom) / 2).sort((x, y) => x - y);
   const median = centres[Math.floor(centres.length / 2)];
-  const near = found.filter((b) => Math.abs((b.top + b.bottom) / 2 - median) <= 0.08);
+  const centred = found.filter((b) => Math.abs((b.top + b.bottom) / 2 - median) <= 0.08);
+  // A moment where the whole width or a much taller area changed is not the text (a scene cut or a
+  // frame that does not line up; seen on 29 Oct 2026): it is left out, the rest is joined.
+  const heights = centred.map((b) => b.bottom - b.top).sort((x, y) => x - y);
+  const typical = heights[Math.floor(heights.length / 2)] ?? 0;
+  const sane = centred.filter((b) => b.right - b.left < 0.97 && b.bottom - b.top <= Math.max(0.12, typical * 2.2));
+  const near = sane.length ? sane : centred;
   return {
     top: Math.min(...near.map((b) => b.top)),
     bottom: Math.max(...near.map((b) => b.bottom)),

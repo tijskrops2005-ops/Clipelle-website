@@ -26,3 +26,11 @@ describe("the cleaned spot, measured from the pictures (27 Oct 2026)", () => {
     expect(joinBands([null, null])).toBeNull();
   });
 });
+
+describe("joining the bands of ten moments (29 Oct 2026)", () => {
+  it("covers every moment's text and leaves out a whole-width outlier", async () => {
+    const { joinBands } = await import("./changedBand");
+    const bands = [null, { top: 0.828, bottom: 0.881, left: 0.122, right: 0.761 }, { top: 0.806, bottom: 0.878, left: 0.217, right: 0.783 }, { top: 0.363, bottom: 0.566, left: 0.417, right: 0.75 }, { top: 0.769, bottom: 0.984, left: 0, right: 1 }, { top: 0.784, bottom: 0.875, left: 0.211, right: 0.85 }, { top: 0.809, bottom: 0.875, left: 0.061, right: 0.939 }, { top: 0.828, bottom: 0.888, left: 0.139, right: 0.889 }];
+    expect(joinBands(bands)).toEqual({ top: 0.784, bottom: 0.888, left: 0.061, right: 0.939 });
+  });
+});

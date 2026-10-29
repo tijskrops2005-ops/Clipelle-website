@@ -8,17 +8,17 @@ import { getRender, startRender, type ShotstackEdit } from "@/lib/services/final
  * frame of the timeline; billed per second rounded down, so close to nothing). `fit: "contain"`
  * shows the whole frame (to compare framing with the original), `crop` fills 9:16.
  */
-export function buildFrameEdit(videoUrl: string, at: number, fit: "crop" | "contain"): ShotstackEdit {
+export function buildFrameEdit(videoUrl: string, at: number, fit: "crop" | "contain", size = { width: 360, height: 640 }): ShotstackEdit {
   return {
     timeline: { background: "#000000", tracks: [{ clips: [{ asset: { type: "video", src: videoUrl, volume: 0, trim: Math.max(0, Math.round(at * 100) / 100) }, start: 0, length: 0.2, fit }] }] },
-    output: { format: "jpg", size: { width: 360, height: 640 } },
+    output: { format: "jpg", size },
     meta: { totalSeconds: 0.2 },
   };
 }
 
 /** Renders the frames in parallel and waits for them (up to 90 s); a frame that fails is null. */
-export async function framesAt(videoUrl: string, moments: number[], fit: "crop" | "contain"): Promise<(string | null)[]> {
-  const renders = await Promise.all(moments.map((at) => startRender(buildFrameEdit(videoUrl, at, fit)).then((r) => r.renderId).catch(() => null)));
+export async function framesAt(videoUrl: string, moments: number[], fit: "crop" | "contain", size?: { width: number; height: number }): Promise<(string | null)[]> {
+  const renders = await Promise.all(moments.map((at) => startRender(buildFrameEdit(videoUrl, at, fit, size)).then((r) => r.renderId).catch(() => null)));
   const out: (string | null)[] = renders.map(() => null);
   const until = Date.now() + 90_000;
   while (Date.now() < until && renders.some((id, i) => id && out[i] === null)) {

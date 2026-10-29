@@ -348,7 +348,8 @@ export function buildCaptionEdit(input: CaptionEditInput) {
           // In a box the words stay put (no pop), so the box keeps its shape while a line is spoken.
           animation: { style: bar.color ? "highlight" : "pop" },
           ...(active ? { active } : {}),
-          ...(bar.color ? { background: fixedBar ? { color: bar.color, opacity: bar.opacity, borderRadius: 18 } : { color: bar.color, opacity: bar.opacity, borderRadius: 18, wrap: true, padding: 18 } } : { border: { width: 0, color: ink, opacity: 1, radius: 16 } }),
+          // Over removed text the bar is fully opaque (29 Oct 2026): at 80% the leftover letters showed through.
+          ...(bar.color ? { background: fixedBar ? { color: bar.color, opacity: 1, borderRadius: 18 } : { color: bar.color, opacity: bar.opacity, borderRadius: 18, wrap: true, padding: 18 } } : { border: { width: 0, color: ink, opacity: 1, radius: 16 } }),
           padding: bar.color ? { top: 8, right: 14, bottom: 8, left: 14 } : { top: 6, right: 10, bottom: 6, left: 10 },
           align: { horizontal: "center", vertical: "middle" },
         },
@@ -505,9 +506,9 @@ export function twoLineHeight(fontPx: number, look: "box" | "outline") {
   return Math.round(fontPx * 2 * 1.25 + (look === "box" ? 16 + 36 : 12));
 }
 
-/** Height of the fixed bar over removed text: the smudge's height plus 24 px above and below. */
+/** Height of the fixed bar over removed text: the smudge's height plus 32 px above and below. */
 export function coverHeightFor(box: { top: number; bottom: number }, frameHeight: number) {
-  return Math.round(((box.bottom - box.top) * frameHeight + 48) / 2) * 2;
+  return Math.round(((box.bottom - box.top) * frameHeight + 64) / 2) * 2;
 }
 
 /** Width of the fixed bar over removed text: the old text's width plus a margin, between 70% and 92% of the frame. */

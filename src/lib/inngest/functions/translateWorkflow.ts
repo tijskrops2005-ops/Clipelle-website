@@ -7,7 +7,8 @@ import { captionStyleOf, styleOverRemovedText } from "@/lib/captionOptions";
 import { assets, db, projects, steps, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
 import { glossaryPronunciations, glossaryReplacements, mergeGlossaries, replacementsFor, type GlossaryEntries, type LocalizedReplacements } from "@/lib/localizedTerms";
 import { localizeReplacements, LOCALIZE_TERMS_USD, type Pronunciations } from "@/lib/services/localizeTerms";
-import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, measureRemovedText, type TextBox } from "@/lib/services/textLocate";
+import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, measureRemovedText, MEASURE_MOMENTS, type TextBox } from "@/lib/services/textLocate";
+import { FRAME_AT_USD } from "@/lib/services/frameAt";
 import { downloadTextRemovalOutput, estimateTextRemovalUsd, getTextRemoval, startTextRemoval, TEXT_REMOVAL_MODEL, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
 import { languageCodeForName, languageOf } from "@/lib/languages";
 import { checkTranslation, estimateCheckUsd } from "@/lib/services/translationCheck";
@@ -475,17 +476,28 @@ async function locateOldText(projectId: string, input: TranslateInput, step: Ste
  */
 async function measureRemovedTextStep(projectId: string, input: TranslateInput, step: StepTools): Promise<TextBox | null> {
   if (input.removedTextBox !== undefined) return input.removedTextBox;
-  return step.run("measure-removed-text", () => withDeadline("Finding the cleaned spot", 3, async () => {
+  return step.run("measure-removed-text", () => withDeadline("Finding the cleaned spot", 6, async () => {
     let box: TextBox | null = null;
     try {
       const [picture] = await db().select({ id: assets.id }).from(assets).where(and(eq(assets.projectId, projectId), eq(assets.kind, "cleaned"), sql`(${assets.storagePath} like '%cleaned-picture%' or ${assets.storagePath} like '%-cleaned.mp4')`)).limit(1);
       if (picture) {
         const row = await loadStep(projectId, "upload");
         const [source, cleaned] = await Promise.all([loadAsset(input.sourceAssetId), loadAsset(picture.id)]);
-        const reserved = await reserveSpend({ service: "fal", action: "extract_frame", estimatedUsd: EXTRACT_FRAME_USD * 6, fingerprintInput: { projectId, source: source.id, cleaned: cleaned.id }, projectId, stepId: row.id, languageCount: Math.max(1, input.targetLanguages.length) });
+        const estimate = FRAME_AT_USD * MEASURE_MOMENTS * 2;
+        const reserved = await reserveSpend({ service: "shotstack", action: "measure_frames", estimatedUsd: estimate, fingerprintInput: { projectId, source: source.id, cleaned: cleaned.id, moments: MEASURE_MOMENTS }, projectId, stepId: row.id, languageCount: Math.max(1, input.targetLanguages.length) });
         try {
-          box = await measureRemovedText(await providerUrl(source), await providerUrl(cleaned));
-          await settleSpend(reserved.entryId, { status: "completed", actualUsd: EXTRACT_FRAME_USD * 6, basis: "list" });
+          const sourceUrl = await providerUrl(source);
+          // "Original": the source's own size (free probe), so the box matches the frame the captions are drawn on.
+          let size: { width: number; height: number } | undefined;
+          if (input.format === "original") {
+            const probed = await ingestFromUrl(sourceUrl).catch(() => null);
+            if (probed?.width && probed.height) {
+              const scale = 640 / Math.max(probed.width, probed.height);
+              size = { width: Math.round((probed.width * scale) / 2) * 2, height: Math.round((probed.height * scale) / 2) * 2 };
+            }
+          }
+          box = await measureRemovedText(sourceUrl, await providerUrl(cleaned), input.sourceSeconds, size);
+          await settleSpend(reserved.entryId, { status: "completed", actualUsd: estimate, basis: "list" });
         } catch (error) {
           await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
           throw error;

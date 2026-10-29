@@ -6,6 +6,7 @@ import { z } from "zod";
 import sharp from "sharp";
 import { changedBand, joinBands } from "@/lib/changedBand";
 import { workflowSettings } from "@/lib/workflow/settings";
+import { framesAt } from "@/lib/services/frameAt";
 import { claudeTokensToUsd, isScriptModel } from "@/lib/pricing";
 
 /**
@@ -69,16 +70,23 @@ export async function locateBurnedCaptions(frameUrls: string[]): Promise<{ box: 
 }
 
 /**
- * The exact place of the removed text (27 Oct 2026): the same three moments of the source and of the
- * cleaned picture (same length and frame rate) are compared pixel by pixel; only the removal changed
- * them, so the changed band is the smudge. Free apart from the six frame grabs.
+ * The exact place of the removed text (27 Oct 2026; 29 Oct 2026: ten moments instead of three, after a
+ * test where three-line captions at other moments stuck out above and below the bar). The same moments
+ * of the source and of the cleaned picture are rendered as frames (Shotstack, src/lib/services/frameAt.ts)
+ * and compared pixel by pixel; only the removal changed them, so the changed band is the smudge. The
+ * frames are the output frame: 9:16 cropped, or the source's own size for "original", so the box
+ * fractions match the frame the captions are drawn on.
  */
-export async function measureRemovedText(sourceUrl: string, cleanedUrl: string): Promise<TextBox | null> {
-  const moments = ["first", "middle", "last"] as const;
-  const frames = await Promise.all(moments.flatMap((m) => [extractFrame(sourceUrl, m), extractFrame(cleanedUrl, m)]));
+export const MEASURE_MOMENTS = 10;
+export async function measureRemovedText(sourceUrl: string, cleanedUrl: string, seconds: number, size?: { width: number; height: number }): Promise<TextBox | null> {
+  const length = Math.max(1, seconds);
+  const moments = Array.from({ length: MEASURE_MOMENTS }, (_, i) => Math.min(length - 0.15, 0.2 + ((length - 0.4) * i) / (MEASURE_MOMENTS - 1)));
+  const fit = size ? "contain" : "crop";
+  const [source, cleaned] = await Promise.all([framesAt(sourceUrl, moments, fit, size), framesAt(cleanedUrl, moments, fit, size)]);
   const bands = [];
-  for (let i = 0; i < frames.length; i += 2) {
-    const [a, b] = await Promise.all([greyPixels(frames[i]), greyPixels(frames[i + 1])]);
+  for (let i = 0; i < moments.length; i++) {
+    if (!source[i] || !cleaned[i]) continue;
+    const [a, b] = await Promise.all([greyPixels(source[i]!), greyPixels(cleaned[i]!)]);
     bands.push(a.width === b.width && a.height === b.height ? changedBand(a.data, b.data, a.width, a.height) : null);
   }
   return joinBands(bands);
