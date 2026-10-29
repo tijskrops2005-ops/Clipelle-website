@@ -373,7 +373,7 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
         keepTerms: t.keepTerms,
         ...(t.replaceTerms?.length ? { replaceTerms: t.replaceTerms } : {}),
         ...(t.instructions?.trim() ? { instructions: t.instructions.trim() } : {}),
-        trimSilence: t.trimSilence ?? true,
+        trimSilence: t.trimSilence ?? false,
         captionPosition: t.captionPosition ?? "low",
         ...(t.captionStyle ? { captionStyle: t.captionStyle } : {}),
         ...(t.removeMusic ? { removeMusic: true } : {}),

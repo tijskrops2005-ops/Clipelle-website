@@ -71,7 +71,7 @@ export const TranslateFields = z.object({
   instructions: z.string().trim().max(300).optional(),
   format: z.enum(["original", "9:16"]),
   enhance: z.boolean(),
-  trimSilence: z.boolean().default(true),
+  trimSilence: z.boolean().default(false),
   captionPosition: z.enum(["low", "middle"]).default("low"),
   /** Caption choices (26 Oct 2026); omitted = the original look. */
   captionStyle: z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: z.enum(CAPTION_COLOR_VALUES), size: z.enum(CAPTION_SIZES), uppercase: z.boolean(), textColor: z.enum(CAPTION_TEXT_COLOR_VALUES), bar: z.enum(CAPTION_BARS) }).partial().optional(),

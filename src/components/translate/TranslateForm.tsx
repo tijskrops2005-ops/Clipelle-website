@@ -84,7 +84,8 @@ function TranslateFormFields({ fromAd, initialSpeaker = "original", onStarted }:
   const [instructions, setInstructions] = useState("");
   const [format, setFormat] = useState<"original" | "9:16">("9:16");
   const [enhance, setEnhance] = useState(false);
-  const [trimSilence, setTrimSilence] = useState(true);
+  // Off by default (29 Oct 2026, Tijs): a silent product shot at the start is part of the video.
+  const [trimSilence, setTrimSilence] = useState(false);
   const [captionPosition, setCaptionPosition] = useState<"low" | "middle">("low");
   const [captionStyle, setCaptionStyle] = useState<CaptionStyleChoice>(DEFAULT_CAPTION_STYLE);
   const [removeMusic, setRemoveMusic] = useState(false);

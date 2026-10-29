@@ -854,14 +854,72 @@ async function captionTiming(projectId: string, input: TranslateInput, code: Lan
   }
   let trimStart = 0;
   let trimEnd = 0;
-  if ((input.trimSilence ?? true) && cues.length > 0) {
+  if ((input.trimSilence ?? false) && cues.length > 0) {
     const first = Math.min(...cues.map((c) => c.start));
     const last = Math.max(...cues.map((c) => c.end));
     if (first > 0.6) trimStart = Math.round((first - 0.3) * 10) / 10;
     if (seconds - last > 0.6) trimEnd = Math.round((seconds - last - 0.3) * 10) / 10;
   }
   const lastEnd = cues.length ? Math.max(...cues.map((c) => c.end)) : seconds;
-  return { video, srt, seconds, cues, trimStart, trimEnd, lastEnd };
+  const firstStart = cues.length ? Math.min(...cues.map((c) => c.start)) : 0;
+  return { video, srt, seconds, cues, trimStart, trimEnd, lastEnd, firstStart };
+}
+
+/**
+ * Does the silent start or end show a new picture? (28 Oct 2026 for the end, 29 Oct 2026 for the start.)
+ * Shotstack renders the silence plus the nearest half second of speech as a 48×86 GIF; firstChange finds a
+ * cut or a fade there. True = keep that part; false = it is dead air (or the check could not run).
+ * The end keeps its step ids from before (`<code>-end-probe-*`), the start uses `<code>-start-probe-*`.
+ */
+async function probeKeeps(step: StepTools, projectId: string, input: TranslateInput, code: LanguageCode, videoAssetId: string, srtAssetId: string, languageCount: number, side: "start" | "end"): Promise<boolean> {
+  const id = `${code}-${side}-probe`;
+  const probe = await step.run(`${id}-submit`, () => withDeadline(side === "end" ? "Looking at the end" : "Looking at the start", 5, async (): Promise<{ renderId: string; entryId: string; estimate: number } | { skip: string }> => {
+    try {
+      const timing = await captionTiming(projectId, input, code, videoAssetId, srtAssetId);
+      if ((side === "end" ? timing.trimEnd : timing.trimStart) <= 0) return { skip: `no silent ${side}` };
+      const from = side === "end" ? Math.max(timing.trimStart, timing.lastEnd - 0.5) : 0;
+      const length = side === "end" ? Math.min(12, timing.seconds - from) : Math.min(12, timing.firstStart + 0.5);
+      if (length < 0.8) return { skip: "too short" };
+      const estimate = Math.round(length * SHOTSTACK_USD_PER_SECOND * 1000) / 1000;
+      const reserved = await reserveSpend({ service: "shotstack", action: `${side}_probe`, estimatedUsd: estimate, fingerprintInput: { projectId, code, video: videoAssetId, from, side }, projectId, stepId: (await loadStep(projectId, "captions")).id, language: code, languageCount, meta: { env: shotstackEnv(), seconds: length } });
+      try {
+        const r = await withRetries(side === "end" ? "Looking at the end" : "Looking at the start", async () => startRender(buildEndProbeEdit({ videoUrl: await providerUrl(timing.video), from, length })));
+        return { renderId: r.renderId, entryId: reserved.entryId, estimate };
+      } catch (error) {
+        await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
+        throw error;
+      }
+    } catch (error) {
+      console.error(`[${side}-probe] skipped`, error);
+      return { skip: "error" };
+    }
+  }));
+  if (!("renderId" in probe)) return false;
+  for (let i = 0; i < 24; i++) {
+    await step.sleep(`${id}-wait-${i}`, "5s");
+    const r = await step.run(`${id}-status-${i}`, async () => {
+      const x = await getRender(probe.renderId).catch(() => null);
+      return { status: x?.status ?? "unknown", url: x?.url ?? null };
+    });
+    if (r.status === "done" && r.url) {
+      return step.run(`${id}-read`, async () => {
+        try {
+          return firstChange(await gifFrames(r.url!)) !== null;
+        } catch (error) {
+          console.error(`[${side}-probe] could not read`, error);
+          return false;
+        } finally {
+          await settleSpend(probe.entryId, { status: "completed", actualUsd: probe.estimate });
+        }
+      });
+    }
+    if (r.status === "failed") {
+      await step.run(`${id}-failed`, () => settleSpend(probe.entryId, { status: "failed", actualUsd: 0 }));
+      return false;
+    }
+  }
+  await step.run(`${id}-timeout`, () => settleSpend(probe.entryId, { status: "completed", actualUsd: probe.estimate }));
+  return false;
 }
 
 /**
@@ -1084,67 +1142,21 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
     sourceForCaptions = enhanced;
   }
 
-  // c2. The silent end (28 Oct 2026): a tiny GIF of the last half second of speech and the silence after it
-  // shows whether the picture changes there. A new picture (an end card, an outro) is kept; dead air is cut.
-  // About a cent; any problem simply keeps the old rule. END_PROBE=off switches it off.
-  let keepTail = false;
-  if ((input.trimSilence ?? true) && process.env.END_PROBE !== "off") {
-    const probe = await step.run(`${code}-end-probe-submit`, () => withDeadline("Looking at the end", 5, async (): Promise<{ renderId: string; entryId: string; estimate: number } | { skip: string }> => {
-      try {
-        const timing = await captionTiming(projectId, input, code, sourceForCaptions, srtAssetId);
-        if (timing.trimEnd <= 0) return { skip: "no silent end" };
-        const from = Math.max(timing.trimStart, timing.lastEnd - 0.5);
-        const length = Math.min(12, timing.seconds - from);
-        if (length < 0.8) return { skip: "too short" };
-        const estimate = Math.round(length * SHOTSTACK_USD_PER_SECOND * 1000) / 1000;
-        const reserved = await reserveSpend({ service: "shotstack", action: "end_probe", estimatedUsd: estimate, fingerprintInput: { projectId, code, video: sourceForCaptions, from }, projectId, stepId: (await loadStep(projectId, "captions")).id, language: code, languageCount, meta: { env: shotstackEnv(), seconds: length } });
-        try {
-          const r = await withRetries("Looking at the end", async () => startRender(buildEndProbeEdit({ videoUrl: await providerUrl(timing.video), from, length })));
-          return { renderId: r.renderId, entryId: reserved.entryId, estimate };
-        } catch (error) {
-          await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
-          throw error;
-        }
-      } catch (error) {
-        console.error("[end-probe] skipped", error);
-        return { skip: "error" };
-      }
-    }));
-    if ("renderId" in probe) {
-      let finished = false;
-      for (let i = 0; i < 24 && !finished; i++) {
-        await step.sleep(`${code}-end-probe-wait-${i}`, "5s");
-        const r = await step.run(`${code}-end-probe-status-${i}`, async () => {
-          const x = await getRender(probe.renderId).catch(() => null);
-          return { status: x?.status ?? "unknown", url: x?.url ?? null };
-        });
-        if (r.status === "done" && r.url) {
-          keepTail = await step.run(`${code}-end-probe-read`, async () => {
-            try {
-              return firstChange(await gifFrames(r.url!)) !== null;
-            } catch (error) {
-              console.error("[end-probe] could not read", error);
-              return false;
-            } finally {
-              await settleSpend(probe.entryId, { status: "completed", actualUsd: probe.estimate });
-            }
-          });
-          finished = true;
-        } else if (r.status === "failed") {
-          await step.run(`${code}-end-probe-failed`, () => settleSpend(probe.entryId, { status: "failed", actualUsd: 0 }));
-          finished = true;
-        }
-      }
-      if (!finished) await step.run(`${code}-end-probe-timeout`, () => settleSpend(probe.entryId, { status: "completed", actualUsd: probe.estimate }));
-    }
-  }
+  // c2. The silent start and end (28/29 Oct 2026): a tiny GIF of the silence and the nearest half second of
+  // speech shows whether the picture changes there. A new picture (a product shot, a logo, an end card) is
+  // kept; dead air is cut. About a cent each; any problem keeps the plain rule. END_PROBE=off switches it off.
+  const probeOn = (input.trimSilence ?? false) && process.env.END_PROBE !== "off";
+  const keepHead = probeOn ? await probeKeeps(step, projectId, input, code, sourceForCaptions, srtAssetId, languageCount, "start") : false;
+  const keepTail = probeOn ? await probeKeeps(step, projectId, input, code, sourceForCaptions, srtAssetId, languageCount, "end") : false;
 
   // d. Captions and format via Shotstack.
   const render = await step.run(`${code}-captions-submit`, () => withDeadline("Starting the captions", 10, async (): Promise<{ renderId: string; entryId: string; estimate: number; stepId: string; seconds: number } | { error: string }> => {
     try {
       const stepRow = await loadStep(projectId, "captions");
       const timing = await captionTiming(projectId, input, code, sourceForCaptions, srtAssetId);
-      const { video, srt, seconds, cues, trimStart } = timing;
+      const { video, srt, seconds, cues } = timing;
+      // A new picture before the first line (a product shot, a logo) stays (29 Oct 2026); dead air is cut.
+      const trimStart = keepHead ? 0 : timing.trimStart;
       // A new picture after the last line (an end card, an outro) stays (28 Oct 2026); dead air is cut.
       const trimEnd = keepTail ? 0 : timing.trimEnd;
       let srtUrl = srt ? await providerUrl(srt) : undefined;
