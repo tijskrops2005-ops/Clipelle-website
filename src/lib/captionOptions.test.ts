@@ -26,3 +26,14 @@ describe("captions over removed text (29 Oct 2026)", () => {
     expect(barChoices(false)).toContain("none");
   });
 });
+
+describe("a background that fits the text colour (29 Oct 2026)", () => {
+  it("switches white to dark for yellow or green text, and keeps a bar that already reads", async () => {
+    const { barForText } = await import("./captionOptions");
+    expect(barForText("#FFD400", "white", true)).toBe("dark");
+    expect(barForText("#22C55E", "white", true)).toBe("dark");
+    expect(barForText("#D43F1B", "white", true)).toBe("white");
+    expect(barForText("#111114", "dark", true)).toBe("white");
+    expect(barForText("#FFFFFF", "yellow", true)).toBe("dark");
+  });
+});

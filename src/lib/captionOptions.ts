@@ -132,6 +132,17 @@ export function styleOverRemovedText(style: Partial<CaptionStyleChoice> | null |
   return { ...s, show: true, bar: s.bar && s.bar !== "none" ? s.bar : "white" };
 }
 
+/**
+ * A background on which the text colour reads (29 Oct 2026, Tijs: yellow and green on white silently
+ * turned black). Keeps the current bar when it reads; otherwise dark for light text, white for dark text.
+ */
+export function barForText(text: string, current: CaptionBar, overOldText: boolean): CaptionBar {
+  const meta = CAPTION_BAR_META[current];
+  if (!meta.color || contrastRatio(text, meta.color) >= 3) return current;
+  const order: CaptionBar[] = luminance(text) > 0.3 ? ["dark", "white", "cream", "yellow"] : ["white", "cream", "yellow", "dark"];
+  return order.find((b) => contrastRatio(text, CAPTION_BAR_META[b].color!) >= 3) ?? (overOldText ? "dark" : "none");
+}
+
 /** The bars that can be chosen: no "none" over removed text. */
 export function barChoices(overOldText: boolean): readonly CaptionBar[] {
   return overOldText ? CAPTION_BARS.filter((b) => b !== "none") : CAPTION_BARS;
