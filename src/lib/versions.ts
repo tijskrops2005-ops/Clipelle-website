@@ -31,6 +31,12 @@ export function sourceAdOf(all: Project[], project: TranslateProject): AdProject
   return all.find((p): p is AdProject => p.workflow === "ad" && p.id === project.parentId);
 }
 
+/** "Add a language" (31 Oct 2026): the earlier translation whose upload this project reuses. */
+export function sourceTranslationOf(all: Project[], project: TranslateProject): TranslateProject | undefined {
+  if (!project.parentId) return undefined;
+  return all.find((p): p is TranslateProject => p.workflow === "translate" && p.id === project.parentId);
+}
+
 /** "Version 2 of Glow launch": the name a new version starts with; the base name loses an earlier prefix. */
 export function versionName(name: string, version: number) {
   const base = name.replace(/^Version \d+ of /i, "").trim() || name;

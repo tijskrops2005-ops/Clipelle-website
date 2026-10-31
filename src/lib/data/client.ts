@@ -343,24 +343,27 @@ export type TranslateProjectDraft = {
 export async function createTranslateProject(draft: TranslateProjectDraft, onUploadProgress?: (fraction: number) => void): Promise<{ id: string }> {
   if (config.demoMode) {
     const now = new Date().toISOString();
-    const sourceAd = draft.sourceProjectId ? mockStore.getProjectsSnapshot().find((p): p is AdProject => p.workflow === "ad" && p.id === draft.sourceProjectId) : undefined;
-    if (draft.sourceProjectId && !sourceAd?.finalVideoUrl) throw new Error("This ad has no finished video yet. Translate it once it is completed.");
+    // A stored video as the source: a finished ad, or an earlier translation's upload ("Add a language").
+    const parent = draft.sourceProjectId ? mockStore.getProjectsSnapshot().find((p) => p.id === draft.sourceProjectId) : undefined;
+    const sourceAd = parent?.workflow === "ad" ? parent : undefined;
+    const sourceTranslation = parent?.workflow === "translate" ? parent : undefined;
+    if (draft.sourceProjectId && !sourceAd?.finalVideoUrl && !sourceTranslation?.sourceVideoUrl) throw new Error("This project has no stored video yet. Translate it once it is completed.");
     const project: TranslateProject = {
       id: `prj_${Date.now().toString(36)}`,
       workflow: "translate",
       name: draft.name,
       status: "processing",
       createdAt: now,
-      sourceFileName: sourceAd ? `${sourceAd.name}.mp4` : (draft.video?.name ?? "video.mp4"),
+      sourceFileName: sourceAd ? `${sourceAd.name}.mp4` : sourceTranslation ? sourceTranslation.sourceFileName : (draft.video?.name ?? "video.mp4"),
       sourceSeconds: Math.round(draft.sourceSeconds),
-      // Demo: the browser's object URL only lives in this tab; a localized ad reuses the ad's placeholder clip.
-      sourceVideoUrl: sourceAd ? sourceAd.finalVideoUrl : draft.video ? URL.createObjectURL(draft.video) : undefined,
+      // Demo: the browser's object URL only lives in this tab; a reused project keeps its placeholder clip.
+      sourceVideoUrl: sourceAd ? sourceAd.finalVideoUrl : sourceTranslation ? sourceTranslation.sourceVideoUrl : draft.video ? URL.createObjectURL(draft.video) : undefined,
       sourceLanguage: draft.sourceLanguage,
       targetLanguages: draft.targetLanguages,
       quality: draft.quality,
       rightsConfirmedAt: now,
       rightsBasis: sourceAd ? "generated" : "own_upload",
-      parentId: sourceAd?.id,
+      parentId: parent?.id,
       steps: {
         upload: { status: "processing", startedAt: now, attempt: 1 },
         translate: { status: "waiting" },

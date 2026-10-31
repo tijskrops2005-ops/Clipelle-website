@@ -351,7 +351,7 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
   }
   const t = input.translate;
   if (!t.rightsConfirmed) throw new DataError("Confirm the rights to the video first.", 400, "rights_required");
-  const sourceAd = t.sourceProjectId ? await finishedAdAsSource(scope, t.sourceProjectId) : null;
+  const source = t.sourceProjectId ? await finishedSourceOf(scope, t.sourceProjectId) : null;
   const [row] = await d
     .insert(projects)
     .values({
@@ -361,12 +361,12 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
       name: t.name,
       status: "draft",
       rightsConfirmedAt: new Date(),
-      parentId: sourceAd?.project.id ?? null,
+      parentId: source?.project.id ?? null,
       input: {
-        sourceFileName: sourceAd ? `${sourceAd.project.name}.mp4` : t.sourceFileName,
-        sourceSeconds: sourceAd ? sourceAd.seconds : t.sourceSeconds,
+        sourceFileName: source ? source.fileName : t.sourceFileName,
+        sourceSeconds: source ? source.seconds : t.sourceSeconds,
         sourceAssetId: "",
-        rightsBasis: sourceAd ? "generated" : "own_upload",
+        rightsBasis: source ? source.rightsBasis : "own_upload",
         sourceLanguage: t.sourceLanguage,
         targetLanguages: t.targetLanguages,
         quality: t.quality,
@@ -389,19 +389,19 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
     .returning();
   await d.insert(steps).values(TRANSLATE_STEPS.map((key) => ({ projectId: row.id, userId, key, status: "waiting" as const })));
   await d.insert(translations).values(t.targetLanguages.map((language) => ({ projectId: row.id, userId, language, status: "waiting" as const, segments: [] })));
-  if (sourceAd) {
-    // The finished ad becomes this project's source: the file is copied inside our storage (every
+  if (source) {
+    // The stored video becomes this project's source: the file is copied inside our storage (every
     // project owns its files; storage paths are unique), no upload from the browser.
-    const target = objectPath({ projectId: row.id, kind: "source", fileName: `${sourceAd.project.name}.mp4` });
+    const target = objectPath({ projectId: row.id, kind: "source", fileName: source.fileName });
     try {
-      await copyObject(sourceAd.asset.storagePath, target);
+      await copyObject(source.asset.storagePath, target);
     } catch (error) {
       await d.delete(projects).where(eq(projects.id, row.id));
-      throw new DataError("The finished video of this ad could not be copied. Try again in a moment.", 503, "copy_failed", error);
+      throw new DataError("The stored video could not be copied. Try again in a moment.", 503, "copy_failed", error);
     }
     const [asset] = await d
       .insert(assets)
-      .values({ projectId: row.id, userId, kind: "source", storagePath: target, mime: sourceAd.asset.mime, bytes: sourceAd.asset.bytes, seconds: sourceAd.seconds, width: sourceAd.asset.width, height: sourceAd.asset.height })
+      .values({ projectId: row.id, userId, kind: "source", storagePath: target, mime: source.asset.mime, bytes: source.asset.bytes, seconds: source.seconds, width: source.asset.width, height: source.asset.height })
       .returning();
     const [updated] = await d.update(projects).set({ input: { ...(row.input as TranslateInput), sourceAssetId: asset.id }, updatedAt: new Date() }).where(eq(projects.id, row.id)).returning();
     return updated;
@@ -409,15 +409,26 @@ export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad:
   return row;
 }
 
-/** "Localize this ad": the ad must be a completed ad of this workspace with a finished video in storage. */
-async function finishedAdAsSource(scope: DataScope, adId: string) {
-  const project = await getProjectRow(adId, scope);
-  if (!project || project.workflow !== "ad") throw new DataError("The ad to translate was not found.", 404, "not_found");
-  if (project.status !== "completed" || !project.finalAssetId) throw new DataError("This ad has no finished video yet. Translate it once it is completed.", 409, "not_completed");
-  const [asset] = await db().select().from(assets).where(eq(assets.id, project.finalAssetId)).limit(1);
-  if (!asset) throw new DataError("The finished video of this ad is missing from storage.", 409, "missing_object");
-  const input = project.input as AdInput;
-  return { project, asset, seconds: asset.seconds ?? input.seconds ?? workflowSettings.adSeconds };
+/**
+ * A stored video of this workspace as the source of a new translation: a completed ad's finished
+ * video ("Localize this ad", rights: generated here) or an earlier translation's own upload ("Add a
+ * language", 31 Oct 2026; the form asks for the rights again). Anything else is "not found".
+ */
+async function finishedSourceOf(scope: DataScope, id: string) {
+  const project = await getProjectRow(id, scope);
+  if (!project) throw new DataError("The video to translate was not found.", 404, "not_found");
+  if (project.workflow === "ad") {
+    if (project.status !== "completed" || !project.finalAssetId) throw new DataError("This ad has no finished video yet. Translate it once it is completed.", 409, "not_completed");
+    const [asset] = await db().select().from(assets).where(eq(assets.id, project.finalAssetId)).limit(1);
+    if (!asset) throw new DataError("The finished video of this ad is missing from storage.", 409, "missing_object");
+    const input = project.input as AdInput;
+    return { project, asset, seconds: asset.seconds ?? input.seconds ?? workflowSettings.adSeconds, fileName: `${project.name}.mp4`, rightsBasis: "generated" as const };
+  }
+  const input = project.input as TranslateInput;
+  if (!input.sourceAssetId) throw new DataError("This project has no stored video to reuse yet.", 409, "not_completed");
+  const [asset] = await db().select().from(assets).where(eq(assets.id, input.sourceAssetId)).limit(1);
+  if (!asset) throw new DataError("The video of this project is missing from storage.", 409, "missing_object");
+  return { project, asset, seconds: asset.seconds ?? input.sourceSeconds, fileName: input.sourceFileName || `${project.name}.mp4`, rightsBasis: "own_upload" as const };
 }
 
 /**

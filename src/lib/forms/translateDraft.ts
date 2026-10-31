@@ -13,8 +13,10 @@ export type TranslateFormErrors = Partial<Record<"video" | "projectName" | "targ
 
 export type TranslateFormState = {
   video?: { file: File; seconds?: number };
-  /** "Localize this ad": the finished ad is the source (no upload, rights recorded as generated here). */
+  /** A stored video as the source (no upload): a finished ad ("Localize this ad", rights recorded as generated here) or an earlier translation's own upload ("Add a language", 31 Oct 2026). */
   sourceAd?: { id: string; seconds: number };
+  /** Whether the rights box must be ticked; default: only for an upload. "Add a language" asks again for the reused upload. */
+  rightsRequired?: boolean;
   projectName: string;
   source: LanguageCode | "auto";
   targets: LanguageCode[];
@@ -57,7 +59,7 @@ export function validateTranslateForm(s: TranslateFormState): TranslateFormError
   else if (tooLong) next.video = `Videos up to ${config.limits.translateVideoMaxSeconds / 60} minutes for now.`;
   if (s.projectName.trim().length < 2) next.projectName = "Give the project a name so you can find it later.";
   if (s.targets.length === 0) next.targets = "Choose at least one target language.";
-  if (!s.rights && !s.sourceAd) next.rights = "We can only translate videos you own, with the speaker's consent. Tick the box to continue.";
+  if (!s.rights && (s.rightsRequired ?? !s.sourceAd)) next.rights = "We can only translate videos you own, with the speaker's consent. Tick the box to continue.";
   return next;
 }
 

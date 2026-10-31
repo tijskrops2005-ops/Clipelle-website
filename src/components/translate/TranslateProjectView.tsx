@@ -20,7 +20,7 @@ import { projectDurationMs } from "@/lib/projectMeta";
 import { chargedCredits, creditsPerLanguage, projectCredits } from "@/lib/projectCredits";
 import { groupWarnings, plainQa } from "@/lib/plainQa";
 import { downloadHref, useProjects } from "@/lib/data/client";
-import { sourceAdOf } from "@/lib/versions";
+import { sourceAdOf, sourceTranslationOf } from "@/lib/versions";
 import { ProjectActions } from "@/components/ProjectActions";
 import { formatTook } from "@/components/pipeline/PipelineStep";
 
@@ -29,6 +29,7 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
   const sourceLanguage: LanguageCode = project.detectedLanguage ?? (project.sourceLanguage === "auto" ? "en" : project.sourceLanguage);
   const all = useProjects();
   const sourceAd = sourceAdOf(all, project);
+  const sourceTranslation = sourceTranslationOf(all, project);
 
   return (
     <div className="space-y-10">
@@ -47,6 +48,11 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
                 Made from the ad <span className="text-ink">{sourceAd.name}</span>
               </Link>
             )}
+            {sourceTranslation && (
+              <Link href={`/projects/${sourceTranslation.id}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
+                Same video as <span className="text-ink">{sourceTranslation.name}</span>
+              </Link>
+            )}
           </span>
         }
         title={project.name}
@@ -54,10 +60,16 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
         description={`Translation into ${project.targetLanguages.map((l) => languageOf(l).label).join(", ")} · created ${formatDate(project.createdAt)}${project.archivedAt ? " · archived" : ""}${project.tags?.length ? ` · ${project.tags.join(", ")}` : ""}`}
         actions={
           project.status === "completed" ? (
-            <Button href="/new/translate" variant="secondary">
-              <Plus className="size-4" aria-hidden />
-              Translate another
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {/* "Add a language" (31 Oct 2026): the stored upload is the source, nothing to upload again. */}
+              <Button href={`/new/translate?from=${project.id}&more=1`} variant="primary">
+                <Plus className="size-4" aria-hidden />
+                Add a language
+              </Button>
+              <Button href="/new/translate" variant="secondary">
+                Translate another
+              </Button>
+            </div>
           ) : undefined
         }
       />
