@@ -1,7 +1,15 @@
 import "server-only";
 import { cacheLife } from "next/cache";
-import { adCreditTable } from "@/lib/plans";
+import { activeListPrice, adCreditTable } from "@/lib/plans";
+import { ALL_SUBSCRIPTIONS } from "@/lib/pricingHelpers";
 import { defaultClipModel, estimateAdCost } from "@/lib/pricing";
+
+/** Which plans show a struck-through launch price right now (a date check), refreshed every hour. */
+export async function cachedListPrices(): Promise<Record<string, number | null>> {
+  "use cache";
+  cacheLife("hours");
+  return Object.fromEntries(ALL_SUBSCRIPTIONS.map((p) => [p.key, activeListPrice(p)]));
+}
 
 /**
  * The credit table the static site pages show. Clip prices carry a promo end date, so the numbers

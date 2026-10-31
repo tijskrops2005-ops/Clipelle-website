@@ -26,9 +26,9 @@ type Tab = "individual" | "business" | "api";
  * Every number comes from plans.ts and pricing.ts. `compact` (Billing settings) shows the cards only.
  * Prices are in dollars on / and in euros on /nl; Billing passes the currency the customer picked.
  */
-export function PricingTable({ onChoose, busyKey, compact, locale = "en", currency = currencyFor(locale), trial = true, initialPlan, currentPlan }: { onChoose?: (plan: Plan, interval: Interval) => void; busyKey?: string | null; compact?: boolean; locale?: Locale; currency?: Currency; /** Show the free-trial button and terms (the site always; Billing only while the workspace can still start one). */ trial?: boolean; /** Preselect this plan's level (a `?plan=` link). */ initialPlan?: string | null; /** Billing: the workspace's plan, marked "Current plan". */ currentPlan?: string | null }) {
+export function PricingTable({ onChoose, busyKey, compact, locale = "en", currency = currencyFor(locale), trial = true, initialPlan, currentPlan, listPrices, adTable }: { onChoose?: (plan: Plan, interval: Interval) => void; busyKey?: string | null; compact?: boolean; locale?: Locale; currency?: Currency; /** Show the free-trial button and terms (the site always; Billing only while the workspace can still start one). */ trial?: boolean; /** Preselect this plan's level (a `?plan=` link). */ initialPlan?: string | null; /** Billing: the workspace's plan, marked "Current plan". */ currentPlan?: string | null; /** Static pages pass the date-based numbers from the hourly cache (src/lib/pricingCached.ts), so the table renders without reading the clock (31 Oct 2026: reading it inside a static prerender left the Suspense boundary unfinished, React error #419). Without them the live functions are used (Billing is dynamic). */ listPrices?: Record<string, number | null>; adTable?: ReturnType<typeof adCreditTable> }) {
   const t = dict(locale).pricing;
-  const m: Money = { currency, locale };
+  const m: Money = { currency, locale, listPrices, adTable };
   const billingHref = (key: string, interval: Interval) => `/signup?next=${encodeURIComponent(`/settings/billing?plan=${key}&interval=${interval}${currency === "eur" ? "&currency=eur" : ""}`)}`;
   const L = (p: string) => localizePath(p, locale);
   const [annual, setAnnual] = useState(true);
@@ -177,7 +177,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en", curren
 }
 
 type T = ReturnType<typeof dict>["pricing"];
-type Money = { currency: Currency; locale: Locale };
+type Money = { currency: Currency; locale: Locale; listPrices?: Record<string, number | null>; adTable?: ReturnType<typeof adCreditTable> };
 
 /** The price, and one line under it that never wraps, so every card's button sits at the same height. */
 function PriceLine({ plan, interval, className, t, m }: { plan: Plan; interval: Interval; className?: string; t: T; m: Money }) {
@@ -185,7 +185,7 @@ function PriceLine({ plan, interval, className, t, m }: { plan: Plan; interval: 
   const p = planPrice(plan, m.currency);
   const price = interval === "annual" ? p.annualMonthly : p.monthly;
   // The launch price in plans.ts is a dollar price; it is never shown next to euros.
-  const list = m.currency === "usd" ? activeListPrice(plan) : null;
+  const list = m.currency === "usd" ? (m.listPrices ? (m.listPrices[plan.key] ?? null) : activeListPrice(plan)) : null;
   // Struck through: the real monthly price next to the annual one, or a real launch price. Nothing invented.
   const struck = interval === "annual" && p.monthly > 0 ? p.monthly : list && list > plan.monthlyUsd ? list : null;
   const totals = annualTotals(plan, m.currency);
@@ -315,7 +315,8 @@ function CompareSection({ t, locale }: { t: T; locale: Locale }) {
 
 function CreditTable({ wide, t, m }: { wide?: boolean; t: T; m: Money }) {
   const formatPrice = (v: number) => formatMoney(v, m.currency, m.locale);
-  const table = adCreditTable();
+  // Only computed while the ad table is shown: the clip prices carry a date.
+  const table = m.adTable ?? (config.features.ads ? adCreditTable() : []);
   const pro = PLANS.find((p) => p.key === "pro")!;
   const rate = usdPerCredit(pro, m.currency);
   const perMinute = { speed: translateCredits({ seconds: 60, quality: "speed", enhance: false, languages: 1, hasSourceTranscript: true }), precision: translateCredits({ seconds: 60, quality: "precision", enhance: false, languages: 1, hasSourceTranscript: true }) };
