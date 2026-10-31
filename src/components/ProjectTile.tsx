@@ -5,14 +5,18 @@ import { cn, formatDate } from "@/lib/utils";
 import { projectLengthLabel, projectMonogram, projectPosterUrl, projectSubtitle, projectVideoCount } from "@/lib/projectMeta";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Poster } from "@/components/Poster";
-import { translateProgress } from "@/lib/translateProgress";
+import { dataClock, translateProgress } from "@/lib/translateProgress";
 
-/** Vertical 9:16 video tile — the eye-catcher of the dashboard and the projects grid. */
-export function ProjectTile({ project, selectable, selected, onToggle }: { project: Project; selectable?: boolean; selected?: boolean; onToggle?: () => void }) {
+/**
+ * Vertical 9:16 video tile — the eye-catcher of the dashboard and the projects grid. `now` is the
+ * list's clock (`useClock`); without one the progress is read from the data alone, so the server
+ * HTML and the browser agree.
+ */
+export function ProjectTile({ project, now, selectable, selected, onToggle }: { project: Project; now?: number | null; selectable?: boolean; selected?: boolean; onToggle?: () => void }) {
   const isCompleted = project.status === "completed";
   const posterUrl = projectPosterUrl(project);
   // A translation being made shows its one progress on the tile too (27 Oct 2026).
-  const progress = project.workflow === "translate" && project.status === "processing" ? translateProgress(project) : null;
+  const progress = project.workflow === "translate" && project.status === "processing" ? translateProgress(project, now ?? dataClock(project)) : null;
   const format = project.workflow === "translate" && project.format === "original" ? "original size" : "9:16";
   // A translation has no product photo: its first frame is the poster (26 Oct 2026), the result or else the source.
   const frameVideo = !posterUrl && project.workflow === "translate" ? project.translations.find((t) => t.videoUrl)?.videoUrl ?? project.sourceVideoUrl : undefined;

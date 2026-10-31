@@ -132,16 +132,19 @@ export function useProject(id: string): Project | undefined {
 }
 
 /** True once the client has its first real list (demo: after hydration from localStorage). */
+// Stable references: a new subscribe function per render makes React unsubscribe and resubscribe on every render.
+const subscribeReady = (cb: () => void) => {
+  if (config.demoMode) return mockStore.subscribeToProjects(cb);
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+};
+const getReady = () => (config.demoMode ? mockStore.isHydrated() : hydrated);
+const getReadyServer = () => false;
+
 export function useProjectsReady(): boolean {
-  const ready = useSyncExternalStore(
-    (cb) => {
-      if (config.demoMode) return mockStore.subscribeToProjects(cb);
-      listeners.add(cb);
-      return () => listeners.delete(cb);
-    },
-    () => (config.demoMode ? mockStore.isHydrated() : hydrated),
-    () => false,
-  );
+  const ready = useSyncExternalStore(subscribeReady, getReady, getReadyServer);
   // Make sure the first fetch is triggered even when no list hook is mounted yet.
   useEffect(() => {
     if (!config.demoMode && !hydrated) void refresh();

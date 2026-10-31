@@ -54,6 +54,21 @@ const K = 2.2;
 const CAP = 0.96;
 const OVERDUE_AT = 1.5;
 
+/**
+ * The newest timestamp in the project: a clock that reads the same on the server and in the
+ * browser, so the server HTML and the first client render agree (the real clock takes over after
+ * hydration through `useClock`). With it a running stage shows as just started.
+ */
+export function dataClock(p: Pick<ProgressInput, "createdAt" | "steps" | "translations">): number {
+  const times = [Date.parse(p.createdAt)];
+  for (const s of Object.values(p.steps)) {
+    if (s?.startedAt) times.push(Date.parse(s.startedAt));
+    if (s?.finishedAt) times.push(Date.parse(s.finishedAt));
+  }
+  for (const t of p.translations) if (t.phase?.at) times.push(Date.parse(t.phase.at));
+  return Math.max(...times.filter((t) => Number.isFinite(t)));
+}
+
 export function expectedSeconds(stage: StageKey, sourceSeconds: number) {
   const e = translateStages[stage];
   return e.base + e.perSecond * Math.max(0, sourceSeconds);

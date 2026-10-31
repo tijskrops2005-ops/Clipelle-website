@@ -5,24 +5,25 @@ import type { CSSProperties } from "react";
 import { useProjects, useProjectsReady } from "@/lib/data/client";
 import type { Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { translateProgress } from "@/lib/translateProgress";
+import { dataClock, translateProgress } from "@/lib/translateProgress";
+import { useClock } from "@/lib/useClock";
 
 /** The latest thing that happened to each project, newest first: from the project's own status and step times. */
-function lastEvent(p: Project) {
+function lastEvent(p: Project, now: number | null) {
   const times = Object.values(p.steps).flatMap((s) => [s.finishedAt, s.startedAt]).filter((t): t is string => Boolean(t));
   const at = times.length ? Math.max(...times.map((t) => Date.parse(t))) : Date.parse(p.createdAt);
   const kind = p.workflow === "ad" ? "Ad" : "Translation";
   const text =
     p.status === "completed" ? `${kind} “${p.name}” is ready` :
     p.status === "failed" ? `${kind} “${p.name}” stopped` :
-    p.status === "processing" ? (p.workflow === "translate" ? `“${p.name}”: ${translateProgress(p).current.toLowerCase()}` : `${kind} “${p.name}” is being made`) :
+    p.status === "processing" ? (p.workflow === "translate" ? `“${p.name}”: ${translateProgress(p, now ?? dataClock(p)).current.toLowerCase()}` : `${kind} “${p.name}” is being made`) :
     p.status === "review" ? `${kind} “${p.name}” is waiting for you` :
     `${kind} “${p.name}” saved as a draft`;
   return { at, text, tone: p.status };
 }
 
-function ago(ms: number) {
-  const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+function ago(ms: number, now: number) {
+  const s = Math.max(0, Math.round((now - ms) / 1000));
   if (s < 60) return "just now";
   const m = Math.round(s / 60);
   if (m < 60) return `${m} min ago`;
@@ -37,9 +38,10 @@ const DOT: Record<string, string> = { completed: "bg-success", failed: "bg-dange
 export function ActivityFeed() {
   const projects = useProjects();
   const ready = useProjectsReady();
+  const now = useClock(30_000);
   const events = projects
     .filter((p) => !p.archivedAt)
-    .map((p) => ({ id: p.id, ...lastEvent(p) }))
+    .map((p) => ({ id: p.id, ...lastEvent(p, now) }))
     .sort((a, b) => b.at - a.at)
     .slice(0, 5);
   return (
@@ -57,7 +59,7 @@ export function ActivityFeed() {
                 <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", DOT[e.tone] ?? "bg-muted")} aria-hidden />
                 <span className="min-w-0">
                   <span className="block truncate text-[13px] text-ink">{e.text}</span>
-                  <span className="block text-[12px] text-muted">{ago(e.at)}</span>
+                  <span className="block text-[12px] text-muted">{now === null ? " " : ago(e.at, now)}</span>
                 </span>
               </Link>
             </li>

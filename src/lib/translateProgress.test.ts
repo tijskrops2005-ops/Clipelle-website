@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { expectedSeconds, translateProgress, type ProgressInput } from "./translateProgress";
+import { dataClock, expectedSeconds, translateProgress, type ProgressInput } from "./translateProgress";
 
 const T0 = Date.parse("2026-10-27T10:00:00Z");
 const iso = (offsetSec: number) => new Date(T0 + offsetSec * 1000).toISOString();
@@ -85,5 +85,16 @@ describe("translateProgress", () => {
 
   it("scales the expectation with the source length", () => {
     expect(expectedSeconds("voice", 60)).toBeGreaterThan(expectedSeconds("voice", 8));
+  });
+
+  it("dataClock is the newest time in the data, so server and browser agree before hydration", () => {
+    const p = project({
+      steps: { upload: { status: "completed", startedAt: iso(0), finishedAt: iso(20) }, translate: { status: "completed", startedAt: iso(20), finishedAt: iso(90) }, captions: { status: "processing", startedAt: iso(90) } },
+      translations: [{ language: "nl", status: "processing", phase: { key: "voice", at: iso(100) } }],
+    });
+    expect(dataClock(p)).toBe(T0 + 100_000);
+    expect(dataClock(project({ steps: { upload: { status: "waiting" }, translate: { status: "waiting" }, captions: { status: "waiting" } } }))).toBe(T0);
+    // Read with its own clock, a running stage has just started: the same number on both sides.
+    expect(translateProgress(p, dataClock(p)).percent).toBe(translateProgress(p, dataClock(p)).percent);
   });
 });

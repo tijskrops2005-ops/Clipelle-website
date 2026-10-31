@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionHeader } from "@/components/ui/PageHeader";
 import { ProjectTile } from "@/components/ProjectTile";
+import { useClock } from "@/lib/useClock";
 
 const LIMIT = 4;
 
@@ -14,6 +15,7 @@ const LIMIT = 4;
 export function RecentProjects() {
   const all = useProjects();
   const ready = useProjectsReady();
+  const now = useClock(15_000);
   const current = all.filter((p) => !p.archivedAt);
   const projects = current.slice(0, LIMIT);
 
@@ -51,7 +53,7 @@ export function RecentProjects() {
       ) : (
         <div className="grid grid-cols-2 gap-5 sm:gap-7 lg:grid-cols-3 xl:grid-cols-4">
           {projects.map((project) => (
-            <ProjectTile key={project.id} project={project} />
+            <ProjectTile key={project.id} project={project} now={now} />
           ))}
         </div>
       )}

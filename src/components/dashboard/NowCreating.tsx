@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { ArrowRight, Languages, Sparkles } from "lucide-react";
 import { useProjects } from "@/lib/data/client";
 import type { Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { translateProgress } from "@/lib/translateProgress";
+import { dataClock, translateProgress } from "@/lib/translateProgress";
+import { useClock } from "@/lib/useClock";
 
 /**
  * "Now creating" on the dashboard (25 Oct 2026): every video that is being made right now, with
@@ -20,10 +20,10 @@ const AD_STEPS: { key: string; title: string }[] = [
   { key: "presenter", title: "AI presenter" },
   { key: "finalEdit", title: "Final edit" },
 ];
-function progressOf(p: Project): { percent: number; label: string; waiting: boolean; since: number } {
+function progressOf(p: Project, now: number | null): { percent: number; label: string; waiting: boolean; since: number } {
   if (p.workflow === "translate") {
     // The same numbers as the project page (27 Oct 2026): one percentage and what happens now.
-    const g = translateProgress(p);
+    const g = translateProgress(p, now ?? dataClock(p));
     const started = Object.values(p.steps).map((s) => s?.startedAt).filter((t): t is string => Boolean(t)).map((t) => Date.parse(t));
     return { percent: g.percent, label: g.overdue ? `${g.current} · taking a little longer` : g.minutesLeft != null && g.minutesLeft > 1 ? `${g.current} · about ${g.minutesLeft} min left` : g.current, waiting: false, since: started.length ? Math.min(...started) : Date.parse(p.createdAt) };
   }
@@ -48,13 +48,8 @@ function running(ms: number) {
 
 export function NowCreating() {
   const projects = useProjects().filter((p) => !p.archivedAt && (p.status === "processing" || p.status === "review"));
-  // Re-render every 15 s so "running for" stays current.
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (projects.length === 0) return;
-    const t = setInterval(() => setNow(Date.now()), 15_000);
-    return () => clearInterval(t);
-  }, [projects.length]);
+  // Null until React is attached (the server HTML carries no running time), then every 15 s.
+  const now = useClock(15_000);
 
   if (projects.length === 0) return null;
   return (
@@ -74,7 +69,7 @@ export function NowCreating() {
       </div>
       <ul className="mt-4 divide-y divide-divider">
         {projects.map((p) => {
-          const g = progressOf(p);
+          const g = progressOf(p, now);
           const Icon = p.workflow === "ad" ? Sparkles : Languages;
           return (
             <li key={p.id}>
@@ -83,7 +78,7 @@ export function NowCreating() {
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline justify-between gap-3">
                     <span className="truncate text-[15px] font-semibold text-ink">{p.name}</span>
-                    <span className="shrink-0 text-[12.5px] text-muted">{p.workflow === "ad" ? "Ad" : `${g.percent}%`} · {running(now - g.since)}</span>
+                    <span className="shrink-0 text-[12.5px] text-muted">{p.workflow === "ad" ? "Ad" : `${g.percent}%`}{now !== null && ` · ${running(now - g.since)}`}</span>
                   </span>
                   <span className={cn("mt-0.5 block truncate text-[13px]", g.waiting ? "text-warning" : "text-muted")}>
                     {g.label}

@@ -7,7 +7,8 @@ import type { TranslateProject, TranslateStepKey } from "@/lib/types";
 import { languageOf } from "@/lib/languages";
 import { downloadHref, retryStep } from "@/lib/data/client";
 import { getProfile } from "@/lib/data/settingsClient";
-import { translateProgress, type LanguageView, type StageView } from "@/lib/translateProgress";
+import { dataClock, translateProgress, type LanguageView, type StageView } from "@/lib/translateProgress";
+import { useClock } from "@/lib/useClock";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
@@ -22,8 +23,9 @@ import { TRANSLATE_STEPS } from "./translateSteps";
  * src/lib/translateProgress.ts; this file only draws them.
  */
 export function TranslateProgress({ project }: { project: TranslateProject }) {
-  const now = useNow(project.status === "processing" ? 1000 : 0);
-  const p = translateProgress(project, now);
+  // The data's own clock until React is attached (same markup on both sides), then the real one every second.
+  const clock = useClock(project.status === "processing" ? 1000 : 0);
+  const p = translateProgress(project, clock ?? dataClock(project));
   // The bar never runs backwards on screen (a refetch can read a little lower than the clock did):
   // the highest value seen is kept as state derived during render.
   const [peak, setPeak] = useState(0);
@@ -165,16 +167,6 @@ function FailedPanel({ project }: { project: TranslateProject }) {
       )}
     </div>
   );
-}
-
-function useNow(intervalMs: number) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!intervalMs) return;
-    const id = window.setInterval(() => setNow(Date.now()), intervalMs);
-    return () => window.clearInterval(id);
-  }, [intervalMs]);
-  return now;
 }
 
 function useNotifyEmail() {

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProjectTile } from "@/components/ProjectTile";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { useClock } from "@/lib/useClock";
 
 type Filter = "all" | Extract<ProjectStatus, "processing" | "completed" | "failed">;
 
@@ -70,6 +71,7 @@ export function matchesSearch(project: Project, query: string) {
 export function ProjectsGrid() {
   const projects = useProjects();
   const ready = useProjectsReady();
+  const now = useClock(15_000);
   const [filter, setFilter] = useState<Filter>("all");
   const [kind, setKind] = useState<KindFilter>("all");
   const [query, setQuery] = useState("");
@@ -196,7 +198,7 @@ export function ProjectsGrid() {
       ) : (
         <div className="grid grid-cols-2 gap-5 sm:gap-7 lg:grid-cols-3 xl:grid-cols-4">
           {visible.map((project) => (
-            <ProjectTile key={project.id} project={project} selectable={selecting && selectableIds.has(project.id)} selected={selected.has(project.id)} onToggle={() => toggle(project.id)} />
+            <ProjectTile key={project.id} project={project} now={now} selectable={selecting && selectableIds.has(project.id)} selected={selected.has(project.id)} onToggle={() => toggle(project.id)} />
           ))}
         </div>
       )}
