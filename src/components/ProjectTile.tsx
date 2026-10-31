@@ -5,6 +5,7 @@ import { cn, formatDate } from "@/lib/utils";
 import { projectLengthLabel, projectMonogram, projectPosterUrl, projectSubtitle, projectVideoCount } from "@/lib/projectMeta";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Poster } from "@/components/Poster";
+import { languageOf } from "@/lib/languages";
 import { dataClock, translateProgress } from "@/lib/translateProgress";
 
 /**
@@ -34,11 +35,11 @@ export function ProjectTile({ project, now, selectable, selected, onToggle }: { 
         </span>
       )}
       <div className={cn("relative aspect-[9/16] overflow-hidden rounded-tile bg-surface-muted shadow-card transition-[box-shadow,transform] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-card-hover", selected && "ring-2 ring-accent ring-offset-2 ring-offset-bg")}>
-        {/* Poster: the first product image, or a curated gradient.
-            Real poster frames arrive with the final-edit output (Stage 8). */}
+        {/* Poster: the first product image, or the ink tile with the language codes; the first frame of the video lies over it once there is one. */}
         <Poster
           seed={project.id}
           monogram={projectMonogram(project)}
+          tags={project.workflow === "translate" ? project.targetLanguages.map((c) => languageOf(c).tag) : undefined}
           imageUrl={posterUrl}
         />
         {frameVideo && (
