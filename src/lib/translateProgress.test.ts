@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dataClock, expectedSeconds, translateProgress, type ProgressInput } from "./translateProgress";
+import { dataClock, expectedSeconds, runningLabel, translateProgress, type ProgressInput } from "./translateProgress";
 
 const T0 = Date.parse("2026-10-27T10:00:00Z");
 const iso = (offsetSec: number) => new Date(T0 + offsetSec * 1000).toISOString();
@@ -85,6 +85,26 @@ describe("translateProgress", () => {
 
   it("scales the expectation with the source length", () => {
     expect(expectedSeconds("voice", 60)).toBeGreaterThan(expectedSeconds("voice", 8));
+  });
+
+  it("says how long the work runs in minutes, never hours", () => {
+    expect(runningLabel(30_000)).toBe("Just started");
+    expect(runningLabel(3 * 60_000 + 5_000)).toBe("Running 3 min");
+    expect(runningLabel(90 * 60_000)).toBe("Running over an hour");
+  });
+
+  it("gives every language chip the word for its own stage and the project its start time", () => {
+    const p = project({
+      steps: { upload: { status: "completed", startedAt: iso(0), finishedAt: iso(20) }, translate: { status: "completed", startedAt: iso(20), finishedAt: iso(90) }, captions: { status: "processing", startedAt: iso(90) } },
+      translations: [{ language: "nl", status: "completed" }, { language: "de", status: "processing", phase: { key: "captions", at: iso(200) } }, { language: "fr", status: "processing", phase: { key: "voice", at: iso(100) } }],
+      targetLanguages: ["nl", "de", "fr"],
+    });
+    const g = translateProgress(p, T0 + 210_000);
+    expect(g.languages.map((l) => l.short)).toEqual(["ready", "captions", "voice"]);
+    expect(g.startedAt).toBe(T0);
+    // Before the translation is done, every chip shares the stage the whole project is in.
+    expect(translateProgress(project(), T0 + 5_000).languages[0].short).toBe("upload");
+    expect(translateProgress(project({ speaker: "presenter", steps: { upload: { status: "completed", startedAt: iso(0) }, translate: { status: "completed", startedAt: iso(1) }, captions: { status: "processing", startedAt: iso(2) } } }), T0 + 5_000).languages[0].short).toBe("presenter");
   });
 
   it("dataClock is the newest time in the data, so server and browser agree before hydration", () => {

@@ -5,7 +5,7 @@ import { ArrowRight, Languages, Sparkles } from "lucide-react";
 import { useProjects } from "@/lib/data/client";
 import type { Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { dataClock, translateProgress } from "@/lib/translateProgress";
+import { dataClock, runningLabel, translateProgress } from "@/lib/translateProgress";
 import { useClock } from "@/lib/useClock";
 
 /**
@@ -37,13 +37,6 @@ function progressOf(p: Project, now: number | null): { percent: number; label: s
   const label = waiting ? `${waiting.title} · waiting for you` : running.length > 1 ? running.map((s) => s.title).join(" + ") : current.title;
   const started = Object.values(steps).map((s) => s?.startedAt).filter((t): t is string => Boolean(t)).map((t) => Date.parse(t));
   return { percent: Math.max(6, Math.round((done / order.length) * 100)), label: `Step ${order.indexOf(current) + 1} of ${order.length} · ${label}`, waiting: Boolean(waiting), since: started.length ? Math.min(...started) : Date.parse(p.createdAt) };
-}
-
-function running(ms: number) {
-  const s = Math.max(0, Math.round(ms / 1000));
-  if (s < 60) return "just started";
-  const m = Math.floor(s / 60);
-  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
 }
 
 export function NowCreating() {
@@ -78,7 +71,7 @@ export function NowCreating() {
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline justify-between gap-3">
                     <span className="truncate text-[15px] font-semibold text-ink">{p.name}</span>
-                    <span className="shrink-0 text-[12.5px] text-muted">{p.workflow === "ad" ? "Ad" : `${g.percent}%`}{now !== null && ` · ${running(now - g.since)}`}</span>
+                    <span className="shrink-0 text-[12.5px] text-muted">{p.workflow === "ad" ? "Ad" : `${g.percent}%`}{now !== null && ` · ${runningLabel(now - g.since)}`}</span>
                   </span>
                   <span className={cn("mt-0.5 block truncate text-[13px]", g.waiting ? "text-warning" : "text-muted")}>
                     {g.label}

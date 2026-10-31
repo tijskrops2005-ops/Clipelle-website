@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Download, Languages, Loader2, Plus, RotateCcw, TriangleAlert } from "lucide-react";
+import { Check, Download, Loader2, Plus, RotateCcw, TriangleAlert } from "lucide-react";
+import { Poster } from "@/components/Poster";
 import { config } from "@/lib/config";
 import type { TranslateProject, TranslateStepKey } from "@/lib/types";
 import { languageOf } from "@/lib/languages";
 import { downloadHref, retryStep } from "@/lib/data/client";
 import { getProfile } from "@/lib/data/settingsClient";
-import { dataClock, translateProgress, type LanguageView, type StageView } from "@/lib/translateProgress";
+import { dataClock, runningLabel, translateProgress, type LanguageView, type StageView } from "@/lib/translateProgress";
 import { useClock } from "@/lib/useClock";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -49,7 +50,10 @@ export function TranslateProgress({ project }: { project: TranslateProject }) {
             <>
               <div className="mt-4 flex items-end justify-between gap-4">
                 <p className="text-[40px] font-semibold leading-none tracking-[-0.03em] text-ink">{percent}<span className="text-[22px] text-muted">%</span></p>
-                <p className="text-[14px] text-muted">{p.overdue ? "Taking a little longer than usual" : p.minutesLeft === null ? "" : p.minutesLeft <= 1 ? "Less than a minute left" : `About ${p.minutesLeft} min left`}</p>
+                <p className="text-right text-[14px] text-muted">
+                  {clock !== null && p.startedAt !== null && <span className="tabular-nums">{runningLabel(clock - p.startedAt)} · </span>}
+                  {p.overdue ? "taking a little longer than usual" : p.minutesLeft === null ? "" : p.minutesLeft <= 1 ? "less than a minute left" : `about ${p.minutesLeft} min left`}
+                </p>
               </div>
               <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-surface-muted" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label="Progress">
                 <div className="h-full w-full origin-left rounded-full bg-accent transition-transform duration-700 ease-out motion-reduce:transition-none" style={{ transform: `scaleX(${percent / 100})` }} />
@@ -100,10 +104,9 @@ export function TranslateProgress({ project }: { project: TranslateProject }) {
 function SourcePoster({ project, percent, failed }: { project: TranslateProject; percent: number; failed: boolean }) {
   return (
     <div className="relative mx-auto aspect-[9/16] w-[120px] overflow-hidden rounded-tile bg-surface-muted shadow-card md:mx-0 md:w-full">
-      {project.sourceVideoUrl ? (
+      <Poster tags={project.targetLanguages.map((c) => languageOf(c).tag)} />
+      {project.sourceVideoUrl && (
         <video src={`${project.sourceVideoUrl}#t=0.5`} muted playsInline preload="metadata" aria-hidden tabIndex={-1} className="pointer-events-none absolute inset-0 size-full object-cover" />
-      ) : (
-        <span className="absolute inset-0 grid place-items-center text-muted"><Languages className="size-8" aria-hidden /></span>
       )}
       {!failed && <span className="poster-sheen pointer-events-none absolute inset-0" aria-hidden />}
       <span className="absolute inset-x-2 bottom-2 flex items-center justify-between rounded-full bg-surface/90 px-2 py-1 text-[11px] font-semibold text-ink shadow-card">
@@ -137,7 +140,8 @@ function LanguageChip({ lang, open, onOpen }: { lang: LanguageView; open: boolea
   const inner = (
     <>
       <span className="label-mono">{l.tag}</span>
-      {ready ? <Check className="size-3.5 text-success" aria-hidden /> : lang.state === "failed" ? <TriangleAlert className="size-3.5 text-danger" aria-hidden /> : <span className="tabular-nums text-muted">{lang.percent}%</span>}
+      {ready ? <Check className="chip-pop size-3.5 text-success" aria-hidden /> : lang.state === "failed" ? <TriangleAlert className="size-3.5 text-danger" aria-hidden /> : null}
+      <span className="text-muted">{lang.short}</span>
       <span className="sr-only">{l.label}: {lang.label}</span>
     </>
   );

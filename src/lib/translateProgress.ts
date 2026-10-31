@@ -28,7 +28,8 @@ export type ProgressInput = {
 };
 
 export type StageView = { key: StageKey; label: string; doneLabel: string; state: StageState };
-export type LanguageView = { code: LanguageCode; state: LanguageState; percent: number; label: string; error?: string };
+/** `short` is the one word on the language chip: what differs between the languages, not a percentage they share. */
+export type LanguageView = { code: LanguageCode; state: LanguageState; percent: number; label: string; short: string; error?: string };
 export type TranslateProgress = {
   /** 0–100, never above 99 until the project is completed. */
   percent: number;
@@ -39,16 +40,30 @@ export type TranslateProgress = {
   languages: LanguageView[];
   /** What is happening right now, in one line. */
   current: string;
+  /** When the work started (the earliest step start), for "Running 3 min"; null before any step ran. */
+  startedAt: number | null;
 };
 
-const LABELS: Record<StageKey, { label: string; doneLabel: string; presenterLabel?: string; presenterDone?: string }> = {
-  upload: { label: "Uploading your video", doneLabel: "Video uploaded" },
-  removeText: { label: "Removing the old on-screen text", doneLabel: "Old text removed" },
-  translate: { label: "Writing out and checking every line", doneLabel: "Every line checked" },
-  voice: { label: "Recording the new voice and matching the lips", doneLabel: "Voice recorded, lips matched", presenterLabel: "Recording the presenter", presenterDone: "Presenter recorded" },
-  enhance: { label: "Sharpening the picture", doneLabel: "Picture sharpened" },
-  captions: { label: "Adding captions", doneLabel: "Captions added" },
+const LABELS: Record<StageKey, { label: string; doneLabel: string; short: string; presenterLabel?: string; presenterDone?: string; presenterShort?: string }> = {
+  upload: { label: "Uploading your video", doneLabel: "Video uploaded", short: "upload" },
+  removeText: { label: "Removing the old on-screen text", doneLabel: "Old text removed", short: "text removal" },
+  translate: { label: "Writing out and checking every line", doneLabel: "Every line checked", short: "check" },
+  voice: { label: "Recording the new voice and matching the lips", doneLabel: "Voice recorded, lips matched", short: "voice", presenterLabel: "Recording the presenter", presenterDone: "Presenter recorded", presenterShort: "presenter" },
+  enhance: { label: "Sharpening the picture", doneLabel: "Picture sharpened", short: "sharpening" },
+  captions: { label: "Adding captions", doneLabel: "Captions added", short: "captions" },
 };
+
+/**
+ * How long the work has been running, in words a customer expects for a five-minute job: never
+ * hours. "Just started" under a minute, "Running 3 min" up to an hour, then "Running over an hour"
+ * (that is a problem, and the page says so next to it).
+ */
+export function runningLabel(ms: number): string {
+  const m = Math.floor(Math.max(0, ms) / 60_000);
+  if (m < 1) return "Just started";
+  if (m < 60) return `Running ${m} min`;
+  return "Running over an hour";
+}
 
 const K = 2.2;
 const CAP = 0.96;
@@ -143,6 +158,11 @@ function labelOf(key: StageKey, presenter: boolean, done: boolean) {
   return done ? l.doneLabel : l.label;
 }
 
+function shortOf(key: StageKey, presenter: boolean) {
+  const l = LABELS[key];
+  return presenter && key === "voice" ? l.presenterShort! : l.short;
+}
+
 export function translateProgress(p: ProgressInput, now = Date.now()): TranslateProgress {
   const presenter = p.speaker === "presenter";
   const shared = [...uploadParts(p, now), stepPart("translate", p.steps.translate.status, p.steps.translate.startedAt, p.sourceSeconds, now)];
@@ -175,16 +195,20 @@ export function translateProgress(p: ProgressInput, now = Date.now()): Translate
     const w = l.parts.reduce((a, x) => a + x.weight, 0) || 1;
     const pct = Math.round((l.parts.reduce((a, x) => a + x.weight * x.fraction, 0) / w) * 100);
     const active = l.parts.find((x) => x.state === "active");
-    if (l.t?.status === "completed") return { code: l.code, state: "ready", percent: 100, label: "Ready" };
-    if (l.t?.status === "failed") return { code: l.code, state: "failed", percent: pct, label: "Stopped", error: l.t.error };
-    if (active) return { code: l.code, state: "active", percent: Math.min(99, pct), label: labelOf(active.key, presenter, false) };
-    return { code: l.code, state: "waiting", percent: Math.min(99, pct), label: "Waiting for the translation" };
+    if (l.t?.status === "completed") return { code: l.code, state: "ready", percent: 100, label: "Ready", short: "ready" };
+    if (l.t?.status === "failed") return { code: l.code, state: "failed", percent: pct, label: "Stopped", short: "stopped", error: l.t.error };
+    if (active) return { code: l.code, state: "active", percent: Math.min(99, pct), label: labelOf(active.key, presenter, false), short: shortOf(active.key, presenter) };
+    const sharedActive = shared.find((x) => x.state === "active");
+    return { code: l.code, state: "waiting", percent: Math.min(99, pct), label: "Waiting for the translation", short: sharedActive ? shortOf(sharedActive.key, presenter) : "waiting" };
   });
 
   const activeShared = shared.find((x) => x.state === "active");
   const current = p.status === "completed" ? "Ready" : p.status === "failed" ? "Stopped" : activeShared ? labelOf(activeShared.key, presenter, false) : languages.find((l) => l.state === "active")?.label ?? (p.status === "draft" ? "Not started" : "Starting");
 
-  return { percent, minutesLeft, overdue, stages: stageViews, languages, current };
+  const starts = Object.values(p.steps).map((s) => (s?.startedAt ? Date.parse(s.startedAt) : NaN)).filter((t) => Number.isFinite(t));
+  const startedAt = starts.length ? Math.min(...starts) : null;
+
+  return { percent, minutesLeft, overdue, stages: stageViews, languages, current, startedAt };
 }
 
 /** The stage names for the strip above the translate form, from the same list as the progress card. */
