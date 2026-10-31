@@ -27,6 +27,13 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 const noSubscribe = () => () => {};
+type BillingTab = "credits" | "reload" | "plans";
+const BILLING_TABS: { key: BillingTab; label: string }[] = [
+  { key: "plans", label: "Plans" },
+  { key: "credits", label: "Add credits" },
+  { key: "reload", label: "Auto-reload" },
+];
+
 /** True when the visitor chose the Dutch site (the language cookie); false on the server. */
 const readDutchSite = () => /(?:^|;\s*)clipelle_lang=nl(?:;|$)/.test(document.cookie);
 
@@ -47,6 +54,9 @@ export function BillingSettings() {
 
   // A site link for credits lands on the slider.
   const creditsParam = params.get("credits");
+  // One section at a time (31 Oct 2026): the page was one scroll of three tall cards on a phone.
+  // A `?plan=` link opens the plans, a `?credits=` link the slider; otherwise the plans come first.
+  const [tab, setTab] = useState<BillingTab>(() => (creditsParam ? "credits" : "plans"));
   useEffect(() => {
     if (creditsParam) document.getElementById("add-credits")?.scrollIntoView({ block: "center" });
   }, [creditsParam]);
@@ -199,7 +209,7 @@ export function BillingSettings() {
         )}
         <div className="mt-2 flex flex-wrap gap-2">
           {enabled && (
-            <Button type="button" variant="primary" onClick={() => document.getElementById("add-credits")?.scrollIntoView({ behavior: "smooth", block: "center" })} disabled={busy !== null}>
+            <Button type="button" variant="primary" onClick={() => { setTab("credits"); window.setTimeout(() => document.getElementById("add-credits")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50); }} disabled={busy !== null}>
               <Coins className="size-4" aria-hidden />Add credits
             </Button>
           )}
@@ -218,11 +228,15 @@ export function BillingSettings() {
         </SectionCard>
       )}
 
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        <span className="text-sm text-muted">Prices excluding VAT, in</span>
-        <SegmentedControl label="Currency" size="sm" options={[{ key: "usd", label: "USD $" }, { key: "eur", label: "EUR €" }]} value={currency} onChange={(k) => setCurrency(k as Currency)} />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <SegmentedControl label="Billing section" options={BILLING_TABS} value={tab} onChange={setTab} />
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted">Prices excluding VAT, in</span>
+          <SegmentedControl label="Currency" size="sm" options={[{ key: "usd", label: "USD $" }, { key: "eur", label: "EUR €" }]} value={currency} onChange={(k) => setCurrency(k as Currency)} />
+        </div>
       </div>
 
+      {tab === "credits" && (
       <SectionCard id="add-credits" title="Add credits" description={status?.planKey === "free" ? "One-off credits on top of a paid plan. Choose a plan first: the free plan runs on its free credits." : "Any amount, one-off, on top of your plan. Credits never expire."}>
         <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr] lg:items-end">
           <div className="panel p-5">
@@ -238,7 +252,9 @@ export function BillingSettings() {
           </div>
         </div>
       </SectionCard>
+      )}
 
+      {tab === "reload" && (
       <AutoReloadSettings
         key={status ? "loaded" : "loading"}
         value={status?.autoReload ?? null}
@@ -247,11 +263,14 @@ export function BillingSettings() {
         unavailableReason={!enabled ? "Payments are not configured on this server yet." : "Auto-reload comes with a paid plan. Choose a plan first."}
         onSaved={(next) => setStatus((s) => (s ? { ...s, autoReload: next } : s))}
       />
+      )}
 
+      {tab === "plans" && (
       <SectionCard id="plans" title="Plans" description="Monthly credits, cancel any time from the portal.">
         <PricingTable compact onChoose={enabled ? choose : undefined} busyKey={busy} currency={currency} trial={Boolean(status?.trialAvailable)} initialPlan={params.get("plan")} currentPlan={status?.planKey ?? null} />
         <p className="mt-4 text-[13px] text-muted">What each plan includes: <a href="/pricing" target="_blank" rel="noopener" className="focus-ring rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">compare the plans</a>.</p>
       </SectionCard>
+      )}
 
       <StartNowModal quote={startNow} planName={planLabel(plan)} busy={busy === "start-now"} onClose={() => setStartNow(null)} onConfirm={confirmStartNow} />
       <PlanConfirmModal change={shown} busy={busy !== null} onConfirm={confirm} onClose={closeConfirm} />
