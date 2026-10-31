@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { VideoDropzone, formatDuration, type UploadedVideo } from "@/components/ui/VideoDropzone";
 import { buildTranslateDraft, cleanReplace, validateTranslateForm, type TranslateFormErrors } from "@/lib/forms/translateDraft";
 import { projectNameFromFile } from "@/lib/forms/projectName";
+import { lastChoicesSummary, readLastChoices, writeLastChoices, type LastChoices } from "@/lib/forms/lastChoices";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { OptionCard, OptionGrid } from "@/components/ui/OptionCard";
@@ -126,6 +127,40 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
   // What the plan unlocks (26 Oct 2026): Precision from Pro, enhancement from Scale. Demo mode and the
   // moment before the plan is known lock nothing; the server checks again.
   const can = (feature: PlanFeature) => config.demoMode || planKey === null || hasFeature(planKey, feature);
+  // The last translation's choices (31 Oct 2026), read after mount so the server HTML stays the same:
+  // a fresh upload form starts with the languages, quality, format and caption look of the previous one.
+  const [recalled, setRecalled] = useState<LastChoices | null>(null);
+  const freshUpload = !fromAd && !fromTranslation && initialSpeaker === "original";
+  useEffect(() => {
+    if (!freshUpload) return;
+    let alive = true;
+    Promise.resolve().then(() => {
+      if (!alive) return;
+      const last = readLastChoices();
+      if (!last) return;
+      setRecalled(last);
+      setTargets(last.targets);
+      setQuality(last.quality);
+      setFormat(last.format);
+      setCaptionPosition(last.captionPosition);
+      setCaptionStyle(last.captionStyle);
+      setRemoveMusic(last.removeMusic);
+      setCleanVoice(last.cleanVoice);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [freshUpload]);
+  function resetChoices() {
+    setRecalled(null);
+    setTargets([]);
+    setQuality("speed");
+    setFormat("9:16");
+    setCaptionPosition("low");
+    setCaptionStyle(DEFAULT_CAPTION_STYLE);
+    setRemoveMusic(false);
+    setCleanVoice(false);
+  }
   useEffect(() => {
     if (config.demoMode) return;
     let alive = true;
@@ -193,6 +228,7 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
     setSubmitting(true);
     try {
       const { id } = await createTranslateProject(sourceAd ? buildTranslateDraft({ ...formState, sourceAd }) : buildTranslateDraft({ ...formState, video: video! }), (f) => setUploadPct(Math.round(f * 100)));
+      if (!withPresenter) writeLastChoices({ targets, quality, format, captionPosition, captionStyle, removeMusic, cleanVoice });
       router.push(`/projects/${id}`);
       onStarted();
     } catch (error) {
@@ -380,6 +416,12 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
           <Field id="targets" label="Translate into" hint="One or more. For an accent, pick the regional version." error={errors.targets}>
                 <SearchableSelect id="targets" multiple values={targets} options={languageOptions} onToggle={toggleTarget} placeholder="Search a language…" disabled={submitting} invalid={Boolean(errors.targets)} />
               </Field>
+              {recalled && (
+                <p className="fold-in flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted" role="status">
+                  <span>Last time: <span className="text-ink">{lastChoicesSummary(recalled, (c) => languageOf(c).tag)}</span></span>
+                  <button type="button" onClick={resetChoices} disabled={submitting} className="focus-ring rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Start from the defaults</button>
+                </p>
+              )}
 
               <fieldset className="space-y-3">
                 <legend className="text-sm font-medium text-ink">Quality</legend>
