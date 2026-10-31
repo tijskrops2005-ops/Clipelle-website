@@ -21,6 +21,8 @@ import { MobileActionBar } from "@/components/ui/MobileActionBar";
 import { Textarea } from "@/components/ui/Textarea";
 import { VideoDropzone, formatDuration, type UploadedVideo } from "@/components/ui/VideoDropzone";
 import { buildTranslateDraft, cleanReplace, validateTranslateForm, type TranslateFormErrors } from "@/lib/forms/translateDraft";
+import { projectNameFromFile } from "@/lib/forms/projectName";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { OptionCard, OptionGrid } from "@/components/ui/OptionCard";
 import { Disclosure } from "@/components/ui/Disclosure";
@@ -71,6 +73,10 @@ function TranslateFormFields({ fromAd, initialSpeaker = "original", onStarted }:
   const router = useRouter();
   const [video, setVideo] = useState<UploadedVideo | null>(null);
   const [projectName, setProjectName] = useState(fromAd ? `${fromAd.name} — translation` : "");
+  // The name comes from the file (31 Oct 2026) unless the customer typed one; the field sits under a fold.
+  const autoName = useRef<string | null>(null);
+  // Block 3 (format, captions, sound) is folded: the defaults are right for most videos; "Change" opens it.
+  const [styleOpen, setStyleOpen] = useState(false);
   const [source, setSource] = useState<LanguageCode | "auto">(fromAd?.language && isTranslateLanguage(fromAd.language) ? fromAd.language : "auto");
   // The presenter flow speaks one language with presenter voices; start on English.
   const [targets, setTargets] = useState<LanguageCode[]>(initialSpeaker === "presenter" ? ["en"] : []);
@@ -204,6 +210,13 @@ function TranslateFormFields({ fromAd, initialSpeaker = "original", onStarted }:
   const knownLength = Boolean(fromAd || video);
   // Short and calm (28 Oct 2026): what was picked in a word or two; the extras on one line.
   const extras = [removeText && "Text removed", cleanReplace(replaceRows).length > 0 && "Words replaced", removeMusic && "No music", cleanVoice && "Clean voice", enhance && "Enhanced"].filter(Boolean) as string[];
+  // The one line on the folded block 3: what the defaults are, or what was changed.
+  const captionsOn = captionStyle.show || (removeText && !withPresenter);
+  const styleSummary = [
+    withPresenter ? null : format === "9:16" ? "Vertical 9:16" : "Original size",
+    captionsOn ? `captions ${captionStyle.highlight === "none" ? "plain" : `with a ${captionStyle.highlight === "box" ? "box" : captionStyle.highlight} on the spoken word`}` : "no captions",
+    withPresenter ? null : [removeMusic && "music removed", cleanVoice && "voice cleaned", enhance && "picture enhanced", trimSilence && "silence removed"].filter(Boolean).join(", ") || "sound as it is",
+  ].filter(Boolean).join(" · ");
   const summaryRows = [
     { label: "Video", value: fromAd ? formatDuration(Math.round(seconds)) : video ? formatDuration(Math.round(video.seconds ?? 30)) : "Not added", muted: !video && !fromAd },
     { label: "Into", value: targets.length === 0 ? "Pick a language" : targets.map((t) => languageOf(t).tag).join(", "), muted: targets.length === 0 },
@@ -220,7 +233,7 @@ function TranslateFormFields({ fromAd, initialSpeaker = "original", onStarted }:
         <ServiceStatusBanner />
 
         {/* 1. The video */}
-        <SectionCard number={1} title={fromAd ? "Your ad" : "Your video"} description={fromAd ? "The finished ad is the source: nothing to upload." : "One speaker, clear audio. The voice and lips follow the new language; the picture stays as it is."}>
+        <SectionCard number={1} title={fromAd ? "Your ad" : "Your video"} description={fromAd ? "The finished ad is the source: nothing to upload." : "One speaker, clear audio."}>
           {fromAd ? (
             <div className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-start">
               <VideoPlayer src={fromAd.finalVideoUrl!} poster={fromAd.imageUrls[0]} simulated={config.demoMode} className="mx-auto w-full max-w-[160px] sm:mx-0" />
@@ -241,6 +254,11 @@ function TranslateFormFields({ fromAd, initialSpeaker = "original", onStarted }:
               onChange={(v) => {
                 setVideo(v);
                 if (v && errors.video) setErrors((e) => ({ ...e, video: undefined }));
+                if (v && (projectName.trim() === "" || projectName === autoName.current)) {
+                  autoName.current = projectNameFromFile(v.file.name);
+                  setProjectName(autoName.current);
+                  if (errors.projectName) setErrors((er) => ({ ...er, projectName: undefined }));
+                }
               }}
               maxSizeMb={config.limits.translateVideoMaxMb}
               maxSeconds={config.limits.translateVideoMaxSeconds}
@@ -261,49 +279,55 @@ function TranslateFormFields({ fromAd, initialSpeaker = "original", onStarted }:
               <span className="block text-[13px] leading-relaxed text-muted">Old captions, titles and stickers are painted out; your new captions go where they were. +{CREDIT_RULES.translate.removeText} credit per second per language.</span>
             </span>
           </label>
-          <Field id="projectName" label="Project name" hint="Only you see this." error={errors.projectName}>
-            <Input
-              id="projectName"
-              value={projectName}
-              onChange={(e) => {
-                setProjectName(e.target.value);
-                if (errors.projectName) setErrors((er) => ({ ...er, projectName: undefined }));
-              }}
-              placeholder="e.g. Founder story — DE + FR"
-              invalid={Boolean(errors.projectName)}
-              disabled={submitting}
-              autoComplete="off"
-            />
-          </Field>
+          <Disclosure title="Project name" summary={projectName.trim() ? projectName : "Taken from the file name"} forceOpen={Boolean(errors.projectName)}>
+            <Field id="projectName" label="Name" error={errors.projectName}>
+              <Input
+                id="projectName"
+                value={projectName}
+                onChange={(e) => {
+                  setProjectName(e.target.value);
+                  if (errors.projectName) setErrors((er) => ({ ...er, projectName: undefined }));
+                }}
+                placeholder="e.g. Founder story — DE + FR"
+                invalid={Boolean(errors.projectName)}
+                disabled={submitting}
+                autoComplete="off"
+              />
+            </Field>
+          </Disclosure>
         </SectionCard>
 
         {/* 2. Languages and quality */}
         <SectionCard number={2} title={withPresenter ? "Language and presenter" : "Languages and quality"} description={withPresenter ? "The lines are translated and checked, then the presenter you pick speaks them." : "Pick the languages. Every line is checked against the original before the render."}>
+          {/* Who speaks (31 Oct 2026): one pill row instead of two cards; the one line under it says what the choice means. */}
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">Who speaks the translation?</legend>
-            <OptionGrid columns={2}>
-              <OptionCard selected={!withPresenter} onSelect={() => setSpeaker("original")} disabled={submitting} title="The original speaker" badge={<Badge tone="success">Recommended</Badge>} description="Their own voice, lips matched. Several languages at once." />
-              <OptionCard
-                selected={withPresenter}
-                onSelect={() => {
-                  setSpeaker("presenter");
-                  setQuality("speed");
-                  setTargets((t) => {
-                    const ok = t.find((c) => (PRESENTER_LANGUAGES as string[]).includes(c));
-                    return ok ? [ok] : [PRESENTER_LANGUAGES.find((c) => c !== source) ?? "en"];
-                  });
-                }}
-                disabled={submitting}
-                lockedTo={!can("aiPresenter") ? FEATURE_PLAN.aiPresenter : undefined}
-                title="An AI presenter"
-                badge={<Badge tone="warning">New</Badge>}
-                description="Another face, voice and accent speaks the checked translation."
-              />
-            </OptionGrid>
-            {!can("aiPresenter") && <PlanHint feature="aiPresenter" text="The AI presenter comes with Pro and up." />}
+            <SegmentedControl
+              label="Who speaks the translation"
+              options={[
+                { key: "original", label: "Their own voice" },
+                { key: "presenter", label: can("aiPresenter") ? "An AI presenter" : <span className="inline-flex items-center gap-1.5">An AI presenter <Lock className="size-3" aria-hidden /></span>, disabled: !can("aiPresenter") },
+              ]}
+              value={speaker}
+              onChange={(k) => {
+                if (k === "original") {
+                  setSpeaker("original");
+                  return;
+                }
+                setSpeaker("presenter");
+                setQuality("speed");
+                setTargets((t) => {
+                  const ok = t.find((c) => (PRESENTER_LANGUAGES as string[]).includes(c));
+                  return ok ? [ok] : [PRESENTER_LANGUAGES.find((c) => c !== source) ?? "en"];
+                });
+              }}
+              disabled={submitting}
+            />
+            <p className="text-[13px] text-muted">{withPresenter ? "Another face, voice and accent speaks the checked translation." : "Their own voice, lips matched. Several languages at once."}</p>
+            {!can("aiPresenter") && <PlanHint feature="aiPresenter" text={`The AI presenter comes with ${FEATURE_PLAN.aiPresenter} and up.`} />}
           </fieldset>
 
-          <Field id="source" label="Spoken language" hint="Detect automatically works for one clear speaker.">
+          <Field id="source" label="Spoken language">
             <SearchableSelect
               id="source"
               value={source}
@@ -342,7 +366,7 @@ function TranslateFormFields({ fromAd, initialSpeaker = "original", onStarted }:
             </>
           ) : (
             <>
-          <Field id="targets" label="Translate into" hint="One or more. For an accent, pick the regional version, e.g. English (UK) or Spanish (Mexico)." error={errors.targets}>
+          <Field id="targets" label="Translate into" hint="One or more. For an accent, pick the regional version." error={errors.targets}>
                 <SearchableSelect id="targets" multiple values={targets} options={languageOptions} onToggle={toggleTarget} placeholder="Search a language…" disabled={submitting} invalid={Boolean(errors.targets)} />
               </Field>
 
@@ -407,8 +431,19 @@ function TranslateFormFields({ fromAd, initialSpeaker = "original", onStarted }:
           </Disclosure>
         </SectionCard>
 
-        {/* 3. Captions and format */}
-        <SectionCard number={3} title="Captions, format and sound" description="The frame, the captions and the sound.">
+        {/* 3. Captions and format: folded (31 Oct 2026), the defaults fit most videos; the summary line says what they are. */}
+        <SectionCard
+          number={3}
+          title="Captions, format and sound"
+          description={styleSummary}
+          aside={
+            <Button type="button" variant="secondary" size="sm" onClick={() => setStyleOpen((o) => !o)} aria-expanded={styleOpen} aria-controls="style-options" disabled={submitting}>
+              {styleOpen ? "Done" : "Change"}
+            </Button>
+          }
+          contentClassName={cn(!styleOpen && "hidden")}
+        >
+          <div id="style-options" className="space-y-6 fold-in">
           {!withPresenter && (<fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">Format</legend>
             <OptionGrid columns={2}>
@@ -457,6 +492,7 @@ function TranslateFormFields({ fromAd, initialSpeaker = "original", onStarted }:
               </span>
             </label>
           </Disclosure>)}
+          </div>
         </SectionCard>
       </div>
 
