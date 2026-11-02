@@ -11,6 +11,7 @@ import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions,
 import { FRAME_AT_USD } from "@/lib/services/frameAt";
 import { downloadTextRemovalOutput, estimateTextRemovalUsd, getTextRemoval, startTextRemoval, TEXT_REMOVAL_MODEL, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
 import { languageCodeForName, languageOf } from "@/lib/languages";
+import { sourceTranscriptEnabled } from "@/lib/pricing";
 import { checkTranslation, estimateCheckUsd } from "@/lib/services/translationCheck";
 import type { LanguageCode, Segment } from "@/lib/types";
 import { SHOTSTACK_USD_PER_SECOND } from "@/lib/translatePricing";
@@ -173,7 +174,8 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
         if (!heygen) throw new StepFailure(`${languageOf(code).label} is not available as a target language.`);
         outputs.push({ code, heygen });
       }
-      if (source && matched[source]) outputs.push({ code: "transcript", heygen: matched[source]! });
+      // The separate source transcript is off by default (2 Nov 2026): the proofread returns the source subtitles for free.
+      if (source && matched[source] && sourceTranscriptEnabled()) outputs.push({ code: "transcript", heygen: matched[source]! });
 
       // Terms that must stay untranslated: a brand glossary (free) attached to the proofread.
       let brandGlossaryId: string | undefined;
@@ -928,6 +930,9 @@ async function probeKeeps(step: StepTools, projectId: string, input: TranslateIn
  */
 async function requestQualityReport(step: StepTools, projectId: string, code: LanguageCode) {
   if (process.env.QUALITY_REPORTS === "off") return;
+  // QUALITY_REPORT_SAMPLE (2 Nov 2026): a share between 0 and 1 of finished versions that get the admin report; 1 = every one.
+  const sample = Number(process.env.QUALITY_REPORT_SAMPLE ?? 1);
+  if (Number.isFinite(sample) && sample < 1 && Math.random() >= Math.max(0, sample)) return;
   await step.run(`${code}-quality-request`, async () => {
     try {
       await inngest.send(qualityCheckRequested.create({ projectId, language: code }));

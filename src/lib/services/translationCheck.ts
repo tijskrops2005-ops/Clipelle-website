@@ -1,4 +1,5 @@
 import "server-only";
+import { cachedSystem } from "@/lib/services/promptCache";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
@@ -108,7 +109,7 @@ export async function checkTranslation(input: { segments: Segment[]; sourceLangu
   const response = await client.messages.parse({
     model: workflowSettings.rewriteModel,
     max_tokens: 3000,
-    system: SYSTEM,
+    system: cachedSystem(SYSTEM),
     messages: [{ role: "user", content: `Source language: ${source}\nTarget language: ${target}${pace}${keep}${replace}${wishes}\n\nFragments:\n\n${lines.join("\n\n")}` }],
     output_config: { format: zodOutputFormat(Output), effort: "low" },
   });

@@ -11,7 +11,7 @@ import { maxSpokenWords } from "@/lib/pricing";
 import { copyObject, objectPath, objectInfo, signedDownloadUrl } from "@/lib/storage";
 import { checkUserLimits, costGuardResponse, costLimits, creativeSpent, getProjectSpend } from "@/lib/services/costGuard";
 import { VIEW_READ_ONLY_MESSAGE } from "@/lib/adminViewSession";
-import { estimateAdCost, estimateTranslateCost } from "@/lib/pricing";
+import { estimateAdCost, estimateTranslateCost, sourceTranscriptEnabled } from "@/lib/pricing";
 import { workflowSettings } from "@/lib/workflow/settings";
 import { DEFAULT_TONE, isAdTone, type AdTone } from "@/lib/adOptions";
 import { DEFAULT_SPEED, isSpeedKey, speedValue, type AdLanguageCode, type SpeedKey } from "@/lib/voiceOptions";
@@ -120,7 +120,7 @@ export function estimateForProject(row: ProjectRow) {
     return estimateAdCost({ seconds: input.seconds ?? workflowSettings.adSeconds, clipModel: workflowSettings.clipModel, engine: input.engine ?? workflowSettings.heygenEngine, speed: speedValue(input.speed) }).total;
   }
   const input = row.input as TranslateInput;
-  return estimateTranslateCost({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, removeText: input.removeText, presenterEngine: input.speaker === "presenter" ? input.presenter?.engine : undefined, languages: input.targetLanguages.length, hasSourceTranscript: input.sourceLanguage !== "auto" }).perLanguageTotal;
+  return estimateTranslateCost({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, removeText: input.removeText, presenterEngine: input.speaker === "presenter" ? input.presenter?.engine : undefined, languages: input.targetLanguages.length, hasSourceTranscript: sourceTranscriptEnabled() && input.sourceLanguage !== "auto" }).perLanguageTotal;
 }
 
 async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: TranslationRow[], assetRows: AssetRow[]): Promise<Project> {

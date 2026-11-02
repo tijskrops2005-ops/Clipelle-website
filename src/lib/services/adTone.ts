@@ -1,4 +1,5 @@
 import "server-only";
+import { cachedSystem } from "@/lib/services/promptCache";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
@@ -94,7 +95,7 @@ export async function rewriteSegmentsInAdTone(input: { segments: ToneSegment[]; 
   const response = await client.messages.parse({
     model: workflowSettings.rewriteModel,
     max_tokens: 2500,
-    system: SYSTEM,
+    system: cachedSystem(SYSTEM),
     messages: [{ role: "user", content: `Target language: ${target}\nFragments:\n\n${lines.join("\n\n")}` }],
     output_config: { format: zodOutputFormat(Output), effort: "low" },
   });

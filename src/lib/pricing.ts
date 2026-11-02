@@ -139,6 +139,16 @@ export function estimateAdCost(input: AdEstimateInput) {
   return { parts, total, presenterSeconds };
 }
 
+/**
+ * The separate source-transcript session (2 Nov 2026, cost round): off by default, because the
+ * proofread already returns the source-language subtitles for free on the same timing
+ * (`original_srt_url`), which the quality check uses. NEXT_PUBLIC_TRANSLATE_SOURCE_TRANSCRIPT=on
+ * brings the paid session back (same engine, so no quality difference was found).
+ */
+export function sourceTranscriptEnabled(env: Record<string, string | undefined> = process.env) {
+  return env.NEXT_PUBLIC_TRANSLATE_SOURCE_TRANSCRIPT === "on";
+}
+
 export type TranslateEstimateInput = { seconds: number; quality: TranslationQuality; enhance: boolean; removeText?: boolean; /** AI presenter instead of the lip-synced speaker: the presenter video replaces the translation render. */ presenterEngine?: PresenterEngine; languages: number; hasSourceTranscript: boolean };
 
 /** Workflow B: cost per language version, plus the total for all chosen languages. */

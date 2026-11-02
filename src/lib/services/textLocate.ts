@@ -1,4 +1,5 @@
 import "server-only";
+import { cachedSystem } from "@/lib/services/promptCache";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { createFalClient } from "@fal-ai/client";
@@ -59,7 +60,7 @@ export async function locateBurnedCaptions(frameUrls: string[]): Promise<{ box: 
   const response = await client.messages.parse({
     model,
     max_tokens: 400,
-    system: SYSTEM,
+    system: cachedSystem(SYSTEM),
     messages: [{ role: "user", content: [...frameUrls.map((url) => ({ type: "image" as const, source: { type: "url" as const, url } })), { type: "text" as const, text: "Where is the burned-in caption text?" }] }],
     output_config: { format: zodOutputFormat(Output), effort: "low" },
   });

@@ -10,7 +10,7 @@ import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { cn, formatDate } from "@/lib/utils";
 import { LANGUAGES, languageOf } from "@/lib/languages";
 import { SearchableSelect, type SelectOption } from "@/components/ui/SearchableSelect";
-import { estimateTranslateCost } from "@/lib/pricing";
+import { estimateTranslateCost, sourceTranscriptEnabled } from "@/lib/pricing";
 import { Badge } from "@/components/ui/Badge";
 import { createTranslateProject } from "@/lib/data/client";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
@@ -119,7 +119,7 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
   // Internal only (never shown): the spending limit per language version decides what can start.
   const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 2;
   const estimateFor = (q: TranslationQuality, enh = enhance) =>
-    estimateTranslateCost({ seconds, quality: q, enhance: enh, removeText, presenterEngine: withPresenter ? presenterSetup.engine : undefined, languages: Math.max(1, targets.length), hasSourceTranscript: source !== "auto" });
+    estimateTranslateCost({ seconds, quality: q, enhance: enh, removeText, presenterEngine: withPresenter ? presenterSetup.engine : undefined, languages: Math.max(1, targets.length), hasSourceTranscript: sourceTranscriptEnabled() && source !== "auto" });
   const estimate = estimateFor(quality);
   const overBudget = estimate.perLanguageTotal > budget;
   const [balance, setBalance] = useState<number | null>(null);
@@ -241,7 +241,7 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
   }
 
   const qualityTitle = QUALITY.find((q) => q.key === quality)?.title ?? "Speed";
-  const creditsPerLanguage = translateCredits({ seconds, quality, enhance, removeText, presenterEngine: withPresenter ? presenterSetup.engine : undefined, languages: Math.max(1, targets.length), hasSourceTranscript: source !== "auto" });
+  const creditsPerLanguage = translateCredits({ seconds, quality, enhance, removeText, presenterEngine: withPresenter ? presenterSetup.engine : undefined, languages: Math.max(1, targets.length), hasSourceTranscript: sourceTranscriptEnabled() && source !== "auto" });
   const languageCount = Math.max(1, targets.length);
   const totalCredits = creditsPerLanguage * languageCount;
   const shortOfCredits = balance !== null && balance < totalCredits;

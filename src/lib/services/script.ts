@@ -1,4 +1,5 @@
 import "server-only";
+import { cachedSystem } from "@/lib/services/promptCache";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
@@ -236,7 +237,7 @@ export async function generateAdScript(input: ScriptInput, options: { shorten?: 
   const response = await client.messages.parse({
     model,
     max_tokens: 4000,
-    system: SYSTEM_PROMPT,
+    system: cachedSystem(SYSTEM_PROMPT),
     messages: [{ role: "user", content }],
     output_config: { format: zodOutputFormat(AdScriptSchema), effort: "medium" },
   });
