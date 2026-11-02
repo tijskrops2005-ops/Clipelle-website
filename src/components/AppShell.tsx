@@ -19,6 +19,7 @@ import { isAdmin } from "@/lib/adminAccess";
 import { ViewingBar } from "@/components/ViewingBar";
 import { DeletionBanner } from "@/components/DeletionBanner";
 import { AppFooter } from "@/components/AppFooter";
+import { DraftScopeProvider } from "@/lib/forms/DraftScope";
 
 /** "≈ 3 ads" while ads are on (a 30 s Standard ad), else "≈ 4 min of translation": the balance in plain units. */
 function approxLabel(credits: number) {
@@ -50,7 +51,10 @@ export async function AppShell({ children }: { children: ReactNode }) {
   const credits = user && scope && !config.demoMode ? await getCreditBalance(scope.workspaceId).catch(() => null) : null;
   const who = user && scope ? { email: user.email, name: user.name, credits, planKey: scope.planKey, workspace: { id: scope.workspaceId, name: scope.workspaceName, kind: scope.workspaceKind, role: scope.role }, workspaces, isAdmin: !config.demoMode && isAdmin(user.email) } : null;
   const support = supportEmail();
+  // Form drafts belong to this user in this workspace (2 Nov 2026, src/lib/forms/formDraft.ts).
+  const draftScope = user && scope ? { userId: user.id, workspaceId: scope.workspaceId } : null;
   return (
+    <DraftScopeProvider scope={draftScope}>
     <div className="flex min-h-screen">
       <DemoRunner />
       <StatusWatcher />
@@ -83,5 +87,6 @@ export async function AppShell({ children }: { children: ReactNode }) {
         <AppFooter />
       </main>
     </div>
+    </DraftScopeProvider>
   );
 }

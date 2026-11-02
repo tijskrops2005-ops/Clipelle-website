@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { clearScopedDraft, readScopedDraft, useDraftSaver, useDraftScope } from "@/lib/forms/DraftScope";
 import { ArrowRight, Check, Link2, Loader2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ProductPageData } from "@/lib/productPage";
@@ -34,6 +35,20 @@ export function UrlToVideo() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [initial, setInitial] = useState<ProjectFormInitial | null>(null);
+  // The pasted link survives a refresh (2 Nov 2026); the page details are read again.
+  const draftScope = useDraftScope();
+  useEffect(() => {
+    let alive = true;
+    Promise.resolve().then(() => {
+      const draft = readScopedDraft<{ url: string }>("url", draftScope);
+      if (alive && draft?.data.url && !url) setUrl(draft.data.url);
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftScope]);
+  useDraftSaver("url", { url }, phase !== "form");
 
   async function onFetch(e: FormEvent) {
     e.preventDefault();
@@ -72,6 +87,7 @@ export function UrlToVideo() {
     }
     if (failed.length) setError(`${failed.length} photo${failed.length === 1 ? "" : "s"} could not be downloaded. You can add photos on the form.`);
     setInitial({ values: { productName: name.trim(), description: description.trim(), productUrl: page.canonicalUrl ?? page.pageUrl, projectName: name.trim().slice(0, 60) }, images });
+    clearScopedDraft("url", draftScope);
     setPhase("form");
   }
 

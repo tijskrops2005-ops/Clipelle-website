@@ -1,6 +1,5 @@
 import {
   FolderOpen,
-  House,
   ShieldCheck,
   LayoutDashboard,
   Settings,
@@ -10,11 +9,11 @@ import {
 export type NavItem = { href: string; label: string; icon: LucideIcon };
 
 /**
- * Sidebar and mobile drawer: Home (the public site) and the app sections. The tools themselves
- * (Ad from a photo, …) come from src/components/tools.ts; "Create new video" is the accent button.
+ * Sidebar and mobile drawer: the app sections (the logo links to the public site; the Home link
+ * went on 2 Nov 2026). The tools themselves (Ad from a photo, …) come from src/components/tools.ts;
+ * "Create new video" is the accent button.
  */
 export const navItems: NavItem[] = [
-  { href: "/", label: "Home", icon: House },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderOpen },
 ];

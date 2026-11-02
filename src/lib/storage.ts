@@ -58,6 +58,21 @@ export function objectPath(parts: { projectId: string; kind: string; fileName: s
 }
 
 /**
+ * A staged upload (2 Nov 2026): a file the browser sends as soon as it is picked, before the project
+ * exists, so a form draft can point at it after a refresh. Lives under the user's own folder; the
+ * attach step copies it into the project and removes it.
+ */
+export function stagedPath(userId: string, fileName: string) {
+  return `${stagedPrefix(userId)}${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}/${safeFileName(fileName)}`;
+}
+export function stagedPrefix(userId: string) {
+  return `users/${userId}/staged/`;
+}
+export function isStagedPathOf(path: string, userId: string) {
+  return path.startsWith(stagedPrefix(userId)) && !path.includes("..");
+}
+
+/**
  * Signed upload URL for the browser (valid 2 hours). The browser PUTs the file straight
  * to Supabase; our server never streams the bytes (Vercel's 4.5 MB request limit).
  */

@@ -12,7 +12,7 @@ import { mockPresenterPage } from "@/lib/mock/presenters";
 import type { AdTone } from "@/lib/adOptions";
 import { mockVoiceOptions } from "@/lib/mock/voices";
 import type { AdLanguageCode, SpeedKey, VoiceOptions } from "@/lib/voiceOptions";
-import type { UploadKind } from "@/lib/data/uploads";
+import type { StagedUpload, UploadKind } from "@/lib/data/uploads";
 import * as mockStore from "@/lib/mock/store";
 import * as mockRunner from "@/lib/mock/runner";
 import { emptyTranslations } from "@/lib/mock/translations";
@@ -317,6 +317,8 @@ export type TranslateProjectDraft = {
   name: string;
   /** The uploaded video; absent for "Localize this ad", where `sourceProjectId` names the finished ad. */
   video?: File;
+  /** The same video already in storage (picked earlier, uploaded at once; 2 Nov 2026): no second upload. */
+  staged?: StagedUpload;
   sourceProjectId?: string;
   sourceSeconds: number;
   sourceLanguage: LanguageCode | "auto";
@@ -374,9 +376,11 @@ export async function createTranslateProject(draft: TranslateProjectDraft, onUpl
     mockStore.addProject(project);
     return { id: project.id };
   }
-  const { video, ...rest } = draft;
-  const { id } = await api<{ id: string }>("/api/projects", { method: "POST", body: JSON.stringify({ workflow: "translate", ...rest, sourceFileName: video?.name ?? "generated-ad.mp4" }) });
-  if (video) await uploadAndAttach(id, "source", video, draft.sourceSeconds, onUploadProgress);
+  const { video, staged, ...rest } = draft;
+  const { id } = await api<{ id: string }>("/api/projects", { method: "POST", body: JSON.stringify({ workflow: "translate", ...rest, sourceFileName: staged?.fileName ?? video?.name ?? "generated-ad.mp4" }) });
+  // Already in storage (staged on pick): attach the stored copy; otherwise upload now, as before.
+  if (staged) await api(`/api/projects/${id}/assets`, { method: "POST", body: JSON.stringify({ kind: "source", storagePath: staged.path, fileName: staged.fileName, seconds: draft.sourceSeconds }) });
+  else if (video) await uploadAndAttach(id, "source", video, draft.sourceSeconds, onUploadProgress);
   await startWithClearMessage(id);
   await showStarted(id);
   return { id };
@@ -406,6 +410,24 @@ async function startWithClearMessage(id: string) {
     if (error instanceof TypeError) throw new Error("The app server could not be reached. Is `npm run dev` still running? Then try again.");
     throw error;
   }
+}
+
+/**
+ * Staged upload (2 Nov 2026): the file goes to storage the moment it is picked, under the user's own
+ * folder, so the form draft can point at it after a refresh and the start needs no second upload.
+ * Demo mode has no storage: null, the form keeps the file in memory only.
+ */
+export async function stageUpload(kind: UploadKind, file: File, onProgress?: (fraction: number) => void): Promise<StagedUpload | null> {
+  if (config.demoMode) return null;
+  const signed = await api<{ path: string; token: string; bucket: string; url?: string }>("/api/uploads/stage", { method: "POST", body: JSON.stringify({ kind, fileName: file.name, bytes: file.size, mime: file.type }) });
+  await uploadToSignedUrl(signed.bucket, signed.path, signed.token, file, onProgress, signed.url);
+  return { path: signed.path, fileName: file.name, bytes: file.size, mime: file.type };
+}
+
+/** Removes a staged file the customer took off the form again (best effort). */
+export async function discardStaged(path: string) {
+  if (config.demoMode) return;
+  await api("/api/uploads/stage", { method: "DELETE", body: JSON.stringify({ path }) }).catch(() => null);
 }
 
 /** Browser → signed URL → storage, then tell the server which object belongs to the project. */

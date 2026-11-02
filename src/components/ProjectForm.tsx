@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { config } from "@/lib/config";
 import { createAdBatch, createAdProject } from "@/lib/data/client";
+import { clearScopedDraft, readScopedDraft, useDraftSaver, useDraftScope } from "@/lib/forms/DraftScope";
 import { fetchBrandLogoFile, getAccountStatus, getBrandDefaults } from "@/lib/data/settingsClient";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { PresenterPicker } from "@/components/PresenterPicker";
@@ -99,8 +100,35 @@ export type ProjectFormInitial = {
   }>;
 };
 
-export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) {
+/** What the ad form remembers between visits (2 Nov 2026): the words and choices; photos, background and logo are picked again. */
+type AdDraftData = {
+  values: Values;
+  language: AdLanguageCode;
+  voiceAccent?: string;
+  voiceId?: string;
+  speed: SpeedKey;
+  tone: AdTone;
+  seconds: AdLength;
+  engine: PresenterEngine;
+  lookId?: string;
+  backgroundChoice: string;
+  accent: string;
+  customAccent: string;
+  captionStyle: CaptionStyle;
+  font: FontKey;
+  reviewScript: boolean;
+  format?: FormatKey;
+};
+const DRAFT_FORM = "ad";
+
+export function ProjectForm(props: { initial?: ProjectFormInitial } = {}) {
+  const [round, setRound] = useState(0);
+  return <ProjectFormFields key={round} {...props} onFresh={() => setRound((r) => r + 1)} />;
+}
+
+function ProjectFormFields({ initial, onFresh }: { initial?: ProjectFormInitial; onFresh: () => void }) {
   const router = useRouter();
+  const draftScope = useDraftScope();
   const preset = initial?.settings ?? {};
   const [values, setValues] = useState<Values>({
     projectName: "",
@@ -210,6 +238,45 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
   const [images, setImages] = useState<UploadedImage[]>(initial?.images ?? []);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+  // A draft of this user in this workspace (2 Nov 2026) comes back on a plain open; a version or a product link brings its own values.
+  const draftable = !initial;
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    if (!draftable) return;
+    let alive = true;
+    Promise.resolve().then(() => {
+      if (!alive) return;
+      const draft = readScopedDraft<AdDraftData>(DRAFT_FORM, draftScope);
+      if (!draft) return;
+      const d = draft.data;
+      if (d.values) setValues((v) => ({ ...v, ...d.values }));
+      if (d.language && isAdLanguage(d.language)) setLanguage(d.language);
+      setVoiceAccent(d.voiceAccent);
+      setVoiceId(d.voiceId);
+      if (d.speed) setSpeed(d.speed);
+      if (d.tone) setTone(d.tone);
+      if (d.seconds && (AD_LENGTHS as readonly number[]).includes(d.seconds)) setSeconds(d.seconds);
+      if (d.engine) setEngine(d.engine);
+      setLookId(d.lookId);
+      if (d.backgroundChoice) setBackgroundChoice(d.backgroundChoice);
+      if (d.accent) setAccent(d.accent);
+      setCustomAccent(d.customAccent ?? "");
+      if (d.captionStyle) setCaptionStyle(d.captionStyle);
+      if (d.font) setFont(d.font);
+      setReviewScript(Boolean(d.reviewScript));
+      setFormat(d.format);
+      setRestored(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [draftable, draftScope]);
+  const draftData: AdDraftData = { values, language, voiceAccent, voiceId, speed, tone, seconds, engine, lookId, backgroundChoice, accent, customAccent, captionStyle, font, reviewScript, format };
+  useDraftSaver(DRAFT_FORM, draftData, draftable && !submitting);
+  function discardDraft() {
+    clearScopedDraft(DRAFT_FORM, draftScope);
+    onFresh();
+  }
   /** Second step of the submit: the form is valid and the customer sees the cost once more before anything starts. */
   const [confirming, setConfirming] = useState(false);
   const submitLock = useRef(false);
@@ -284,11 +351,13 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
       if (batchOn) {
         const { id } = await createAdBatch(draft, variants);
         images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+        clearScopedDraft(DRAFT_FORM, draftScope);
         router.push(`/batches/${id}`);
         return;
       }
       const { id } = await createAdProject(draft);
       images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+      clearScopedDraft(DRAFT_FORM, draftScope);
       router.push(`/projects/${id}`);
     } catch (error) {
       submitLock.current = false;
@@ -340,6 +409,12 @@ export function ProjectForm({ initial }: { initial?: ProjectFormInitial } = {}) 
               invalid={Boolean(errors.images)}
               disabled={submitting}
             />
+            {restored && !submitting && (
+              <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted" role="status">
+                <span>Picked up where you left off; add your photos again.</span>
+                <button type="button" onClick={discardDraft} className="focus-ring rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Start over</button>
+              </p>
+            )}
           </Field>
 
           <Field id="productName" label="Product name" error={errors.productName}>

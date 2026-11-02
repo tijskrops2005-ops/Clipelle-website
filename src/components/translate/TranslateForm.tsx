@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowRight, Languages, Loader2, Lock, Plus, ShieldCheck, X } from "lucide-react";
+import { ArrowRight, FileVideo, Languages, Loader2, Lock, Plus, ShieldCheck, X } from "lucide-react";
 import { config } from "@/lib/config";
 import type { AdProject, LanguageCode, TranslateProject, TranslationQuality } from "@/lib/types";
 import { isTranslateLanguage, TOP_LANGUAGES } from "@/lib/translateLanguages";
@@ -12,7 +12,9 @@ import { LANGUAGES, languageOf } from "@/lib/languages";
 import { SearchableSelect, type SelectOption } from "@/components/ui/SearchableSelect";
 import { estimateTranslateCost, sourceTranscriptEnabled } from "@/lib/pricing";
 import { Badge } from "@/components/ui/Badge";
-import { createTranslateProject } from "@/lib/data/client";
+import { createTranslateProject, discardStaged, stageUpload } from "@/lib/data/client";
+import type { StagedUpload } from "@/lib/data/uploads";
+import { clearScopedDraft, readScopedDraft, useDraftSaver, useDraftScope } from "@/lib/forms/DraftScope";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { Button } from "@/components/ui/Button";
 import { Field, controlClass, controlStateClass } from "@/components/ui/Field";
@@ -70,9 +72,39 @@ export function TranslateForm(props: TranslateFormProps = {}) {
   return <TranslateFormFields key={round} {...props} onStarted={() => setRound((r) => r + 1)} />;
 }
 
+/** What the form remembers between visits (2 Nov 2026, src/lib/forms/formDraft.ts): every choice and the staged video; never the rights tick. */
+type TranslateDraftData = {
+  projectName: string;
+  source: LanguageCode | "auto";
+  targets: LanguageCode[];
+  quality: TranslationQuality;
+  keepTerms: string;
+  replaceRows: { from: string; to: string }[];
+  instructions: string;
+  format: "original" | "9:16";
+  enhance: boolean;
+  trimSilence: boolean;
+  captionPosition: "low" | "middle";
+  captionStyle: CaptionStyleChoice;
+  removeMusic: boolean;
+  cleanVoice: boolean;
+  removeText: boolean;
+  speaker: "original" | "presenter";
+  presenterSetup: PresenterTranslate;
+  staged: StagedUpload | null;
+};
+const DRAFT_FORM = "translate";
+
 function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "original", onStarted }: TranslateFormProps & { onStarted: () => void }) {
   const router = useRouter();
+  const draftScope = useDraftScope();
   const [video, setVideo] = useState<UploadedVideo | null>(null);
+  // The picked video goes to storage at once (2 Nov 2026): a refresh keeps it, and the start needs no second upload.
+  const [staged, setStaged] = useState<StagedUpload | null>(null);
+  const [stagingPct, setStagingPct] = useState<number | null>(null);
+  const stagingFor = useRef<File | null>(null);
+  /** Set when the form came back from a draft, with the moment it was saved. */
+  const [restoredAt, setRestoredAt] = useState<string | null>(null);
   const [projectName, setProjectName] = useState(fromAd ? `${fromAd.name} — translation` : fromTranslation ? `${fromTranslation.name} — more languages` : "");
   // The name comes from the file (31 Oct 2026) unless the customer typed one; the field sits under a fold.
   const autoName = useRef<string | null>(null);
@@ -115,7 +147,7 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
   // submit button first in the form blocks implicit submission on Enter. So the button can stay readable.
   const formRef = useRef<HTMLFormElement>(null);
 
-  const seconds = sourceAd?.seconds ?? video?.seconds ?? 30;
+  const seconds = sourceAd?.seconds ?? video?.seconds ?? staged?.seconds ?? 30;
   // Internal only (never shown): the spending limit per language version decides what can start.
   const budget = Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) > 0 ? Number(process.env.NEXT_PUBLIC_MAX_COST_PER_CREATIVE_USD) : 2;
   const estimateFor = (q: TranslationQuality, enh = enhance) =>
@@ -131,11 +163,38 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
   // a fresh upload form starts with the languages, quality, format and caption look of the previous one.
   const [recalled, setRecalled] = useState<LastChoices | null>(null);
   const freshUpload = !fromAd && !fromTranslation && initialSpeaker === "original";
+  const draftable = !fromAd && !fromTranslation;
   useEffect(() => {
-    if (!freshUpload) return;
+    if (!draftable) return;
     let alive = true;
     Promise.resolve().then(() => {
       if (!alive) return;
+      // A draft of this user in this workspace comes first (2 Nov 2026); otherwise the last choices.
+      const draft = readScopedDraft<TranslateDraftData>(DRAFT_FORM, draftScope);
+      if (draft) {
+        const d = draft.data;
+        setProjectName(d.projectName ?? "");
+        setSource(d.source ?? "auto");
+        setTargets(Array.isArray(d.targets) ? d.targets.filter(isTranslateLanguage) : []);
+        setQuality(d.quality === "precision" ? "precision" : "speed");
+        setKeepTerms(d.keepTerms ?? "");
+        setReplaceRows(Array.isArray(d.replaceRows) && d.replaceRows.length ? d.replaceRows : [{ from: "", to: "" }]);
+        setInstructions(d.instructions ?? "");
+        setFormat(d.format === "original" ? "original" : "9:16");
+        setEnhance(Boolean(d.enhance));
+        setTrimSilence(Boolean(d.trimSilence));
+        setCaptionPosition(d.captionPosition === "middle" ? "middle" : "low");
+        setCaptionStyle(d.captionStyle ?? DEFAULT_CAPTION_STYLE);
+        setRemoveMusic(Boolean(d.removeMusic));
+        setCleanVoice(Boolean(d.cleanVoice));
+        setRemoveText(Boolean(d.removeText));
+        setSpeaker(d.speaker === "presenter" ? "presenter" : "original");
+        if (d.presenterSetup) setPresenterSetup(d.presenterSetup);
+        if (d.staged?.path && d.staged.fileName) setStaged(d.staged);
+        setRestoredAt(draft.savedAt);
+        return;
+      }
+      if (!freshUpload) return;
       const last = readLastChoices();
       if (!last) return;
       setRecalled(last);
@@ -150,7 +209,33 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
     return () => {
       alive = false;
     };
-  }, [freshUpload]);
+  }, [freshUpload, draftable, draftScope]);
+  // Every change lands in the draft a moment later, until the video starts (the draft is cleared then).
+  const draftData: TranslateDraftData = { projectName, source, targets, quality, keepTerms, replaceRows, instructions, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic, cleanVoice, removeText, speaker, presenterSetup, staged };
+  useDraftSaver(DRAFT_FORM, draftData, draftable && !submitting);
+  /** "Start over": the draft and the staged video go, the form comes back empty. */
+  function discardDraft() {
+    clearScopedDraft(DRAFT_FORM, draftScope);
+    if (staged) void discardStaged(staged.path);
+    onStarted();
+  }
+  /** The picked file goes to storage straight away; a failure is silent here (the start uploads it then). */
+  async function stage(file: File) {
+    stagingFor.current = file;
+    setStagingPct(0);
+    try {
+      const result = await stageUpload("source", file, (f) => stagingFor.current === file && setStagingPct(Math.round(f * 100)));
+      if (stagingFor.current !== file) {
+        if (result) void discardStaged(result.path);
+        return;
+      }
+      setStaged(result ? { ...result, seconds: video?.seconds } : null);
+    } catch {
+      if (stagingFor.current === file) setStaged(null);
+    } finally {
+      if (stagingFor.current === file) setStagingPct(null);
+    }
+  }
   function resetChoices() {
     setRecalled(null);
     setTargets([]);
@@ -202,7 +287,9 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
   }));
   const sourceOptions: SelectOption[] = [{ value: "auto", label: "Detect automatically", group: "Recommended" }, ...LANGUAGES.map((l) => ({ value: l.code, label: l.label, group: TOP_LANGUAGES.includes(l.base) ? "Most used" : "All languages" }))];
 
-  const formState = { video: video ?? undefined, sourceAd, rightsRequired: !fromAd, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic: withPresenter ? false : removeMusic, cleanVoice: withPresenter ? false : cleanVoice, removeText, replaceTerms: replaceRows, instructions, speaker, presenter: withPresenter ? presenterSetup : undefined };
+  // The file in memory, the staged copy, or both (after a refresh only the copy is left).
+  const videoState = video ? { file: video.file, seconds: video.seconds ?? staged?.seconds, staged: staged ?? undefined } : staged ? { seconds: staged.seconds, staged } : undefined;
+  const formState = { video: videoState, sourceAd, rightsRequired: !fromAd, projectName, source, targets, quality, rights, keepTerms, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic: withPresenter ? false : removeMusic, cleanVoice: withPresenter ? false : cleanVoice, removeText, replaceTerms: replaceRows, instructions, speaker, presenter: withPresenter ? presenterSetup : undefined };
 
   function validate(): Errors {
     return validateTranslateForm(formState);
@@ -218,7 +305,7 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
       setConfirming(false);
       return;
     }
-    if (!video && !sourceAd) return;
+    if (!videoState && !sourceAd) return;
     if (!confirming) {
       setConfirming(true);
       return;
@@ -227,8 +314,9 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
     submitLock.current = true;
     setSubmitting(true);
     try {
-      const { id } = await createTranslateProject(sourceAd ? buildTranslateDraft({ ...formState, sourceAd }) : buildTranslateDraft({ ...formState, video: video! }), (f) => setUploadPct(Math.round(f * 100)));
+      const { id } = await createTranslateProject(sourceAd ? buildTranslateDraft({ ...formState, sourceAd }) : buildTranslateDraft({ ...formState, video: videoState! }), (f) => setUploadPct(Math.round(f * 100)));
       if (!withPresenter) writeLastChoices({ targets, quality, format, captionPosition, captionStyle, removeMusic, cleanVoice });
+      clearScopedDraft(DRAFT_FORM, draftScope);
       router.push(`/projects/${id}`);
       onStarted();
     } catch (error) {
@@ -245,7 +333,8 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
   const languageCount = Math.max(1, targets.length);
   const totalCredits = creditsPerLanguage * languageCount;
   const shortOfCredits = balance !== null && balance < totalCredits;
-  const knownLength = Boolean(sourceAd || video);
+  const knownLength = Boolean(sourceAd || video || staged);
+  const staging = stagingPct !== null;
   // Short and calm (28 Oct 2026): what was picked in a word or two; the extras on one line.
   const extras = [removeText && "Text removed", cleanReplace(replaceRows).length > 0 && "Words replaced", removeMusic && "No music", cleanVoice && "Clean voice", enhance && "Enhanced"].filter(Boolean) as string[];
   // The one line on the folded block 3: what the defaults are, or what was changed.
@@ -256,7 +345,7 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
     withPresenter ? null : [removeMusic && "music removed", cleanVoice && "voice cleaned", enhance && "picture enhanced", trimSilence && "silence removed"].filter(Boolean).join(", ") || "sound as it is",
   ].filter(Boolean).join(" · ");
   const summaryRows = [
-    { label: "Video", value: sourceAd ? formatDuration(Math.round(seconds)) : video ? formatDuration(Math.round(video.seconds ?? 30)) : "Not added", muted: !video && !sourceAd },
+    { label: "Video", value: sourceAd ? formatDuration(Math.round(seconds)) : video || staged ? formatDuration(Math.round(seconds)) : "Not added", muted: !video && !staged && !sourceAd },
     { label: "Into", value: targets.length === 0 ? "Pick a language" : targets.map((t) => languageOf(t).tag).join(", "), muted: targets.length === 0 },
     withPresenter ? { label: "Speaker", value: presenterSetup.engine === "avatar_iv" ? "Presenter · Premium" : "Presenter" } : { label: "Quality", value: qualityTitle },
     { label: "Format", value: format === "9:16" ? "9:16" : "Original" },
@@ -295,12 +384,33 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
             </div>
           ) : (
           <Field id="video" label="Video" error={errors.video}>
+            {!video && staged ? (
+              <div className="flex items-center gap-4 rounded-[14px] bg-surface-muted p-4">
+                <span className="grid size-12 shrink-0 place-items-center rounded-[12px] bg-ink text-surface" aria-hidden><FileVideo className="size-5" /></span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-medium text-ink">{staged.fileName}</p>
+                  <p className="text-[13px] text-muted">{staged.seconds ? `${formatDuration(staged.seconds)} · ` : ""}Already uploaded, kept from your last visit.</p>
+                </div>
+                <Button type="button" variant="ghost" size="sm" disabled={submitting} onClick={() => { void discardStaged(staged.path); setStaged(null); }}>Remove</Button>
+              </div>
+            ) : (
             <VideoDropzone
               id="video"
               video={video}
               onChange={(v) => {
                 setVideo(v);
                 if (v && errors.video) setErrors((e) => ({ ...e, video: undefined }));
+                if (v && v.file !== stagingFor.current) {
+                  if (staged) void discardStaged(staged.path);
+                  setStaged(null);
+                  void stage(v.file);
+                } else if (v && staged && v.seconds !== undefined && staged.seconds !== v.seconds) setStaged({ ...staged, seconds: v.seconds });
+                if (!v) {
+                  stagingFor.current = null;
+                  setStagingPct(null);
+                  if (staged) void discardStaged(staged.path);
+                  setStaged(null);
+                }
                 if (v && (projectName.trim() === "" || projectName === autoName.current)) {
                   autoName.current = projectNameFromFile(v.file.name);
                   setProjectName(autoName.current);
@@ -313,6 +423,16 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
               invalid={Boolean(errors.video)}
               disabled={submitting}
             />
+            )}
+            {staging && (
+              <p className="mt-2 flex items-center gap-2 text-[13px] text-muted" role="status"><Loader2 className="size-3.5 animate-spin" aria-hidden />Uploading {stagingPct}% — you can keep filling in the form.</p>
+            )}
+            {restoredAt && !submitting && (
+              <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted" role="status">
+                <span>Picked up where you left off.</span>
+                <button type="button" onClick={discardDraft} className="focus-ring rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Start over</button>
+              </p>
+            )}
           </Field>
           )}
           <label htmlFor="removeText" className={cn("flex items-start gap-3 rounded-panel border p-4 transition-colors duration-150", can("removeText") ? "cursor-pointer" : "cursor-not-allowed opacity-70", removeText ? "border-ink bg-surface" : "border-border bg-surface hover:border-ink/30")}>
@@ -617,9 +737,9 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
               {config.demoMode ? " Demo mode: nothing is charged, the run is simulated." : " A language that fails costs nothing."}
             </p>
             <div className="mt-4 flex flex-col gap-2">
-              <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || !rights || overBudget || shortOfCredits}>
-                {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
-                {submitting ? (uploadPct !== null && uploadPct < 100 ? `Uploading ${uploadPct}%` : "Starting…") : `Start now · ${totalCredits} credits`}
+              <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || staging || !rights || overBudget || shortOfCredits}>
+                {submitting || staging ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
+                {staging ? `Uploading ${stagingPct}%` : submitting ? (uploadPct !== null && uploadPct < 100 ? `Uploading ${uploadPct}%` : "Starting…") : `Start now · ${totalCredits} credits`}
               </Button>
               {submitting && uploadPct !== null && (
                 <div className="h-1.5 overflow-hidden rounded-full bg-surface-muted" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={uploadPct} aria-label="Upload">
@@ -633,9 +753,9 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
           </div>
         ) : (
           <>
-            <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || !rights || overBudget || shortOfCredits}>
-              <Languages className="size-5" aria-hidden />
-              {`Start translation · ${totalCredits} credits`}
+            <Button type="button" variant="accent" size="lg" className="w-full" onClick={() => formRef.current?.requestSubmit()} disabled={submitting || staging || !rights || overBudget || shortOfCredits}>
+              {staging ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
+              {staging ? `Uploading ${stagingPct}%` : `Start translation · ${totalCredits} credits`}
             </Button>
             <Button href="/new" variant="ghost" className={cn("w-full", submitting && "pointer-events-none opacity-50")} aria-disabled={submitting || undefined}>
               Back
@@ -665,9 +785,9 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
               <p className={cn("text-[20px] font-semibold leading-none tracking-[-0.02em]", overBudget || shortOfCredits ? "text-danger" : "text-ink")}>{totalCredits}</p>
             </div>
           )}
-          <Button type="button" variant="accent" size="lg" className={cn("shrink-0", confirming && "flex-1")} onClick={() => formRef.current?.requestSubmit()} disabled={submitting || overBudget || shortOfCredits}>
-            {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
-            {submitting ? (uploadPct !== null && uploadPct < 100 ? `Uploading ${uploadPct}%` : "Starting…") : confirming ? "Start now" : "Start translation"}
+          <Button type="button" variant="accent" size="lg" className={cn("shrink-0", confirming && "flex-1")} onClick={() => formRef.current?.requestSubmit()} disabled={submitting || staging || overBudget || shortOfCredits}>
+            {submitting || staging ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
+            {staging ? `Uploading ${stagingPct}%` : submitting ? (uploadPct !== null && uploadPct < 100 ? `Uploading ${uploadPct}%` : "Starting…") : confirming ? "Start now" : "Start translation"}
           </Button>
         </div>
         {submitting && uploadPct !== null && (

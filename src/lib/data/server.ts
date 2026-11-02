@@ -8,7 +8,7 @@ import { assets, db, projects, steps, translations, type AdInput, type AssetRow,
 import { adProjectCreated, adScriptApproved, autoReloadCheck, inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
 import { applyScriptReview, countWords, normaliseHooks, type AdScript } from "@/lib/services/script";
 import { maxSpokenWords } from "@/lib/pricing";
-import { copyObject, objectPath, objectInfo, signedDownloadUrl } from "@/lib/storage";
+import { copyObject, deleteObject, isStagedPathOf, objectPath, objectInfo, signedDownloadUrl } from "@/lib/storage";
 import { checkUserLimits, costGuardResponse, costLimits, creativeSpent, getProjectSpend } from "@/lib/services/costGuard";
 import { VIEW_READ_ONLY_MESSAGE } from "@/lib/adminViewSession";
 import { estimateAdCost, estimateTranslateCost, sourceTranscriptEnabled } from "@/lib/pricing";
@@ -457,12 +457,24 @@ export async function attachUploadedAsset(scope: DataScope, projectId: string, f
   const row = await getProjectRow(projectId, scope);
   if (!row) throw new DataError("Project not found.", 404, "not_found");
   if (row.status !== "draft") throw new DataError("Files can only be added before the project starts.", 409, "not_draft");
-  if (!file.storagePath.startsWith(`projects/${projectId}/`)) throw new DataError("File path does not belong to this project.", 400, "bad_path");
-  const info = await objectInfo(file.storagePath);
+  // A staged upload (2 Nov 2026): picked on the form before the project existed, under the user's own
+  // folder; it is copied into the project and the staged copy removed. Anything else must be this project's.
+  let storagePath = file.storagePath;
+  if (isStagedPathOf(storagePath, userId)) {
+    const target = objectPath({ projectId, kind: file.kind, fileName: file.fileName });
+    try {
+      await copyObject(storagePath, target);
+    } catch (error) {
+      throw new DataError("The uploaded file was not found in storage. Upload it again.", 400, "missing_object", error);
+    }
+    await deleteObject(storagePath).catch(() => null);
+    storagePath = target;
+  } else if (!storagePath.startsWith(`projects/${projectId}/`)) throw new DataError("File path does not belong to this project.", 400, "bad_path");
+  const info = await objectInfo(storagePath);
   if (!info) throw new DataError("The uploaded file was not found in storage. Upload it again.", 400, "missing_object");
   const [asset] = await db()
     .insert(assets)
-    .values({ projectId, userId, kind: file.kind, storagePath: file.storagePath, mime: info.mime, bytes: info.bytes, seconds: file.seconds })
+    .values({ projectId, userId, kind: file.kind, storagePath, mime: info.mime, bytes: info.bytes, seconds: file.seconds })
     .returning();
   if (row.workflow === "ad" && file.kind === "image") {
     const input = row.input as AdInput;

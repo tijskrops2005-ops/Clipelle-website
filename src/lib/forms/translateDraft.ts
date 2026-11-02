@@ -3,6 +3,7 @@ import type { LanguageCode, TranslationQuality } from "@/lib/types";
 import { config } from "@/lib/config";
 import { isDefaultCaptionStyle, type CaptionStyleChoice } from "@/lib/captionOptions";
 import type { PresenterTranslate } from "@/lib/presenterTranslate";
+import type { StagedUpload } from "@/lib/data/uploads";
 
 /**
  * Pure helpers behind the "Translate a video" form: validation and the exact object that goes
@@ -12,7 +13,8 @@ import type { PresenterTranslate } from "@/lib/presenterTranslate";
 export type TranslateFormErrors = Partial<Record<"video" | "projectName" | "targets" | "rights" | "form", string>>;
 
 export type TranslateFormState = {
-  video?: { file: File; seconds?: number };
+  /** The picked file; after a refresh only the staged copy in storage is left (2 Nov 2026), with the file's name and length. */
+  video?: { file?: File; seconds?: number; staged?: StagedUpload };
   /** A stored video as the source (no upload): a finished ad ("Localize this ad", rights recorded as generated here) or an earlier translation's own upload ("Add a language", 31 Oct 2026). */
   sourceAd?: { id: string; seconds: number };
   /** Whether the rights box must be ticked; default: only for an upload. "Add a language" asks again for the reused upload. */
@@ -74,7 +76,7 @@ export function parseKeepTerms(raw: string) {
 }
 
 /** Exactly what the form sends to createTranslateProject. Requires a video, or a finished ad as the source (validated before). */
-export function buildTranslateDraft(s: TranslateFormState & ({ video: { file: File; seconds?: number } } | { sourceAd: { id: string; seconds: number } })): TranslateProjectDraft {
+export function buildTranslateDraft(s: TranslateFormState & ({ video: { file?: File; seconds?: number; staged?: StagedUpload } } | { sourceAd: { id: string; seconds: number } })): TranslateProjectDraft {
   if (s.sourceAd) {
     return {
       name: s.projectName.trim(),
@@ -96,8 +98,10 @@ export function buildTranslateDraft(s: TranslateFormState & ({ video: { file: Fi
   const video = s.video!;
   return {
     name: s.projectName.trim(),
+    // The file when it is still in memory; the staged copy (only as a key when there is one) lets a restored draft start without it.
     video: video.file,
-    sourceSeconds: Math.round(video.seconds ?? 30),
+    ...(video.staged ? { staged: video.staged } : {}),
+    sourceSeconds: Math.round(video.seconds ?? video.staged?.seconds ?? 30),
     sourceLanguage: s.source,
     targetLanguages: s.targets,
     quality: s.quality,
