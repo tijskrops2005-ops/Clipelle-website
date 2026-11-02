@@ -445,22 +445,20 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
               <span className="block text-[13px] leading-relaxed text-muted">Old captions, titles and stickers are painted out; your new captions go where they were. +{CREDIT_RULES.translate.removeText} credit per second per language.</span>
             </span>
           </label>
-          <Disclosure title="Project name" summary={projectName.trim() ? projectName : "Taken from the file name"} forceOpen={Boolean(errors.projectName)}>
-            <Field id="projectName" label="Name" error={errors.projectName}>
-              <Input
-                id="projectName"
-                value={projectName}
-                onChange={(e) => {
-                  setProjectName(e.target.value);
-                  if (errors.projectName) setErrors((er) => ({ ...er, projectName: undefined }));
-                }}
-                placeholder="e.g. Founder story — DE + FR"
-                invalid={Boolean(errors.projectName)}
-                disabled={submitting}
-                autoComplete="off"
-              />
-            </Field>
-          </Disclosure>
+          <Field id="projectName" label="Project name" error={errors.projectName}>
+            <Input
+              id="projectName"
+              value={projectName}
+              onChange={(e) => {
+                setProjectName(e.target.value);
+                if (errors.projectName) setErrors((er) => ({ ...er, projectName: undefined }));
+              }}
+              placeholder="e.g. Founder story — DE + FR"
+              invalid={Boolean(errors.projectName)}
+              disabled={submitting}
+              autoComplete="off"
+            />
+          </Field>
         </SectionCard>
 
         {/* 2. Languages and quality */}
