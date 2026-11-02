@@ -199,6 +199,15 @@ export async function untilFree<T>(step: StepTools, id: string, run: (attempt: n
 
 /* ---------- waiting on a provider: webhook first, polling as the fallback ---------- */
 
+/**
+ * Seconds to sleep before status check `i` where no webhook exists (2 Nov 2026, speed round): short
+ * at first, because many jobs finish within seconds, then longer, never above twice the configured
+ * poll interval. 3, 5, 8, 11, 14 … up to the cap.
+ */
+export function pollDelaySeconds(i: number, pollSeconds: number) {
+  return Math.min(Math.max(2, pollSeconds * 2), 3 + i * 3 - (i > 0 ? 1 : 0));
+}
+
 type StepTools = Parameters<Parameters<typeof inngest.createFunction>[1]>[0]["step"];
 
 /**

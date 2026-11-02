@@ -62,7 +62,7 @@ import {
   storeBytes,
   storeFromUrl,
   withDeadline,
-  withRetries, waitForJob, untilFree, busySeconds, type Busy } from "@/lib/workflow/steps";
+  withRetries, waitForJob, untilFree, busySeconds, pollDelaySeconds, type Busy } from "@/lib/workflow/steps";
 import { callbackUrlFor } from "@/lib/webhooks/incoming";
 
 /**
@@ -321,18 +321,19 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
           const detected = statuses.find((s) => s.input_language)?.input_language ?? null;
           const detectedCode = languageCodeForName(detected);
           const sourceLanguage = detectedCode ?? (input.sourceLanguage !== "auto" ? input.sourceLanguage : null);
-          let checkCost = 0;
-          for (const code of input.targetLanguages) {
+          // The quality checks of all languages run side by side (2 Nov 2026, speed round); each is its own call.
+          const checkCosts = await Promise.all(input.targetLanguages.map(async (code) => {
             const cues = cuesBy[code];
-            if (!cues) continue;
+            if (!cues) return 0;
             const originals = alignOriginalText(cues, transcript);
             const segments: Segment[] = cues.map((c, i) => ({ index: c.index, start: c.start, end: c.end, original: originals[i] ?? "", translated: c.text, text: c.text }));
             const [row] = await db().update(translations).set({ segments, status: "processing", updatedAt: new Date() }).where(and(eq(translations.projectId, projectId), eq(translations.language, code))).returning();
             // Automatic quality check (replaces the manual review): corrected lines go back into the segments.
             const checked = await checkLanguage(projectId, started.stepId, row, input, transcript.length ? sourceLanguage : null, input.targetLanguages.length);
-            checkCost += checked.qa.costUsd;
             await db().update(translations).set({ segments: checked.segments, qa: checked.qa, updatedAt: new Date() }).where(eq(translations.id, row.id));
-          }
+            return checked.qa.costUsd;
+          }));
+          const checkCost = checkCosts.reduce((a, b) => a + b, 0);
           await db().update(projects).set({ detectedLanguage: sourceLanguage, updatedAt: new Date() }).where(eq(projects.id, projectId));
           for (const id of started.entryIds) await settleSpend(id, { status: "completed", actualUsd: started.perLanguage });
           await markCompleted(projectId, key, { output: { sessions: sessionMap, ...(started.glossaryWarning ? { warning: started.glossaryWarning } : {}) }, costUsd: started.estimate + checkCost });
@@ -342,7 +343,7 @@ async function runTranslate(projectId: string, input: TranslateInput, upload: Up
       }));
       return sessionMap;
     }
-    await step.sleep(`translate-wait-${i}`, `${cfg.pollSeconds}s`);
+    await step.sleep(`translate-wait-${i}`, `${pollDelaySeconds(i, cfg.pollSeconds)}s`);
   }
   return step.run("translate-timeout", () => failStep(projectId, key, new StepFailure(`The translation took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`)));
 }
@@ -577,7 +578,7 @@ async function runTextRemoval(projectId: string, input: TranslateInput, step: St
       console.error(`[text removal] prediction failed: ${st.error}`);
       return failClean("The on-screen text could not be removed from this video. Retry, or start again without this option.");
     }
-    await step.sleep(`clean-wait-${i}`, `${cfg.pollSeconds}s`);
+    await step.sleep(`clean-wait-${i}`, `${pollDelaySeconds(i, cfg.pollSeconds)}s`);
   }
   return failClean(`Removing the on-screen text took longer than ${cfg.maxWaitMinutes} minutes. Retry the step.`);
 }
@@ -946,10 +947,13 @@ async function requestQualityReport(step: StepTools, projectId: string, code: La
 
 async function setLanguagePhase(projectId: string, code: LanguageCode, key: "voice" | "enhance" | "captions" | "done") {
   try {
-    const patch = JSON.stringify({ phases: { [code]: { key, at: new Date().toISOString() } } });
+    const at = new Date().toISOString();
+    const patch = JSON.stringify({ phases: { [code]: { key, at } } });
+    const entry = JSON.stringify([{ key, at }]);
+    // The current phase per language (the progress bar) and, since 2 Nov 2026, the full phase log per language (docs/speed.md).
     await db()
       .update(steps)
-      .set({ output: sql`jsonb_set(coalesce(${steps.output}, '{}'::jsonb), '{phases}', coalesce(${steps.output} -> 'phases', '{}'::jsonb) || (${patch}::jsonb -> 'phases'))`, updatedAt: new Date() })
+      .set({ output: sql`jsonb_set(jsonb_set(coalesce(${steps.output}, '{}'::jsonb), '{phases}', coalesce(${steps.output} -> 'phases', '{}'::jsonb) || (${patch}::jsonb -> 'phases')), ${sql.raw(`'{phaseLog,${code}}'`)}, coalesce(${steps.output} -> 'phaseLog' -> ${code}, '[]'::jsonb) || ${entry}::jsonb, true)`, updatedAt: new Date() })
       .where(and(eq(steps.projectId, projectId), eq(steps.key, "captions")));
   } catch (error) {
     console.error("[translate] phase write failed", error instanceof Error ? error.message : error);
