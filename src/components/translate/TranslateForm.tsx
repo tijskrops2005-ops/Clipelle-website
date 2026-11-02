@@ -108,8 +108,6 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
   const [projectName, setProjectName] = useState(fromAd ? `${fromAd.name} — translation` : fromTranslation ? `${fromTranslation.name} — more languages` : "");
   // The name comes from the file (31 Oct 2026) unless the customer typed one; the field sits under a fold.
   const autoName = useRef<string | null>(null);
-  // Block 3 (format, captions, sound) is folded: the defaults are right for most videos; "Change" opens it.
-  const [styleOpen, setStyleOpen] = useState(false);
   const [source, setSource] = useState<LanguageCode | "auto">(fromAd?.language && isTranslateLanguage(fromAd.language) ? fromAd.language : fromTranslation ? fromTranslation.sourceLanguage : "auto");
   // The presenter flow speaks one language with presenter voices; start on English.
   const [targets, setTargets] = useState<LanguageCode[]>(initialSpeaker === "presenter" ? ["en"] : []);
@@ -337,13 +335,6 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
   const staging = stagingPct !== null;
   // Short and calm (28 Oct 2026): what was picked in a word or two; the extras on one line.
   const extras = [removeText && "Text removed", cleanReplace(replaceRows).length > 0 && "Words replaced", removeMusic && "No music", cleanVoice && "Clean voice", enhance && "Enhanced"].filter(Boolean) as string[];
-  // The one line on the folded block 3: what the defaults are, or what was changed.
-  const captionsOn = captionStyle.show || (removeText && !withPresenter);
-  const styleSummary = [
-    withPresenter ? null : format === "9:16" ? "Vertical 9:16" : "Original size",
-    captionsOn ? `captions ${captionStyle.highlight === "none" ? "plain" : `with a ${captionStyle.highlight === "box" ? "box" : captionStyle.highlight} on the spoken word`}` : "no captions",
-    withPresenter ? null : [removeMusic && "music removed", cleanVoice && "voice cleaned", enhance && "picture enhanced", trimSilence && "silence removed"].filter(Boolean).join(", ") || "sound as it is",
-  ].filter(Boolean).join(" · ");
   const summaryRows = [
     { label: "Video", value: sourceAd ? formatDuration(Math.round(seconds)) : video || staged ? formatDuration(Math.round(seconds)) : "Not added", muted: !video && !staged && !sourceAd },
     { label: "Into", value: targets.length === 0 ? "Pick a language" : targets.map((t) => languageOf(t).tag).join(", "), muted: targets.length === 0 },
@@ -568,19 +559,9 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
 
         </SectionCard>
 
-        {/* 3. Captions and format: folded (31 Oct 2026), the defaults fit most videos; the summary line says what they are. */}
-        <SectionCard
-          number={3}
-          title="Captions, format and sound"
-          description={styleSummary}
-          aside={
-            <Button type="button" variant="secondary" size="sm" onClick={() => setStyleOpen((o) => !o)} aria-expanded={styleOpen} aria-controls="style-options" disabled={submitting}>
-              {styleOpen ? "Done" : "Change"}
-            </Button>
-          }
-          contentClassName={cn(!styleOpen && "hidden")}
-        >
-          <div id="style-options" className="space-y-6 fold-in">
+        {/* 3. Captions, format and sound: always open (2 Nov 2026, Tijs), like steps 1 and 2. */}
+        <SectionCard number={3} title={withPresenter ? "Captions and wording" : "Captions, format and sound"} description={withPresenter ? "How the captions look, and the words you want kept or changed." : "The format, how the captions look, the words you want kept or changed, and the sound."}>
+          <div className="space-y-6">
           {!withPresenter && (<fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">Format</legend>
             <OptionGrid columns={2}>

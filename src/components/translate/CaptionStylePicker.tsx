@@ -15,8 +15,6 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, over
   const bar = effectiveBar(value, overOldText);
   // With text removal the captions are always on, on a bar (29 Oct 2026): they hide the cleaned spot.
   const shown = overOldText || value.show;
-  const barColor = CAPTION_BAR_META[bar].color;
-  const textSwapped = Boolean(barColor && value.textColor && readableOn(value.textColor, barColor) !== value.textColor);
   return (
     <div className="space-y-5">
       <fieldset className="space-y-2">
@@ -50,7 +48,6 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, over
               value={CAPTION_BAR_META[bar].color}
               onPick={(_, key) => set({ bar: key as CaptionBar })}
               disabled={disabled}
-              hint={[overOldText ? "Sits where the old text was, the whole video long." : null, textSwapped ? "This text colour does not read on this background, so the words are shown in black or white. Pick a darker or lighter background to keep it." : null].filter(Boolean).join(" ") || undefined}
             />
 
             <div className="flex flex-wrap gap-x-6 gap-y-4">
