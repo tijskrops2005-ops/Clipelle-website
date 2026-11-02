@@ -24,8 +24,9 @@ export const CAPTION_COLORS = [
   { key: "pink", label: "Pink", value: "#EC4899" },
   { key: "white", label: "White", value: "#FFFFFF" },
 ] as const;
-export type CaptionColor = (typeof CAPTION_COLORS)[number]["value"];
-export const CAPTION_COLOR_VALUES = CAPTION_COLORS.map((c) => c.value) as unknown as readonly [CaptionColor, ...CaptionColor[]];
+/** Any #RRGGBB since 2 Nov 2026 (the one colour picker); the list above is the named starting set. */
+export type CaptionColor = string;
+export const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
 /**
  * Colour of the words themselves (26 Oct 2026; every colour since 28 Oct 2026, also on a background).
@@ -41,8 +42,7 @@ export const CAPTION_TEXT_COLORS = [
   { key: "blue", label: "Blue", value: "#2563EB" },
   { key: "pink", label: "Pink", value: "#EC4899" },
 ] as const;
-export type CaptionTextColor = (typeof CAPTION_TEXT_COLORS)[number]["value"];
-export const CAPTION_TEXT_COLOR_VALUES = CAPTION_TEXT_COLORS.map((c) => c.value) as unknown as readonly [CaptionTextColor, ...CaptionTextColor[]];
+export type CaptionTextColor = string;
 
 /** The text colour on a background: the chosen one when it reads there, else black or white. */
 export function readableOn(text: string, background: string) {
@@ -107,8 +107,10 @@ export type CaptionStyleChoice = {
  * to the text plus padding and only shows while a line is on screen). Words turn dark on a light box.
  */
 export const CAPTION_BARS = ["none", "white", "cream", "yellow", "dark"] as const;
-export type CaptionBar = (typeof CAPTION_BARS)[number];
-export const CAPTION_BAR_META: Record<CaptionBar, { label: string; color: string | null; opacity: number }> = {
+export type CaptionBarKey = (typeof CAPTION_BARS)[number];
+/** A named bar, or any #RRGGBB since 2 Nov 2026 (the one colour picker). */
+export type CaptionBar = CaptionBarKey | (string & {});
+export const CAPTION_BAR_META: Record<CaptionBarKey, { label: string; color: string | null; opacity: number }> = {
   // (28 Oct 2026) shown as colour swatches on the form; the labels are their accessible names.
   none: { label: "None", color: null, opacity: 0 },
   white: { label: "White", color: "#FFFFFF", opacity: 0.92 },
@@ -116,10 +118,27 @@ export const CAPTION_BAR_META: Record<CaptionBar, { label: string; color: string
   yellow: { label: "Yellow", color: "#FFD400", opacity: 0.95 },
   dark: { label: "Dark", color: "#111114", opacity: 0.8 },
 };
+/** What a bar choice means: a named bar from the table, a free hex colour at the white bar's opacity, anything else = none. */
+export function barMeta(bar: CaptionBar | undefined | null): { label: string; color: string | null; opacity: number } {
+  if (bar && bar in CAPTION_BAR_META) return CAPTION_BAR_META[bar as CaptionBarKey];
+  if (bar && HEX_COLOR.test(bar)) return { label: bar.toUpperCase(), color: bar.toUpperCase(), opacity: CAPTION_BAR_META.white.opacity };
+  return CAPTION_BAR_META.none;
+}
+/** The named key for a hex that is one of the named bars (so stored data stays as before), else the hex. */
+export function barFromHex(hex: string | null): CaptionBar {
+  if (!hex) return "none";
+  const named = (Object.keys(CAPTION_BAR_META) as CaptionBarKey[]).find((k) => CAPTION_BAR_META[k].color?.toUpperCase() === hex.toUpperCase());
+  return named ?? hex.toUpperCase();
+}
+/** True when the bar is a real colour (named or hex), false for none. */
+export function isBarOn(bar: CaptionBar | undefined | null) {
+  return barMeta(bar).color !== null;
+}
+
 /** The background in use: the customer's pick, else white over removed text and none otherwise. */
 export function effectiveBar(style: Pick<CaptionStyleChoice, "bar">, overOldText: boolean): CaptionBar {
   // Over removed text there is always a bar (29 Oct 2026, Tijs: without one the smudge and leftover letters show).
-  if (overOldText) return style.bar && style.bar !== "none" ? style.bar : "white";
+  if (overOldText) return isBarOn(style.bar) ? style.bar! : "white";
   return style.bar ?? "none";
 }
 
@@ -129,7 +148,7 @@ export function effectiveBar(style: Pick<CaptionStyleChoice, "bar">, overOldText
  */
 export function styleOverRemovedText(style: Partial<CaptionStyleChoice> | null | undefined): Partial<CaptionStyleChoice> {
   const s: Partial<CaptionStyleChoice> = style ?? {};
-  return { ...s, show: true, bar: s.bar && s.bar !== "none" ? s.bar : "white" };
+  return { ...s, show: true, bar: isBarOn(s.bar) ? s.bar : "white" };
 }
 
 /**
@@ -137,14 +156,14 @@ export function styleOverRemovedText(style: Partial<CaptionStyleChoice> | null |
  * turned black). Keeps the current bar when it reads; otherwise dark for light text, white for dark text.
  */
 export function barForText(text: string, current: CaptionBar, overOldText: boolean): CaptionBar {
-  const meta = CAPTION_BAR_META[current];
+  const meta = barMeta(current);
   if (!meta.color || contrastRatio(text, meta.color) >= 3) return current;
-  const order: CaptionBar[] = luminance(text) > 0.3 ? ["dark", "white", "cream", "yellow"] : ["white", "cream", "yellow", "dark"];
+  const order: CaptionBarKey[] = luminance(text) > 0.3 ? ["dark", "white", "cream", "yellow"] : ["white", "cream", "yellow", "dark"];
   return order.find((b) => contrastRatio(text, CAPTION_BAR_META[b].color!) >= 3) ?? (overOldText ? "dark" : "none");
 }
 
 /** The bars that can be chosen: no "none" over removed text. */
-export function barChoices(overOldText: boolean): readonly CaptionBar[] {
+export function barChoices(overOldText: boolean): readonly CaptionBarKey[] {
   return overOldText ? CAPTION_BARS.filter((b) => b !== "none") : CAPTION_BARS;
 }
 
@@ -163,8 +182,8 @@ export function isDefaultCaptionStyle(style: CaptionStyleChoice) {
 /** "Box · red · medium · capitals", or "Off": for summaries and the project page. */
 export function describeCaptionStyle(style: CaptionStyleChoice) {
   if (!style.show) return "Off";
-  const color = CAPTION_COLORS.find((c) => c.value === style.color)?.label.toLowerCase() ?? "";
+  const color = CAPTION_COLORS.find((c) => c.value.toUpperCase() === style.color.toUpperCase())?.label.toLowerCase() ?? style.color.toUpperCase();
   const highlight = style.highlight === "none" ? "No highlight" : `${CAPTION_HIGHLIGHT_META[style.highlight].label} · ${color}`;
-  const text = style.textColor && style.textColor !== "#FFFFFF" ? ` · ${CAPTION_TEXT_COLORS.find((c) => c.value === style.textColor)?.label.toLowerCase()} text` : "";
+  const text = style.textColor && style.textColor.toUpperCase() !== "#FFFFFF" ? ` · ${CAPTION_TEXT_COLORS.find((c) => c.value.toUpperCase() === style.textColor!.toUpperCase())?.label.toLowerCase() ?? style.textColor.toUpperCase()} text` : "";
   return `${highlight} · ${style.size}${style.uppercase ? " · capitals" : ""}${text}`;
 }

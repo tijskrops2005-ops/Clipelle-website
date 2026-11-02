@@ -62,7 +62,7 @@ export type AdFormState = {
   seconds: AdLength;
   engine: PresenterEngine;
   lookId?: string;
-  /** "own", "image", or a key from BACKGROUND_COLORS. */
+  /** "own", "image", a key from BACKGROUND_COLORS, or any #RRGGBB (2 Nov 2026, the colour picker). */
   backgroundChoice: string;
   backgroundImage?: File;
   accent: string;
@@ -98,7 +98,7 @@ export function buildAdDraft(s: AdFormState): AdProjectDraft {
       s.backgroundChoice === "image" && s.backgroundImage
         ? { type: "image", file: s.backgroundImage }
         : s.backgroundChoice !== "own" && s.backgroundChoice !== "image"
-          ? { type: "color", value: BACKGROUND_COLORS.find((c) => c.key === s.backgroundChoice)?.value ?? "#FFFFFF" }
+          ? { type: "color", value: BACKGROUND_COLORS.find((c) => c.key === s.backgroundChoice)?.value ?? (HEX_COLOR.test(s.backgroundChoice) ? s.backgroundChoice.toUpperCase() : "#FFFFFF") }
           : undefined,
     brand: {
       accent: effectiveAccent !== DEFAULT_ACCENT ? effectiveAccent : undefined,

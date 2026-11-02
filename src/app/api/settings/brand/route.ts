@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CAPTION_BARS } from "@/lib/captionOptions";
 import { requireUser } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
 import { getBrandDefaults, getOrCreateProfile, saveBrandDefaults } from "@/lib/data/profile";
@@ -18,10 +19,13 @@ export async function GET() {
   }
 }
 
+const Hex = z.string().regex(HEX_COLOR);
 const Body = z.object({
-  accent: z.string().regex(HEX_COLOR).optional().or(z.literal("")),
+  accent: Hex.optional().or(z.literal("")),
   captionStyle: z.enum(CAPTION_STYLES).optional().or(z.literal("")),
   font: z.enum(FONT_KEYS).optional().or(z.literal("")),
+  /** Caption colours for new translations (2 Nov 2026): any hex; the background a named bar or a hex. */
+  captionColors: z.object({ color: Hex.optional(), textColor: Hex.optional(), bar: z.union([z.enum(CAPTION_BARS), Hex]).optional() }).optional(),
 });
 
 /** Saves the brand defaults; empty values clear a field. The logo is managed by ./logo and kept here. The ad form reads them as initial values only. */
@@ -35,7 +39,8 @@ export async function PUT(request: Request) {
     await getOrCreateProfile(user);
     const b = parsed.data;
     const { logoPath } = await getBrandDefaults(user.id);
-    await saveBrandDefaults(user.id, { accent: b.accent || undefined, captionStyle: b.captionStyle || undefined, font: b.font || undefined, logoPath });
+    const captionColors = b.captionColors && Object.values(b.captionColors).some(Boolean) ? b.captionColors : undefined;
+    await saveBrandDefaults(user.id, { accent: b.accent || undefined, captionStyle: b.captionStyle || undefined, font: b.font || undefined, logoPath, ...(captionColors ? { captionColors } : {}) });
     return Response.json({ ok: true });
   } catch (error) {
     return dataErrorResponse(error);

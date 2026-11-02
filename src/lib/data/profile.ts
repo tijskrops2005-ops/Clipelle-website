@@ -3,7 +3,9 @@ import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import { creditLedger, db, notifyWishes, profiles, projects, workspaceMembers, workspaces, type ProfileRow } from "@/lib/db";
 import { listLedger } from "@/lib/credits";
 
-export type BrandDefaults = { accent?: string; captionStyle?: string; font?: string; logoPath?: string };
+/** Caption colours a translation starts with (2 Nov 2026): the spoken word, the words and the background (a bar key or hex; "none" = no background). */
+export type BrandCaptionColors = { color?: string; textColor?: string; bar?: string };
+export type BrandDefaults = { accent?: string; captionStyle?: string; font?: string; logoPath?: string; captionColors?: BrandCaptionColors };
 
 /** The profile row, created on first use from the auth user. */
 export async function getOrCreateProfile(user: { id: string; email: string; name?: string; termsVersion?: string; termsAcceptedAt?: string; referredBy?: string }): Promise<ProfileRow> {

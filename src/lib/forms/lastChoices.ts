@@ -46,7 +46,8 @@ export function readLastChoices(store: Store | null = storage()): LastChoices | 
       quality: v.quality === "precision" ? "precision" : "speed",
       format: v.format === "original" ? "original" : "9:16",
       captionPosition: v.captionPosition === "middle" ? "middle" : "low",
-      captionStyle: { ...DEFAULT_CAPTION_STYLE, ...Object.fromEntries(Object.entries(style).filter(([k]) => k in DEFAULT_CAPTION_STYLE)) } as CaptionStyleChoice,
+      // Colours are never carried over (2 Nov 2026, Tijs): a new video starts with the default or brand colours.
+      captionStyle: { ...DEFAULT_CAPTION_STYLE, ...Object.fromEntries(Object.entries(style).filter(([k]) => k in DEFAULT_CAPTION_STYLE && k !== "color" && k !== "textColor")) } as CaptionStyleChoice,
       removeMusic: v.removeMusic === true,
       cleanVoice: v.cleanVoice === true,
       at: typeof v.at === "string" ? v.at : new Date(0).toISOString(),

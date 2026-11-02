@@ -1,4 +1,4 @@
-import { CAPTION_SIZE_PX, captionStyleOf, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { barMeta, CAPTION_SIZE_PX, captionStyleOf, readableOn, type CaptionStyleChoice } from "@/lib/captionOptions";
 
 /**
  * The caption look as CSS for the edit screen's preview (2 Nov 2026): the same choices the render
@@ -9,11 +9,13 @@ export function captionCss(style: Partial<CaptionStyleChoice> | undefined, previ
   const look = captionStyleOf(style);
   const scale = previewWidth / 1080;
   const fontPx = Math.max(9, CAPTION_SIZE_PX[look.size] * scale);
-  const text = look.textColor ?? "#FFFFFF";
+  // On a background the words take a colour that reads there and lose their outline, as the render does.
+  const bar = barMeta(look.bar);
+  const text = bar.color ? readableOn(look.textColor ?? "#FFFFFF", bar.color) : look.textColor ?? "#FFFFFF";
   const outline = text.toUpperCase() === "#FFFFFF" ? "#111114" : "#FFFFFF";
   const stroke = `${Math.max(1, 3 * scale)}px`;
   return {
-    box: { fontSize: `${fontPx}px`, lineHeight: 1.25, fontWeight: 900, color: text, textTransform: look.uppercase ? ("uppercase" as const) : ("none" as const), WebkitTextStroke: `${stroke} ${outline}`, paintOrder: "stroke fill" as const, textAlign: "center" as const, width: "83%" },
+    box: { fontSize: `${fontPx}px`, lineHeight: 1.25, fontWeight: 900, color: text, textTransform: look.uppercase ? ("uppercase" as const) : ("none" as const), WebkitTextStroke: bar.color ? "0" : `${stroke} ${outline}`, paintOrder: "stroke fill" as const, textAlign: "center" as const, width: "83%", ...(bar.color ? { background: hexAlpha(bar.color, bar.opacity), borderRadius: `${8 * scale}px`, padding: `${6 * scale}px ${10 * scale}px` } : {}) },
     word: (active: boolean) => {
       if (!active || look.highlight === "none") return {};
       if (look.highlight === "box") return { background: look.color, color: isLight(look.color) ? "#111114" : text, borderRadius: `${4 * scale}px`, padding: `0 ${6 * scale}px`, WebkitTextStroke: "0" };
@@ -21,6 +23,11 @@ export function captionCss(style: Partial<CaptionStyleChoice> | undefined, previ
       return { textDecoration: "underline", textDecorationColor: look.color, textDecorationThickness: `${Math.max(2, 5 * scale)}px` };
     },
   };
+}
+
+function hexAlpha(hex: string, alpha: number) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
 function isLight(hex: string) {

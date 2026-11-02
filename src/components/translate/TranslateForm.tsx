@@ -37,7 +37,8 @@ import { AD_LANGUAGES, type AdLanguageCode } from "@/lib/voiceOptions";
 import { DEFAULT_CAPTION_STYLE, type CaptionStyleChoice } from "@/lib/captionOptions";
 import { CREDIT_RULES, FEATURE_PLAN, hasFeature, translateCredits, type PlanFeature } from "@/lib/plans";
 import { PlanHint } from "@/components/PlanHint";
-import { getAccountStatus } from "@/lib/data/settingsClient";
+import { getAccountStatus, getBrandDefaults } from "@/lib/data/settingsClient";
+import { barMeta, isBarOn } from "@/lib/captionOptions";
 
 type Errors = TranslateFormErrors;
 
@@ -186,12 +187,23 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
         setRemoveMusic(Boolean(d.removeMusic));
         setCleanVoice(Boolean(d.cleanVoice));
         setRemoveText(Boolean(d.removeText));
-        setSpeaker(d.speaker === "presenter" ? "presenter" : "original");
+        // The tool that was opened wins (2 Nov 2026): "Translate with a presenter" stays a presenter form whatever the draft says.
+        const speakerNow = initialSpeaker === "presenter" ? "presenter" : d.speaker === "presenter" ? "presenter" : "original";
+        setSpeaker(speakerNow);
+        if (speakerNow === "presenter") setTargets((t) => (t.find((c) => (PRESENTER_LANGUAGES as string[]).includes(c)) ? [t.find((c) => (PRESENTER_LANGUAGES as string[]).includes(c))!] : ["en"]));
         if (d.presenterSetup) setPresenterSetup(d.presenterSetup);
         if (d.staged?.path && d.staged.fileName) setStaged(d.staged);
         setRestoredAt(draft.savedAt);
         return;
       }
+      // No draft: the caption colours from Settings → Brand (2 Nov 2026), never the colours of the last video.
+      void getBrandDefaults()
+        .then((b) => {
+          const c = b.captionColors;
+          if (!alive || !c) return;
+          setCaptionStyle((s) => ({ ...s, ...(c.color ? { color: c.color } : {}), ...(c.textColor ? { textColor: c.textColor } : {}), ...(c.bar !== undefined ? { bar: isBarOn(c.bar) ? (barMeta(c.bar).color ? c.bar : undefined) : undefined } : {}) }));
+        })
+        .catch(() => {});
       if (!freshUpload) return;
       const last = readLastChoices();
       if (!last) return;
@@ -207,7 +219,7 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
     return () => {
       alive = false;
     };
-  }, [freshUpload, draftable, draftScope]);
+  }, [freshUpload, draftable, draftScope, initialSpeaker]);
   // Every change lands in the draft a moment later, until the video starts (the draft is cleared then).
   const draftData: TranslateDraftData = { projectName, source, targets, quality, keepTerms, replaceRows, instructions, format, enhance, trimSilence, captionPosition, captionStyle, removeMusic, cleanVoice, removeText, speaker, presenterSetup, staged };
   useDraftSaver(DRAFT_FORM, draftData, draftable && !submitting);

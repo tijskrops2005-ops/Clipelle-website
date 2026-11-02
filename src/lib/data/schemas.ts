@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CAPTION_BARS, CAPTION_COLOR_VALUES, CAPTION_HIGHLIGHTS, CAPTION_SIZES, CAPTION_TEXT_COLOR_VALUES } from "@/lib/captionOptions";
+import { CAPTION_BARS, CAPTION_HIGHLIGHTS, CAPTION_SIZES } from "@/lib/captionOptions";
 import { PRESENTER_LANGUAGES, PRESENTER_LAYOUTS } from "@/lib/presenterTranslate";
 import { isTranslateLanguage } from "@/lib/translateLanguages";
 import { config } from "@/lib/config";
@@ -13,6 +13,9 @@ import { FORMAT_KEYS, HOOK_KEYS, MAX_BATCH_VARIANTS, MIN_BATCH_VARIANTS } from "
  * The one validation of what a new project may contain, shared by the app's own route
  * (/api/projects) and the public API (/api/v1). Changing a rule here changes both.
  */
+/** Any colour as #RRGGBB (2 Nov 2026, the one colour picker): captions, brand accent, presenter background. */
+export const HexColor = z.string().regex(HEX_COLOR, "Use a colour as #RRGGBB.");
+
 export const AdBody = z.object({
   workflow: z.literal("ad"),
   name: z.string().trim().min(2).max(120),
@@ -75,7 +78,7 @@ export const TranslateFields = z.object({
   trimSilence: z.boolean().default(false),
   captionPosition: z.enum(["low", "middle"]).default("low"),
   /** Caption choices (26 Oct 2026); omitted = the original look. */
-  captionStyle: z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: z.enum(CAPTION_COLOR_VALUES), size: z.enum(CAPTION_SIZES), uppercase: z.boolean(), textColor: z.enum(CAPTION_TEXT_COLOR_VALUES), bar: z.enum(CAPTION_BARS) }).partial().optional(),
+  captionStyle: z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: HexColor, size: z.enum(CAPTION_SIZES), uppercase: z.boolean(), textColor: HexColor, bar: z.union([z.enum(CAPTION_BARS), HexColor]) }).partial().optional(),
   /** Sound (26 Oct 2026): strip the background music, clean up the speech. */
   /** Remove text burned into the picture before translating (Pro, 26 Oct 2026). */
   removeText: z.boolean().optional(),
@@ -103,7 +106,7 @@ export type TranslateBodyInput = z.infer<typeof TranslateBody>;
 const Seconds = z.number().min(0).max(60 * 60);
 const RangeBody = z.object({ start: Seconds, end: Seconds });
 const CueBody = z.object({ index: z.number().int().min(0), start: Seconds, end: Seconds, text: z.string().max(400) });
-const CaptionStyleBody = z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: z.enum(CAPTION_COLOR_VALUES), size: z.enum(CAPTION_SIZES), uppercase: z.boolean(), textColor: z.enum(CAPTION_TEXT_COLOR_VALUES).optional(), bar: z.enum(CAPTION_BARS).optional() });
+const CaptionStyleBody = z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: HexColor, size: z.enum(CAPTION_SIZES), uppercase: z.boolean(), textColor: HexColor.optional(), bar: z.union([z.enum(CAPTION_BARS), HexColor]).optional() });
 export const EditRecipeBody = z.object({
   v: z.literal(RECIPE_VERSION),
   sourceSeconds: z.number().positive().max(60 * 60),

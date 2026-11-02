@@ -707,3 +707,32 @@ body { overflow-x: clip; }
 .prose-clipelle th, .prose-clipelle td { text-align: left; padding: 0.6em 0.75em; border-bottom: 1px solid var(--divider); vertical-align: top; }
 .prose-clipelle th { font-weight: 600; color: var(--ink); }
 .prose-clipelle hr { border: 0; border-top: 1px solid var(--divider); margin: 2.5em 0; }
+
+/* The hue slider of the colour picker (2 Nov 2026): a rainbow track with a plain round thumb. */
+.hue-slider {
+  appearance: none;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
+  outline: none;
+}
+.hue-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-ink);
+  cursor: pointer;
+}
+.hue-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-ink);
+  cursor: pointer;
+}
+.hue-slider:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ink) 20%, transparent);
+}

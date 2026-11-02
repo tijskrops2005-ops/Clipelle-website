@@ -10,13 +10,16 @@ function fakeStore() {
 describe("last choices", () => {
   it("round-trips the choices and stamps the time", () => {
     const s = fakeStore();
-    writeLastChoices({ targets: ["de", "fr"], quality: "precision", format: "original", captionPosition: "middle", captionStyle: { ...DEFAULT_CAPTION_STYLE, uppercase: false }, removeMusic: true, cleanVoice: false }, s);
+    writeLastChoices({ targets: ["de", "fr"], quality: "precision", format: "original", captionPosition: "middle", captionStyle: { ...DEFAULT_CAPTION_STYLE, uppercase: false, color: "#123456", textColor: "#ABCDEF" }, removeMusic: true, cleanVoice: false }, s);
     const c = readLastChoices(s)!;
     expect(c.targets).toEqual(["de", "fr"]);
     expect(c.quality).toBe("precision");
     expect(c.format).toBe("original");
     expect(c.captionPosition).toBe("middle");
     expect(c.captionStyle.uppercase).toBe(false);
+    // Colours never carry over (2 Nov 2026): the next video starts with the default or brand colours.
+    expect(c.captionStyle.color).toBe(DEFAULT_CAPTION_STYLE.color);
+    expect(c.captionStyle.textColor).toBe(DEFAULT_CAPTION_STYLE.textColor);
     expect(c.removeMusic).toBe(true);
     expect(Date.parse(c.at)).toBeGreaterThan(0);
     expect(lastChoicesSummary(c, (code) => code.toUpperCase())).toBe("DE, FR · Precision · original size");

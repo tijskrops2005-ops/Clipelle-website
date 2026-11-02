@@ -408,7 +408,7 @@ export const profiles = pgTable(
     email: text("email").notNull(),
     name: text("name"),
     /** Defaults for the ad form's brand style; the form still sends exactly what the customer picked. */
-    brand: jsonb("brand").$type<{ accent?: string; captionStyle?: string; font?: string; logoPath?: string }>(),
+    brand: jsonb("brand").$type<{ accent?: string; captionStyle?: string; font?: string; logoPath?: string; captionColors?: { color?: string; textColor?: string; bar?: string } }>(),
     /** Plan state mirrored from the payment provider (Part 3). */
     planKey: text("plan_key").default("free").notNull(),
     stripeCustomerId: text("stripe_customer_id"),

@@ -37,3 +37,19 @@ describe("a background that fits the text colour (29 Oct 2026)", () => {
     expect(barForText("#FFFFFF", "yellow", true)).toBe("dark");
   });
 });
+
+describe("any colour (2 Nov 2026, the one colour picker)", () => {
+  it("reads a named bar, a free hex bar and none", async () => {
+    const { barMeta, barFromHex, isBarOn } = await import("./captionOptions");
+    expect(barMeta("white").color).toBe("#FFFFFF");
+    expect(barMeta("#1F3A5F")).toMatchObject({ color: "#1F3A5F", opacity: barMeta("white").opacity });
+    expect(barMeta("none").color).toBeNull();
+    expect(barMeta("purple").color).toBeNull();
+    expect(barFromHex("#FFFFFF")).toBe("white");
+    expect(barFromHex("#111114")).toBe("dark");
+    expect(barFromHex("#1f3a5f")).toBe("#1F3A5F");
+    expect(barFromHex(null)).toBe("none");
+    expect(isBarOn("#1F3A5F")).toBe(true);
+    expect(isBarOn("none")).toBe(false);
+  });
+});

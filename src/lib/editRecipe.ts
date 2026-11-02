@@ -1,4 +1,4 @@
-import { CAPTION_SIZE_PX, captionStyleOf, DEFAULT_CAPTION_STYLE, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { barMeta, CAPTION_SIZE_PX, captionStyleOf, DEFAULT_CAPTION_STYLE, readableOn, type CaptionStyleChoice } from "@/lib/captionOptions";
 
 /**
  * The edit screen's recipe (2 Nov 2026): what the customer changed on a finished video, as data. The
@@ -258,8 +258,10 @@ function textClip(text: string, window: Range, o: { frame: { width: number; heig
 function captionClip(style: CaptionStyleChoice, position: "low" | "middle", srtUrl: string, total: number, frame: { width: number; height: number }, ink: string, light: string, accent?: string) {
   const look = captionStyleOf(style);
   const fontPx = CAPTION_SIZE_PX[look.size];
-  const text = look.textColor ?? light;
-  const stroke = { width: 8, color: ink, opacity: 1 };
+  // A background behind the words (any colour since 2 Nov 2026): the words then take a colour that reads on it, without outline.
+  const bar = barMeta(look.bar);
+  const text = bar.color ? readableOn(look.textColor ?? light, bar.color) : look.textColor ?? light;
+  const stroke = bar.color ? { width: 0, color: light, opacity: 0 } : { width: 8, color: ink, opacity: 1 };
   const color = look.color ?? accent ?? "#D43F1B";
   const active =
     look.highlight === "box" ? { font: { color: text, background: color }, stroke } : look.highlight === "color" ? { font: { color }, stroke } : look.highlight === "underline" ? { font: { color, textDecoration: "underline" }, stroke } : undefined;
@@ -270,9 +272,9 @@ function captionClip(style: CaptionStyleChoice, position: "low" | "middle", srtU
       font: { family: "Roboto", size: fontPx, color: text, opacity: 1, weight: 900 },
       style: { textTransform: look.uppercase ? "uppercase" : "none" },
       stroke,
-      animation: { style: "pop" },
+      animation: { style: bar.color ? "highlight" : "pop" },
       ...(active ? { active } : {}),
-      border: { width: 0, color: ink, opacity: 1, radius: 16 },
+      ...(bar.color ? { background: { color: bar.color, opacity: bar.opacity, borderRadius: 18, wrap: true, padding: 18 } } : { border: { width: 0, color: ink, opacity: 1, radius: 16 } }),
       padding: { top: 6, right: 10, bottom: 6, left: 10 },
       align: { horizontal: "center", vertical: "middle" },
     },

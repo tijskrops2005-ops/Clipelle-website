@@ -2,20 +2,25 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
-import { BRAND_COLORS, CAPTION_STYLES, CAPTION_STYLE_META, DEFAULT_ACCENT, DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, FONT_META, HEX_COLOR, type CaptionStyle, type FontKey } from "@/lib/adOptions";
+import { CAPTION_STYLES, CAPTION_STYLE_META, DEFAULT_ACCENT, DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, FONT_META, HEX_COLOR, type CaptionStyle, type FontKey } from "@/lib/adOptions";
+import { barFromHex, barMeta, contrastRatio, DEFAULT_CAPTION_STYLE as DEFAULT_CAPTION_LOOK, isBarOn } from "@/lib/captionOptions";
+import { ColorPicker } from "@/components/ui/ColorPicker";
+import { LOW_CONTRAST } from "@/components/translate/CaptionStylePicker";
 import { getBrandDefaults, removeBrandLogo, saveBrandDefaults, uploadBrandLogo } from "@/lib/data/settingsClient";
 import { detectLogoKind, LOGO_ACCEPT, logoProblem, MAX_LOGO_BYTES } from "@/lib/brandLogo";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Field, controlClass, controlStateClass } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { DemoBadge } from "@/components/DemoModeBadge";
 
 /** Brand defaults: the ad form starts with these values; the form still sends exactly what you pick there. */
 export function BrandSettings() {
   const [accent, setAccent] = useState(DEFAULT_ACCENT);
-  const [custom, setCustom] = useState("");
+  // Caption colours for new translations (2 Nov 2026): the spoken word, the words, the background (null = none).
+  const [capColor, setCapColor] = useState<string>(DEFAULT_CAPTION_LOOK.color);
+  const [capText, setCapText] = useState<string>(DEFAULT_CAPTION_LOOK.textColor ?? "#FFFFFF");
+  const [capBar, setCapBar] = useState<string | null>(null);
   const [captionStyle, setCaptionStyle] = useState<CaptionStyle>(DEFAULT_CAPTION_STYLE);
   const [font, setFont] = useState<FontKey>(DEFAULT_FONT);
   const [loaded, setLoaded] = useState(false);
@@ -70,9 +75,11 @@ export function BrandSettings() {
     getBrandDefaults()
       .then((b) => {
         if (!alive) return;
-        if (b.accent) {
-          if (BRAND_COLORS.some((c) => c.value === b.accent)) setAccent(b.accent);
-          else setCustom(b.accent);
+        if (b.accent && HEX_COLOR.test(b.accent)) setAccent(b.accent.toUpperCase());
+        if (b.captionColors) {
+          if (b.captionColors.color) setCapColor(b.captionColors.color);
+          if (b.captionColors.textColor) setCapText(b.captionColors.textColor);
+          setCapBar(isBarOn(b.captionColors.bar) ? barMeta(b.captionColors.bar).color : null);
         }
         if (b.captionStyle && (CAPTION_STYLES as readonly string[]).includes(b.captionStyle)) setCaptionStyle(b.captionStyle as CaptionStyle);
         if (b.font && (FONT_KEYS as readonly string[]).includes(b.font)) setFont(b.font as FontKey);
@@ -89,9 +96,15 @@ export function BrandSettings() {
     e.preventDefault();
     setBusy(true);
     setMsg(null);
-    const effective = HEX_COLOR.test(custom) ? custom.toUpperCase() : accent;
+    const effective = accent;
+    const bar = barFromHex(capBar);
+    const captionColors = {
+      ...(capColor.toUpperCase() !== DEFAULT_CAPTION_LOOK.color ? { color: capColor } : {}),
+      ...(capText.toUpperCase() !== (DEFAULT_CAPTION_LOOK.textColor ?? "#FFFFFF") ? { textColor: capText } : {}),
+      ...(bar !== "none" ? { bar } : {}),
+    };
     try {
-      await saveBrandDefaults({ accent: effective !== DEFAULT_ACCENT ? effective : undefined, captionStyle: captionStyle !== DEFAULT_CAPTION_STYLE ? captionStyle : undefined, font: font !== DEFAULT_FONT ? font : undefined });
+      await saveBrandDefaults({ accent: effective !== DEFAULT_ACCENT ? effective : undefined, captionStyle: captionStyle !== DEFAULT_CAPTION_STYLE ? captionStyle : undefined, font: font !== DEFAULT_FONT ? font : undefined, captionColors: Object.keys(captionColors).length ? captionColors : undefined });
       setMsg({ tone: "ok", text: "Brand defaults saved. New ads start with these values." });
     } catch (err) {
       setMsg({ tone: "error", text: err instanceof Error ? err.message : "Could not save." });
@@ -136,20 +149,16 @@ export function BrandSettings() {
 
       <SectionCard title="Brand defaults" description="Starting values for the brand style on the ad form. You can still change them per video." aside={<DemoBadge>Stored in this browser</DemoBadge>}>
       <form onSubmit={onSubmit} className="space-y-6" aria-busy={!loaded}>
-        <div>
-          <p className="mb-2 text-sm font-medium text-ink">Accent colour</p>
-          <p className="mb-3 text-[13px] text-muted">Highlights the spoken caption word.</p>
-          <div className="flex flex-wrap items-center gap-2">
-            {BRAND_COLORS.map((c) => {
-              const selected = !HEX_COLOR.test(custom) && accent === c.value;
-              return (
-                <button key={c.key} type="button" onClick={() => { setAccent(c.value); setCustom(""); }} aria-pressed={selected} title={c.label} className={cn("focus-ring grid size-9 place-items-center rounded-full border-2 transition-[border-color,transform] duration-150 hover:-translate-y-px", selected ? "border-ink" : "border-transparent")}>
-                  <span className="size-6 rounded-full border border-border" style={{ backgroundColor: c.value }} aria-hidden />
-                  <span className="sr-only">{c.label}</span>
-                </button>
-              );
-            })}
-            <Input id="customAccent" value={custom} onChange={(e) => setCustom(e.target.value.trim())} placeholder="#1F3A5F" maxLength={7} className="h-9 w-28 text-[13px]" aria-label="Custom accent colour (hex)" />
+        <ColorPicker id="brandAccent" label="Accent colour" value={accent} onChange={(hex) => hex && setAccent(hex)} note={contrastRatio(accent, "#FFFFFF") < 3 ? "Low contrast" : undefined} />
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm font-medium text-ink">Caption colours for translations</p>
+            <p className="text-[13px] text-muted">New translations start with these; you can still change them per video.</p>
+          </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-4">
+            <ColorPicker id="brandCaptionHighlight" label="Highlight colour" value={capColor} onChange={(hex) => hex && setCapColor(hex)} />
+            <ColorPicker id="brandCaptionText" label="Text colour" value={capText} onChange={(hex) => hex && setCapText(hex)} note={capBar && contrastRatio(capText, capBar) < LOW_CONTRAST ? "Low contrast" : undefined} />
+            <ColorPicker id="brandCaptionBackground" label="Background" value={capBar} onChange={setCapBar} allowNone />
           </div>
         </div>
         <div className="grid gap-5 md:grid-cols-2">

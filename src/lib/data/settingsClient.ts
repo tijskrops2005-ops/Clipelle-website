@@ -6,7 +6,8 @@ import { config } from "@/lib/config";
  * Settings access for screens, with the demo switch like src/lib/data/client.ts: demo mode keeps
  * everything in localStorage under the demo user, database mode calls /api/settings/*.
  */
-export type BrandDefaults = { accent?: string; captionStyle?: string; font?: string; logoPath?: string; /** Where the logo can be fetched (own route, or a data URL in demo mode). */ logoUrl?: string };
+export type BrandCaptionColors = { color?: string; textColor?: string; bar?: string };
+export type BrandDefaults = { accent?: string; captionStyle?: string; font?: string; logoPath?: string; /** Where the logo can be fetched (own route, or a data URL in demo mode). */ logoUrl?: string; /** Caption colours a new translation starts with (2 Nov 2026). */ captionColors?: BrandCaptionColors };
 const BRAND_KEY = "clipelle.demo.brand";
 const LOGO_KEY = "clipelle.demo.brandLogo";
 const NAME_KEY = "clipelle.demo.name";
@@ -43,7 +44,7 @@ export async function getBrandDefaults(): Promise<BrandDefaults> {
   return api<BrandDefaults>("/api/settings/brand");
 }
 
-export async function saveBrandDefaults(brand: Pick<BrandDefaults, "accent" | "captionStyle" | "font">) {
+export async function saveBrandDefaults(brand: Pick<BrandDefaults, "accent" | "captionStyle" | "font" | "captionColors">) {
   if (config.demoMode) return writeLocal(BRAND_KEY, brand);
   await api("/api/settings/brand", { method: "PUT", body: JSON.stringify(brand) });
 }

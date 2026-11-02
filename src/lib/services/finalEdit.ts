@@ -1,7 +1,7 @@
 import "server-only";
 import { fitCaptionToCover } from "@/lib/captionFit";
 import { chunkCharsFor } from "@/lib/captionChunks";
-import { CAPTION_BAR_META, CAPTION_SIZE_PX, DEFAULT_CAPTION_STYLE as DEFAULT_TRANSLATE_LOOK, captionStyleOf, effectiveBar, isLightColor, outlineFor, type CaptionHighlight, type CaptionStyleChoice, readableOn } from "@/lib/captionOptions";
+import { barMeta, CAPTION_SIZE_PX, DEFAULT_CAPTION_STYLE as DEFAULT_TRANSLATE_LOOK, captionStyleOf, effectiveBar, isLightColor, outlineFor, type CaptionHighlight, type CaptionStyleChoice, readableOn } from "@/lib/captionOptions";
 import { adLayout } from "@/lib/adLayout";
 import { DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, type CaptionStyle } from "@/lib/adOptions";
 
@@ -306,7 +306,7 @@ export function captionBoxWidth(input: Pick<CaptionEditInput, "coverBox" | "size
 /** Width of the caption box and the characters one chunk may hold (2 Nov 2026): over removed text from the fitted box, else from the size. */
 export function captionChunkPlan(input: Pick<CaptionEditInput, "coverBox" | "size" | "captionStyle">): { widthPx: number; chunkChars: number } {
   const base = captionStyleOf({ ...input.captionStyle });
-  const bar = CAPTION_BAR_META[base.show ? effectiveBar(base, Boolean(input.coverBox)) : "none"];
+  const bar = barMeta(base.show ? effectiveBar(base, Boolean(input.coverBox)) : "none");
   const frame = input.size ? fitSize(input.size) : { width: 1080, height: 1920 };
   if (input.coverBox && bar.color) {
     const fit = fitCaptionToCover(input.coverBox, frame, base.size);
@@ -327,7 +327,7 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const base = captionStyleOf({ color: accent as CaptionStyleChoice["color"], ...input.captionStyle });
   // A background that wraps the text (27 Oct 2026); over removed text it is white unless chosen otherwise.
   const barKey = base.show ? effectiveBar(base, Boolean(input.coverBox)) : "none";
-  const bar = CAPTION_BAR_META[barKey];
+  const bar = barMeta(barKey);
   const darkWords = bar.color !== null && isLightColor(bar.color);
   // On a box the words need no outline; a highlight in the box's own colour would vanish, so it turns red (or white on red).
   // The customer's text colour stays when it reads on the box (28 Oct 2026); otherwise black or white.

@@ -8,6 +8,7 @@ import { createAdBatch, createAdProject } from "@/lib/data/client";
 import { clearScopedDraft, readScopedDraft, useDraftSaver, useDraftScope } from "@/lib/forms/DraftScope";
 import { fetchBrandLogoFile, getAccountStatus, getBrandDefaults } from "@/lib/data/settingsClient";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
+import { ColorPicker } from "@/components/ui/ColorPicker";
 import { PresenterPicker } from "@/components/PresenterPicker";
 import { AD_LENGTHS, DEFAULTS, DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, estimateAdCost, type AdLength, type PresenterEngine } from "@/lib/pricing";
 import { buildAdDraft, effectiveAccentOf, validateAdForm, type AdFormErrors, type AdFormValues } from "@/lib/forms/adDraft";
@@ -19,7 +20,6 @@ import { AD_LANGUAGES, AD_LANGUAGE_CODES, DEFAULT_SPEED, SPEEDS, isAdLanguage, t
 import {
   AD_TONES,
   BACKGROUND_COLORS,
-  BRAND_COLORS,
   CAPTION_STYLES,
   CAPTION_STYLE_META,
   DEFAULT_ACCENT,
@@ -216,10 +216,7 @@ function ProjectFormFields({ initial, onFresh }: { initial?: ProjectFormInitial;
     getBrandDefaults()
       .then((b) => {
         if (!alive) return;
-        if (b.accent && HEX_COLOR.test(b.accent)) {
-          if (BRAND_COLORS.some((c) => c.value === b.accent)) setAccent(b.accent);
-          else setCustomAccent(b.accent);
-        }
+        if (b.accent && HEX_COLOR.test(b.accent)) setAccent(b.accent.toUpperCase());
         if (b.captionStyle && (CAPTION_STYLES as readonly string[]).includes(b.captionStyle)) setCaptionStyle(b.captionStyle as CaptionStyle);
         if (b.font && (FONT_KEYS as readonly string[]).includes(b.font)) setFont(b.font as FontKey);
         // The saved logo becomes a File in the dropzone, so the draft carries it exactly like a manual upload.
@@ -597,23 +594,27 @@ function ProjectFormFields({ initial, onFresh }: { initial?: ProjectFormInitial;
             <p className="mt-1.5 text-[13px] text-muted">The word limit stays the same; a slower voice makes the video about 10% longer and a faster one about 10% shorter. The credits follow.</p>
           </fieldset>
 
-          <Disclosure title="Advanced" summary={backgroundChoice === "own" ? "Background: the presenter's own" : backgroundChoice === "image" ? "Background: your own image" : `Background: ${BACKGROUND_COLORS.find((c) => c.key === backgroundChoice)?.label ?? backgroundChoice}`}>
+          <Disclosure title="Advanced" summary={backgroundChoice === "own" ? "Background: the presenter's own" : backgroundChoice === "image" ? "Background: your own image" : `Background: ${BACKGROUND_COLORS.find((c) => c.key === backgroundChoice)?.label ?? backgroundChoice.toUpperCase()}`}>
             <div>
               <p className="mb-1.5 text-sm font-medium text-ink">Background</p>
               <p className="mb-3 text-[13px] text-muted">A solid colour or your own image behind the presenter. Not every presenter can swap their background; then the original is kept and the project page says so.</p>
               <div className="flex flex-wrap gap-2">
-                {[{ key: "own", label: "Presenter's own", value: "" }, ...BACKGROUND_COLORS, { key: "image", label: "Your own image", value: "" }].map((c) => (
+                {[{ key: "own", label: "Presenter's own" }, { key: "color", label: "A colour" }, { key: "image", label: "Your own image" }].map((c) => (
                   <OptionCard
                     key={c.key}
                     size="chip"
-                    selected={backgroundChoice === c.key}
-                    onSelect={() => setBackgroundChoice(c.key)}
+                    selected={c.key === "color" ? backgroundChoice !== "own" && backgroundChoice !== "image" : backgroundChoice === c.key}
+                    onSelect={() => setBackgroundChoice(c.key === "color" ? BACKGROUND_COLORS[0].key : c.key)}
                     disabled={submitting}
                     title={c.label}
-                    leading={c.value ? <span className="size-4 rounded-full border border-border" style={{ backgroundColor: c.value }} aria-hidden /> : undefined}
                   />
                 ))}
               </div>
+              {backgroundChoice !== "own" && backgroundChoice !== "image" && (
+                <div className="mt-3">
+                  <ColorPicker id="backgroundColor" label="Background colour" value={BACKGROUND_COLORS.find((c) => c.key === backgroundChoice)?.value ?? (HEX_COLOR.test(backgroundChoice) ? backgroundChoice : BACKGROUND_COLORS[0].value)} onChange={(hex) => hex && setBackgroundChoice(BACKGROUND_COLORS.find((c) => c.value.toUpperCase() === hex.toUpperCase())?.key ?? hex)} disabled={submitting} />
+                </div>
+              )}
               {backgroundChoice === "image" && (
                 <div className="mt-3">
                   <UploadDropzone id="backgroundImage" images={backgroundImages} onChange={setBackgroundImages} max={1} disabled={submitting} title="Drop a background image here, or click to choose" hint="PNG or JPG, up to 10 MB. Portrait or square works best." onReject={(message) => setErrors((e) => ({ ...e, form: message }))} />
@@ -694,37 +695,8 @@ function ProjectFormFields({ initial, onFresh }: { initial?: ProjectFormInitial;
 
           <Disclosure title="Brand style" summary={brandChanged ? "Custom colour, captions, font or logo" : "Accent colour, caption look, font and logo. All optional."}>
             <p className="text-[13px] text-muted">Your colour highlights the spoken caption word; the logo sits top right. Captions are the only text on screen.</p>
-            <div>
-              <p className="mb-2 text-[13px] font-medium text-ink">Accent colour</p>
-              <div className="flex flex-wrap items-center gap-2">
-                {BRAND_COLORS.map((c) => {
-                  const selected = !HEX_COLOR.test(customAccent) && accent === c.value;
-                  return (
-                    <button
-                      key={c.key}
-                      type="button"
-                      onClick={() => {
-                        setAccent(c.value);
-                        setCustomAccent("");
-                      }}
-                      disabled={submitting}
-                      aria-pressed={selected}
-                      title={c.label}
-                      className={cn("focus-ring grid size-9 place-items-center rounded-full border-2 transition-[border-color,transform] duration-150 hover:-translate-y-px", selected ? "border-ink" : "border-transparent")}
-                    >
-                      <span className="size-6 rounded-full border border-border" style={{ backgroundColor: c.value }} aria-hidden />
-                      <span className="sr-only">{c.label}</span>
-                    </button>
-                  );
-                })}
-                <Input id="customAccent" value={customAccent} onChange={(e) => setCustomAccent(e.target.value.trim())} placeholder="#1F3A5F" maxLength={7} disabled={submitting} className="h-9 w-28 text-[13px]" aria-label="Custom accent colour (hex)" />
-              </div>
-              {lowContrast && (
-                <p role="status" className="mt-2 text-[13px] font-medium text-danger">
-                  This colour is too light: white text on it is hard to read (contrast {accentContrast.toFixed(1)}:1, we recommend at least {MIN_LARGE_TEXT_CONTRAST}:1). Pick a darker colour.
-                </p>
-              )}
-            </div>
+            {/* One colour picker everywhere (2 Nov 2026); white text sits on the accent, so a light one gets the note. */}
+            <ColorPicker id="brandAccent" label="Accent colour" value={effectiveAccent} onChange={(hex) => { if (hex) { setAccent(hex); setCustomAccent(""); } }} disabled={submitting} note={lowContrast ? "Low contrast" : undefined} />
             <div className="grid gap-5 md:grid-cols-2">
               <Field id="captionStyle" label="Captions" hint={CAPTION_STYLE_META[captionStyle].blurb}>
                 <select id="captionStyle" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value as CaptionStyle)} disabled={submitting} className={cn(controlClass, controlStateClass(false), "h-11")}>

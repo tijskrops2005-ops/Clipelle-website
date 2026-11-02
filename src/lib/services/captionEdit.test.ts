@@ -144,3 +144,21 @@ describe("the bar always covers the cleaned spot (27 Oct 2026)", () => {
     expect(tall.height).toBe(coverHeightFor({ top: 0.5, bottom: 0.65 }, 1920));
   });
 });
+
+describe("free colours (2 Nov 2026, the one colour picker)", () => {
+  it("passes any hex through for the highlight, the words and the background, and keeps the words readable on the bar", () => {
+    const a = captionAsset(buildCaptionEdit({ ...base, captionStyle: { highlight: "box", color: "#1F3A5F", textColor: "#FDE68A" } }));
+    expect(a.active.font).toEqual({ color: "#FDE68A", background: "#1F3A5F" });
+    expect(a.font.color).toBe("#FDE68A");
+    const b = captionAsset(buildCaptionEdit({ ...base, captionStyle: { highlight: "color", color: "#7C3AED", textColor: "#FFFFFF", bar: "#134E4A" } }));
+    expect(b.background).toMatchObject({ color: "#134E4A", wrap: true });
+    expect(b.font.color).toBe("#FFFFFF");
+    expect(b.active.font).toEqual({ color: "#7C3AED" });
+    // Light words on a light custom bar turn dark, as on the named bars.
+    const c = captionAsset(buildCaptionEdit({ ...base, captionStyle: { textColor: "#FDE68A", bar: "#F3F4F6" } }));
+    expect(c.font.color).toBe("#111114");
+    // Over removed text a custom bar is fully opaque.
+    const d = captionAsset(buildCaptionEdit({ ...base, coverBox: { top: 0.7, bottom: 0.74, left: 0.2, right: 0.8 }, captionStyle: { bar: "#1F3A5F" } }));
+    expect(d.background).toMatchObject({ color: "#1F3A5F", opacity: 1 });
+  });
+});

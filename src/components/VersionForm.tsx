@@ -43,7 +43,8 @@ export function VersionForm({ fromId, variations }: { fromId: string; variations
       const brandAccent = project.brand?.accent && HEX_COLOR.test(project.brand.accent) ? project.brand.accent.toUpperCase() : undefined;
       const swatch = brandAccent ? BRAND_COLORS.find((c) => c.value.toUpperCase() === brandAccent) : undefined;
       const colorValue = project.background?.type === "color" ? project.background.value.toLowerCase() : undefined;
-      const backgroundChoice = colorValue ? (BACKGROUND_COLORS.find((c) => c.value.toLowerCase() === colorValue)?.key ?? "own") : bgImage ? "image" : "own";
+      // A named background keeps its key; any other colour travels as its hex (2 Nov 2026).
+      const backgroundChoice = colorValue ? (BACKGROUND_COLORS.find((c) => c.value.toLowerCase() === colorValue)?.key ?? (HEX_COLOR.test(colorValue) ? colorValue.toUpperCase() : "own")) : bgImage ? "image" : "own";
       setInitial({
         parentId: project.id,
         values: {
@@ -67,8 +68,8 @@ export function VersionForm({ fromId, variations }: { fromId: string; variations
           tone: project.tone,
           backgroundChoice,
           backgroundImages: bgImage ? [{ id: "version-background", file: bgImage, previewUrl: URL.createObjectURL(bgImage) }] : [],
-          accent: swatch?.value,
-          customAccent: brandAccent && !swatch ? brandAccent : undefined,
+          accent: brandAccent ?? swatch?.value,
+          customAccent: undefined,
           captionStyle: project.brand?.captionStyle && (CAPTION_STYLES as readonly string[]).includes(project.brand.captionStyle) ? (project.brand.captionStyle as CaptionStyle) : undefined,
           font: project.brand?.font && (FONT_KEYS as readonly string[]).includes(project.brand.font) ? (project.brand.font as FontKey) : undefined,
           logoImages: logo ? [{ id: "version-logo", file: logo, previewUrl: URL.createObjectURL(logo) }] : [],

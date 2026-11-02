@@ -3,7 +3,9 @@
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { CAPTION_PRESETS, type EditRecipe } from "@/lib/editRecipe";
-import { isDefaultCaptionStyle } from "@/lib/captionOptions";
+import { barFromHex, barMeta, contrastRatio, isDefaultCaptionStyle, type CaptionBar } from "@/lib/captionOptions";
+import { ColorPicker } from "@/components/ui/ColorPicker";
+import { LOW_CONTRAST } from "@/components/translate/CaptionStylePicker";
 import { formatDuration } from "@/components/ui/VideoDropzone";
 
 /**
@@ -31,7 +33,13 @@ export function CaptionsPanel({ recipe, onRecipe, time, onSeek, disabled }: { re
                   {p.label}
                 </button>
               ))}
-              {presetKey === "custom" && <span className="self-center text-[13px] text-muted">Custom (as rendered)</span>}
+              {presetKey === "custom" && <span className="self-center text-[13px] text-muted">Custom</span>}
+            </div>
+            {/* The one colour picker (2 Nov 2026): the three caption colours, free hex, the preview follows. */}
+            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-4">
+              {captions.style.highlight !== "none" && <ColorPicker id="editHighlight" label="Highlight colour" value={captions.style.color} onChange={(hex) => hex && set({ style: { ...captions.style, color: hex } })} disabled={disabled} />}
+              <ColorPicker id="editText" label="Text colour" value={captions.style.textColor ?? "#FFFFFF"} onChange={(hex) => hex && set({ style: { ...captions.style, textColor: hex } })} disabled={disabled} note={barMeta(captions.style.bar).color && contrastRatio(captions.style.textColor ?? "#FFFFFF", barMeta(captions.style.bar).color!) < LOW_CONTRAST ? "Low contrast" : undefined} />
+              <ColorPicker id="editBackground" label="Background" value={barMeta(captions.style.bar).color} onChange={(hex) => set({ style: { ...captions.style, bar: barFromHex(hex) as CaptionBar } })} allowNone disabled={disabled} />
             </div>
           </div>
           <div>
