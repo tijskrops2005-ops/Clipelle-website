@@ -13,6 +13,7 @@ import { PauseOffscreen } from "@/components/motion/PauseOffscreen";
 import { ToolSearch } from "@/components/ToolSearch";
 import { TopBar } from "@/components/TopBar";
 import { isAdmin } from "@/lib/adminAccess";
+import { ViewingBar } from "@/components/ViewingBar";
 
 /**
  * Persistent frame for every app page. The sidebar sits on the page background;
@@ -46,6 +47,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
         </Suspense>
       </div>
       <main className="flex min-w-0 flex-1 flex-col">
+        {scope?.viewing && <ViewingBar viewing={scope.viewing} />}
         {/* mobile / tablet top bar */}
         <div className="lg:hidden">
           <Suspense fallback={<div className="h-14" aria-hidden />}>
