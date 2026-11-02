@@ -133,6 +133,15 @@ export async function deleteAccount(confirmEmail: string) {
   await api("/api/settings/profile", { method: "DELETE", body: JSON.stringify({ confirmEmail }) });
 }
 
+/** Close the account (2 Nov 2026): removed after 30 days unless restored by signing in. */
+export async function requestAccountDeletion(confirmEmail: string): Promise<{ deletionAt: string }> {
+  if (config.demoMode) throw new Error("Demo mode has no accounts to close.");
+  return api<{ deletionAt: string }>("/api/settings/account/delete", { method: "POST", body: JSON.stringify({ confirmEmail }) });
+}
+export async function restoreAccount(): Promise<void> {
+  await api("/api/settings/account/restore", { method: "POST" });
+}
+
 /* ---------- two-step verification (2 Nov 2026) ---------- */
 
 export type MfaState = { enabled: boolean; recoveryLeft: number; required: boolean };

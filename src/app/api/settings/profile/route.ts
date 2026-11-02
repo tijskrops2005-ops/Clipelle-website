@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
-import { deleteAccountData, getOrCreateProfile, updateNotifyEmail, updateProfileName } from "@/lib/data/profile";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { getOrCreateProfile, updateNotifyEmail, updateProfileName } from "@/lib/data/profile";
 import { supabaseServer } from "@/lib/supabase/ssr";
 import { databaseModeOnly, readJson } from "@/app/api/projects/_guard";
 
@@ -41,19 +40,19 @@ export async function PATCH(request: Request) {
 }
 
 /** Deletes the account and everything in it. The body must repeat the e-mail address. */
+/** Close the account (2 Nov 2026, was a hard delete): scheduled removal in 30 days; see /api/settings/account/delete. */
 export async function DELETE(request: Request) {
   const blocked = databaseModeOnly();
   if (blocked) return blocked;
   try {
     const user = await requireUser();
     const body = await readJson<{ confirmEmail?: string }>(request);
-    if (body?.confirmEmail?.trim().toLowerCase() !== user.email.toLowerCase()) return Response.json({ error: "Type your e-mail address exactly to confirm." }, { status: 400 });
-    await deleteAccountData(user.id);
-    const { error } = await supabaseAdmin().auth.admin.deleteUser(user.id);
-    if (error) return Response.json({ error: "Your data was removed but the sign-in could not be deleted yet. Contact us." }, { status: 500 });
+    if ((body?.confirmEmail ?? "").trim().toLowerCase() !== user.email.toLowerCase()) return Response.json({ error: "Type your e-mail address exactly as it is on the account." }, { status: 400 });
+    const { requestDeletion } = await import("@/lib/accountLifecycle");
+    const { deletionAt } = await requestDeletion(user);
     const supabase = await supabaseServer();
-    await supabase.auth.signOut();
-    return Response.json({ ok: true });
+    await supabase.auth.signOut().catch(() => undefined);
+    return Response.json({ ok: true, deletionAt: deletionAt.toISOString() });
   } catch (error) {
     return dataErrorResponse(error);
   }

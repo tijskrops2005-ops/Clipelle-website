@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { config } from "@/lib/config";
-import { changePassword, deleteAccount, getProfile, saveNotifyEmail, saveProfileName, type ProfileInfo } from "@/lib/data/settingsClient";
+import { changePassword, getProfile, saveNotifyEmail, saveProfileName, type ProfileInfo } from "@/lib/data/settingsClient";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
@@ -12,13 +12,13 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { Badge } from "@/components/ui/Badge";
 import { DemoBadge } from "@/components/DemoModeBadge";
 import { TwoFactorSettings } from "@/components/settings/TwoFactorSettings";
+import { DangerZone } from "@/components/settings/DangerZone";
 
 export function ProfileSettings() {
   const router = useRouter();
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
   const [msg, setMsg] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -59,14 +59,6 @@ export function ProfileSettings() {
       await changePassword(password);
       setPassword("");
     }, "Password changed.");
-  }
-  function onDelete(e: FormEvent) {
-    e.preventDefault();
-    void run("delete", async () => {
-      await deleteAccount(confirm);
-      router.push("/");
-      router.refresh();
-    }, "Account deleted.");
   }
 
   return (
@@ -129,17 +121,7 @@ export function ProfileSettings() {
 
       <TwoFactorSettings />
 
-      <SectionCard title="Delete account" description="Removes your projects, files, credits and sign-in. This cannot be undone.">
-        <form onSubmit={onDelete} className="space-y-5">
-          <Field id="confirm" label="Type your e-mail address to confirm">
-            <Input id="confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="off" disabled={config.demoMode} />
-          </Field>
-          <Button type="submit" variant="danger" disabled={busy !== null || config.demoMode || !confirm}>
-            {busy === "delete" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            Delete my account
-          </Button>
-        </form>
-      </SectionCard>
+      <DangerZone />
     </>
   );
 }
