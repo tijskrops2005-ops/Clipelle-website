@@ -566,39 +566,6 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
             </>
           )}
 
-          {/* Visible since 25 Oct 2026 (was under Advanced): names and special terms are where machine translation slips most. */}
-          <Field id="keepTerms" label="Words to keep as they are" optional hint="Brand and product names stay exactly as written. Comma-separated, up to 20.">
-            <Input id="keepTerms" value={keepTerms} maxLength={600} onChange={(e) => setKeepTerms(e.target.value)} placeholder="e.g. your brand name, product names" disabled={submitting} />
-          </Field>
-
-          {/* Less used (27 Oct 2026): folded, so the form reads short. */}
-          <Disclosure title="Change the wording" summary={[cleanReplace(replaceRows).length ? `${cleanReplace(replaceRows).length} ${cleanReplace(replaceRows).length === 1 ? "word" : "words"} replaced` : null, instructions.trim() ? "instructions added" : null].filter(Boolean).join(" · ") || "Replace words, or ask for a change"}>
-          <fieldset className="space-y-2">
-            <legend className="flex w-full items-center justify-between text-sm font-medium text-ink">Words to replace <span className="label-mono text-muted">Optional</span></legend>
-            <p className="text-[13px] text-muted">Say something else than the video does. Write it once; it is said in each language you picked, names stay as written.</p>
-            <div className="space-y-2">
-              {replaceRows.map((row, i) => (
-                <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2">
-                  <Input aria-label={`Word ${i + 1} in the video`} value={row.from} maxLength={60} onChange={(e) => setReplaceRows((rows) => rows.map((r, j) => (j === i ? { ...r, from: e.target.value } : r)))} placeholder="In the video, e.g. GlowCo" disabled={submitting} />
-                  <ArrowRight className="size-4 text-muted" aria-hidden />
-                  <Input aria-label={`Word ${i + 1} to say instead`} value={row.to} maxLength={60} onChange={(e) => setReplaceRows((rows) => rows.map((r, j) => (j === i ? { ...r, to: e.target.value } : r)))} placeholder="Say instead, e.g. your brand" disabled={submitting} />
-                  <button type="button" onClick={() => setReplaceRows((rows) => (rows.length === 1 ? [{ from: "", to: "" }] : rows.filter((_, j) => j !== i)))} disabled={submitting} aria-label={`Remove word ${i + 1}`} className="focus-ring grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-muted hover:text-ink">
-                    <X className="size-4" aria-hidden />
-                  </button>
-                </div>
-              ))}
-            </div>
-            {replaceRows.length < 10 && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => setReplaceRows((rows) => [...rows, { from: "", to: "" }])} disabled={submitting}>
-                <Plus className="size-4" aria-hidden />Add a word
-              </Button>
-            )}
-          </fieldset>
-
-          <Field id="instructions" label="Anything to change?" optional hint="Plain words, up to 300 characters. A line changes only where it still fits its moment.">
-            <Textarea id="instructions" value={instructions} maxLength={300} rows={2} onChange={(e) => setInstructions(e.target.value)} placeholder="e.g. Leave out the sentence about free shipping." disabled={submitting} />
-          </Field>
-          </Disclosure>
         </SectionCard>
 
         {/* 3. Captions and format: folded (31 Oct 2026), the defaults fit most videos; the summary line says what they are. */}
@@ -637,6 +604,43 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
           </fieldset>)}
 
           <CaptionStylePicker value={captionStyle} onChange={setCaptionStyle} position={captionPosition} onPosition={setCaptionPosition} overOldText={removeText && !withPresenter} disabled={submitting} />
+
+          {/* The wording (2 Nov 2026, Tijs): after the caption choices, as plain sections. Names and special terms are where machine translation slips most. */}
+          <Field id="keepTerms" label="Words to keep as they are" optional hint="Brand and product names stay exactly as written. Comma-separated, up to 20.">
+            <Input id="keepTerms" value={keepTerms} maxLength={600} onChange={(e) => setKeepTerms(e.target.value)} placeholder="e.g. your brand name, product names" disabled={submitting} />
+          </Field>
+
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-[15px] font-semibold text-ink">Change the wording</h3>
+              <p className="text-[13px] text-muted">Replace words, or ask for a change. Both optional.</p>
+            </div>
+          <fieldset className="space-y-2">
+            <legend className="flex w-full items-center justify-between text-sm font-medium text-ink">Words to replace <span className="label-mono text-muted">Optional</span></legend>
+            <p className="text-[13px] text-muted">Said in every language you picked; names stay as written.</p>
+            <div className="space-y-2">
+              {replaceRows.map((row, i) => (
+                <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2">
+                  <Input aria-label={`Word ${i + 1} in the video`} value={row.from} maxLength={60} onChange={(e) => setReplaceRows((rows) => rows.map((r, j) => (j === i ? { ...r, from: e.target.value } : r)))} placeholder="In the video, e.g. GlowCo" disabled={submitting} />
+                  <ArrowRight className="size-4 text-muted" aria-hidden />
+                  <Input aria-label={`Word ${i + 1} to say instead`} value={row.to} maxLength={60} onChange={(e) => setReplaceRows((rows) => rows.map((r, j) => (j === i ? { ...r, to: e.target.value } : r)))} placeholder="Say instead, e.g. your brand" disabled={submitting} />
+                  <button type="button" onClick={() => setReplaceRows((rows) => (rows.length === 1 ? [{ from: "", to: "" }] : rows.filter((_, j) => j !== i)))} disabled={submitting} aria-label={`Remove word ${i + 1}`} className="focus-ring grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-muted hover:text-ink">
+                    <X className="size-4" aria-hidden />
+                  </button>
+                </div>
+              ))}
+            </div>
+            {replaceRows.length < 10 && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => setReplaceRows((rows) => [...rows, { from: "", to: "" }])} disabled={submitting}>
+                <Plus className="size-4" aria-hidden />Add a word
+              </Button>
+            )}
+          </fieldset>
+
+          <Field id="instructions" label="Anything to change?" optional hint="Plain words, up to 300 characters. A line changes only where it still fits its moment.">
+            <Textarea id="instructions" value={instructions} maxLength={300} rows={2} onChange={(e) => setInstructions(e.target.value)} placeholder="e.g. Leave out the sentence about free shipping." disabled={submitting} />
+          </Field>
+          </div>
 
           {!withPresenter && (<fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">Sound</legend>
