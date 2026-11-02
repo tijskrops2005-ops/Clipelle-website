@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { TERMS_VERSION } from "./termsVersion";
 import { PLANS, TOPUPS, customCreditsPrice, validCustomCredits } from "./plans";
 import { creditsSessionParams, CHECKOUT_INTEGRATION_ID, INVOICE_FOOTER, checkoutCurrency, termsConsentEnabled, MANAGED_PAYMENTS_UNSUPPORTED, automaticTaxEnabled, managedPaymentsEnabled, REFERRAL_KEYS, STRIPE_PRODUCT_TAX_CODE, subscriptionSessionParams, topupSessionParams, TOPUP_METADATA, withManagedPayments } from "./billingCheckout";
 
@@ -10,7 +11,7 @@ describe("checkout sessions and the partner program", () => {
     const flat = JSON.stringify(params).toLowerCase();
     for (const k of REFERRAL_KEYS) expect(flat, k).not.toContain(k.toLowerCase());
     expect(params.mode).toBe("payment");
-    expect(params.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", topupKey: TOPUPS[0].key, kind: "topup" });
+    expect(params.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", topupKey: TOPUPS[0].key, kind: "topup", terms: TERMS_VERSION });
     expect(TOPUP_METADATA.commissions_disabled).toBe("yes");
   });
 
@@ -19,7 +20,7 @@ describe("checkout sessions and the partner program", () => {
     const params = subscriptionSessionParams(pro, input);
     expect(params.mode).toBe("subscription");
     expect(params.customer).toBe("cus_test");
-    expect(params.subscription_data.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", planKey: "pro" });
+    expect(params.subscription_data.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", planKey: "pro", terms: TERMS_VERSION });
     const flat = JSON.stringify(params).toLowerCase();
     for (const k of REFERRAL_KEYS) expect(flat, k).not.toContain(k.toLowerCase());
   });
@@ -52,8 +53,8 @@ describe("Stripe Managed Payments (merchant of record)", () => {
     const params = subscriptionSessionParams(pro, { ...input, managed: true });
     expect(params.managed_payments).toEqual({ enabled: true });
     for (const path of unsupported("subscription")) expect(has(params as Record<string, unknown>, path), path).toBe(false);
-    expect(params.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", planKey: "pro", kind: "plan" });
-    expect(params.subscription_data.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", planKey: "pro" });
+    expect(params.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", planKey: "pro", kind: "plan", terms: TERMS_VERSION });
+    expect(params.subscription_data.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", planKey: "pro", terms: TERMS_VERSION });
     expect(params.customer).toBe("cus_test");
     expect(params.allow_promotion_codes).toBe(true);
   });
@@ -62,7 +63,7 @@ describe("Stripe Managed Payments (merchant of record)", () => {
     const params = topupSessionParams(TOPUPS[0], { ...input, managed: true });
     expect(params.managed_payments).toEqual({ enabled: true });
     for (const path of unsupported("payment")) expect(has(params as Record<string, unknown>, path), path).toBe(false);
-    expect(params.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", topupKey: TOPUPS[0].key, kind: "topup" });
+    expect(params.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", topupKey: TOPUPS[0].key, kind: "topup", terms: TERMS_VERSION });
     const flat = JSON.stringify(params).toLowerCase();
     for (const k of REFERRAL_KEYS) expect(flat, k).not.toContain(k.toLowerCase());
   });
@@ -177,7 +178,7 @@ describe("any amount of credits (26 Oct 2026)", () => {
     const params = creditsSessionParams(750, input);
     expect(params.mode).toBe("payment");
     expect(params.line_items).toEqual([{ price: "price_unit", quantity: 750 }]);
-    expect(params.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", topupKey: "custom", credits: "750", kind: "topup" });
+    expect(params.metadata).toEqual({ userId: "user-1", workspaceId: "ws-1", topupKey: "custom", credits: "750", kind: "topup", terms: TERMS_VERSION });
     for (const k of REFERRAL_KEYS) expect(params).not.toHaveProperty(k);
   });
   it("prices every allowed amount at the pack rate", () => {

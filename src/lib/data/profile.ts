@@ -6,13 +6,20 @@ import { listLedger } from "@/lib/credits";
 export type BrandDefaults = { accent?: string; captionStyle?: string; font?: string; logoPath?: string };
 
 /** The profile row, created on first use from the auth user. */
-export async function getOrCreateProfile(user: { id: string; email: string; name?: string }): Promise<ProfileRow> {
+export async function getOrCreateProfile(user: { id: string; email: string; name?: string; termsVersion?: string; termsAcceptedAt?: string; referredBy?: string }): Promise<ProfileRow> {
   const d = db();
   const [row] = await d.select().from(profiles).where(eq(profiles.userId, user.id)).limit(1);
-  if (row) return row;
+  if (row) {
+    // Sign-up facts recorded once (2 Nov 2026): the accepted terms version and the referral code travel with the sign-in until the profile has them.
+    if (!row.termsVersion && user.termsVersion) {
+      const [updated] = await d.update(profiles).set({ termsVersion: user.termsVersion, termsAcceptedAt: user.termsAcceptedAt ? new Date(user.termsAcceptedAt) : row.createdAt, referredBy: row.referredBy ?? user.referredBy ?? null, updatedAt: new Date() }).where(eq(profiles.userId, user.id)).returning();
+      return updated ?? row;
+    }
+    return row;
+  }
   const [created] = await d
     .insert(profiles)
-    .values({ userId: user.id, email: user.email, name: user.name ?? null })
+    .values({ userId: user.id, email: user.email, name: user.name ?? null, termsVersion: user.termsVersion ?? null, termsAcceptedAt: user.termsAcceptedAt ? new Date(user.termsAcceptedAt) : null, referredBy: user.referredBy ?? null })
     .onConflictDoNothing()
     .returning();
   if (created) return created;

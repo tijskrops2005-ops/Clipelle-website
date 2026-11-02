@@ -1,3 +1,4 @@
+import { TERMS_VERSION } from "@/lib/termsVersion";
 import { TRIAL, type Currency, type Plan, type TopupPack } from "@/lib/plans";
 import { companyLine } from "@/content/company";
 
@@ -131,13 +132,13 @@ export function subscriptionSessionParams(plan: Plan, input: CheckoutInput) {
     success_url: `${input.origin}/settings/billing?checkout=success`,
     cancel_url: `${input.origin}/settings/billing?checkout=cancelled`,
     subscription_data: {
-      metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key },
+      metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key, terms: TERMS_VERSION },
       // The free trial (26 Oct 2026): nothing is charged for TRIAL.days; a card is required, and
       // without one at the end the subscription is cancelled instead of left unpaid.
       ...(input.trial ? { trial_period_days: TRIAL.days, trial_settings: { end_behavior: { missing_payment_method: "cancel" as const } } } : {}),
     },
     ...(input.trial ? { payment_method_collection: "always" as const } : {}),
-    metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key, kind: "plan", ...(input.trial ? { trial: "yes" } : {}) },
+    metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key, kind: "plan", terms: TERMS_VERSION, ...(input.trial ? { trial: "yes" } : {}) },
     allow_promotion_codes: true,
     integration_identifier: CHECKOUT_INTEGRATION_ID,
     ...taxParams(input.automaticTax),
@@ -166,7 +167,7 @@ function oneOffSessionParams(meta: { topupKey: string; credits?: string }, quant
     line_items: [{ price: input.priceId, quantity }],
     success_url: `${input.origin}/settings/billing?checkout=success`,
     cancel_url: `${input.origin}/settings/billing?checkout=cancelled`,
-    metadata: { userId: input.userId, workspaceId: input.workspaceId, ...meta, kind: "topup" },
+    metadata: { userId: input.userId, workspaceId: input.workspaceId, ...meta, kind: "topup", terms: TERMS_VERSION },
     integration_identifier: CHECKOUT_INTEGRATION_ID,
     // A real invoice (PDF, our company details) for credits, not only a receipt. Managed Payments
     // issues its own invoices and strips this.

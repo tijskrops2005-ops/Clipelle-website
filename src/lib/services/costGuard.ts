@@ -15,7 +15,8 @@
  */
 import { createHash } from "node:crypto";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
-import { costEntries, db, projects, type CostEntryRow } from "@/lib/db";
+import { costEntries, db, projects, workspaces, type CostEntryRow } from "@/lib/db";
+import { effectiveLimit, limitCaps, type CustomerLimits } from "@/lib/customerLimits";
 
 export type CostService = "heygen" | "anthropic" | "fal" | "shotstack" | "replicate";
 export type EntryStatus = "started" | "completed" | "failed";
@@ -83,14 +84,29 @@ function startOfMonth() {
 /** Day and month limits per user, checked before a project starts and before every paid call. */
 export async function checkUserLimits(userId: string, estimatedUsd: number): Promise<{ ok: true } | { ok: false; message: string }> {
   const limits = costLimits();
+  // Per-customer limits set by an administrator (2 Nov 2026) can raise the defaults, never above the caps from the environment.
+  const own = await customerLimitsOf(userId);
+  const caps = limitCaps();
+  const dayLimit = effectiveLimit(own.dailyUsd, limits.maxPerUserPerDayUsd, caps.dailyUsd);
+  const monthLimit = effectiveLimit(own.monthlyUsd, limits.maxPerUserPerMonthUsd, caps.monthlyUsd);
   const [day, month] = await Promise.all([getUserSpendSince(userId, startOfToday()), getUserSpendSince(userId, startOfMonth())]);
-  if (day + estimatedUsd > limits.maxPerUserPerDayUsd) {
-    return { ok: false, message: `This would bring today's spend to $${(day + estimatedUsd).toFixed(2)}, above the daily limit of $${limits.maxPerUserPerDayUsd.toFixed(2)} for your account. Try again tomorrow.` };
+  if (day + estimatedUsd > dayLimit) {
+    return { ok: false, message: `This would bring today's spend to $${(day + estimatedUsd).toFixed(2)}, above the daily limit of $${dayLimit.toFixed(2)} for your account. Try again tomorrow.` };
   }
-  if (month + estimatedUsd > limits.maxPerUserPerMonthUsd) {
-    return { ok: false, message: `This would bring this month's spend to $${(month + estimatedUsd).toFixed(2)}, above the monthly limit of $${limits.maxPerUserPerMonthUsd.toFixed(2)} for your account.` };
+  if (month + estimatedUsd > monthLimit) {
+    return { ok: false, message: `This would bring this month's spend to $${(month + estimatedUsd).toFixed(2)}, above the monthly limit of $${monthLimit.toFixed(2)} for your account.` };
   }
   return { ok: true };
+}
+
+/** The limits on the customer's personal workspace; empty when none were set. */
+export async function customerLimitsOf(userId: string): Promise<CustomerLimits> {
+  try {
+    const [ws] = await db().select({ limits: workspaces.limits }).from(workspaces).where(and(eq(workspaces.ownerUserId, userId), eq(workspaces.kind, "personal"))).limit(1);
+    return ws?.limits ?? {};
+  } catch {
+    return {};
+  }
 }
 
 /* ---------- storage (table cost_entries) ---------- */

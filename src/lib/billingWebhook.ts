@@ -3,8 +3,15 @@ import type Stripe from "stripe";
 import { grantAnnualMonth, grantAutoReloadCredits, grantPlanCredits, grantTopupCredits, setPlan, workspaceByCustomer } from "@/lib/billing";
 import { disableAutoReload } from "@/lib/billingAutoReload";
 import { PLAN_KEYS } from "@/lib/billing";
-import { CUSTOM_CREDITS, planByKey, planByLookupKey, validCustomCredits } from "@/lib/plans";
+import { CUSTOM_CREDITS, TOPUPS, planByKey, planByLookupKey, validCustomCredits } from "@/lib/plans";
 import { notifyAddress, sendEmail } from "@/lib/email";
+import { recordPurchase } from "@/lib/purchases";
+
+/** The purchase row of a top-up session (2 Nov 2026): what was bought, the credits and the amount paid including VAT. */
+async function recordTopupPurchase(session: Stripe.Checkout.Session, workspaceId: string, userId: string, credits: number) {
+  if (!session.amount_total || !session.currency) return;
+  await recordPurchase({ workspaceId, userId: userId || null, kind: "topup", item: `${credits.toLocaleString("en-US")} credits`, credits, amountCents: session.amount_total, currency: session.currency, stripeRef: session.id, termsVersion: session.metadata?.terms ?? null, termsAcceptedAt: session.created ? new Date(session.created * 1000) : null }).catch(() => undefined);
+}
 
 /** Looks up a price's lookup key at Stripe (an invoice line carries only the price id). */
 export type BillingDeps = { lookupKeyOfPrice: (priceId: string) => Promise<string | null>; subscriptionStatus?: (subscriptionId: string) => Promise<string | null> };
@@ -69,9 +76,11 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
           const credits = Number(session.metadata.credits);
           if (!validCustomCredits(credits) || session.amount_subtotal !== credits * CUSTOM_CREDITS.unitCents) return { handled: false, note: "custom credits do not match the amount" };
           await grantTopupCredits(workspaceId, userId, "custom", session.id, credits);
+          await recordTopupPurchase(session, workspaceId, userId, credits);
           return { handled: true, note: "topup granted" };
         }
         await grantTopupCredits(workspaceId, userId, session.metadata.topupKey, session.id);
+        await recordTopupPurchase(session, workspaceId, userId, TOPUPS.find((t) => t.key === session.metadata?.topupKey)?.credits ?? 0);
         return { handled: true, note: "topup granted" };
       }
       if (session.metadata?.kind === "plan" && typeof session.customer === "string") {
@@ -96,6 +105,7 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
         const credits = Number(invoice.metadata.credits);
         if (!validCustomCredits(credits) || invoice.subtotal !== credits * CUSTOM_CREDITS.unitCents) return { handled: false, note: "auto-reload credits do not match the amount" };
         await grantAutoReloadCredits(ws.id, ws.ownerUserId, credits, invoice.id!);
+        if (invoice.amount_paid && invoice.currency) await recordPurchase({ workspaceId: ws.id, userId: ws.ownerUserId, kind: "auto_reload", item: `${credits.toLocaleString("en-US")} credits (auto-reload)`, credits, amountCents: invoice.amount_paid, currency: invoice.currency, stripeRef: invoice.id! }).catch(() => undefined);
         return { handled: true, note: "auto-reload credits granted" };
       }
       if (!PERIOD_INVOICES.has(invoice.billing_reason ?? "") && !isFullPeriodUpdate(invoice)) return { handled: true, note: `no plan credits for a ${invoice.billing_reason ?? "unknown"} invoice` };
@@ -112,9 +122,15 @@ export async function applyStripeEvent(event: Stripe.Event, deps: BillingDeps = 
       const planKey = planByLookupKey(lookup)?.key ?? (line?.metadata?.planKey as string | undefined) ?? (invoice.parent?.subscription_details?.metadata?.planKey as string | undefined) ?? ws.planKey;
       if (PLAN_KEYS.includes(planKey as (typeof PLAN_KEYS)[number]) && planKey !== "free") {
         // An annual price is paid once a year, its credits come every month (27 Oct 2026): month 1 now, the rest from the daily job.
-        if (lookup && planByKey(planKey)?.stripeLookup?.annual === lookup) await grantAnnualMonth(ws.id, ws.ownerUserId, planKey, invoice.id!, 1);
+        const annual = Boolean(lookup && planByKey(planKey)?.stripeLookup?.annual === lookup);
+        if (annual) await grantAnnualMonth(ws.id, ws.ownerUserId, planKey, invoice.id!, 1);
         else await grantPlanCredits(ws.id, ws.ownerUserId, planKey, invoice.id);
         await setPlan(ws.id, { planKey, subscriptionStatus: "active" });
+        const plan = planByKey(planKey);
+        if (invoice.amount_paid && invoice.currency && plan) {
+          const meta = invoice.parent?.subscription_details?.metadata ?? {};
+          await recordPurchase({ workspaceId: ws.id, userId: ws.ownerUserId, kind: "subscription", item: `${plan.name} plan (${annual ? "annual" : "monthly"})`, credits: annual ? plan.creditsPerMonth * 12 : plan.creditsPerMonth, amountCents: invoice.amount_paid, currency: invoice.currency, stripeRef: invoice.id!, termsVersion: (meta.terms as string | undefined) ?? null }).catch(() => undefined);
+        }
         return { handled: true, note: `plan credits for ${planKey}` };
       }
       return { handled: false, note: "no plan on invoice" };

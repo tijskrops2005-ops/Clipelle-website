@@ -10,6 +10,7 @@ import { applyScriptReview, countWords, normaliseHooks, type AdScript } from "@/
 import { maxSpokenWords } from "@/lib/pricing";
 import { copyObject, objectPath, objectInfo, signedDownloadUrl } from "@/lib/storage";
 import { checkUserLimits, costGuardResponse, costLimits, creativeSpent, getProjectSpend } from "@/lib/services/costGuard";
+import { VIEW_READ_ONLY_MESSAGE } from "@/lib/adminViewSession";
 import { estimateAdCost, estimateTranslateCost } from "@/lib/pricing";
 import { workflowSettings } from "@/lib/workflow/settings";
 import { DEFAULT_TONE, isAdTone, type AdTone } from "@/lib/adOptions";
@@ -23,7 +24,12 @@ import { textRemovalConfigured } from "@/lib/services/textRemoval";
 import { workspaces } from "@/lib/db";
 
 /** Who acts and in which workspace. Every project read or write is scoped to the workspace; the user is recorded on rows. */
-export type DataScope = { userId: string; workspaceId: string };
+export type DataScope = { userId: string; workspaceId: string; /** An administrator viewing as this customer (2 Nov 2026): every change is refused. */ readOnly?: boolean };
+
+/** Writes are refused while an administrator views as the customer; the proxy refuses them first, this is the second lock. */
+function assertWritable(scope: DataScope) {
+  if (scope.readOnly) throw new DataError(VIEW_READ_ONLY_MESSAGE, 403, "read_only_view");
+}
 
 /**
  * Data access for real projects (database mode). The UI calls this through the routes in
@@ -327,6 +333,7 @@ export type NewTranslateProject = {
 
 /** Creates the project and its step rows in status draft. Files are attached next, then `startProject`. */
 export async function createDraft(scope: DataScope, input: { workflow: "ad"; ad: NewAdProject } | { workflow: "translate"; translate: NewTranslateProject }) {
+  assertWritable(scope);
   const d = db();
   const { userId, workspaceId } = scope;
   if (input.workflow === "ad") {
@@ -478,6 +485,7 @@ export async function attachUploadedAsset(scope: DataScope, projectId: string, f
 
 /** Draft → processing and the workflow event. Idempotent: a second call returns the project unchanged (rule 4). */
 export async function startProject(scope: DataScope, projectId: string) {
+  assertWritable(scope);
   const { userId, workspaceId } = scope;
   const row = await getProjectRow(projectId, scope);
   if (!row) throw new DataError("Project not found.", 404, "not_found");
@@ -500,6 +508,14 @@ export async function startProject(scope: DataScope, projectId: string) {
   // Per-user limits (day and month) on top of the budget per creative.
   const perUser = await checkUserLimits(userId, estimate * (row.workflow === "translate" ? (row.input as TranslateInput).targetLanguages.length : 1));
   if (!perUser.ok) throw new DataError(perUser.message, 429, "user_limit");
+
+  // Projects running at once (2 Nov 2026): only when an administrator set a limit for this customer (the plan default is no limit).
+  const [limitRow] = await db().select({ limits: workspaces.limits }).from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1);
+  const atOnce = limitRow?.limits?.concurrentProjects ?? 0;
+  if (atOnce > 0) {
+    const [running] = await db().select({ n: sql<number>`count(*)` }).from(projects).where(and(eq(projects.workspaceId, workspaceId), inArray(projects.status, ["processing", "review"])));
+    if (Number(running?.n ?? 0) >= atOnce) throw new DataError(`You have ${atOnce} ${atOnce === 1 ? "video" : "videos"} running, the most at once for your account. Wait for one to finish, then start this one.`, 429, "concurrency_limit");
+  }
 
   // Credits: the free plan may only start the free combination; every project reserves its credits first.
   const credits = creditsForProject(row);
@@ -606,6 +622,7 @@ export function normaliseTags(tags: string[]) {
 }
 
 export async function retryStep(scope: DataScope, projectId: string, stepKey: string) {
+  assertWritable(scope);
   const row = await getProjectRow(projectId, scope);
   if (!row) throw new DataError("Project not found.", 404, "not_found");
   const [step] = await db().select().from(steps).where(and(eq(steps.projectId, projectId), eq(steps.key, stepKey))).limit(1);
