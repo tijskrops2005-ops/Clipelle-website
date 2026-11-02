@@ -44,7 +44,7 @@ Master assignment: cheaper (docs/cost-reduction.md + safe savings behind env fla
 |---|---|---|
 | 1 | Cost: research document + prompt caching, intermediate cleanup, quality-report sampling behind flags | done |
 | 2 | Speed: measurements, polling/backoff, measured ETA | done |
-| 3 | Subtitles over removed text: box follows the text's size and place, always covers the smudge; tests with local frames | open |
+| 3 | Subtitles over removed text: box follows the text's size and place, always covers the smudge; tests with local frames | done |
 | 4 | UX: profile click → dashboard, menu for settings/logout, no Home link, form drafts with staged uploads | open |
 | 5 | Edit screen: trim, cut, subtitles, lower third/logo, preview, Export as a version with credits | open |
 | 6 | Screenshots, docs, report | open |

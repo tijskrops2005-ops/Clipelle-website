@@ -1,6 +1,6 @@
 import { and, eq, gte, ne, sql } from "drizzle-orm";
 import { inngest, qualityCheckRequested, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
-import { chunkCharsFor, chunkCues, fillGaps } from "@/lib/captionChunks";
+import { chunkCues, fillGaps } from "@/lib/captionChunks";
 import { firstChange } from "@/lib/sceneCut";
 import { buildEndProbeEdit, gifFrames } from "@/lib/services/endProbe";
 import { captionStyleOf, styleOverRemovedText } from "@/lib/captionOptions";
@@ -39,7 +39,7 @@ import {
   parseDirectSession,
 } from "@/lib/services/translate";
 import { estimateEnhanceUsd, getEnhanceStatus, submitEnhance } from "@/lib/services/enhance";
-import { buildCaptionEdit, buildPresenterTranslateEdit, captionBoxWidth, buildRemuxEdit, getRender, ingestFromUrl, shotstackEnv, startRender } from "@/lib/services/finalEdit";
+import { buildCaptionEdit, buildPresenterTranslateEdit, captionChunkPlan, buildRemuxEdit, getRender, ingestFromUrl, shotstackEnv, startRender } from "@/lib/services/finalEdit";
 import { createAvatarVideo, estimateCostUsd, estimateSeconds, getVideo } from "@/lib/services/heygen";
 import { pickPresenter } from "@/lib/inngest/functions/adWorkflow";
 import { speedValue } from "@/lib/voiceOptions";
@@ -1175,9 +1175,9 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         // The captions are always the checked lines (25 Oct 2026; before, only when trimming), shifted
         // with the picture when silence is cut. The service's own SRT is the fallback without lines.
         // Short chunks of a few words, at most two caption lines (27 Oct 2026): a whole sentence at once read as a block.
-        const size = captionStyleOf(input.captionStyle).size;
-        const boxWidth = captionBoxWidth({ coverBox: input.oldTextBox ?? undefined, size: input.format === "original" && upload.width && upload.height ? { width: upload.width, height: upload.height } : undefined, captionStyle: captionLook });
-        const chunks = chunkCues(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })), chunkCharsFor(size, boxWidth));
+        // The chunk size follows the real caption box (2 Nov 2026): over removed text the fitted box and its font, else the chosen size.
+        const plan = captionChunkPlan({ coverBox: input.oldTextBox ?? undefined, size: input.format === "original" && upload.width && upload.height ? { width: upload.width, height: upload.height } : undefined, captionStyle: captionLook });
+        const chunks = chunkCues(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })), plan.chunkChars);
         // Over removed text the bar never leaves the screen, so the cleaned spot never shows.
         // The last line runs a second past the end (28 Oct 2026): the edit rounds its length up to a tenth of a
         // second, so a cue that stops exactly at the end left the final frame (the one that stays on screen) bare.

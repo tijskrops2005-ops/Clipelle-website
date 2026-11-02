@@ -1,4 +1,6 @@
 import "server-only";
+import { fitCaptionToCover } from "@/lib/captionFit";
+import { chunkCharsFor } from "@/lib/captionChunks";
 import { CAPTION_BAR_META, CAPTION_SIZE_PX, DEFAULT_CAPTION_STYLE as DEFAULT_TRANSLATE_LOOK, captionStyleOf, effectiveBar, isLightColor, outlineFor, type CaptionHighlight, type CaptionStyleChoice, readableOn } from "@/lib/captionOptions";
 import { adLayout } from "@/lib/adLayout";
 import { DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, type CaptionStyle } from "@/lib/adOptions";
@@ -298,10 +300,20 @@ function activeWord(highlight: CaptionHighlight, color: string, light: string, i
 
 /** Width of the caption box in pixels, the same rule buildCaptionEdit uses (for sizing the caption chunks). */
 export function captionBoxWidth(input: Pick<CaptionEditInput, "coverBox" | "size" | "captionStyle">) {
+  return captionChunkPlan(input).widthPx;
+}
+
+/** Width of the caption box and the characters one chunk may hold (2 Nov 2026): over removed text from the fitted box, else from the size. */
+export function captionChunkPlan(input: Pick<CaptionEditInput, "coverBox" | "size" | "captionStyle">): { widthPx: number; chunkChars: number } {
   const base = captionStyleOf({ ...input.captionStyle });
   const bar = CAPTION_BAR_META[base.show ? effectiveBar(base, Boolean(input.coverBox)) : "none"];
   const frame = input.size ? fitSize(input.size) : { width: 1080, height: 1920 };
-  return input.coverBox && bar.color ? coverWidthFor(input.coverBox, frame.width) : Math.round(frame.width * 0.833);
+  if (input.coverBox && bar.color) {
+    const fit = fitCaptionToCover(input.coverBox, frame, base.size);
+    return { widthPx: fit.widthPx, chunkChars: fit.chunkChars };
+  }
+  const widthPx = Math.round(frame.width * 0.833);
+  return { widthPx, chunkChars: chunkCharsFor(base.size, widthPx) };
 }
 
 /** One video track plus TikTok-style captions, output 1080×1920. Same caption style as the ad. */
@@ -326,15 +338,19 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   const active = activeBase && bar.color ? { ...activeBase, stroke: "none" as const } : activeBase;
   const words = bar.color ? { text: look.textColor ?? light, stroke: { width: 0, color: light, opacity: 0 } } : captionText(look, light, ink);
   // Over removed text the captions are centred where that text was.
-  const offsetY = input.coverBox ? captionOffsetFor(input.coverBox) : input.captionPosition === "middle" ? 0 : -0.18;
   // Over removed text (27 Oct 2026, after a review of the smudge and leftover pill edges): one fixed bar
   // as wide as the old text plus a margin, on screen for the whole video, so the cleaned spot never shows.
   const frame = input.size ? fitSize(input.size) : { width: 1080, height: 1920 };
   const fixedBar = Boolean(input.coverBox && bar.color);
-  const width = fixedBar ? coverWidthFor(input.coverBox!, frame.width) : Math.round(frame.width * 0.833);
-  const lines = twoLineHeight(CAPTION_SIZE_PX[look.size], bar.color ? "box" : "outline");
-  // The bar is never lower than the smudge plus a margin above and below, so it always covers it.
-  const height = fixedBar ? Math.max(lines, coverHeightFor(input.coverBox!, frame.height)) : lines;
+  // Over removed text (2 Nov 2026) the box follows the old text: its font from the smudge's height, its
+  // width from the smudge's width, always covering the smudge with a margin, inside the safe zones.
+  const fit = fixedBar ? fitCaptionToCover(input.coverBox!, frame, look.size) : null;
+  const fontPx = fit ? fit.fontPx : CAPTION_SIZE_PX[look.size];
+  const width = fit ? fit.widthPx : Math.round(frame.width * 0.833);
+  const lines = twoLineHeight(fontPx, bar.color ? "box" : "outline");
+  const height = fit ? Math.max(lines, fit.heightPx) : lines;
+  // Over removed text the captions are centred where that text was (and kept inside the safe zones by the fit).
+  const offsetY = fit ? fit.offsetY : input.coverBox ? captionOffsetFor(input.coverBox) : input.captionPosition === "middle" ? 0 : -0.18;
 
   const captions = {
     clips: [
@@ -342,7 +358,7 @@ export function buildCaptionEdit(input: CaptionEditInput) {
         asset: {
           type: "rich-caption",
           src: input.srtUrl ?? "alias://source",
-          font: { family: "Roboto", size: CAPTION_SIZE_PX[look.size], color: words.text, opacity: 1, weight: 900 },
+          font: { family: "Roboto", size: fontPx, color: words.text, opacity: 1, weight: 900 },
           style: { textTransform: look.uppercase ? "uppercase" : "none" },
           stroke: words.stroke,
           // In a box the words stay put (no pop), so the box keeps its shape while a line is spoken.
