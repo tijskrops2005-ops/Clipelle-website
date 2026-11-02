@@ -48,3 +48,16 @@ Master assignment: cheaper (docs/cost-reduction.md + safe savings behind env fla
 | 4 | UX: profile click → dashboard, menu for settings/logout, no Home link, form drafts with staged uploads | done |
 | 5 | Edit screen: trim, cut, subtitles, lower third/logo, preview, Export as a version with credits | done |
 | 6 | Screenshots, docs, report | done |
+
+# Translate forms tidied, one colour picker (2 Nov 2026)
+
+Tag `pre-translate-form-colours` marks the state before. One commit per point; tsc, lint, tests, secrets and build green after each.
+
+| # | Point | Status |
+|---|---|---|
+| 1 | Beta label off Remove on-screen text | done (3cfec39) |
+| 2 | Project name as a plain field | done (371d9bf) |
+| 3 | Wording fields moved to step 3, Change the wording as a plain section | done (0715a05) |
+| 4 | Step 3 always open, no explanation under Background | done (266211b) |
+| 5 | One colour picker everywhere, free hex colours, brand caption colours, Low contrast, server validation, render tests | done (f13e901) |
+| 6 | Chrome checks on laptop and 390 px, screenshots, docs, report | done |
