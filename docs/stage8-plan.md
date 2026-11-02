@@ -188,3 +188,12 @@ Echte gebruikersaccounts en betalingen, e-mailnotificaties, meerdere varianten i
 47. **Bevestigen vóór Stripe (26 okt 2026)**: een plankeuze in Billing opent eerst een venster "You're upgrading to …" (`PlanConfirmModal`, getallen uit `planChange` in `src/lib/planChange.ts`, getest): huidig → nieuw plan en credits, prijs, bij een proef "€0 today" met de datum van de eerste betaling. Wie al een abonnement heeft, wisselt plan of niveau via het klantportaal: `/api/billing/portal` met `{ planKey, interval }` opent direct het bevestigscherm (`flow_data.subscription_update_confirm`, `planChangeFlow` in `billingPortal.ts`, getest), want de checkout weigert een tweede abonnement (409 `has_subscription`). Een link van de site (`?plan=pro_2&interval=annual`) opent hetzelfde venster.
 48. **Elk aantal credits (26 okt 2026)**: naast de drie pakketten één Stripe-prijs per credit (`reelay_credit_unit`, $0,05 / €0,05, `commissions_disabled: yes`), gekocht met een hoeveelheid: 100 tot 10.000 credits in stappen van 50 (`CUSTOM_CREDITS` in `plans.ts`). Checkout `{ kind: "credits", credits }` (`creditsSessionParams`); de webhook boekt alleen als `amount_subtotal` precies credits × 5 cent is (getest). Op de prijspagina en in Billing een schuifregelaar (`CreditsSlider.tsx`); `?credits=750` vanaf de site zet het aantal.
 49. **Prijspagina rustiger (26 okt 2026)**: één rekenhulp "Which plan fits?" (`PlanCalculator.tsx`) in plaats van drie; de rekenkern (`planFit`) kiest het kleinste plan of niveau dat de maand dekt én de gekozen functies heeft, zonder eenmalige pakketten als maandbedrag (getest). Wat weg is staat in `docs/removed-blocks.md`.
+
+## 12. Klantenbeheer, MFA en verwijderjob (2 november 2026)
+
+- [ ] `npm run db:migrate:prod` (migratie 0026: admin_audit_log, purchases, admin_views, profielkolommen, workspaces.limits) vóór de push.
+- [ ] Supabase → Authentication → Multi-factor: TOTP aanzetten. Zonder dit mislukt "Turn on two-step verification" met een foutmelding van de provider.
+- [ ] Eigen e-mail in `ADMIN_EMAILS` (Vercel), daarna 2FA aanzetten in Settings → Profile; `/admin` werkt pas met de code.
+- [ ] Optioneel: `ADMIN_LIMIT_CAP_DAILY_USD`, `ADMIN_LIMIT_CAP_MONTHLY_USD`, `ADMIN_LIMIT_CAP_CONCURRENT` (standaard 500 / 5000 / 50) en `NEXT_PUBLIC_PARTNER_PLATFORM_URL`.
+- [ ] Inngest Cloud: sync na de deploy, zodat de cron `account-deletion` (dagelijks 04:30 Amsterdam) bestaat.
+- [ ] Partnerlinks: `?ref=<code>` of `?via=<code>` op de site; de code komt in `profiles.referred_by` bij aanmelding en telt op /admin/payouts.

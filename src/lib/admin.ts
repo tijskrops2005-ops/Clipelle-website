@@ -1,6 +1,7 @@
 import "server-only";
 import { and, count, desc, eq, gte, inArray, lt, sql, sum } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
+import { connection } from "next/server";
 import { DEMO_USER, requireUser, type AppUser } from "@/lib/auth";
 import { adminGate } from "@/lib/mfaGate";
 import { assuranceLevel } from "@/lib/mfa";
@@ -24,6 +25,8 @@ import { isAdmin } from "@/lib/adminAccess";
  * for the code; `mfa: false` is for that page). Demo mode has no accounts: the pages render demo data.
  */
 export async function requireAdmin(opts: { mfa?: boolean } = {}): Promise<AppUser> {
+  // Request-time by definition (session, cookies); says so before any page reads params or search params.
+  await connection();
   if (config.demoMode) return DEMO_USER;
   let user: AppUser;
   try {

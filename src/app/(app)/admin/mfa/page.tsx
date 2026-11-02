@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import AdminLoading from "../loading";
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { requireAdmin } from "@/lib/admin";
@@ -13,7 +15,15 @@ import { MfaChallenge } from "@/components/auth/MfaChallenge";
 export const metadata: Metadata = { title: "Two-step verification", robots: { index: false, follow: false } };
 
 /** The gate in front of the admin area (2 Nov 2026): set up the authenticator, or enter its code. */
-export default async function AdminMfaPage() {
+export default function AdminMfaPage() {
+  return (
+    <Suspense fallback={<AdminLoading />}>
+      <MfaInner />
+    </Suspense>
+  );
+}
+
+async function MfaInner() {
   await requireAdmin({ mfa: false });
   const aal = await assuranceLevel();
   const gate = adminGate({ demo: config.demoMode, isAdmin: true, current: aal.current, next: aal.next });

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import AdminLoading from "../loading";
 import { requireAdmin } from "@/lib/admin";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -8,7 +10,15 @@ import { CostsPanel } from "@/components/admin/CostsPanel";
 export const metadata: Metadata = { title: "Costs", robots: { index: false, follow: false } };
 
 /** The real cost of every paid call on the live site (29 Oct 2026): the /dev/costs overview, for administrators. */
-export default async function AdminCostsPage() {
+export default function AdminCostsPage() {
+  return (
+    <Suspense fallback={<AdminLoading />}>
+      <CostsInner />
+    </Suspense>
+  );
+}
+
+async function CostsInner() {
   await requireAdmin();
   return (
     <div className="space-y-10">

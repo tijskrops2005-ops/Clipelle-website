@@ -28,10 +28,10 @@ Assignment: the full customer administration (/admin/customers, detail, view as 
 |---|---|---|---|
 | 0 | Schema: admin_audit_log, purchases, admin_views; profiles (totp, recovery codes, terms, referral, last seen, deletion); workspaces.limits; migration 0026 | done | `npm run db:migrate:prod` before the push |
 | 1 | Two-step verification (TOTP, recovery codes) + admin gate (MFA required) + proxy (verify redirect, read-only view, referral cookie) | done | Supabase: enable MFA/TOTP in Auth settings |
-| 2 | Audit log table + /admin/audit | open | |
-| 3 | /admin/customers | open | |
-| 4 | /admin/customers/[id]: stats, adjust credits, limits, workspaces, purchases, credit history, projects; purchases from the Stripe webhook; terms version | open | |
-| 5 | View as customer | open | |
-| 6 | /admin/payouts + referral at sign-up | open | |
-| 7 | Settings: Admin card, Danger zone (export, scheduled deletion, restore banner, final deletion job), top bar, app footer, privacy texts | open | |
-| 8 | Docs, screenshots, report | open | |
+| 2 | Audit log table + /admin/audit | done | see git log |
+| 3 | /admin/customers | done | see git log |
+| 4 | /admin/customers/[id]: stats, adjust credits, limits, workspaces, purchases, credit history, projects; purchases from the Stripe webhook; terms version | done | see git log |
+| 5 | View as customer | done | see git log |
+| 6 | /admin/payouts + referral at sign-up | done | see git log |
+| 7 | Settings: Admin card, Danger zone (export, scheduled deletion, restore banner, final deletion job), top bar, app footer, privacy texts | done | see git log |
+| 8 | Docs, screenshots (`clipelle-admin-*.jpg`), report | done | |

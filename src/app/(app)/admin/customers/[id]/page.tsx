@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import AdminLoading from "../../loading";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { customerLedger, getCustomer, type CustomerDetail } from "@/lib/adminCustomers";
@@ -25,7 +27,15 @@ function mockDetail(id: string): CustomerDetail | null {
   };
 }
 
-export default async function AdminCustomerPage({ params }: { params: Promise<{ id: string }> }) {
+export default function AdminCustomerPage(props: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={<AdminLoading />}>
+      <CustomerInner {...props} />
+    </Suspense>
+  );
+}
+
+async function CustomerInner({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
   const { id } = await params;
   if (config.demoMode) {

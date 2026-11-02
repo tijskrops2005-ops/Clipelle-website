@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import AdminLoading from "../loading";
 import { requireAdmin } from "@/lib/admin";
 import { listCustomers } from "@/lib/adminCustomers";
 import { CUSTOMER_FILTERS, customerStats, filterCounts, matchesFilter, matchesQuery, paginate, sortCustomers, type CustomerFilter, type CustomerSort } from "@/lib/customerFilters";
@@ -10,7 +12,15 @@ export const metadata: Metadata = { title: "Customers", robots: { index: false, 
 
 const PER_PAGE = 50;
 
-export default async function AdminCustomersPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+export default function AdminCustomersPage(props: { searchParams: Promise<Record<string, string | undefined>> }) {
+  return (
+    <Suspense fallback={<AdminLoading />}>
+      <CustomersInner {...props} />
+    </Suspense>
+  );
+}
+
+async function CustomersInner({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   await requireAdmin();
   const sp = await searchParams;
   const filter = (CUSTOMER_FILTERS.some((f) => f.key === sp.filter) ? sp.filter : "all") as CustomerFilter;
