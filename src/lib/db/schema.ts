@@ -2,6 +2,7 @@ import type { CaptionStyleChoice } from "@/lib/captionOptions";
 import type { PresenterTranslate } from "@/lib/presenterTranslate";
 import type { AutoReload } from "@/lib/autoReload";
 import type { QualityCheck } from "@/lib/quality/report";
+import type { CustomerLimits } from "@/lib/customerLimits";
 import {
   bigint,
   boolean,
@@ -409,6 +410,19 @@ export const profiles = pgTable(
     freeAdGrantedAt: timestamp("free_ad_granted_at", { withTimezone: true }),
     /** E-mail when a video is ready or fails (Settings → Profile). Default on; no marketing ever. */
     notifyEmail: boolean("notify_email").default(true).notNull(),
+    /** Two-step verification (2 Nov 2026): a mirror of the TOTP factor at the auth provider, for the customer list. */
+    totpEnabled: boolean("totp_enabled").default(false).notNull(),
+    /** Recovery codes for two-step verification, stored as SHA-256 hashes; a used code keeps its time. */
+    recoveryCodes: jsonb("recovery_codes").$type<{ hash: string; usedAt: string | null }[]>(),
+    /** Which version of the terms was accepted at sign-up (the `updated` date of src/content/legal/terms.ts) and when. */
+    termsVersion: text("terms_version"),
+    termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
+    /** Referral code or partner the account came through (`?ref=`/`?via=` at the first visit), for the admin list and the payout estimate. */
+    referredBy: text("referred_by"),
+    /** Last signed-in request, updated at most once an hour. */
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    /** Account deletion requested (Settings → Danger zone): final removal 30 days later by the daily job; signing in before then can restore it. */
+    deletionRequestedAt: timestamp("deletion_requested_at", { withTimezone: true }),
     ...timestamps,
   },
 ).enableRLS();
@@ -577,6 +591,8 @@ export const workspaces = pgTable(
     trialStartedAt: timestamp("trial_started_at", { withTimezone: true }),
     /** Auto-reload (26 Oct 2026): buy credits with the saved card when the balance runs low; settings and state. */
     autoReload: jsonb("auto_reload").$type<AutoReload>(),
+    /** Per-customer limits set by an administrator (2 Nov 2026); 0 or missing = the plan's default. Capped by the environment (src/lib/customerLimits.ts). */
+    limits: jsonb("limits").$type<CustomerLimits>(),
     ...timestamps,
   },
   (t) => [
@@ -662,4 +678,76 @@ export const qualityReports = pgTable(
     ...timestamps,
   },
   (t) => [index("quality_reports_project_idx").on(t.projectId, t.language, t.createdAt), index("quality_reports_created_idx").on(t.createdAt)],
+).enableRLS();
+
+/**
+ * Admin audit log (2 Nov 2026): every action an administrator takes on a customer, with the old and
+ * new value, the reason and a hashed IP. Read on /admin/audit; never deleted with the customer.
+ */
+export const adminAuditLog = pgTable(
+  "admin_audit_log",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    adminUserId: text("admin_user_id").notNull(),
+    adminEmail: text("admin_email").notNull(),
+    /** credits_adjust | limits_set | view_start | view_end | project_cancel | project_retry | account_delete_final | ... */
+    action: text("action").notNull(),
+    targetUserId: text("target_user_id"),
+    targetWorkspaceId: uuid("target_workspace_id"),
+    /** A name or e-mail to show without a lookup (the customer may be deleted later). */
+    targetLabel: text("target_label"),
+    oldValue: jsonb("old_value").$type<unknown>(),
+    newValue: jsonb("new_value").$type<unknown>(),
+    reason: text("reason"),
+    ipHash: text("ip_hash"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("admin_audit_created_idx").on(t.createdAt), index("admin_audit_admin_idx").on(t.adminUserId, t.createdAt), index("admin_audit_target_idx").on(t.targetUserId, t.createdAt)],
+).enableRLS();
+
+/**
+ * Purchases (2 Nov 2026): one row per paid Stripe invoice or checkout session, with the amount the
+ * customer paid including VAT, so the admin pages can show revenue and a purchase list without
+ * asking Stripe. Kept after an account is deleted (invoices must be retained).
+ */
+export const purchases = pgTable(
+  "purchases",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workspaceId: uuid("workspace_id"),
+    userId: text("user_id"),
+    /** subscription | topup | auto_reload */
+    kind: text("kind").notNull(),
+    /** "Pro plan (monthly)", "500 credits" */
+    item: text("item").notNull(),
+    credits: integer("credits").default(0).notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    currency: text("currency").notNull(),
+    /** paid | refunded */
+    status: text("status").default("paid").notNull(),
+    /** Stripe invoice or checkout session id; one row per id. */
+    stripeRef: text("stripe_ref").notNull(),
+    termsVersion: text("terms_version"),
+    termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("purchases_ref_idx").on(t.stripeRef), index("purchases_workspace_idx").on(t.workspaceId, t.createdAt), index("purchases_created_idx").on(t.createdAt)],
+).enableRLS();
+
+/**
+ * "View as customer" sessions (2 Nov 2026): an administrator looks at the app as one customer,
+ * read-only, for at most 30 minutes. The cookie carries the id; the row is the truth.
+ */
+export const adminViews = pgTable(
+  "admin_views",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    adminUserId: text("admin_user_id").notNull(),
+    targetUserId: text("target_user_id").notNull(),
+    targetWorkspaceId: uuid("target_workspace_id").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+  },
+  (t) => [index("admin_views_admin_idx").on(t.adminUserId, t.startedAt)],
 ).enableRLS();

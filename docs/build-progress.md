@@ -19,3 +19,19 @@ How to continue after an interruption: read the table, take the first open row, 
 
 Findings on the way:
 - The "demo tiles never render" finding of the audit was a stale Turbopack cache (`.next/dev` built with the other `NEXT_PUBLIC_DEMO_MODE`): the client bundle polled `/api/projects` while the server rendered demo seeds. `rm -rf .next` fixed it. The hydration fix (#2) stays: the server-rendered clock really did differ from the browser's.
+
+# Admin customers (started 2 Nov 2026)
+
+Assignment: the full customer administration (/admin/customers, detail, view as customer, payouts, audit log), two-step verification (optional for everyone, required for administrators), and in the user settings an Admin card and a Danger zone (data export, scheduled account deletion). Tag before the work: `pre-admin-customers`. One commit per part; tsc, lint, `npm test`, `check:secrets` and `next build` pass after each. The local database is gone, so database-backed tests skip and the pages are checked in demo mode (mock data) plus unit tests on the pure rules.
+
+| # | Part | Status | Notes |
+|---|---|---|---|
+| 0 | Schema: admin_audit_log, purchases, admin_views; profiles (totp, recovery codes, terms, referral, last seen, deletion); workspaces.limits; migration 0026 | done | `npm run db:migrate:prod` before the push |
+| 1 | Two-step verification (TOTP, recovery codes) + admin gate (MFA required) + proxy (verify redirect, read-only view, referral cookie) | done | Supabase: enable MFA/TOTP in Auth settings |
+| 2 | Audit log table + /admin/audit | open | |
+| 3 | /admin/customers | open | |
+| 4 | /admin/customers/[id]: stats, adjust credits, limits, workspaces, purchases, credit history, projects; purchases from the Stripe webhook; terms version | open | |
+| 5 | View as customer | open | |
+| 6 | /admin/payouts + referral at sign-up | open | |
+| 7 | Settings: Admin card, Danger zone (export, scheduled deletion, restore banner, final deletion job), top bar, app footer, privacy texts | open | |
+| 8 | Docs, screenshots, report | open | |

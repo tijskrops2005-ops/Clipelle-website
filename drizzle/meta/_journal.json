@@ -183,6 +183,13 @@
       "when": 1793218956160,
       "tag": "0025_abnormal_maddog",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793622624569,
+      "tag": "0026_many_captain_flint",
+      "breakpoints": true
     }
   ]
 }
