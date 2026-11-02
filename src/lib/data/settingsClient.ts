@@ -133,6 +133,28 @@ export async function deleteAccount(confirmEmail: string) {
   await api("/api/settings/profile", { method: "DELETE", body: JSON.stringify({ confirmEmail }) });
 }
 
+/* ---------- two-step verification (2 Nov 2026) ---------- */
+
+export type MfaState = { enabled: boolean; recoveryLeft: number; required: boolean };
+
+export async function getMfaState(): Promise<MfaState> {
+  if (config.demoMode) return { enabled: false, recoveryLeft: 0, required: false };
+  return api<MfaState>("/api/settings/mfa");
+}
+/** After the browser verified the new authenticator: returns the recovery codes, shown once. */
+export async function mfaEnabled(): Promise<string[]> {
+  return (await api<{ codes: string[] }>("/api/settings/mfa/enabled", { method: "POST" })).codes;
+}
+export async function mfaDisabled(): Promise<void> {
+  await api("/api/settings/mfa/disabled", { method: "POST" });
+}
+export async function mfaRecover(code: string): Promise<void> {
+  await api("/api/settings/mfa/recover", { method: "POST", body: JSON.stringify({ code }) });
+}
+export async function mfaNewCodes(): Promise<string[]> {
+  return (await api<{ codes: string[] }>("/api/settings/mfa/recovery", { method: "POST" })).codes;
+}
+
 export async function getNotifyWishes(): Promise<string[]> {
   if (config.demoMode) return readLocal<string[]>(WISH_KEY, []);
   return (await api<{ features: string[] }>("/api/settings/notify")).features;

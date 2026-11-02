@@ -1,6 +1,23 @@
 "use client";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
+
+/**
+ * The browser auth client that shares the session cookies with the server (2 Nov 2026), for the
+ * two-step verification flows only: enrol, challenge and verify the authenticator app. It still
+ * cannot read or write any table (RLS on, grants revoked).
+ */
+let authClient: SupabaseClient | null = null;
+export function supabaseAuthBrowser(): SupabaseClient {
+  if (!authClient) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if (!url || !key) throw new Error("Sign-in is not configured (NEXT_PUBLIC_SUPABASE_URL / _PUBLISHABLE_KEY).");
+    authClient = createBrowserClient(url, key);
+  }
+  return authClient;
+}
 
 /**
  * Supabase client for the browser, with the publishable key only. It can do exactly one

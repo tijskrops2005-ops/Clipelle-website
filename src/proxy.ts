@@ -1,6 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { isAdmin } from "@/lib/adminAccess";
+import { mfaBlocksApi, mfaRedirectsPage, mfaVerifyNeeded, MFA_REQUIRED_MESSAGE } from "@/lib/mfaGate";
+import { parseViewCookie, viewAllowsRequest, VIEW_COOKIE, VIEW_READ_ONLY_MESSAGE } from "@/lib/adminViewSession";
+
+/** A partner or referral code on the first visit (`?ref=`, `?via=`), kept 90 days and stored at sign-up. */
+const REF_COOKIE = "clipelle_ref";
+function referralParam(request: NextRequest) {
+  const v = request.nextUrl.searchParams.get("ref") ?? request.nextUrl.searchParams.get("via");
+  return v && /^[A-Za-z0-9_-]{2,64}$/.test(v) ? v : null;
+}
+function rememberReferral(request: NextRequest, response: NextResponse) {
+  const ref = referralParam(request);
+  if (ref && !request.cookies.get(REF_COOKIE)) response.cookies.set(REF_COOKIE, ref, { path: "/", maxAge: 90 * 24 * 3600, sameSite: "lax" });
+  return response;
+}
 
 /**
  * Next.js proxy (middleware): refreshes the Supabase session cookie on every request and sends
@@ -32,7 +46,14 @@ export async function proxy(request: NextRequest) {
   const demo = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (demo || !url || !key) return NextResponse.next();
+  if (demo || !url || !key) return rememberReferral(request, NextResponse.next());
+
+  // "View as customer" (2 Nov 2026): while an administrator looks at the app as a customer, every
+  // request that could change something, and every file download, is refused here, before any code runs.
+  const view = parseViewCookie(request.cookies.get(VIEW_COOKIE)?.value);
+  if (view && !viewAllowsRequest(request.method, path)) {
+    return path.startsWith("/api/") ? NextResponse.json({ error: VIEW_READ_ONLY_MESSAGE, code: "read_only_view" }, { status: 403 }) : new NextResponse(VIEW_READ_ONLY_MESSAGE, { status: 403 });
+  }
 
   let response = NextResponse.next({ request });
   const supabase = createServerClient(url, key, {
@@ -54,6 +75,21 @@ export async function proxy(request: NextRequest) {
     return new NextResponse(null, { status: 404 });
   }
 
+  // Two-step verification (2 Nov 2026): an account with an authenticator finishes signing in with its
+  // code before any app page or app API call; the level comes from the session itself (no network).
+  if (user) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (mfaVerifyNeeded(aal?.currentLevel, aal?.nextLevel)) {
+      if (mfaBlocksApi(path)) return NextResponse.json({ error: MFA_REQUIRED_MESSAGE, code: "mfa_required" }, { status: 401 });
+      if (mfaRedirectsPage(path, PROTECTED)) {
+        const verify = request.nextUrl.clone();
+        verify.pathname = "/verify-2fa";
+        verify.search = `?next=${encodeURIComponent(path + request.nextUrl.search)}`;
+        return NextResponse.redirect(verify);
+      }
+    }
+  }
+
   if (!user && PROTECTED.some((p) => path === p || path.startsWith(`${p}/`))) {
     const login = request.nextUrl.clone();
     login.pathname = "/login";
@@ -69,7 +105,7 @@ export async function proxy(request: NextRequest) {
     home.search = target?.search ?? "";
     return NextResponse.redirect(home);
   }
-  return response;
+  return rememberReferral(request, response);
 }
 
 export const config = {

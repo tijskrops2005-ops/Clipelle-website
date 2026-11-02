@@ -1,7 +1,9 @@
 import "server-only";
 import { and, count, desc, eq, gte, inArray, lt, sql, sum } from "drizzle-orm";
-import { notFound } from "next/navigation";
-import { requireUser, type AppUser } from "@/lib/auth";
+import { notFound, redirect } from "next/navigation";
+import { DEMO_USER, requireUser, type AppUser } from "@/lib/auth";
+import { adminGate } from "@/lib/mfaGate";
+import { assuranceLevel } from "@/lib/mfa";
 import { careerInterests, costEntries, creditLedger, db, demoRequests, profiles, projects, rateLimits, serviceRequests, steps, waitlist, workspaces } from "@/lib/db";
 import { chargeOf } from "@/lib/services/costGuard";
 import { ALL_PLANS, CREDIT_COST_USD } from "@/lib/plans";
@@ -15,9 +17,14 @@ import { config } from "@/lib/config";
  */
 export { adminEmails, isAdmin } from "@/lib/adminAccess";
 import { isAdmin } from "@/lib/adminAccess";
-/** The signed-in admin, or a 404 for everyone else (the page does not exist for them). */
-export async function requireAdmin(): Promise<AppUser> {
-  if (config.demoMode) notFound();
+/**
+ * The signed-in admin, or a 404 for everyone else (the page does not exist for them). Since
+ * 2 Nov 2026 the admin area also needs two-step verification: without a verified authenticator, or
+ * with one not used in this session, the page sends the admin to /admin/mfa (which explains and asks
+ * for the code; `mfa: false` is for that page). Demo mode has no accounts: the pages render demo data.
+ */
+export async function requireAdmin(opts: { mfa?: boolean } = {}): Promise<AppUser> {
+  if (config.demoMode) return DEMO_USER;
   let user: AppUser;
   try {
     user = await requireUser();
@@ -25,6 +32,10 @@ export async function requireAdmin(): Promise<AppUser> {
     notFound();
   }
   if (!isAdmin(user.email)) notFound();
+  if (opts.mfa !== false) {
+    const aal = await assuranceLevel();
+    if (adminGate({ demo: false, isAdmin: true, current: aal.current, next: aal.next }) !== "ok") redirect("/admin/mfa");
+  }
   return user;
 }
 

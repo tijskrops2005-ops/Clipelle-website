@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/Input";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Badge } from "@/components/ui/Badge";
 import { DemoBadge } from "@/components/DemoModeBadge";
+import { TwoFactorSettings } from "@/components/settings/TwoFactorSettings";
 
 export function ProfileSettings() {
   const router = useRouter();
@@ -125,6 +126,8 @@ export function ProfileSettings() {
           </Button>
         </form>
       </SectionCard>
+
+      <TwoFactorSettings />
 
       <SectionCard title="Delete account" description="Removes your projects, files, credits and sign-in. This cannot be undone.">
         <form onSubmit={onDelete} className="space-y-5">
