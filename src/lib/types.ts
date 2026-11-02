@@ -60,6 +60,8 @@ interface ProjectBase {
   /** Organisation: free tags for search; archived projects stay but leave the default lists. */
   tags?: string[];
   archivedAt?: string;
+  /** An edited version (2 Nov 2026): exported from `sourceProjectId` with the customer's recipe. */
+  edit?: { sourceProjectId: string; language?: string; recipe: import("@/lib/editRecipe").EditRecipe };
 }
 
 /** A set of 2–5 variations of one product, each its own project and run. */
@@ -147,6 +149,8 @@ export interface Translation {
   segments: Segment[];
   /** Finished video with captions for this language. */
   videoUrl?: string;
+  /** The same version before its captions (2 Nov 2026): what the edit screen plays and the export renders on. */
+  rawVideoUrl?: string;
   /** Plain-language reason when this language version stopped (e.g. its budget was reached). */
   error?: string;
   /** Paid calls so far for this language version, including its share of shared costs. */
@@ -173,6 +177,9 @@ export interface TranslateProject extends ProjectBase {
   format?: "9:16" | "original";
   /** Captions on screen (the default) or the translated video alone. */
   captionsOn?: boolean;
+  /** The caption look and position that were rendered (2 Nov 2026, for the edit screen). */
+  captionStyle?: Partial<import("@/lib/captionOptions").CaptionStyleChoice>;
+  captionPosition?: "low" | "middle";
   /** On-screen text removed from the source before translating (+1 credit per second). */
   removeText?: boolean;
   /** Who speaks: the original speaker (lip-synced) or an AI presenter (26 Oct 2026). */

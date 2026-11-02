@@ -49,3 +49,15 @@ export function nextVersionNumber(all: Project[], project: AdProject) {
   const top = Math.max(1, ...all.filter((p) => p.workflow === "ad" && (p.id === rootId || p.parentId === rootId)).map((p) => p.version ?? 1));
   return top + 1;
 }
+
+/**
+ * Edited versions (2 Nov 2026): an export points at the root of its group with `parentId` and carries
+ * `edit`. For any project, the other members of its group (the root and every edited version),
+ * oldest first. A translation made with "Add a language" is not a version of the other one.
+ */
+export function editVersionsOf(all: Project[], project: Project): Project[] {
+  const rootId = project.edit ? project.parentId ?? project.id : project.id;
+  return all
+    .filter((p) => p.id !== project.id && p.workflow === project.workflow && (p.id === rootId || (p.parentId === rootId && Boolean(p.edit))))
+    .sort((a, b) => (a.version ?? 1) - (b.version ?? 1));
+}

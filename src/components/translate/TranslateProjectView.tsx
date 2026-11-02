@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Download, Plus, ShieldCheck, SpellCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Plus, Scissors, ShieldCheck, SpellCheck } from "lucide-react";
 import { config } from "@/lib/config";
 import type { LanguageCode, TranslateProject } from "@/lib/types";
 import { languageLabel, languageOf } from "@/lib/languages";
@@ -20,7 +20,7 @@ import { projectDurationMs } from "@/lib/projectMeta";
 import { chargedCredits, creditsPerLanguage, projectCredits } from "@/lib/projectCredits";
 import { groupWarnings, plainQa } from "@/lib/plainQa";
 import { downloadHref, useProjects } from "@/lib/data/client";
-import { sourceAdOf, sourceTranslationOf } from "@/lib/versions";
+import { editVersionsOf, sourceAdOf, sourceTranslationOf } from "@/lib/versions";
 import { ProjectActions } from "@/components/ProjectActions";
 import { formatTook } from "@/components/pipeline/PipelineStep";
 
@@ -29,7 +29,9 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
   const sourceLanguage: LanguageCode = project.detectedLanguage ?? (project.sourceLanguage === "auto" ? "en" : project.sourceLanguage);
   const all = useProjects();
   const sourceAd = sourceAdOf(all, project);
-  const sourceTranslation = sourceTranslationOf(all, project);
+  const sourceTranslation = project.edit ? undefined : sourceTranslationOf(all, project);
+  const editedFrom = project.edit ? all.find((p) => p.id === project.edit!.sourceProjectId) : undefined;
+  const versions = editVersionsOf(all, project);
 
   return (
     <div className="space-y-10">
@@ -53,6 +55,12 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
                 Same video as <span className="text-ink">{sourceTranslation.name}</span>
               </Link>
             )}
+            {editedFrom && (
+              <Link href={`/projects/${editedFrom.id}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
+                <Scissors className="size-4" aria-hidden />
+                Edited from <span className="text-ink">{editedFrom.name}</span>
+              </Link>
+            )}
           </span>
         }
         title={project.name}
@@ -61,11 +69,18 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
         actions={
           project.status === "completed" ? (
             <div className="flex flex-wrap gap-2">
+              {/* The edit screen (2 Nov 2026): trim, cut, captions, text and logo on the finished video. */}
+              <Button href={`/projects/${project.id}/edit`} variant="primary">
+                <Scissors className="size-4" aria-hidden />
+                Edit
+              </Button>
               {/* "Add a language" (31 Oct 2026): the stored upload is the source, nothing to upload again. */}
-              <Button href={`/new/translate?from=${project.id}&more=1`} variant="primary">
+              {!project.edit && (
+              <Button href={`/new/translate?from=${project.id}&more=1`} variant="secondary">
                 <Plus className="size-4" aria-hidden />
                 Add a language
               </Button>
+              )}
               <Button href="/new/translate" variant="secondary">
                 Translate another
               </Button>
@@ -85,6 +100,25 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
             <section className="space-y-5">
               <SectionHeader title="Quality check" description="Every line was compared with the original before the final render." aside={<DemoBadge>Demo check</DemoBadge>} />
               <QualityCheck project={project} />
+            </section>
+          )}
+          {versions.length > 0 && (
+            <section className="space-y-5">
+              <SectionHeader title="Versions" description={`This is version ${project.version ?? 1}. Edited versions made from the same video are listed here.`} />
+              <Card>
+                <CardContent className="pt-5">
+                  <ul className="space-y-1.5">
+                    {versions.map((v) => (
+                      <li key={v.id}>
+                        <Link href={`/projects/${v.id}`} className="focus-ring flex items-center justify-between gap-3 rounded-control px-2 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-surface-muted">
+                          <span className="truncate">{v.name}</span>
+                          <StatusBadge status={v.status} />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
             </section>
           )}
           <Collapsible title="Project details" summary="Your source video, file, languages and rights confirmation.">

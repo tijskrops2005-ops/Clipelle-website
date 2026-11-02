@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Copy, Download, FolderOpen, Languages, LayoutGrid, Plus } from "lucide-react";
+import { ArrowLeft, Copy, Download, FolderOpen, Languages, LayoutGrid, Plus, Scissors } from "lucide-react";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { projectDurationMs } from "@/lib/projectMeta";
 import { formatTook } from "@/components/pipeline/PipelineStep";
@@ -74,6 +74,12 @@ export function ProjectView({ id }: { id: string }) {
               <Link href={`/batches/${project.batchId}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
                 <LayoutGrid className="size-4" aria-hidden />
                 Part of a batch of variations
+              </Link>
+            )}
+            {project.edit && (
+              <Link href={`/projects/${project.edit.sourceProjectId}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
+                <Scissors className="size-4" aria-hidden />
+                Edited version {project.version ?? 2}
               </Link>
             )}
           </span>
@@ -160,6 +166,10 @@ function ResultHero({ project }: { project: AdProject }) {
                 Download video
               </Button>
               <div className="flex flex-wrap gap-2">
+                <Button href={`/projects/${project.id}/edit`} variant="secondary">
+                  <Scissors className="size-4" aria-hidden />
+                  Edit
+                </Button>
                 <Button href={`/new/translate?from=${project.id}`} variant="secondary">
                   <Languages className="size-4" aria-hidden />
                   Translate this ad

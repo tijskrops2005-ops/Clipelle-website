@@ -9,7 +9,8 @@ import type {
   TranslateProject,
   TranslateStepKey,
 } from "@/lib/types";
-import { getProjectsSnapshot, subscribeToProjects, updateProject } from "./store";
+import { addProject, getProjectsSnapshot, subscribeToProjects, updateProject } from "./store";
+import { outputSeconds, recipeSummary, type EditRecipe } from "@/lib/editRecipe";
 import { demoDetectedLanguage, demoSegments } from "./translations";
 
 /**
@@ -275,9 +276,68 @@ function tick() {
 
   for (const project of getProjectsSnapshot()) {
     if (project.status !== "processing") continue;
-    if (project.workflow === "ad") tickAd(project, now, nowIso);
+    if (project.edit) tickEdit(project, now, nowIso);
+    else if (project.workflow === "ad") tickAd(project, now, nowIso);
     else tickTranslate(project, now, nowIso);
   }
+}
+
+/* ---------- edited versions (2 Nov 2026): one simulated render of the recipe ---------- */
+const EDIT_DURATION_MS = 6_000;
+
+/** Demo twin of createEditVersion: a new version next to the source, finished by the runner after a few seconds. */
+export function createEditVersion(sourceId: string, recipe: EditRecipe, language?: string): { id: string } {
+  const all = getProjectsSnapshot();
+  const source = all.find((p) => p.id === sourceId);
+  if (!source || source.status !== "completed") throw new Error("Finish the video first; editing works on a finished video.");
+  const rootId = source.parentId ?? source.id;
+  if (all.some((p) => p.edit && (p.id === rootId || p.parentId === rootId) && p.status === "processing")) throw new Error("An export of this video is still running. Wait for it to finish, then export the next one.");
+  const version = Math.max(1, ...all.filter((p) => p.id === rootId || p.parentId === rootId).map((p) => p.version ?? 1)) + 1;
+  const baseName = source.name.replace(/ · v\d+( \(.*\))?$/, "");
+  const name = `${baseName} · v${version} (${recipeSummary(recipe).join(", ")})`;
+  const nowIso = new Date().toISOString();
+  const id = `prj_${Date.now().toString(36)}`;
+  const done = (s: { status: string }) => ({ ...s, status: "completed" as const, startedAt: nowIso, finishedAt: nowIso });
+  if (source.workflow === "ad") {
+    addProject({ ...source, id, name, status: "processing", createdAt: nowIso, parentId: rootId, version, batchId: undefined, tags: undefined, archivedAt: undefined, finalVideoUrl: undefined, edit: { sourceProjectId: source.id, recipe }, steps: { script: done(source.steps.script), productClip: done(source.steps.productClip), presenter: done(source.steps.presenter), finalEdit: { status: "processing", startedAt: nowIso, attempt: 1 } } });
+    return { id };
+  }
+  const code = language ?? source.targetLanguages[0];
+  const t = source.translations.find((x) => x.language === code);
+  addProject({
+    ...source,
+    id,
+    name,
+    status: "processing",
+    createdAt: nowIso,
+    parentId: rootId,
+    version,
+    tags: undefined,
+    archivedAt: undefined,
+    targetLanguages: [code],
+    sourceSeconds: Math.round(outputSeconds(recipe)),
+    edit: { sourceProjectId: source.id, language: code, recipe },
+    steps: { upload: done(source.steps.upload), translate: done(source.steps.translate), captions: { status: "processing", startedAt: nowIso, attempt: 1 } },
+    translations: [{ language: code, status: "processing", segments: t?.segments ?? [], qa: t?.qa }],
+  });
+  return { id };
+}
+
+function tickEdit(project: Project, now: number, nowIso: string) {
+  const key = project.workflow === "ad" ? "finalEdit" : "captions";
+  const step = project.workflow === "ad" ? project.steps.finalEdit : project.steps.captions;
+  if (step.status !== "processing") return;
+  const startedAt = step.startedAt ? Date.parse(step.startedAt) : NaN;
+  if (Number.isNaN(startedAt) || now - startedAt > EDIT_DURATION_MS * 3) {
+    updateProject(project.id, (p) => ({ ...p, steps: { ...p.steps, [key]: { ...step, startedAt: nowIso } } }) as Project);
+    return;
+  }
+  if (now - startedAt < EDIT_DURATION_MS) return;
+  updateProject(project.id, (p) => {
+    const finished = { ...step, status: "completed" as const, finishedAt: nowIso, outputUrl: config.demoVideoUrl };
+    if (p.workflow === "ad") return { ...p, status: "completed", finalVideoUrl: config.demoVideoUrl, steps: { ...p.steps, finalEdit: finished } };
+    return { ...p, status: "completed", steps: { ...p.steps, captions: finished }, translations: p.translations.map((t) => ({ ...t, status: "completed" as const, videoUrl: p.sourceVideoUrl ?? config.demoVideoUrl, phase: { key: "done" as const, at: nowIso } })) };
+  });
 }
 
 let stop: (() => void) | null = null;

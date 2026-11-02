@@ -5,7 +5,9 @@ import { config } from "@/lib/config";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { AdProject, LanguageCode, Project, Step, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { assets, db, projects, steps, translations, type AdInput, type AssetRow, type ProjectRow, type StepRow, type TranslateInput, type TranslationRow } from "@/lib/db";
-import { adProjectCreated, adScriptApproved, autoReloadCheck, inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
+import { adProjectCreated, adScriptApproved, autoReloadCheck, editRequested, inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
+import { exportCredits, outputSeconds } from "@/lib/editRecipe";
+import { captionsUsd } from "@/lib/pricing";
 import { applyScriptReview, countWords, normaliseHooks, type AdScript } from "@/lib/services/script";
 import { maxSpokenWords } from "@/lib/pricing";
 import { copyObject, deleteObject, isStagedPathOf, objectPath, objectInfo, signedDownloadUrl } from "@/lib/storage";
@@ -105,6 +107,9 @@ export function lockedFeature(row: Pick<ProjectRow, "workflow" | "input">, planK
 
 /** Credits one project costs, from the same estimates (A: whole ad; B: per language × languages). */
 export function creditsForProject(row: ProjectRow) {
+  // An edited version (2 Nov 2026) costs its export, whatever the source cost.
+  const edit = (row.input as AdInput | TranslateInput).edit;
+  if (edit) return exportCredits(outputSeconds(edit.recipe));
   if (row.workflow === "ad") {
     const input = row.input as AdInput;
     return adCredits({ seconds: input.seconds ?? workflowSettings.adSeconds, engine: input.engine ?? workflowSettings.heygenEngine, speed: speedValue(input.speed) });
@@ -115,6 +120,8 @@ export function creditsForProject(row: ProjectRow) {
 
 /** Estimate for one click, with the same numbers the forms show. */
 export function estimateForProject(row: ProjectRow) {
+  const edit = (row.input as AdInput | TranslateInput).edit;
+  if (edit) return captionsUsd(outputSeconds(edit.recipe));
   if (row.workflow === "ad") {
     const input = row.input as AdInput;
     return estimateAdCost({ seconds: input.seconds ?? workflowSettings.adSeconds, clipModel: workflowSettings.clipModel, engine: input.engine ?? workflowSettings.heygenEngine, speed: speedValue(input.speed) }).total;
@@ -173,6 +180,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       batchId: row.batchId ?? undefined,
       tags: row.tags ?? undefined,
       archivedAt: row.archivedAt?.toISOString(),
+      edit: input.edit,
     };
     return project;
   }
@@ -196,6 +204,8 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     removeText: input.removeText,
     format: input.format ?? "9:16",
     captionsOn: input.captionStyle?.show !== false,
+    captionStyle: input.captionStyle,
+    captionPosition: input.captionPosition,
     speaker: input.speaker ?? "original",
     presenter: input.presenter,
     rightsConfirmedAt: (row.rightsConfirmedAt ?? row.createdAt).toISOString(),
@@ -210,6 +220,8 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
         segments: t.segments,
         // The finished file only: a half-made version never shows as the result (27 Oct 2026).
         videoUrl: t.status === "completed" ? await urlFor(assetsById.get(t.captionedAssetId ?? t.enhancedAssetId ?? t.videoAssetId ?? "")) : undefined,
+        // Before the captions (2 Nov 2026): the enhanced or translated file, or, for an edited version, the copy it was made from.
+        rawVideoUrl: t.status === "completed" ? await urlFor(assetsById.get(t.enhancedAssetId ?? t.videoAssetId ?? (input.edit ? input.sourceAssetId : "") ?? "")) : undefined,
         error: t.error ?? undefined,
         qa: t.qa ? { changes: t.qa.changes, warnings: t.qa.warnings, summary: t.qa.summary } : undefined,
         spentUsd: creativeSpent(spend, t.language, input.targetLanguages.length),
@@ -220,8 +232,10 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     estimateUsd,
     creditsUsed,
     parentId: row.parentId ?? undefined,
+    version: row.version,
     tags: row.tags ?? undefined,
     archivedAt: row.archivedAt?.toISOString(),
+    edit: input.edit,
   };
   return project;
 }
@@ -654,7 +668,8 @@ export async function retryStep(scope: DataScope, projectId: string, stepKey: st
       .set({ status: "processing", startedAt: new Date(), finishedAt: null, error: null, attempt: step.attempt + 1, updatedAt: new Date() })
       .where(eq(steps.id, step.id));
   });
-  await inngest.send(stepRetry.create({ projectId, stepKey }));
+  // An edited version has one job of its own (2 Nov 2026); the workflows would not know its steps.
+  await inngest.send((row.input as AdInput | TranslateInput).edit ? editRequested.create({ projectId }) : stepRetry.create({ projectId, stepKey }));
 }
 
 

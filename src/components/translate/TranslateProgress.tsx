@@ -38,7 +38,7 @@ export function TranslateProgress({ project }: { project: TranslateProject }) {
   const picked = project.translations.find((t) => t.language === (open ?? ready[0]?.code) && t.videoUrl);
   const notify = useNotifyEmail();
   const many = project.targetLanguages.length > 1;
-  const title = failed ? "Your translation stopped" : many ? `Your ${project.targetLanguages.length} videos are being made` : `Your ${languageOf(project.targetLanguages[0]).label} video is being made`;
+  const title = failed ? (project.edit ? "Your export stopped" : "Your translation stopped") : project.edit ? "Your edited video is being exported" : many ? `Your ${project.targetLanguages.length} videos are being made` : `Your ${languageOf(project.targetLanguages[0]).label} video is being made`;
 
   return (
     <section className="rounded-card bg-surface shadow-card" aria-live="polite" aria-labelledby="progress-title">

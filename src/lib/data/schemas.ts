@@ -3,6 +3,7 @@ import { CAPTION_BARS, CAPTION_COLOR_VALUES, CAPTION_HIGHLIGHTS, CAPTION_SIZES, 
 import { PRESENTER_LANGUAGES, PRESENTER_LAYOUTS } from "@/lib/presenterTranslate";
 import { isTranslateLanguage } from "@/lib/translateLanguages";
 import { config } from "@/lib/config";
+import { OVERLAY_MAX_CHARS, RECIPE_VERSION } from "@/lib/editRecipe";
 import { DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, isAdLength, isPresenterEngine } from "@/lib/pricing";
 import { AD_TONES, DEFAULT_AD_LANGUAGE, DEFAULT_TONE, DIRECTION_MAX_CHARS, HEX_COLOR, OFFER_MAX_CHARS, CAPTION_STYLES, FONT_KEYS } from "@/lib/adOptions";
 import { AD_LANGUAGE_CODES, DEFAULT_SPEED, SPEEDS } from "@/lib/voiceOptions";
@@ -97,3 +98,21 @@ export const TranslateBody = TranslateFields.refine((b) => !b.targetLanguages.in
 
 export type AdBodyInput = z.infer<typeof AdBody>;
 export type TranslateBodyInput = z.infer<typeof TranslateBody>;
+
+/* ---------- the edit screen's recipe (2 Nov 2026, src/lib/editRecipe.ts) ---------- */
+const Seconds = z.number().min(0).max(60 * 60);
+const RangeBody = z.object({ start: Seconds, end: Seconds });
+const CueBody = z.object({ index: z.number().int().min(0), start: Seconds, end: Seconds, text: z.string().max(400) });
+const CaptionStyleBody = z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: z.enum(CAPTION_COLOR_VALUES), size: z.enum(CAPTION_SIZES), uppercase: z.boolean(), textColor: z.enum(CAPTION_TEXT_COLOR_VALUES).optional(), bar: z.enum(CAPTION_BARS).optional() });
+export const EditRecipeBody = z.object({
+  v: z.literal(RECIPE_VERSION),
+  sourceSeconds: z.number().positive().max(60 * 60),
+  trim: RangeBody,
+  cuts: z.array(RangeBody).max(50),
+  captions: z.object({ enabled: z.boolean(), cues: z.array(CueBody).max(500), style: CaptionStyleBody, position: z.enum(["low", "middle"]) }).optional(),
+  lowerThird: z.object({ enabled: z.boolean(), text: z.string().max(OVERLAY_MAX_CHARS), from: Seconds, to: Seconds, position: z.enum(["top", "bottom"]) }).optional(),
+  cta: z.object({ enabled: z.boolean(), text: z.string().max(OVERLAY_MAX_CHARS), from: Seconds, to: Seconds }).optional(),
+  logo: z.object({ enabled: z.boolean() }).optional(),
+});
+export const ExportBody = z.object({ recipe: EditRecipeBody, language: z.string().max(40).optional() });
+export type ExportBodyInput = z.infer<typeof ExportBody>;

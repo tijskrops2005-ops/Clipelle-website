@@ -1,4 +1,5 @@
 import type { CaptionStyleChoice } from "@/lib/captionOptions";
+import type { EditRecipe } from "@/lib/editRecipe";
 import type { PresenterTranslate } from "@/lib/presenterTranslate";
 import type { AutoReload } from "@/lib/autoReload";
 import type { QualityCheck } from "@/lib/quality/report";
@@ -62,8 +63,15 @@ export const costStatus = pgEnum("cost_status", ["started", "completed", "failed
 
 /* ---------- JSON shapes stored in jsonb columns ---------- */
 
+/**
+ * An edited version (2 Nov 2026): this project is an export of another project's finished video with
+ * the customer's recipe (src/lib/editRecipe.ts). Only the edit step runs; the earlier steps are copied as done.
+ */
+export type EditMeta = { sourceProjectId: string; /** The language version that was edited (translations). */ language?: string; recipe: EditRecipe };
+
 /** What the user entered. One shape per workflow; `workflow` on the row says which. */
 export type AdInput = {
+  edit?: EditMeta;
   /** Chosen ad length in seconds (AD_LENGTHS in src/lib/pricing.ts). Missing on older rows = 30. */
   seconds?: number;
   /** Presenter quality chosen by the customer: avatar_iii = Standard, avatar_iv = Premium. Missing = Premium. */
@@ -103,6 +111,7 @@ export type AdInput = {
 };
 
 export type TranslateInput = {
+  edit?: EditMeta;
   sourceFileName: string;
   sourceSeconds: number;
   sourceAssetId: string;

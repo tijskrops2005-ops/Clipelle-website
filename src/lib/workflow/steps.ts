@@ -346,7 +346,12 @@ export async function settleProjectCredits(projectId: string) {
     // The price is the rule (plans.ts), not the provider bill: a finished ad costs its full credits,
     // a translation the credits of the language versions that were delivered (25 Oct 2026).
     let used: number;
-    if (row.workflow === "ad") {
+    const edit = (row.input as AdInput | TranslateInput).edit;
+    if (edit) {
+      // An edited version (2 Nov 2026): the export's own rule.
+      const { exportCredits, outputSeconds } = await import("@/lib/editRecipe");
+      used = exportCredits(outputSeconds(edit.recipe));
+    } else if (row.workflow === "ad") {
       const input = row.input as AdInput;
       used = adCredits({ seconds: input.seconds ?? workflowSettings.adSeconds, engine: input.engine ?? workflowSettings.heygenEngine, speed: speedValue(input.speed) });
     } else {

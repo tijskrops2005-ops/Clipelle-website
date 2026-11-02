@@ -2,6 +2,7 @@ import { adCredits, translateCredits } from "@/lib/plans";
 import { DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE } from "@/lib/pricing";
 import { SPEEDS } from "@/lib/voiceOptions";
 import type { AdProject, Project, TranslateProject } from "@/lib/types";
+import { exportCredits, outputSeconds } from "@/lib/editRecipe";
 
 /**
  * Credits by the rule (plans.ts), for the screens (26 Oct 2026: customers see credits only, never
@@ -17,6 +18,8 @@ export function creditsPerLanguage(p: TranslateProject) {
 
 /** What the project costs by the rule: the ad, or every language version. */
 export function projectCredits(p: Project) {
+  // An edited version (2 Nov 2026) costs its export.
+  if (p.edit) return exportCredits(outputSeconds(p.edit.recipe));
   return p.workflow === "ad" ? adProjectCredits(p) : creditsPerLanguage(p) * p.targetLanguages.length;
 }
 

@@ -13,6 +13,7 @@ import type { AdTone } from "@/lib/adOptions";
 import { mockVoiceOptions } from "@/lib/mock/voices";
 import type { AdLanguageCode, SpeedKey, VoiceOptions } from "@/lib/voiceOptions";
 import type { StagedUpload, UploadKind } from "@/lib/data/uploads";
+import type { EditRecipe } from "@/lib/editRecipe";
 import * as mockStore from "@/lib/mock/store";
 import * as mockRunner from "@/lib/mock/runner";
 import { emptyTranslations } from "@/lib/mock/translations";
@@ -438,6 +439,14 @@ async function uploadAndAttach(projectId: string, kind: UploadKind, file: File, 
   });
   await uploadToSignedUrl(signed.bucket, signed.path, signed.token, file, onProgress, signed.url);
   await api(`/api/projects/${projectId}/assets`, { method: "POST", body: JSON.stringify({ kind, storagePath: signed.path, fileName: file.name, seconds }) });
+}
+
+/** "Export" on the edit screen (2 Nov 2026): a new version rendered from the recipe; the new project's id. */
+export async function exportEdit(projectId: string, recipe: EditRecipe, language?: string): Promise<{ id: string }> {
+  if (config.demoMode) return mockRunner.createEditVersion(projectId, recipe, language);
+  const { id } = await api<{ id: string }>(`/api/projects/${projectId}/export`, { method: "POST", body: JSON.stringify({ recipe, language }) });
+  await showStarted(id);
+  return { id };
 }
 
 /** "Review script first": approve the generated script with a chosen hook and optional edits. */

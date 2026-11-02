@@ -46,5 +46,5 @@ Master assignment: cheaper (docs/cost-reduction.md + safe savings behind env fla
 | 2 | Speed: measurements, polling/backoff, measured ETA | done |
 | 3 | Subtitles over removed text: box follows the text's size and place, always covers the smudge; tests with local frames | done |
 | 4 | UX: profile click → dashboard, menu for settings/logout, no Home link, form drafts with staged uploads | done |
-| 5 | Edit screen: trim, cut, subtitles, lower third/logo, preview, Export as a version with credits | open |
+| 5 | Edit screen: trim, cut, subtitles, lower third/logo, preview, Export as a version with credits | done |
 | 6 | Screenshots, docs, report | open |

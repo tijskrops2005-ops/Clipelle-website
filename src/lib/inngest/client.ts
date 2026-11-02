@@ -33,6 +33,11 @@ export const translateProjectCreated = eventType("project/translate.created", {
   schema: z.object({ projectId: z.string().uuid() }),
 });
 
+/** An edited version was created (2 Nov 2026): render it with its recipe (src/lib/inngest/functions/editExport.ts). */
+export const editRequested = eventType("project/edit.requested", {
+  schema: z.object({ projectId: z.string().uuid() }),
+});
+
 /** Workflow A with "Review script first": the user approved (and maybe edited) the script. */
 export const adScriptApproved = eventType("project/ad-script.approved", {
   schema: z.object({ projectId: z.string().uuid() }),
