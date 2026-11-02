@@ -440,7 +440,6 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
             <span>
               <span className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
                 Remove on-screen text
-                <Badge tone="warning">Beta</Badge>
                 {!can("removeText") && <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-surface"><Lock className="size-3" aria-hidden />{FEATURE_PLAN.removeText}</span>}
               </span>
               <span className="block text-[13px] leading-relaxed text-muted">Old captions, titles and stickers are painted out; your new captions go where they were. +{CREDIT_RULES.translate.removeText} credit per second per language.</span>
