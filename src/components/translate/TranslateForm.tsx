@@ -28,7 +28,6 @@ import { lastChoicesSummary, readLastChoices, writeLastChoices, type LastChoices
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { OptionCard, OptionGrid } from "@/components/ui/OptionCard";
-import { Disclosure } from "@/components/ui/Disclosure";
 import { SummaryPanel } from "@/components/ui/SummaryPanel";
 import { CaptionStylePicker } from "@/components/translate/CaptionStylePicker";
 import { DEFAULT_PRESENTER_TRANSLATE, PresenterSetup } from "@/components/translate/PresenterSetup";
@@ -614,30 +613,17 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
           </Field>
           </div>
 
-          {!withPresenter && (<fieldset className="space-y-2">
+          {!withPresenter && (<fieldset className="space-y-3">
             <legend className="text-sm font-medium text-ink">Sound</legend>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <CheckCard id="removeMusic" checked={removeMusic} onChange={setRemoveMusic} disabled={submitting} title="Remove background music" text="Only the translated voice stays." />
-              <CheckCard id="cleanVoice" checked={cleanVoice} onChange={setCleanVoice} disabled={submitting} title="Clean up the voice" text="Less echo and background noise." />
-            </div>
+            <CheckRow id="removeMusic" checked={removeMusic} onChange={setRemoveMusic} disabled={submitting} title="Remove background music" text="Only the translated voice stays." />
+            <CheckRow id="cleanVoice" checked={cleanVoice} onChange={setCleanVoice} disabled={submitting} title="Clean up the voice" text="Less echo and background noise." />
           </fieldset>)}
 
-          {!withPresenter && (<Disclosure title="Advanced" summary={`${trimSilence ? "Silence removed" : "Silence kept"} · ${enhance ? "enhancement on" : "no enhancement"}`}>
-            <label htmlFor="trimSilence" className={cn("flex cursor-pointer items-start gap-3 rounded-panel border p-4 transition-colors duration-150", trimSilence ? "border-ink bg-surface" : "border-border bg-surface hover:border-ink/30")}>
-              <input id="trimSilence" type="checkbox" checked={trimSilence} onChange={(e) => setTrimSilence(e.target.checked)} disabled={submitting} className="mt-0.5 size-4 shrink-0" />
-              <span>
-                <span className="block text-sm font-medium text-ink">Remove silence at start and end</span>
-                <span className="block text-[13px] leading-relaxed text-muted">Quiet stretches before the first and after the last line are cut.</span>
-              </span>
-            </label>
-            <label htmlFor="enhance" className={cn("flex items-start gap-3 rounded-panel border p-4 transition-colors duration-150", can("enhance") ? "cursor-pointer" : "cursor-not-allowed opacity-70", enhance ? "border-ink bg-surface" : "border-border bg-surface hover:border-ink/30")}>
-              <input id="enhance" type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} disabled={submitting || !can("enhance")} className="mt-0.5 size-4 shrink-0" />
-              <span>
-                <span className="flex items-center gap-2 text-sm font-medium text-ink">Enhance picture quality{!can("enhance") && <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-surface"><Lock className="size-3" aria-hidden />{FEATURE_PLAN.enhance}</span>}</span>
-                <span className="block text-[13px] leading-relaxed text-muted">Sharper picture before the captions. +{CREDIT_RULES.translate.enhance} credit per second per language.</span>
-              </span>
-            </label>
-          </Disclosure>)}
+          {!withPresenter && (<fieldset className="space-y-3">
+            <legend className="text-sm font-medium text-ink">Picture and timing</legend>
+            <CheckRow id="trimSilence" checked={trimSilence} onChange={setTrimSilence} disabled={submitting} title="Remove silence at start and end" text="Quiet stretches before the first and after the last line are cut." />
+            <CheckRow id="enhance" checked={enhance} onChange={setEnhance} disabled={submitting || !can("enhance")} title="Enhance picture quality" text={`Sharper picture before the captions. +${CREDIT_RULES.translate.enhance} credit per second per language.`} lock={!can("enhance") ? FEATURE_PLAN.enhance : undefined} />
+          </fieldset>)}
           </div>
         </SectionCard>
       </div>
@@ -773,13 +759,16 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
   );
 }
 
-/** A checkbox as a bordered card (sound options). */
-function CheckCard({ id, checked, onChange, disabled, title, text }: { id: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; title: string; text: string }) {
+/** A plain checkbox row (2 Nov 2026, Tijs: no cards): the title next to the box, one short line under it, an optional plan lock. */
+function CheckRow({ id, checked, onChange, disabled, title, text, lock }: { id: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; title: string; text: string; lock?: string }) {
   return (
-    <label htmlFor={id} className={cn("flex cursor-pointer items-start gap-3 rounded-panel border p-4 transition-colors duration-150", checked ? "border-ink bg-surface" : "border-border bg-surface hover:border-ink/30")}>
+    <label htmlFor={id} className={cn("flex items-start gap-3", disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer")}>
       <input id={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} disabled={disabled} className="mt-0.5 size-4 shrink-0" />
       <span>
-        <span className="block text-sm font-medium text-ink">{title}</span>
+        <span className="flex flex-wrap items-center gap-2 text-sm text-ink">
+          {title}
+          {lock && <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-surface"><Lock className="size-3" aria-hidden />{lock}</span>}
+        </span>
         <span className="block text-[13px] leading-relaxed text-muted">{text}</span>
       </span>
     </label>
