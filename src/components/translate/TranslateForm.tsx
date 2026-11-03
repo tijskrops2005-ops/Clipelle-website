@@ -576,24 +576,8 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
           <div className="space-y-6">
           {!withPresenter && (<fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">Format</legend>
-            <OptionGrid columns={2}>
-              {(
-                [
-                  { key: "9:16", title: "Vertical 9:16", text: "For TikTok, Reels and Shorts; the sides are cropped.", recommended: true },
-                  { key: "original", title: "Keep original", text: "The same size as your upload.", recommended: false },
-                ] as const
-              ).map((f) => (
-                <OptionCard
-                  key={f.key}
-                  selected={format === f.key}
-                  onSelect={() => setFormat(f.key)}
-                  disabled={submitting}
-                  title={f.title}
-                  badge={f.recommended ? <Badge tone="success">Recommended</Badge> : undefined}
-                  description={f.text}
-                />
-              ))}
-            </OptionGrid>
+            <SegmentedControl label="Format" size="sm" options={[{ key: "9:16", label: "Vertical 9:16" }, { key: "original", label: "Keep original" }]} value={format} onChange={setFormat} disabled={submitting} />
+            <p className="text-[13px] text-muted">{format === "9:16" ? "For TikTok, Reels and Shorts; the sides are cropped. Recommended." : "The same size as your upload."}</p>
           </fieldset>)}
 
           <CaptionStylePicker value={captionStyle} onChange={setCaptionStyle} position={captionPosition} onPosition={setCaptionPosition} overOldText={removeText && !withPresenter} disabled={submitting} />
@@ -604,13 +588,8 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
           </Field>
 
           <div className="space-y-5">
-            <div>
-              <h3 className="text-[15px] font-semibold text-ink">Change the wording</h3>
-              <p className="text-[13px] text-muted">Replace words, or ask for a change. Both optional.</p>
-            </div>
           <fieldset className="space-y-2">
             <legend className="flex w-full items-center justify-between text-sm font-medium text-ink">Words to replace <span className="label-mono text-muted">Optional</span></legend>
-            <p className="text-[13px] text-muted">Said in every language you picked; names stay as written.</p>
             <div className="space-y-2">
               {replaceRows.map((row, i) => (
                 <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2">
