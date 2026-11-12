@@ -9,8 +9,64 @@ import { cn } from "@/lib/utils";
  * tiles used to download in full on every visit). Under "reduce motion" it stays on the poster.
  * `sound` (25 Oct 2026) turns the sound on after a click: the video restarts from the beginning so
  * the visitor hears it whole; turning it off mutes it again.
+ * `syncGroup` (12 Nov 2026): videos in the same group run together. The `leader` keeps the clock;
+ * every `follower` plays, pauses and restarts with it and is pulled back when it drifts, so an
+ * original and its translation stay side by side on the same frame.
  */
-export function LazyVideo({ src, poster, label, className, sound = false }: { src: string; poster?: string; label: string; className?: string; sound?: boolean }) {
+type SyncRole = "leader" | "follower";
+type Group = { leader: HTMLVideoElement | null; followers: Set<HTMLVideoElement>; detach: (() => void) | null };
+const groups = new Map<string, Group>();
+const DRIFT_SECONDS = 0.2;
+
+function group(id: string): Group {
+  let g = groups.get(id);
+  if (!g) {
+    g = { leader: null, followers: new Set(), detach: null };
+    groups.set(id, g);
+  }
+  return g;
+}
+
+/** Wires the leader's events to its followers; called again whenever the group changes. */
+function wire(g: Group) {
+  g.detach?.();
+  g.detach = null;
+  const leader = g.leader;
+  if (!leader) return;
+  const each = (fn: (f: HTMLVideoElement) => void) => g.followers.forEach((f) => fn(f));
+  const align = (force = false) => each((f) => {
+    if (force || Math.abs(f.currentTime - leader.currentTime) > DRIFT_SECONDS) f.currentTime = Math.min(leader.currentTime, Math.max(0, (f.duration || Infinity) - 0.05));
+  });
+  const onPlay = () => { align(true); each((f) => void f.play().catch(() => {})); };
+  const onPause = () => each((f) => f.pause());
+  const onTime = () => {
+    // The leader looped: everyone starts over together.
+    if (leader.currentTime < 0.25) each((f) => { if (f.currentTime > 0.5) { f.currentTime = 0; void f.play().catch(() => {}); } });
+    else align();
+  };
+  const onSeeked = () => align(true);
+  leader.addEventListener("play", onPlay);
+  leader.addEventListener("pause", onPause);
+  leader.addEventListener("timeupdate", onTime);
+  leader.addEventListener("seeked", onSeeked);
+  g.detach = () => {
+    leader.removeEventListener("play", onPlay);
+    leader.removeEventListener("pause", onPause);
+    leader.removeEventListener("timeupdate", onTime);
+    leader.removeEventListener("seeked", onSeeked);
+  };
+}
+
+/** Restarts a whole group from the first frame (used when the sound is switched on). */
+export function restartSyncGroup(id: string) {
+  const g = groups.get(id);
+  if (!g?.leader) return;
+  g.leader.currentTime = 0;
+  g.followers.forEach((f) => { f.currentTime = 0; });
+  void g.leader.play().catch(() => {});
+}
+
+export function LazyVideo({ src, poster, label, className, sound = false, syncGroup, syncRole = "leader" }: { src: string; poster?: string; label: string; className?: string; sound?: boolean; syncGroup?: string; syncRole?: SyncRole }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [load, setLoad] = useState(false);
 
@@ -19,10 +75,28 @@ export function LazyVideo({ src, poster, label, className, sound = false }: { sr
     if (!el) return;
     el.muted = !sound;
     if (sound) {
-      el.currentTime = 0;
-      el.play().catch(() => {});
+      // In a group the whole pair starts over, so the two stay on the same frame.
+      if (syncGroup) restartSyncGroup(syncGroup);
+      else {
+        el.currentTime = 0;
+        el.play().catch(() => {});
+      }
     }
-  }, [sound]);
+  }, [sound, syncGroup]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !syncGroup) return;
+    const g = group(syncGroup);
+    if (syncRole === "leader") g.leader = el;
+    else g.followers.add(el);
+    wire(g);
+    return () => {
+      if (syncRole === "leader" && g.leader === el) g.leader = null;
+      else g.followers.delete(el);
+      wire(g);
+    };
+  }, [syncGroup, syncRole]);
 
   useEffect(() => {
     const el = ref.current;
@@ -42,13 +116,15 @@ export function LazyVideo({ src, poster, label, className, sound = false }: { sr
     return () => io.disconnect();
   }, []);
 
+  // A follower never loops on its own: it waits for the leader's restart, so a shorter or longer original stays in step.
+  const follower = Boolean(syncGroup) && syncRole === "follower";
   return (
     <video
       ref={ref}
       src={load || sound ? src : undefined}
       poster={poster}
       muted
-      loop
+      loop={!follower}
       playsInline
       autoPlay={load || sound}
       preload="none"

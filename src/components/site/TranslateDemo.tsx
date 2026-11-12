@@ -1,6 +1,6 @@
 import { Check, Film, Languages, UploadCloud } from "lucide-react";
 import type { Locale } from "@/lib/i18n";
-import { resolveExampleFile } from "@/lib/examples";
+import { resolveExampleFile, resolvedPair } from "@/lib/examples";
 import { translationShowcase } from "@/content/translationShowcase";
 import { dict } from "@/content/i18n";
 import { Reveal } from "@/components/site/Reveal";
@@ -17,8 +17,10 @@ import { cn } from "@/lib/utils";
 export function TranslateDemo({ locale }: { locale: Locale }) {
   const t = dict(locale);
   const d = t.home.translateDemo;
-  const result = resolveExampleFile(translationShowcase.result.file);
-  const poster = resolveExampleFile(translationShowcase.result.poster) ?? undefined;
+  // A different sample than the showcase above it (12 Nov 2026): the product review; the showcase pair is the fallback.
+  const pair = resolvedPair("lounge-chair-nl");
+  const result = pair?.result ?? resolveExampleFile(translationShowcase.result.file);
+  const poster = pair?.resultPoster ?? resolveExampleFile(translationShowcase.result.poster) ?? undefined;
   const originalPoster = resolveExampleFile(translationShowcase.original.poster) ?? undefined;
   const picked = ["tdemo-l1", "tdemo-l2", "tdemo-l3"];
   return (

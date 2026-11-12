@@ -48,3 +48,18 @@ export function resolvedExamples(kind?: Example["kind"]): ResolvedExample[] {
 export function firstExample(kind: Example["kind"]): ResolvedExample | undefined {
   return resolvedExamples(kind)[0];
 }
+
+/** One translation sample with its original, both resolved, by id; null when the result file exists nowhere. */
+export function resolvedPair(id: string): { result: string; resultPoster?: string; original: string | null; originalPoster?: string; example: Example } | null {
+  const e = examples.find((x) => x.id === id);
+  if (!e) return null;
+  const result = resolveFile(e.file);
+  if (!result) return null;
+  return {
+    result,
+    resultPoster: e.poster ? resolveFile(e.poster) ?? undefined : undefined,
+    original: e.original ? resolveFile(e.original) : null,
+    originalPoster: e.originalPoster ? resolveFile(e.originalPoster) ?? undefined : undefined,
+    example: e,
+  };
+}

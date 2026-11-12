@@ -254,7 +254,7 @@ export const en = {
       title: "Clear price. Nothing to reshoot.",
       text: "Numbers from our own runs, and the rules we keep.",
       /** The price of a 30-second translated video on Pro billed yearly (plans.ts). */
-      price: { from: "From", title: "per minute of video", text: "With the Pro plan." },
+      price: { from: "From", title: "per 30-second video", text: "One language, with the Pro plan billed yearly." },
       stats: [
         { value: "0", title: "Reshoots", text: "The same video, in a new language." },
         { value: "∞", title: "Credits never expire", text: "Also after you cancel." },

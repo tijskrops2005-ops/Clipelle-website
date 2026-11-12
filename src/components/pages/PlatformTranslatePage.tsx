@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { firstExample } from "@/lib/examples";
+import { firstExample, resolvedExamples } from "@/lib/examples";
 import { config } from "@/lib/config";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
@@ -19,7 +19,8 @@ export function PlatformTranslatePage({ locale }: { locale: Locale }) {
   const t = dict(locale);
   const p = t.platformTranslate;
   const L = (x: string) => localizePath(x, locale);
-  const sample = firstExample("translate");
+  // Not the same sample as the homepage (12 Nov 2026): the last translation in the list, else the first.
+  const sample = resolvedExamples("translate").at(-1) ?? firstExample("translate");
   const perMinute = { speed: translateCredits({ seconds: 60, quality: "speed", enhance: false, languages: 1, hasSourceTranscript: true }), precision: translateCredits({ seconds: 60, quality: "precision", enhance: false, languages: 1, hasSourceTranscript: true }) };
   return (
     <div className="space-y-24 sm:space-y-32">

@@ -246,7 +246,7 @@ export const nl: SiteDict = {
       eyebrow: "Waarom Clipelle",
       title: "Heldere prijs. Niets opnieuw filmen.",
       text: "Cijfers uit onze eigen runs, en de regels waar we ons aan houden.",
-      price: { from: "Vanaf", title: "per minuut video", text: "Met het Pro-abonnement." },
+      price: { from: "Vanaf", title: "per video van 30 seconden", text: "Eén taal, met het Pro-abonnement per jaar." },
       stats: [
         { value: "0", title: "Keer opnieuw filmen", text: "Dezelfde video, in een nieuwe taal." },
         { value: "∞", title: "Credits vervallen nooit", text: "Ook als je opzegt." },

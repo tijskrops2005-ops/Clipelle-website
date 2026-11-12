@@ -1,8 +1,7 @@
 import type { CSSProperties } from "react";
 import { AppWindow, ArrowRight, BadgeCheck, Check, Briefcase, Building2, CircleDollarSign, Clapperboard, Infinity as InfinityIcon, ListChecks, LockKeyhole, ShieldCheck, Shirt, Sofa, Sparkles, Store, Tag, Truck, type LucideIcon } from "lucide-react";
 import { TRANSLATE_LANGUAGES } from "@/lib/translateLanguages";
-import { resolveExampleFile } from "@/lib/examples";
-import { translationShowcase } from "@/content/translationShowcase";
+import { resolvedPair } from "@/lib/examples";
 import { LazyVideo } from "@/components/site/LazyVideo";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
@@ -132,8 +131,11 @@ export function FinalCta({ locale = "en" }: { locale?: Locale }) {
   const h = t.home;
   // Fixed positions and timings (no randomness): the same on the server and in the browser.
   const drops = CODES.map((code, i) => ({ code, left: `${(i * 41) % 100}%`, dur: `${8 + (i % 5) * 1.6}s`, delay: `${-((i * 1.7) % 9)}s`, o: i % 4 === 0 ? 0.55 : 0.28, size: i % 3 === 0 ? 15 : 12 }));
-  const original = resolveExampleFile(translationShowcase.original.file);
-  const result = resolveExampleFile(translationShowcase.result.file);
+  // A different sample than the top of the page (12 Nov 2026, Noah: vary the videos): the unboxing pair, in step.
+  const pair = resolvedPair("unboxing-nl") ?? resolvedPair("coffee-gift-nl");
+  const original = pair?.original ?? null;
+  const result = pair?.result ?? null;
+  const codes = (pair?.example.codes ?? "EN → NL").split("→").map((c: string) => c.trim());
   return (
     <Reveal as="section" className="relative overflow-hidden rounded-card bg-ink px-6 py-14 sm:px-12 sm:py-16">
       <div className="glow-field gold -left-16 -top-24 h-80 w-80" aria-hidden />
@@ -161,17 +163,17 @@ export function FinalCta({ locale = "en" }: { locale?: Locale }) {
           <div className="relative mx-auto flex h-[300px] w-[300px] items-center justify-center sm:h-[340px] sm:w-[340px]" aria-hidden>
             <div className="absolute left-0 top-6 w-[132px] -rotate-6 sm:w-[150px]">
               <div className="relative aspect-[9/16] overflow-hidden rounded-[22px] border-[4px] border-champagne/20 bg-ink shadow-card-hover">
-                <LazyVideo src={original} poster={resolveExampleFile(translationShowcase.original.poster) ?? undefined} label="" />
-                <span className="absolute left-2 top-2 rounded-full bg-surface/90 px-2 py-0.5 text-[10px] font-semibold text-ink">{translationShowcase.original.code}</span>
+                <LazyVideo src={original} poster={pair?.originalPoster} label="" syncGroup="final-cta" syncRole="follower" />
+                <span className="absolute left-2 top-2 rounded-full bg-surface/90 px-2 py-0.5 text-[10px] font-semibold text-ink">{codes[0]}</span>
               </div>
             </div>
             <div className="absolute right-0 top-0 w-[150px] rotate-3 sm:w-[170px]">
               <div className="relative aspect-[9/16] overflow-hidden rounded-[22px] border-[4px] border-gold-light/60 bg-ink shadow-card-hover">
-                <LazyVideo src={result} poster={resolveExampleFile(translationShowcase.result.poster) ?? undefined} label="" />
-                <span className="absolute left-2 top-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white">{translationShowcase.result.code}</span>
+                <LazyVideo src={result} poster={pair?.resultPoster} label="" syncGroup="final-cta" syncRole="leader" />
+                <span className="absolute left-2 top-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white">{codes[1]}</span>
               </div>
             </div>
-            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-champagne px-3 py-1.5 text-[12px] font-semibold text-ink shadow-card">{translationShowcase.original.code} → {translationShowcase.result.code}</span>
+            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-champagne px-3 py-1.5 text-[12px] font-semibold text-ink shadow-card">{codes[0]} → {codes[1]}</span>
           </div>
         )}
       </div>

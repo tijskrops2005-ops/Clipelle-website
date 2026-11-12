@@ -137,7 +137,9 @@ export function FeatureRows({ rows, className }: { rows: FeatureRow[]; className
 
 /** One line in two languages behind the translated video: the "translate a video" panel. */
 export function TranslatePanel({ label, sampleLabel, placeholder, lines, from, to }: { label: string; sampleLabel: string; placeholder: string; lines: [string, string]; from: string; to: string }) {
-  const sample = resolvedExamples("translate")[0];
+  // The second sample here, so the feature row shows another video than the hero's centre tile (12 Nov 2026).
+  const list = resolvedExamples("translate");
+  const sample = list[1] ?? list[0];
   return (
     <div className="relative flex items-center justify-center px-6 py-10" aria-hidden>
       <TranslateSketch label={label} from={from} to={to} lines={lines} className="tilt-left absolute left-[4%] top-[10%] hidden w-[210px] opacity-95 md:block" />

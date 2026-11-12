@@ -19,10 +19,10 @@ export function WhyClipelle({ locale }: { locale: Locale }) {
   const w = dict(locale).home.why;
   const pro = PLANS.find((p) => p.key === "pro")!;
   const currency = currencyFor(locale);
-  // "From" one minute of video (60 credits) on Pro: its lowest price, billed yearly (28 Oct 2026, Tijs:
-  // what a minute costs on the plan most people take, not loose credits). Real numbers from plans.ts.
-  const perMinute = Math.round((planPrice(pro, currency).annualMonthly / pro.creditsPerMonth) * 60 * 100) / 100;
-  const price = formatMoney(perMinute, currency, locale);
+  // "From" one 30-second video (30 credits) on Pro, billed yearly (12 Nov 2026, Noah: a minute read as
+  // "$2 per video"; a typical short video is 30 seconds). Real numbers from plans.ts; follows a price change.
+  const perVideo = Math.round((planPrice(pro, currency).annualMonthly / pro.creditsPerMonth) * 30 * 100) / 100;
+  const price = formatMoney(perVideo, currency, locale);
 
   return (
     <Reveal as="section">
