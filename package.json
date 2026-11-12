@@ -23,7 +23,9 @@
     "quality:report": "node --import tsx --conditions=react-server --env-file=.env.local scripts/quality-reports.mts",
     "quality:report:prod": "node --import tsx --conditions=react-server --env-file=.env.prod scripts/quality-reports.mts",
     "r2:check": "node --import tsx --conditions=react-server --env-file=.env.local scripts/r2-check.mts",
-    "r2:check:prod": "node --import tsx --conditions=react-server --env-file=.env.prod scripts/r2-check.mts"
+    "r2:check:prod": "node --import tsx --conditions=react-server --env-file=.env.prod scripts/r2-check.mts",
+    "samples:list:prod": "node --import tsx --conditions=react-server --env-file=.env.prod scripts/export-samples.mts list",
+    "samples:export:prod": "node --import tsx --conditions=react-server --env-file=.env.prod scripts/export-samples.mts export"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
