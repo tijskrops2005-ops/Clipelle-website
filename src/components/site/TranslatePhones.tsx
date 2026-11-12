@@ -5,7 +5,7 @@ import { ArrowRight, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { LazyVideo } from "@/components/site/LazyVideo";
 import { cn } from "@/lib/utils";
 
-type PhoneData = { key: "original" | "result"; label: string; name: string; src: string | null; poster?: string; videoLabel: string };
+type PhoneData = { key: "original" | "result"; label: string; name: string; src: string | null; poster?: string; videoLabel: string; /** Original only: its measured pace against the translation (Example.originalPace). */ pace?: number };
 /** The two phones share one clock (12 Nov 2026): the translation leads, the original follows. */
 const SYNC_GROUP = "translate-showcase";
 
@@ -43,7 +43,7 @@ function Phone({ data, tone, big, sound, onToggle, soundOn, soundOff, className 
   return (
     <figure className={className}>
       <div className={cn("relative aspect-[9/16] overflow-hidden rounded-[28px] border-[5px] border-ink bg-ink shadow-card-hover", big ? "w-[190px] sm:w-[230px]" : "w-[160px] sm:w-[190px]")}>
-        {data.src ? <LazyVideo src={data.src} poster={data.poster} label={data.videoLabel} sound={sound} syncGroup={SYNC_GROUP} syncRole={data.key === "result" ? "leader" : "follower"} /> : <div className="grid size-full place-items-center bg-surface-muted text-[13px] text-muted">—</div>}
+        {data.src ? <LazyVideo src={data.src} poster={data.poster} label={data.videoLabel} sound={sound} syncGroup={SYNC_GROUP} syncRole={data.key === "result" ? "leader" : "follower"} syncRate={data.key === "original" ? data.pace : undefined} /> : <div className="grid size-full place-items-center bg-surface-muted text-[13px] text-muted">—</div>}
         <span className={cn("absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-soft", tone === "accent" ? "bg-accent text-white" : "bg-surface/90 text-ink")}>{data.label}</span>
         {data.src && (
           <button

@@ -163,7 +163,7 @@ export function FinalCta({ locale = "en" }: { locale?: Locale }) {
           <div className="relative mx-auto flex h-[300px] w-[300px] items-center justify-center sm:h-[340px] sm:w-[340px]" aria-hidden>
             <div className="absolute left-0 top-6 w-[132px] -rotate-6 sm:w-[150px]">
               <div className="relative aspect-[9/16] overflow-hidden rounded-[22px] border-[4px] border-champagne/20 bg-ink shadow-card-hover">
-                <LazyVideo src={original} poster={pair?.originalPoster} label="" syncGroup="final-cta" syncRole="follower" />
+                <LazyVideo src={original} poster={pair?.originalPoster} label="" syncGroup="final-cta" syncRole="follower" syncRate={pair?.pace} />
                 <span className="absolute left-2 top-2 rounded-full bg-surface/90 px-2 py-0.5 text-[10px] font-semibold text-ink">{codes[0]}</span>
               </div>
             </div>

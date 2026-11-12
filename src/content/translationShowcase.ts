@@ -10,4 +10,6 @@ export const translationShowcase = {
   lines: ["Mijn moeder is stiekem een beetje boos op me,", "omdat ik mijn vader de Coffee Special Deal Ritual Set heb gegeven."],
   /** Seconds of the source video. */
   seconds: 11,
+  /** Seconds of the original per second of the translation, measured from the scene cuts (see Example.originalPace). */
+  originalPace: 1.155,
 };

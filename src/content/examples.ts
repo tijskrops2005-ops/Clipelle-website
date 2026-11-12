@@ -22,6 +22,13 @@ export type Example = {
   originalPoster?: string;
   /** Language codes shown between the two phones, e.g. "EN → NL". */
   codes?: string;
+  /**
+   * Seconds of the original per second of the translation (12 Nov 2026), so the two phones show the
+   * same moment: a translation at natural pace runs faster or slower than its original. Measured from
+   * the scene cuts (ffmpeg `select='gt(scene,0.25)'`, least-squares ratio of the cut times); without it
+   * the player uses the ratio of the two lengths, which a trimmed silent tail puts off by a few tenths.
+   */
+  originalPace?: number;
 };
 
 export const examples: Example[] = [
@@ -35,6 +42,7 @@ export const examples: Example[] = [
     original: "translate-coffee-gift-original.mp4",
     originalPoster: "translate-coffee-gift-original.jpg",
     codes: "EN → NL",
+    originalPace: 1.155,
     note: "11 s · English to Dutch · own voice, lip sync, captions",
   },
   {

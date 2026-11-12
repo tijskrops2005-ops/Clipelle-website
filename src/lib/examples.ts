@@ -50,7 +50,7 @@ export function firstExample(kind: Example["kind"]): ResolvedExample | undefined
 }
 
 /** One translation sample with its original, both resolved, by id; null when the result file exists nowhere. */
-export function resolvedPair(id: string): { result: string; resultPoster?: string; original: string | null; originalPoster?: string; example: Example } | null {
+export function resolvedPair(id: string): { result: string; resultPoster?: string; original: string | null; originalPoster?: string; pace?: number; example: Example } | null {
   const e = examples.find((x) => x.id === id);
   if (!e) return null;
   const result = resolveFile(e.file);
@@ -60,6 +60,7 @@ export function resolvedPair(id: string): { result: string; resultPoster?: strin
     resultPoster: e.poster ? resolveFile(e.poster) ?? undefined : undefined,
     original: e.original ? resolveFile(e.original) : null,
     originalPoster: e.originalPoster ? resolveFile(e.originalPoster) ?? undefined : undefined,
+    pace: e.originalPace,
     example: e,
   };
 }

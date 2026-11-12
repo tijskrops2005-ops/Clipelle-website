@@ -32,7 +32,7 @@ export function TranslateShowcase({ locale }: { locale: Locale }) {
       <div className="stage-panel relative mt-12 overflow-hidden rounded-card px-4 py-10 shadow-card sm:px-10 sm:py-14">
         <div className="stage-glow pointer-events-none absolute inset-x-[15%] inset-y-[5%]" aria-hidden />
         <TranslatePhones
-          original={{ key: "original", label: `${s.original} · ${from}`, name: `${s.original} (${from})`, src: original, poster: originalPoster, videoLabel: `${s.original}, ${from}` }}
+          original={{ key: "original", label: `${s.original} · ${from}`, name: `${s.original} (${from})`, src: original, poster: originalPoster, videoLabel: `${s.original}, ${from}`, pace: translationShowcase.originalPace }}
           result={{ key: "result", label: `${s.result} · ${to}`, name: `${s.result} (${to})`, src: result, poster: resultPoster, videoLabel: `${s.result}, ${to}, ${s.lipSync}` }}
           codes={`${translationShowcase.original.code} → ${translationShowcase.result.code}`}
           lipSync={s.lipSync}
