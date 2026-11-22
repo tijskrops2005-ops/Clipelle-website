@@ -1,3 +1,4 @@
+import { translateFlowSteps, translateFlowTitles } from "@/lib/translateFlow";
 /**
  * English copy of the marketing site. The Dutch file (nl.ts) must have exactly the same shape:
  * TypeScript checks it against `SiteDict`. Only the site is translated; the app stays English.
@@ -171,7 +172,7 @@ export const en = {
       linesTitle: "Captions of the translation",
       cta: "Translate a video",
       how: "How translation works",
-      pipeline: ["Upload", "Translate & check", "Lip sync", "Captions and 9:16"],
+      pipeline: translateFlowTitles("en"),
       stats: [
         { value: 1, suffix: " credit", label: "Per second of translated video, per language" },
         { value: 100, suffix: "%", label: "Of the lines checked against the original" },
@@ -202,7 +203,7 @@ export const en = {
       languages: ["Dutch", "German", "French", "Spanish", "Italian"],
       chips: ["Speed", "9:16", "Captions"],
       button: "Start translation",
-      steps: ["Upload", "Translate and check", "Lip sync", "Captions and 9:16"],
+      steps: translateFlowTitles("en"),
     },
     trustTitle: "Built to be trusted",
     trustText: "What we promise is in the product, not just on this page.",
@@ -406,12 +407,8 @@ export const en = {
     eyebrow: "Translate videos",
     title: "The same video, in every language you sell in",
     intro: "Upload a video you own. The speech is translated, the speaker's own voice and lip movements follow the new language, and captions are added. Several languages at once, each checked line by line.",
-    stepsTitle: "Three steps, nothing waits for you",
-    steps: [
-      { title: "Upload", text: "Your video is checked and stored safely, together with your rights confirmation." },
-      { title: "Translate", text: "The speech is translated and every line is checked automatically against the original: missing words, numbers, names, natural phrasing." },
-      { title: "Captions and 9:16", text: "Voice and lips are matched to the new language; captions and the vertical format are added. One file per language." },
-    ],
+    stepsTitle: "Four steps, nothing waits for you",
+    steps: translateFlowSteps("en"),
     rightsEyebrow: "Rights first",
     rightsTitle: "Only videos you own",
     rightsText: "The voice and face in the video are cloned for the translation. You tick this confirmation before every translation; it is stored with the project, with a timestamp. Without it nothing starts.",

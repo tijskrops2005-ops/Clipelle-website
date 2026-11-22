@@ -41,7 +41,7 @@ export function PlatformTranslatePage({ locale }: { locale: Locale }) {
       </section>
       <Reveal as="section">
         <SectionIntro eyebrow={t.common.howItWorks} title={p.stepsTitle} />
-        <StepList className="mt-10 [&>li]:bg-surface [&>li]:px-6 [&>li]:py-6 [&>li]:shadow-card" columns={3} items={p.steps} />
+        <StepList className="mt-10 [&>li]:bg-surface [&>li]:px-6 [&>li]:py-6 [&>li]:shadow-card" columns={4} items={p.steps} />
       </Reveal>
       <Reveal as="section">
         <SectionIntro eyebrow={p.rightsEyebrow} title={p.rightsTitle} text={config.rightsConfirmationText} />

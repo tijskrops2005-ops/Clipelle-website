@@ -1,4 +1,5 @@
 import type { SiteDict } from "./en";
+import { translateFlowSteps, translateFlowTitles } from "@/lib/translateFlow";
 
 /** Nederlandse teksten van de marketingsite, in natuurlijk Nederlands (geen letterlijke vertaling). */
 export const nl: SiteDict = {
@@ -165,7 +166,7 @@ export const nl: SiteDict = {
       linesTitle: "Ondertitels van de vertaling",
       cta: "Vertaal een video",
       how: "Zo werkt vertalen",
-      pipeline: ["Uploaden", "Vertalen & controleren", "Lipsync", "Ondertitels en 9:16"],
+      pipeline: translateFlowTitles("nl"),
       stats: [
         { value: 1, suffix: " credit", label: "Per seconde vertaalde video, per taal" },
         { value: 100, suffix: "%", label: "Van de regels vergeleken met het origineel" },
@@ -196,7 +197,7 @@ export const nl: SiteDict = {
       languages: ["Nederlands", "Duits", "Frans", "Spaans", "Italiaans"],
       chips: ["Speed", "9:16", "Ondertitels"],
       button: "Vertaling starten",
-      steps: ["Upload", "Vertalen en controleren", "Lipsync", "Ondertitels en 9:16"],
+      steps: translateFlowTitles("nl"),
     },
     trustTitle: "Gebouwd om te vertrouwen",
     trustText: "Wat we beloven zit in het product, niet alleen op deze pagina.",
@@ -397,12 +398,8 @@ export const nl: SiteDict = {
     eyebrow: "Video's vertalen",
     title: "Dezelfde video, in elke taal waarin je verkoopt",
     intro: "Upload een video van jezelf. De spraak wordt vertaald, de eigen stem en lipbewegingen van de spreker volgen de nieuwe taal, en er komen ondertitels bij. Meerdere talen tegelijk, elk regel voor regel gecontroleerd.",
-    stepsTitle: "Drie stappen, niets wacht op jou",
-    steps: [
-      { title: "Uploaden", text: "Je video wordt gecontroleerd en veilig opgeslagen, samen met je rechtenbevestiging." },
-      { title: "Vertalen", text: "De spraak wordt vertaald en elke regel wordt automatisch vergeleken met het origineel: ontbrekende woorden, getallen, namen, natuurlijke zinnen." },
-      { title: "Ondertitels en 9:16", text: "Stem en lippen worden op de nieuwe taal afgestemd; ondertitels en het verticale formaat komen erbij. Eén bestand per taal." },
-    ],
+    stepsTitle: "Vier stappen, niets wacht op jou",
+    steps: translateFlowSteps("nl"),
     rightsEyebrow: "Rechten eerst",
     rightsTitle: "Alleen video's van jezelf",
     rightsText: "De stem en het gezicht in de video worden voor de vertaling gekloond. Je vinkt deze bevestiging aan vóór elke vertaling; ze wordt met tijdstip bij het project bewaard. Zonder bevestiging start er niets.",

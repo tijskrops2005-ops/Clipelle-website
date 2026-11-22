@@ -70,13 +70,14 @@ const STEPS = ["Script", "Product clip", "Presenter", "Final edit"];
 /** The four steps with a flowing dashed line between them: one glance at what happens after the click. */
 export function PipelineStrip({ labels = STEPS, className }: { labels?: string[]; className?: string }) {
   return (
-    <div className={cn("relative flex items-center justify-between gap-2 rounded-card bg-surface px-4 py-3 shadow-card sm:px-6", className)} aria-label={labels.join(" → ")}>
-      <div className="dash-line pointer-events-none absolute inset-x-10 top-1/2 h-0.5 -translate-y-1/2" aria-hidden />
+    <div className={cn("relative grid grid-cols-2 gap-x-3 gap-y-2.5 rounded-card bg-surface px-4 py-3.5 shadow-card sm:flex sm:items-center sm:justify-between sm:gap-2 sm:px-6 sm:py-3", className)} aria-label={labels.join(" → ")}>
+      <div className="dash-line pointer-events-none absolute inset-x-10 top-1/2 hidden h-0.5 -translate-y-1/2 sm:block" aria-hidden />
       {labels.map((l, i) => (
-        <div key={l} className="relative flex items-center gap-2 rounded-full bg-surface px-1">
+        <div key={l} className="relative flex min-w-0 items-center gap-2 rounded-full bg-surface sm:px-1">
           {/* The steps light up one after the other, like a run in progress (off under "reduce motion"). */}
-          <span className="step-glow grid size-7 place-items-center rounded-full bg-ink text-[12px] font-semibold text-surface" style={{ "--step-delay": `${(i * 4.8) / labels.length}s` } as React.CSSProperties}>{i + 1}</span>
-          <span className="hidden text-[13px] font-medium text-ink sm:inline">{l}</span>
+          <span className="step-glow grid size-7 shrink-0 place-items-center rounded-full bg-ink text-[12px] font-semibold text-surface" style={{ "--step-delay": `${(i * 4.8) / labels.length}s` } as React.CSSProperties}>{i + 1}</span>
+          {/* Phones show the words too (23 Nov 2026): four bare numbers said nothing. */}
+          <span className="text-[12.5px] font-medium leading-tight text-ink sm:text-[13px]">{l}</span>
         </div>
       ))}
     </div>

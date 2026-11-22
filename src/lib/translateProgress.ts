@@ -1,4 +1,5 @@
 import { translateStages } from "@/content/measured";
+import { translateFlowTitles } from "@/lib/translateFlow";
 import type { LanguageCode, Step, StepStatus, Translation } from "@/lib/types";
 
 /**
@@ -213,5 +214,5 @@ export function translateProgress(p: ProgressInput, now = Date.now()): Translate
 
 /** The stage names for the strip above the translate form, from the same list as the progress card. */
 export function translateStageStrip(presenter: boolean) {
-  return ["Upload", "Translate & check", presenter ? "AI presenter" : "Voice & lip sync", "Captions"];
+  return translateFlowTitles("en", presenter);
 }
