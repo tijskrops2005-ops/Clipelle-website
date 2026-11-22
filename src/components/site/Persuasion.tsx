@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { AppWindow, ArrowRight, BadgeCheck, Check, Briefcase, Building2, CircleDollarSign, Clapperboard, Infinity as InfinityIcon, ListChecks, LockKeyhole, ShieldCheck, Shirt, Sofa, Sparkles, Store, Tag, Truck, type LucideIcon } from "lucide-react";
-import { TRANSLATE_LANGUAGES } from "@/lib/translateLanguages";
+import { TRANSLATE_LANGUAGES, languageLabel } from "@/lib/translateLanguages";
 import { resolvedPair } from "@/lib/examples";
 import { LazyVideo } from "@/components/site/LazyVideo";
 import { dict } from "@/content/i18n";
@@ -40,7 +40,7 @@ export function BuiltFor({ locale }: { locale: Locale }) {
       <p className="mt-6 text-[14px] text-muted">
         <span className="font-medium text-ink">{h.madeForLabel}</span>{" "}
         {h.madeFor.map((f, i) => (
-          <span key={f}>{i > 0 && <span aria-hidden className="mx-2 text-border">/</span>}{f}</span>
+          <span key={f}>{i > 0 && <span aria-hidden className="mx-2 text-border">/</span>}<span className="whitespace-nowrap">{f}</span></span>
         ))}
       </p>
     </Reveal>
@@ -50,7 +50,11 @@ export function BuiltFor({ locale }: { locale: Locale }) {
 /* ---------- language wall ---------- */
 
 export function LanguageWall({ locale }: { locale: Locale }) {
-  const labels = TRANSLATE_LANGUAGES.map((l) => l.label);
+  // The languages themselves first (one chip per language), then the regional variants; in the page language.
+  const seen = new Set<string>();
+  const bases = TRANSLATE_LANGUAGES.filter((l) => (seen.has(l.base) ? false : (seen.add(l.base), true)));
+  const variants = TRANSLATE_LANGUAGES.filter((l) => !bases.includes(l));
+  const labels = [...new Set([...bases, ...variants].map((l) => languageLabel(l, locale)))];
   const rows = [0, 1, 2].map((r) => labels.filter((_, i) => i % 3 === r).slice(0, 34));
   return (
     <div className="relative mt-8 overflow-hidden py-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]" aria-label={locale === "nl" ? "190 talen en regionale varianten" : "190 languages and regional variants"} role="img">
@@ -151,8 +155,9 @@ export function FinalCta({ locale = "en" }: { locale?: Locale }) {
           <h2 className="mx-auto max-w-xl text-balance text-[clamp(1.9rem,4vw,3rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-champagne lg:mx-0">{h.finalTitle}</h2>
           <p className="mx-auto mt-4 max-w-md text-[15px] text-champagne/70 lg:mx-0">{h.finalText}</p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
-            <Button href="/signup" variant="accent" size="lg">{t.common.startFree}<ArrowRight className="size-5" aria-hidden /></Button>
-            <Button href={localizePath("/demo", locale)} variant="secondary" size="lg" className="border-champagne/20 bg-champagne/10 text-champagne hover:bg-champagne/20">{t.common.bookDemo}</Button>
+            {/* Stacked on phones: both the same width (23 Nov 2026). */}
+            <Button href="/signup" variant="accent" size="lg" className="w-full max-w-[280px] sm:w-auto sm:max-w-none">{t.common.startFree}<ArrowRight className="size-5" aria-hidden /></Button>
+            <Button href={localizePath("/demo", locale)} variant="secondary" size="lg" className="w-full max-w-[280px] border-champagne/20 bg-champagne/10 text-champagne hover:bg-champagne/20 sm:w-auto sm:max-w-none">{t.common.bookDemo}</Button>
           </div>
           <ul className="mt-7 flex flex-col items-center gap-2.5 text-[14px] text-champagne/85 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-5 lg:justify-start">
             {h.finalPoints.map((p) => <li key={p} className="flex items-center gap-2"><Check className="size-4 text-gold-light" aria-hidden />{p}</li>)}

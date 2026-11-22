@@ -28,7 +28,7 @@ export function RealOutput({ data, kind, locale = "en" }: { data: RealOutputData
   const time = data.durationSeconds !== undefined ? `${Math.round(data.durationSeconds / 60)} min` : null;
   return (
     <Reveal as="section">
-      <SectionIntro eyebrow={r.eyebrow} title={kind === "ad" ? r.titleAd : r.titleTranslation} text={r.text} />
+      <SectionIntro eyebrow={r.eyebrow} title={kind === "ad" ? r.titleAd : r.titleTranslation} text={cost || time ? r.text : r.textPlain} />
       <div className="mt-10 grid gap-5 rounded-card bg-surface p-6 shadow-card lg:grid-cols-[1fr_auto]">
         <div className="grid gap-5 sm:grid-cols-2">
           {hasInput && (
@@ -38,7 +38,8 @@ export function RealOutput({ data, kind, locale = "en" }: { data: RealOutputData
                 // eslint-disable-next-line @next/next/no-img-element -- our own product photo from a real run
                 <img src={photo} alt="Product photo used for this ad" className="mt-3 aspect-square w-full rounded-tile object-cover" />
               ) : (
-                <video src={source ?? undefined} poster={sourcePoster ?? undefined} controls muted playsInline preload="none" aria-label={r.sourceVideo} className="mt-3 aspect-square w-full rounded-tile bg-ink object-cover" />
+                // The same clean frame as every other video on the site (23 Nov 2026: this was the browser's own player, cropped square).
+                <PhoneFrame src={source ?? undefined} poster={sourcePoster ?? undefined} float={false} className="mt-3 !w-[150px]" caption={t.home.translate.original} placeholder={t.common.sampleComingSoon} />
               )}
             </div>
           )}
@@ -61,8 +62,8 @@ export function RealOutput({ data, kind, locale = "en" }: { data: RealOutputData
           )}
           <div className="sm:col-span-2 flex flex-wrap items-center gap-2 text-[13px] text-muted">
             <Badge tone="success">{t.common.unedited}</Badge>
-            {data.settings && <span>{data.settings}</span>}
-            {data.madeOn && <span>· {r.madeOn} {formatDate(data.madeOn)}</span>}
+            {data.settings && <span>{locale === "nl" && data.settingsNl ? data.settingsNl : data.settings}</span>}
+            {data.madeOn && <span>· {r.madeOn} {locale === "nl" ? new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(data.madeOn)) : formatDate(data.madeOn)}</span>}
           </div>
         </div>
         <PhoneFrame src={video ?? undefined} poster={poster ?? undefined} float={false} className="w-[200px]" caption={t.common.unedited} placeholder={t.common.sampleComingSoon} />

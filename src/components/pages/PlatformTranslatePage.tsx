@@ -21,7 +21,9 @@ export function PlatformTranslatePage({ locale }: { locale: Locale }) {
   const L = (x: string) => localizePath(x, locale);
   // Not the same sample as the homepage (12 Nov 2026): the last translation in the list, else the first.
   const sample = resolvedExamples("translate").at(-1) ?? firstExample("translate");
-  const perMinute = { speed: translateCredits({ seconds: 60, quality: "speed", enhance: false, languages: 1, hasSourceTranscript: true }), precision: translateCredits({ seconds: 60, quality: "precision", enhance: false, languages: 1, hasSourceTranscript: true }) };
+  // Credits per second, the unit the whole site uses (23 Nov 2026: this page said "per minute").
+  const perSecond = { speed: translateCredits({ seconds: 60, quality: "speed", enhance: false, languages: 1, hasSourceTranscript: true }) / 60, precision: translateCredits({ seconds: 60, quality: "precision", enhance: false, languages: 1, hasSourceTranscript: true }) / 60 };
+  const unit = (n: number) => `${n} ${n === 1 ? p.creditPerSecond : p.creditsPerSecond}`;
   return (
     <div className="space-y-24 sm:space-y-32">
       <section className="grid items-center gap-12 pt-16 sm:pt-24 lg:grid-cols-[1.15fr_1fr]">
@@ -35,7 +37,7 @@ export function PlatformTranslatePage({ locale }: { locale: Locale }) {
           </div>
           <p className="mt-3 text-[13px] text-muted">{t.common.noCard}</p>
         </div>
-        <HeroStage variant="translate" label={t.common.illustration}>
+        <HeroStage variant="translate" label={t.common.illustration} plain>
           {sample ? <PhoneFrame src={sample.src} poster={sample.posterSrc} caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} /> : <div className="float-soft"><TranslateSketch label={t.common.illustration} className="w-[260px]" /></div>}
         </HeroStage>
       </section>
@@ -44,14 +46,19 @@ export function PlatformTranslatePage({ locale }: { locale: Locale }) {
         <StepList className="mt-10 [&>li]:bg-surface [&>li]:px-6 [&>li]:py-6 [&>li]:shadow-card" columns={4} items={p.steps} />
       </Reveal>
       <Reveal as="section">
-        <SectionIntro eyebrow={p.rightsEyebrow} title={p.rightsTitle} text={config.rightsConfirmationText} />
-        <p className="mx-auto mt-6 max-w-2xl text-center text-[15px] leading-relaxed text-muted">{p.rightsText}</p>
+        <SectionIntro eyebrow={p.rightsEyebrow} title={p.rightsTitle} text={p.rightsText} />
+        {/* The sentence itself as what it is: the box you tick in the app (which is English), with its meaning on /nl. */}
+        <figure className="mx-auto mt-8 max-w-2xl rounded-card bg-surface p-6 text-center shadow-card">
+          <figcaption className="label-mono text-muted">{p.rightsBox}</figcaption>
+          <blockquote className="mt-3 text-[17px] font-medium leading-snug text-ink">“{config.rightsConfirmationText}”</blockquote>
+          {p.rightsGloss && <p className="mt-3 text-[14px] leading-relaxed text-muted">{p.rightsGloss}</p>}
+        </figure>
       </Reveal>
       <Reveal as="section">
         <SectionIntro eyebrow={p.qualityEyebrow} title={p.qualityTitle} text={p.qualityText} />
         <div className="mt-10 grid gap-5 md:grid-cols-2">
-          <div className="rounded-card bg-surface p-6 shadow-card"><p className="text-[17px] font-semibold">Speed · {perMinute.speed} {p.creditsPerMinute}</p><p className="mt-2 text-[15px] leading-relaxed text-muted">{p.speedText}</p></div>
-          <div className="rounded-card bg-surface p-6 shadow-card"><p className="text-[17px] font-semibold">Precision · {perMinute.precision} {p.creditsPerMinute}</p><p className="mt-2 text-[15px] leading-relaxed text-muted">{p.precisionText}</p></div>
+          <div className="rounded-card bg-surface p-6 shadow-card"><p className="text-[17px] font-semibold">Speed · {unit(perSecond.speed)}</p><p className="mt-2 text-[15px] leading-relaxed text-muted">{p.speedText}</p></div>
+          <div className="rounded-card bg-surface p-6 shadow-card"><p className="text-[17px] font-semibold">Precision · {unit(perSecond.precision)}</p><p className="mt-2 text-[15px] leading-relaxed text-muted">{p.precisionText}</p></div>
         </div>
         <ul className="mx-auto mt-8 grid max-w-3xl gap-3 text-[15px] text-ink/85 sm:grid-cols-2">{p.features.map((x) => <li key={x} className="flex items-center gap-2"><span className="size-1.5 rounded-full bg-accent" aria-hidden />{x}</li>)}</ul>
       </Reveal>

@@ -213,3 +213,22 @@ export function translateLanguageOf(code: string): Language | undefined {
 export function isTranslateLanguage(code: unknown): code is LanguageCode {
   return typeof code === "string" && byCode.has(code);
 }
+
+/**
+ * A language's name in the page language (23 Nov 2026, the Dutch site showed "English (Hong Kong)").
+ * English is the label in the list above; Dutch comes from the platform's own locale data through
+ * the ISO tag ("ES-CL" → "Spaans (Chili)"), with the English label as the fallback. Pure.
+ */
+export function languageLabel(l: Language, locale: "en" | "nl" = "en"): string {
+  if (locale === "en") return l.label;
+  try {
+    const [lang, region] = l.tag.split("-");
+    const name = new Intl.DisplayNames([locale], { type: "language" }).of(lang.toLowerCase());
+    if (!name || name.toLowerCase() === lang.toLowerCase()) return l.label;
+    const place = region ? new Intl.DisplayNames([locale], { type: "region" }).of(region) : undefined;
+    const short = place?.replace(/ SAR van China$/, "");
+    return `${name.charAt(0).toUpperCase()}${name.slice(1)}${short && short !== region ? ` (${short})` : ""}`;
+  } catch {
+    return l.label;
+  }
+}

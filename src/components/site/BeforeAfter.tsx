@@ -1,34 +1,35 @@
 import { resolvedExamples, resolveExampleFile } from "@/lib/examples";
+import { exampleWords } from "@/content/examples";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
 import { TranslatePhones } from "@/components/site/TranslatePhones";
 
 /**
- * Before and after (28 Oct 2026): every translation sample that has its uploaded original shows
- * the two side by side, with the same phones and sound buttons as the homepage showcase. Our own
- * output only; a sample without an original is left out here and stays in the gallery.
+ * Before and after (28 Oct 2026): every translation sample, the uploaded original next to the result
+ * where we have it, with the same phones and sound buttons as the homepage showcase. Our own output only.
  */
 export function BeforeAfter({ locale }: { locale: Locale }) {
   const t = dict(locale);
   const s = t.home.translate;
-  const pairs = resolvedExamples("translate").flatMap((e) => {
-    const original = e.original ? resolveExampleFile(e.original) : null;
-    return original ? [{ e, original, originalPoster: e.originalPoster ? resolveExampleFile(e.originalPoster) ?? undefined : undefined }] : [];
-  });
-  if (pairs.length === 0) return null;
+  // Since 23 Nov 2026 every translation sample is here: with its original where we have it, alone otherwise
+  // (the separate grid with the browser's own players repeated the same videos; docs/removed-blocks.md).
+  const samples = resolvedExamples("translate").map((e) => ({
+    e,
+    words: exampleWords(e, locale),
+    original: e.original ? resolveExampleFile(e.original) : null,
+    originalPoster: e.originalPoster ? resolveExampleFile(e.originalPoster) ?? undefined : undefined,
+  }));
+  if (samples.length === 0) return null;
   return (
-    <section className="space-y-6">
-      <div className="max-w-2xl">
-        <h2 className="text-title">{t.examples.pairsTitle}</h2>
-        <p className="mt-2 text-[15px] leading-relaxed text-muted">{t.examples.pairsText}</p>
-      </div>
+    <section aria-label={t.examples.pairsTitle}>
       <ul className="space-y-6">
-        {pairs.map(({ e, original, originalPoster }) => (
+        {samples.map(({ e, words, original, originalPoster }) => (
           <li key={e.id} className="stage-panel overflow-hidden rounded-card px-4 py-8 shadow-card sm:px-10 sm:py-10">
-            <p className="mb-6 text-center text-[15px] font-semibold text-ink">{e.title}<span className="ml-2 font-normal text-muted">{e.note}</span></p>
+            <p className="mb-6 text-center text-[15px] font-semibold text-ink">{words.title}<span className="mt-1 block font-normal text-muted sm:ml-2 sm:mt-0 sm:inline">{words.note}</span></p>
             <TranslatePhones
-              original={{ key: "original", label: s.original, name: `${s.original} (${e.title})`, src: original, poster: originalPoster, videoLabel: `${s.original}, ${e.title}` }}
-              result={{ key: "result", label: s.result, name: `${s.result} (${e.title})`, src: e.src, poster: e.posterSrc, videoLabel: `${s.result}, ${e.title}, ${s.lipSync}` }}
+              syncId={`pair-${e.id}`}
+              original={original ? { key: "original", label: s.original, name: `${s.original} (${words.title})`, src: original, poster: originalPoster, videoLabel: `${s.original}, ${words.title}`, pace: e.originalPace } : null}
+              result={{ key: "result", label: s.result, name: `${s.result} (${words.title})`, src: e.src, poster: e.posterSrc, videoLabel: `${s.result}, ${words.title}, ${s.lipSync}` }}
               codes={e.codes ?? "→"}
               lipSync={s.lipSync}
               soundOn={s.soundOn}

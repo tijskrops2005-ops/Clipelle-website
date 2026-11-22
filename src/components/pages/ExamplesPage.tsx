@@ -13,9 +13,8 @@ export function ExamplesPage({ locale }: { locale: Locale }) {
   return (
     <div className="space-y-24 pt-16 sm:pt-24">
       <SectionIntro eyebrow={t.home.examplesEyebrow} title={t.examples.title} text={t.examples.text} />
-      {/* 28 Oct 2026: the original next to the result first, then every translated video. */}
+      {/* 28 Oct 2026: the original next to the result. 23 Nov 2026: every translation sample sits in this one block. */}
       <BeforeAfter locale={locale} />
-      <section className="space-y-6"><h2 className="text-title">{t.examples.translations}</h2><ExampleGallery kind="translate" limit={6} locale={locale} /></section>
       {/* 27 Oct 2026: the ad samples and the formats show only while ads are on. */}
       {config.features.ads && (
         <>

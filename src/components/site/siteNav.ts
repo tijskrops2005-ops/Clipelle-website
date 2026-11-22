@@ -24,9 +24,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { config } from "@/lib/config";
+import { publishedCaseStudies } from "@/content/case-studies";
 
 /** 27 Oct 2026: with ads switched off, the two ad tools are announced ("Soon") and the ad-only solutions leave the menu. */
 const ADS = config.features.ads;
+const HAS_STORIES = publishedCaseStudies().length > 0;
 const ifAds = (item: MenuItem) => ({ ...item, soon: !ADS || undefined });
 
 /** One entry in a card menu. `soon` marks what is announced but not built: the page says so too. */
@@ -44,10 +46,10 @@ export const menus: Menu[] = [
       {
         title: "Creation",
         items: [
-          { href: "/platform/translate", title: "Translate & lipsync", text: "A video you own, in other languages, with the speaker's own voice and matching lips.", icon: Languages },
-          ifAds({ href: "/platform/ads", title: "Image to video", text: "One product photo becomes a finished 9:16 ad with a presenter and captions.", icon: Clapperboard }),
-          ifAds({ href: "/platform/url-to-video", title: "URL to video", text: "Paste a product link; name, description and photos are filled in for you.", icon: Link2 }),
-          { href: "/new", title: "Studio", text: "The app where your videos are made and kept.", icon: LayoutDashboard },
+          { href: "/platform/translate", title: "Translate and lip sync", text: "A video you own, in other languages, with the speaker's own voice and matching lips.", icon: Languages },
+          ifAds({ href: "/platform/ads", title: "Ads from a photo", text: "One product photo becomes a finished 9:16 ad with a presenter and captions.", icon: Clapperboard }),
+          ifAds({ href: "/platform/url-to-video", title: "Ads from a link", text: "Paste a product link; name, description and photos are filled in for you.", icon: Link2 }),
+          { href: "/new", title: "Dashboard", text: "Where your videos are made and kept.", icon: LayoutDashboard },
         ],
       },
       {
@@ -98,9 +100,10 @@ export const menus: Menu[] = [
       {
         title: "Learn",
         items: [
-          { href: "/blog", title: "Blog", text: "Practical articles on product video, scripts, captions and translation.", icon: Newspaper },
+          { href: "/blog", title: "Blog", text: "Practical articles on translation, captions and product video.", icon: Newspaper },
           { href: "/resources/guides", title: "Guides", text: "Step-by-step handbooks for the things people ask about most.", icon: FileText },
-          { href: "/customers", title: "Case studies", text: "Stories from brands that use Clipelle, as they share them.", icon: BookOpen },
+          // Customer stories join the menu and the footer with the first published story (23 Nov 2026: the link led to an empty page).
+          ...(HAS_STORIES ? [{ href: "/customers", title: "Case studies", text: "Stories from brands that use Clipelle, as they share them.", icon: BookOpen }] : []),
           { href: "/resources/faq", title: "FAQ", text: "Costs, credits, rights, what is placed on screen.", icon: HelpCircle },
         ],
       },

@@ -38,7 +38,6 @@ export function HomePage({ locale }: { locale: Locale }) {
   const h = t.home;
   const L = (p: string) => localizePath(p, locale);
   const questions = faqFor(locale, faq).slice(0, 6);
-  const words = h.showcaseWords;
   return (
     <div className="space-y-24 sm:space-y-32">
       <JsonLd data={{ "@context": "https://schema.org", "@type": "Organization", name: config.productName, url: absoluteUrl("/"), logo: absoluteUrl("/brand/clipelle-logo-dark.png") }} />
@@ -50,12 +49,12 @@ export function HomePage({ locale }: { locale: Locale }) {
         <h1 className="mx-auto mt-5 max-w-4xl text-[clamp(2.6rem,6.4vw,4.5rem)] font-semibold leading-[1.02] tracking-[-0.035em]">{h.title}</h1>
         <p className="mx-auto mt-6 max-w-2xl text-subtitle text-muted">{h.intro}</p>
         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button href={`/signup?next=${encodeURIComponent("/new/translate")}`} variant="accent" size="lg"><Languages className="size-5" aria-hidden />{t.common.translateFirst}</Button>
-          <Button href={L("/examples")} variant="secondary" size="lg">{t.common.seeExamples}<ArrowRight className="size-5" aria-hidden /></Button>
+          <Button href={`/signup?next=${encodeURIComponent("/new/translate")}`} variant="accent" size="lg" className="w-full max-w-[300px] sm:w-auto sm:max-w-none"><Languages className="size-5" aria-hidden />{t.common.translateFirst}</Button>
+          <Button href={L("/examples")} variant="secondary" size="lg" className="w-full max-w-[300px] sm:w-auto sm:max-w-none">{t.common.seeExamples}<ArrowRight className="size-5" aria-hidden /></Button>
         </div>
         <p className="mt-4 text-[13px] text-muted">{t.common.noCardLong}</p>
         <ProofChips items={h.proof} className="mt-6 justify-center" />
-        <HeroShowcase words={words} illustrationLabel={t.common.illustration} sampleLabel={t.common.sampleMadeWith} className="mt-12 sm:mt-14" />
+        <HeroShowcase sampleLabel={t.common.sampleShort} originalLabel={h.translate.original} className="mt-12 sm:mt-14" />
         <PipelineStrip labels={h.translate.pipeline} className="mt-6" />
       </section>
 

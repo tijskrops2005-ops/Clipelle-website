@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { ArrowRight, AudioLines, Captions, Clock3, Compass, FileCheck, Gauge, Image as ImageIcon, Languages, Mic, Palette, Smartphone, Smile, Stamp, Tag, UserRound, type LucideIcon } from "lucide-react";
-import { resolvedExamples, type ResolvedExample } from "@/lib/examples";
+import { resolvedExamples, resolvedPair } from "@/lib/examples";
+import { examples } from "@/content/examples";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
@@ -28,46 +29,53 @@ const SLOTS = [
   { r: 9, y: 56, width: "w-[136px]", show: "hidden xl:block" },
 ] as const;
 
-/** Sample videos take the middle slots; the rest are drawn ads with different caption colours (gold is allowed inside the dark frame). */
-const ACCENTS = ["var(--accent)", "var(--gold-light)", "var(--warning)", "var(--accent)", "var(--gold-light)", "var(--warning)", "var(--accent)"];
-
-/** One sample video in the same frame as the drawn ads (no fixed width: the parent decides). */
-function VideoTile({ sample, label }: { sample: ResolvedExample; label: string }) {
+/** One real video in the hero frame, with a short label that fits the narrow tiles on a phone. */
+function VideoTile({ src, poster, alt, label, original }: { src: string; poster?: string; alt: string; label: string; original?: boolean }) {
   return (
     <div className="relative aspect-[9/16] overflow-hidden rounded-[28px] border-[5px] border-ink bg-ink shadow-card-hover">
-      <LazyVideo src={sample.src} poster={sample.posterSrc} label={`${sample.title}: ${sample.note}`} />
-      <span className="label-mono absolute left-3 top-3 rounded-full bg-surface/90 px-2 py-0.5 text-[10px] text-ink">{label}</span>
+      <LazyVideo src={src} poster={poster} label={alt} />
+      <span className={cn("label-mono absolute left-2.5 top-2.5 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px]", original ? "bg-ink/70 text-surface" : "bg-surface/90 text-ink")}>{label}</span>
     </div>
   );
 }
 
-export function HeroShowcase({ words, illustrationLabel, sampleLabel, className }: { words: string[][]; illustrationLabel: string; sampleLabel: string; className?: string }) {
-  const samples = resolvedExamples().slice(0, SLOTS.length);
-  // Fill from the centre outwards so the samples sit in the most visible slots.
-  const order = [3, 2, 4, 1, 5, 0, 6];
-  const content: ReactNode[] = new Array(SLOTS.length);
-  let s = 0;
-  let w = 0;
-  for (const i of order) {
-    const sample = samples[s];
-    if (sample) {
-      s += 1;
-      content[i] = <VideoTile sample={sample} label={sampleLabel} />;
-    } else {
-      const triple = words[w % words.length] ?? words[0];
-      w += 1;
-      content[i] = <AdSketch compact label={illustrationLabel} words={triple} accent={ACCENTS[i]} />;
-    }
-  }
+/**
+ * The fan under the hero. Since 23 Nov 2026 it shows real videos only (Tijs): each sample's
+ * translation and, where we have it, the original it came from, the first pair side by side in the
+ * middle. The drawn ad tiles with hook text are gone: they showed text cards the product never puts
+ * on screen (AdSketch stays in Sketches.tsx; docs/removed-blocks.md). More samples in
+ * src/content/examples.ts fill the outer slots on their own.
+ */
+export function HeroShowcase({ sampleLabel, originalLabel, className }: { sampleLabel: string; originalLabel: string; className?: string }) {
+  const pairs = examples.filter((e) => e.kind === "translate").flatMap((e) => {
+    const pair = resolvedPair(e.id);
+    return pair ? [pair] : [];
+  });
+  const codesOf = (codes?: string) => (codes ?? "").split("→").map((c) => c.trim());
+  type Tile = { src: string; poster?: string; alt: string; label: string; original?: boolean };
+  const result = (p: (typeof pairs)[number]): Tile => ({ src: p.result, poster: p.resultPoster, alt: `${p.example.title}: ${p.example.note}`, label: [sampleLabel, codesOf(p.example.codes)[1]].filter(Boolean).join(" · ") });
+  const original = (p: (typeof pairs)[number]): Tile | null => (p.original ? { src: p.original, poster: p.originalPoster, alt: `${originalLabel}: ${p.example.title}`, label: [originalLabel, codesOf(p.example.codes)[0]].filter(Boolean).join(" · "), original: true } : null);
+  // In order of importance: the first pair (translation in the middle, its original beside it), then the others.
+  const tiles = [pairs[0] && result(pairs[0]), pairs[0] && original(pairs[0]), pairs[1] && result(pairs[1]), pairs[1] && original(pairs[1]), ...pairs.slice(2).map(result)].filter((t): t is Tile => Boolean(t)).slice(0, SLOTS.length);
+  // Slots from the centre outwards: middle, left of it, right of it, further right, further left, the two edges.
+  const order = [3, 2, 4, 5, 1, 0, 6];
+  const content: (Tile | undefined)[] = new Array(SLOTS.length);
+  tiles.forEach((t, n) => {
+    content[order[n]] = t;
+  });
   return (
     <div className={cn("relative pb-14 max-sm:overflow-x-clip", className)}>
       <div className="stage-glow pointer-events-none absolute inset-x-[10%] inset-y-[-10%]" aria-hidden />
       <ul className="fan relative" aria-label="Examples">
-        {SLOTS.map((slot, i) => (
-          <li key={i} className={cn("shrink-0", slot.width, slot.show)} style={{ "--r": `${slot.r}deg`, "--y": `${slot.y}px`, "--rise-delay": `${Math.abs(i - 3) * 90}ms` } as CSSProperties}>
-            <div>{content[i]}</div>
-          </li>
-        ))}
+        {SLOTS.map((slot, i) => {
+          const tile = content[i];
+          if (!tile) return null;
+          return (
+            <li key={i} className={cn("shrink-0", slot.width, slot.show)} style={{ "--r": `${slot.r}deg`, "--y": `${slot.y}px`, "--rise-delay": `${Math.abs(i - 3) * 90}ms` } as CSSProperties}>
+              <div><VideoTile {...tile} /></div>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -144,7 +152,7 @@ export function TranslatePanel({ label, sampleLabel, placeholder, lines, from, t
     <div className="relative flex items-center justify-center px-6 py-10" aria-hidden>
       <TranslateSketch label={label} from={from} to={to} lines={lines} className="tilt-left absolute left-[4%] top-[10%] hidden w-[210px] opacity-95 md:block" />
       <div className="relative w-[170px] sm:w-[200px]">
-        {sample ? <VideoTile sample={sample} label={sampleLabel} /> : <AdSketch compact label={placeholder} words={[lines[0], lines[1], lines[1]]} accent="var(--gold-light)" />}
+        {sample ? <VideoTile src={sample.src} poster={sample.posterSrc} alt={`${sample.title}: ${sample.note}`} label={sampleLabel} /> : <AdSketch compact label={placeholder} words={[lines[0], lines[1], lines[1]]} accent="var(--gold-light)" />}
       </div>
     </div>
   );

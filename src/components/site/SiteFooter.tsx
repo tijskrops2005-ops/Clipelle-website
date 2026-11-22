@@ -17,8 +17,9 @@ export function SiteFooter({ locale = "en" }: { locale?: Locale }) {
   const email = supportEmail();
   return (
     <footer className="mt-24 border-t border-divider px-4 py-14 sm:mt-32 sm:px-6">
-      <div className="mx-auto grid max-w-6xl gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[1.3fr_repeat(5,1fr)]">
-        <div className="sm:col-span-2 md:col-span-3 lg:col-span-1">
+      {/* Phones: the link groups two by two (23 Nov 2026: five stacked groups made a footer longer than some pages). */}
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-3 lg:grid-cols-[1.3fr_repeat(5,1fr)]">
+        <div className="col-span-2 md:col-span-3 lg:col-span-1">
           <Link href={localizePath("/", locale)} aria-label={config.productName} className="focus-ring inline-flex rounded-control">
             <LogoFull className="h-12" />
           </Link>

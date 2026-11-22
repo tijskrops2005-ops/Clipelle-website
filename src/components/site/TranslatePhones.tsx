@@ -13,13 +13,22 @@ const SYNC_GROUP = "translate-showcase";
  * The two phones of the translation showcase with a sound button each (25 Oct 2026). One video
  * plays with sound at a time, so the original and the translation can be heard one after the other.
  */
-export function TranslatePhones({ original, result, codes, lipSync, soundOn, soundOff, soundHint }: { original: PhoneData; result: PhoneData; codes: string; lipSync: string; soundOn: string; soundOff: string; soundHint: string }) {
+export function TranslatePhones({ original, result, codes, lipSync, soundOn, soundOff, soundHint, syncId = SYNC_GROUP }: { original: PhoneData | null; result: PhoneData; codes: string; lipSync: string; soundOn: string; soundOff: string; soundHint: string; /** One clock per pair: every pair on a page needs its own id (23 Nov 2026: two pairs shared one and the second original followed the wrong video). */ syncId?: string }) {
   const [playing, setPlaying] = useState<PhoneData["key"] | null>(null);
   const toggle = (key: PhoneData["key"]) => setPlaying((p) => (p === key ? null : key));
+  // A sample whose upload we do not have: the translation alone, in the same frame.
+  if (!original) {
+    return (
+      <div className="relative flex flex-col items-center">
+        <Phone data={result} tone="accent" big sound={playing === "result"} onToggle={() => toggle("result")} soundOn={soundOn} soundOff={soundOff} syncId={syncId} />
+        <p className="mt-3 flex items-center justify-center gap-1.5 text-[13px] font-medium text-ink"><Sparkles className="size-4 text-accent" aria-hidden />{lipSync}</p>
+      </div>
+    );
+  }
   return (
     <>
       <div className="relative grid items-center gap-6 sm:grid-cols-[1fr_auto_1fr] sm:gap-4 lg:gap-10">
-        <Phone data={original} tone="muted" sound={playing === "original"} onToggle={() => toggle("original")} soundOn={soundOn} soundOff={soundOff} className="justify-self-center sm:justify-self-end" />
+        <Phone data={original} tone="muted" sound={playing === "original"} onToggle={() => toggle("original")} soundOn={soundOn} soundOff={soundOff} syncId={syncId} className="justify-self-center sm:justify-self-end" />
 
         {/* Connector: languages, a live wave and the arrow */}
         <div className="flex flex-row items-center justify-center gap-3 sm:flex-col" aria-hidden>
@@ -29,7 +38,7 @@ export function TranslatePhones({ original, result, codes, lipSync, soundOn, sou
         </div>
 
         <div className="justify-self-center sm:justify-self-start">
-          <Phone data={result} tone="accent" big sound={playing === "result"} onToggle={() => toggle("result")} soundOn={soundOn} soundOff={soundOff} />
+          <Phone data={result} tone="accent" big sound={playing === "result"} onToggle={() => toggle("result")} soundOn={soundOn} soundOff={soundOff} syncId={syncId} />
           <p className="mt-3 flex items-center justify-center gap-1.5 text-[13px] font-medium text-ink"><Sparkles className="size-4 text-accent" aria-hidden />{lipSync}</p>
         </div>
       </div>
@@ -38,12 +47,12 @@ export function TranslatePhones({ original, result, codes, lipSync, soundOn, sou
   );
 }
 
-function Phone({ data, tone, big, sound, onToggle, soundOn, soundOff, className }: { data: PhoneData; tone: "muted" | "accent"; big?: boolean; sound: boolean; onToggle: () => void; soundOn: string; soundOff: string; className?: string }) {
+function Phone({ data, tone, big, sound, onToggle, soundOn, soundOff, syncId, className }: { data: PhoneData; tone: "muted" | "accent"; big?: boolean; sound: boolean; onToggle: () => void; soundOn: string; soundOff: string; syncId: string; className?: string }) {
   const Icon = sound ? Volume2 : VolumeX;
   return (
     <figure className={className}>
       <div className={cn("relative aspect-[9/16] overflow-hidden rounded-[28px] border-[5px] border-ink bg-ink shadow-card-hover", big ? "w-[190px] sm:w-[230px]" : "w-[160px] sm:w-[190px]")}>
-        {data.src ? <LazyVideo src={data.src} poster={data.poster} label={data.videoLabel} sound={sound} syncGroup={SYNC_GROUP} syncRole={data.key === "result" ? "leader" : "follower"} syncRate={data.key === "original" ? data.pace : undefined} /> : <div className="grid size-full place-items-center bg-surface-muted text-[13px] text-muted">—</div>}
+        {data.src ? <LazyVideo src={data.src} poster={data.poster} label={data.videoLabel} sound={sound} syncGroup={syncId} syncRole={data.key === "result" ? "leader" : "follower"} syncRate={data.key === "original" ? data.pace : undefined} /> : <div className="grid size-full place-items-center bg-surface-muted text-[13px] text-muted">—</div>}
         <span className={cn("absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-soft", tone === "accent" ? "bg-accent text-white" : "bg-surface/90 text-ink")}>{data.label}</span>
         {data.src && (
           <button

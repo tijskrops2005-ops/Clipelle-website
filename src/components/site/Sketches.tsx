@@ -122,12 +122,12 @@ export function ProofChips({ items, className }: { items: string[]; className?: 
 }
 
 /** The hero phone with two illustrated cards tilted behind it, on soft colour fields. */
-export function HeroStage({ children, className, variant = "ads", label = "Illustration" }: { children: React.ReactNode; className?: string; variant?: "ads" | "translate"; label?: string }) {
+export function HeroStage({ children, className, variant = "ads", label = "Illustration", plain }: { children: React.ReactNode; className?: string; variant?: "ads" | "translate"; label?: string; /** The glow and the phone only: no tilted illustration cards behind it (23 Nov 2026: they were cut off mid-word). */ plain?: boolean }) {
   return (
-    <div className={cn("relative mx-auto flex h-[480px] w-full max-w-[520px] items-center justify-center overflow-hidden sm:h-[560px]", className)}>
+    <div className={cn("relative mx-auto flex h-[480px] w-full max-w-[520px] items-center justify-center sm:h-[560px]", !plain && "overflow-hidden", className)}>
       <div className="glow-field accent left-[-10%] top-[10%] h-72 w-72" />
       <div className="glow-field warm bottom-[0%] right-[-8%] h-64 w-64" />
-      {variant === "ads" ? (
+      {plain ? null : variant === "ads" ? (
         <>
           <div className="absolute left-[-4%] top-[10%] hidden w-[150px] sm:block"><AdSketch compact label={label} className="tilt-left opacity-95" words={["This just arrived…", "Trail Bottle.", "Cold all day."]} /></div>
           <div className="absolute right-[-4%] top-[20%] hidden w-[150px] sm:block"><AdSketch compact label={label} className="tilt-right opacity-95" words={["Three reasons…", "One: it lasts.", "Tap to shop."]} accent="var(--warning)" /></div>

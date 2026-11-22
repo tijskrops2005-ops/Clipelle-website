@@ -20,6 +20,8 @@ export type RealOutput = {
   durationSeconds?: number;
   /** Length, quality, language as chosen on the form. */
   settings?: string;
+  /** The same line in Dutch, for /nl. */
+  settingsNl?: string;
   /** Date of the run. */
   madeOn?: string;
 };
@@ -45,5 +47,6 @@ export const realTranslation: RealOutput = {
   // The checked Dutch lines, as spoken and shown in the result.
   script: "Mijn moeder is stiekem een beetje boos op me, omdat ik mijn vader de Coffee Special Deal Ritual Set heb gegeven. Hij kreeg hem van mij en nu kijkt ze me scheef aan, want zijn opgeblazen gevoel verdween sneller dan verwacht.",
   settings: "11 s · English to Dutch · captions",
+  settingsNl: "11 s · Engels naar Nederlands · ondertitels",
   madeOn: "2026-10-27",
 };

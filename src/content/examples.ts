@@ -29,7 +29,14 @@ export type Example = {
    * the player uses the ratio of the two lengths, which a trimmed silent tail puts off by a few tenths.
    */
   originalPace?: number;
+  /** The title and the one-line note in Dutch, for /nl (23 Nov 2026: the Dutch site showed "Gift story, translated"). */
+  nl?: { title: string; note: string };
 };
+
+/** A sample's title and note in the page language (English is the default). */
+export function exampleWords(e: Example, locale: "en" | "nl" = "en") {
+  return locale === "nl" && e.nl ? e.nl : { title: e.title, note: e.note };
+}
 
 export const examples: Example[] = [
   // 28 Oct 2026: Tijs's own videos, translated with Clipelle (the older samples are off the site).
@@ -44,6 +51,7 @@ export const examples: Example[] = [
     codes: "EN → NL",
     originalPace: 1.155,
     note: "11 s · English to Dutch · own voice, lip sync, captions",
+    nl: { title: "Cadeauverhaal, vertaald", note: "11 s · Engels naar Nederlands · eigen stem, lipsync, ondertitels" },
   },
   {
     id: "unboxing-nl",
@@ -55,6 +63,7 @@ export const examples: Example[] = [
     originalPoster: "translate-unboxing-original.jpg",
     codes: "EN → NL",
     note: "8 s · English to Dutch · own voice, lip sync, captions",
+    nl: { title: "Unboxing, vertaald", note: "8 s · Engels naar Nederlands · eigen stem, lipsync, ondertitels" },
   },
   {
     id: "lounge-chair-nl",
@@ -64,6 +73,7 @@ export const examples: Example[] = [
     poster: "translate-lounge-chair-nl.jpg",
     codes: "EN → NL",
     note: "30 s · English to Dutch · own voice, lip sync, captions",
+    nl: { title: "Productreview, vertaald", note: "30 s · Engels naar Nederlands · eigen stem, lipsync, ondertitels" },
   },
 ];
 
