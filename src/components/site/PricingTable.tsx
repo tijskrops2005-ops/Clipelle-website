@@ -12,6 +12,7 @@ import { CreditsSlider } from "./CreditsSlider";
 import { PlanCalculator } from "./PlanCalculator";
 import { CREDIT_EXPIRY, PLANS, TRIAL, activeListPrice, adCreditTable, currencyFor, formatMoney, hasFeature, planByKey, planFamily, planLevels, planPrice, translateCredits, type Currency, type Plan, type PlanFamily, type PlanKey } from "@/lib/plans";
 import { ALL_SUBSCRIPTIONS, annualTotals, featureSteps, usdPerCredit } from "@/lib/pricingHelpers";
+import { useBillingAnnual } from "@/lib/useBilling";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
 
@@ -31,7 +32,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en", curren
   const m: Money = { currency, locale, listPrices, adTable };
   const billingHref = (key: string, interval: Interval) => `/signup?next=${encodeURIComponent(`/settings/billing?plan=${key}&interval=${interval}${currency === "eur" ? "&currency=eur" : ""}`)}`;
   const L = (p: string) => localizePath(p, locale);
-  const [annual, setAnnual] = useState(true);
+  const [annual, setAnnual] = useBillingAnnual();
   const interval: Interval = annual ? "annual" : "monthly";
   const initial = planByKey(initialPlan);
   const [tab, setTab] = useState<Tab>(initial?.family === "business" ? "business" : "individual");
@@ -193,8 +194,9 @@ function PriceLine({ plan, interval, className, t, m }: { plan: Plan; interval: 
   return (
     <div className={className}>
       <p className="flex items-baseline gap-x-2 whitespace-nowrap">
-        {struck !== null && <s className="text-[20px] text-muted" aria-label={t.was.replace("{price}", formatPrice(struck))}>{formatPrice(struck)}</s>}
-        <span className="text-display">{price === 0 ? (m.locale === "nl" ? "Gratis" : "Free") : formatPrice(price)}</span>
+        {struck !== null && <s className={cn("text-muted", Number.isInteger(price) ? "text-[20px]" : "text-[16px]")} aria-label={t.was.replace("{price}", formatPrice(struck))}>{formatPrice(struck)}</s>}
+        {/* A price with cents (the euro price per month on yearly billing) is set smaller, so the line stays inside the card. */}
+        <span className={cn("text-display", !Number.isInteger(price) && "text-[1.75rem]")}>{price === 0 ? (m.locale === "nl" ? "Gratis" : "Free") : formatPrice(price)}</span>
         {price > 0 && <span className="text-base font-medium text-muted">{t.perMonth}</span>}
       </p>
       <p className="mt-1 truncate text-[13px] text-muted" title={note}>{note}</p>
@@ -270,8 +272,8 @@ function PlanCard({ plan, interval, cta, onLevel, t, m }: { plan: Plan; interval
           {steps.locked.map((f) => (
             <li key={f} className="flex items-start gap-2 text-muted"><Lock className="mt-0.5 size-4 shrink-0" aria-hidden /><span>{t.features[f]}<span className="block text-[12px] text-muted/80">{t.availableIn.replace("{plan}", steps.next ?? "")}</span></span></li>
           ))}
+          {steps.lockedMore > 0 && <li className="pl-6 text-[12.5px] text-muted">{t.moreIn.replace("{n}", String(steps.lockedMore)).replace("{plan}", steps.next ?? "")}</li>}
         </ul>
-        <p className="mt-4 text-[13px] font-medium text-ink">{plan.key === "free" ? t.freeExpires.replace("{n}", String(CREDIT_EXPIRY.freeAdDays)) : t.neverExpire}</p>
       </div>
     </div>
   );
@@ -288,8 +290,8 @@ function EnterpriseBand({ t, locale }: { t: T; locale: Locale }) {
           <p className="mt-2 text-[15px] leading-relaxed text-champagne/75">{t.band.text}</p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-3">
-          <Link href={localizePath("/demo", locale)} className="focus-ring inline-flex h-11 items-center gap-1.5 rounded-control bg-gold-light px-5 text-[14px] font-semibold text-ink transition-transform duration-150 hover:-translate-y-px">{t.band.sales} <ArrowRight className="size-4" aria-hidden /></Link>
-          <Link href={localizePath("/services/done-for-you", locale)} className="focus-ring inline-flex h-11 items-center rounded-control border border-champagne/25 px-5 text-[14px] font-semibold text-champagne transition-colors duration-150 hover:bg-champagne/10">{t.band.service}</Link>
+          {/* One action, the white button every dark band uses for its second action; the managed service has its own block below. */}
+          <Link href={localizePath("/demo", locale)} className="focus-ring inline-flex h-11 items-center gap-1.5 rounded-control bg-surface px-5 text-[14px] font-semibold text-ink transition-transform duration-150 hover:-translate-y-px">{t.band.sales} <ArrowRight className="size-4" aria-hidden /></Link>
         </div>
       </div>
     </div>
@@ -301,8 +303,9 @@ function CompareSection({ t, locale }: { t: T; locale: Locale }) {
   const [open, setOpen] = useState(false);
   const id = useId();
   return (
-    <section className="text-center">
-      <h3 className="text-title">{t.compare.title}</h3>
+    <section className="text-center" aria-label={t.compare.title}>
+      {/* No heading above a single button (23 Nov 2026): it read as an empty section. The title shows with the table. */}
+      {open && <h3 className="text-title">{t.compare.title}</h3>}
       <button type="button" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)} className="focus-ring mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-surface px-5 text-[14px] font-semibold text-ink shadow-card transition-shadow duration-150 hover:shadow-card-hover">
         {open ? t.compare.hide : t.compare.show}<ChevronDown className={cn("size-4 transition-transform duration-200", open && "rotate-180")} aria-hidden />
       </button>

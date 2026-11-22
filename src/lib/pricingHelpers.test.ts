@@ -76,9 +76,10 @@ describe("pricing helpers match plans.ts for every combination", () => {
 describe("plan cards: what each plan adds and what the next one unlocks (26 Oct 2026)", () => {
   it("follows the feature table in plans.ts", () => {
     // Variations belong to ads and leave the cards while ads are off (the tests run without NEXT_PUBLIC_ADS_ENABLED).
-    expect(featureSteps("starter")).toEqual({ previous: null, added: [], locked: ["precision", "premium", "api", "removeText", "aiPresenter"], next: "Pro" });
-    expect(featureSteps("pro")).toEqual({ previous: "Starter", added: ["precision", "premium", "api", "removeText", "aiPresenter"], locked: ["enhance"], next: "Scale" });
-    expect(featureSteps("scale")).toEqual({ previous: "Pro", added: ["enhance"], locked: ["team"], next: "Business" });
+    // 23 Nov 2026: with ads off the presenter is one row (no "premium"), and a card shows two locked rows and counts the rest.
+    expect(featureSteps("starter")).toEqual({ previous: null, added: [], locked: ["precision", "api"], lockedMore: 2, next: "Pro" });
+    expect(featureSteps("pro")).toEqual({ previous: "Starter", added: ["precision", "api", "removeText", "aiPresenter"], locked: ["enhance"], lockedMore: 0, next: "Scale" });
+    expect(featureSteps("scale")).toEqual({ previous: "Pro", added: ["enhance"], locked: ["team"], lockedMore: 0, next: "Business" });
     expect(featureSteps("business")).toMatchObject({ previous: "Scale", added: ["team"], locked: [], next: null });
   });
 });

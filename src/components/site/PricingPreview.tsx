@@ -45,8 +45,10 @@ export function PricingPreview({ className, locale = "en" }: { className?: strin
         };
       }),
       everythingIn: steps.previous ? `${t.pricing.everythingIn.replace("{name}", steps.previous)}:` : null,
-      features: [...steps.added.map((f) => t.pricing.features[f]), ...(words?.bullets ?? plan.bullets), ...(paid ? [p.packs] : [])],
+      // Credit packs are said once, on the first paid plan; the others say "Everything in …, plus".
+      features: [...steps.added.map((f) => t.pricing.features[f]), ...(words?.bullets ?? plan.bullets), ...(paid && !steps.previous ? [p.packs] : [])],
       locked: steps.locked.map((f) => ({ text: t.pricing.features[f], plan: t.pricing.availableIn.replace("{plan}", steps.next ?? "") })),
+      lockedMore: steps.lockedMore > 0 ? t.pricing.moreIn.replace("{n}", String(steps.lockedMore)).replace("{plan}", steps.next ?? "") : null,
       recommended: Boolean(plan.recommended),
       cta: paid ? t.pricing.trial.cta.replace("{n}", String(TRIAL.days)) : t.common.startFree,
       paid,

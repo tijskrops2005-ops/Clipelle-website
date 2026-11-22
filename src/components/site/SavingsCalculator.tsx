@@ -4,8 +4,9 @@ import { config } from "@/lib/config";
 import { useMemo, useState } from "react";
 import { measured } from "@/content/measured";
 import { AD_LENGTHS, type AdLength, type PresenterEngine } from "@/lib/pricing";
-import { currencyFor, formatMoney, planPrice, planLabel, translateCredits } from "@/lib/plans";
-import { HANDS_ON_MINUTES, INDIVIDUAL_PAID, compareCredits, compareMonth } from "@/lib/pricingHelpers";
+import { currencyFor, formatMoney, planLabel, translateCredits } from "@/lib/plans";
+import { HANDS_ON_MINUTES, INDIVIDUAL_PAID, compareCredits, compareMonth, pricePerMonth, videoPrice, type Billing } from "@/lib/pricingHelpers";
+import { useBillingAnnual } from "@/lib/useBilling";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
@@ -21,6 +22,8 @@ import { cn } from "@/lib/utils";
  * worth, both their input), against HANDS_ON_MINUTES with Clipelle; when Clipelle costs more at
  * the chosen numbers the page says so plainly. No competitor names. 26 Oct 2026: a switch between
  * translations (the default, our main product: length, languages, Speed or Precision) and ads.
+ * 23 Nov 2026: the plan prices follow the same monthly/yearly switch as the plan cards (useBilling),
+ * and "per video" is one definition everywhere: credits of the video × the plan's price per credit.
  */
 
 /** Video lengths a translation can have on the slider (the upload limit is three minutes). */
@@ -40,21 +43,26 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
   const [translateMinutes, setTranslateMinutes] = useState(0);
   const [minutesNow, setMinutesNow] = useState(60);
   const [hourValue, setHourValue] = useState(25);
+  const [annual] = useBillingAnnual();
+  const billing: Billing = annual ? "annual" : "monthly";
 
   const r = useMemo(() => {
     const month =
       mode === "translate"
-        ? compareCredits({ costNow: currentCost, videos, creditsPerVideo: translateCredits({ seconds: trSeconds, quality, enhance: false }) * languages, minutesNow, hourValue, currency, needs: quality === "precision" ? ["precision"] : [] })
-        : compareMonth({ costNow: currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue, currency });
-    const ladder = INDIVIDUAL_PAID.map((p) => ({ plan: p, videos: Math.floor(p.creditsPerMonth / month.perAd), perVideo: (planPrice(p, currency).monthly / p.creditsPerMonth) * month.perAd }));
-    return { ...month, ladder };
-  }, [mode, trSeconds, languages, quality, currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue, currency]);
+        ? compareCredits({ costNow: currentCost, videos, creditsPerVideo: translateCredits({ seconds: trSeconds, quality, enhance: false }) * languages, minutesNow, hourValue, currency, needs: quality === "precision" ? ["precision"] : [], billing })
+        : compareMonth({ costNow: currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue, currency, billing });
+    const ladder = INDIVIDUAL_PAID.map((p) => ({ plan: p, price: pricePerMonth(p, currency, billing), videos: Math.floor(p.creditsPerMonth / month.perAd), perVideo: videoPrice(p, month.perAd, currency, billing) }));
+    // One video on the plan that fits: its credits × that plan's price per credit (the same definition as the ladder).
+    const fitPerVideo = month.fit.plan ? videoPrice(month.fit.plan, month.perAd, currency, billing) : 0;
+    return { ...month, ladder, fitPerVideo };
+  }, [mode, trSeconds, languages, quality, currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue, currency, billing]);
 
   const adTime = measured.adMinutes !== null ? c.adTimeMeasured.replace("{n}", String(measured.adMinutes)) : c.adTimeUnmeasured;
-  const trTime = measured.translationMinutes !== null ? c.trTimeMeasured.replace("{n}", String(measured.translationMinutes)).replace("{note}", measured.translationNote) : c.trTimeUnmeasured;
+  const num = (v: number) => v.toLocaleString(locale === "nl" ? "nl-NL" : "en-US");
+  const trTime = measured.translationMinutes !== null ? c.trTimeMeasured.replace("{n}", num(measured.translationMinutes)).replace("{note}", measured.translationNote) : c.trTimeUnmeasured;
   const cents = (v: number) => `${sym}${v.toLocaleString(locale === "nl" ? "nl-NL" : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const money = (v: number) => (v < 10 ? cents(v) : formatMoney(Math.round(v), currency, locale));
-  const hours = (h: number) => `${h < 10 ? Math.round(h * 10) / 10 : Math.round(h)} h`;
+  const hours = (h: number) => `${num(h < 10 ? Math.round(h * 10) / 10 : Math.round(h))} ${c.hourUnit}`;
   const fitName = r.fit.plan ? (r.fit.withPacks ? `${planLabel(r.fit.plan)} ${c.plus} ${r.fit.packs} ${r.fit.packs === 1 ? c.pack : c.packs}` : planLabel(r.fit.plan)) : c.aPlan;
   const translating = mode === "translate";
 
@@ -105,13 +113,16 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
       </div>
 
       <div className="rounded-card bg-surface p-6 shadow-card">
-        <p className="text-[17px] font-semibold text-ink">{c.sideBySide}</p>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <p className="text-[17px] font-semibold text-ink">{c.sideBySide}</p>
+          <p className="text-[12.5px] text-muted">{annual ? c.billedYearly : c.billedMonthly}</p>
+        </div>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-[15px]">
             <thead className="text-[13px] text-muted"><tr><th className="py-2 pr-3 font-medium"> </th><th className="py-2 pr-3 font-medium">{c.diy}</th><th className="py-2 font-medium">{c.withClipelle}</th></tr></thead>
             <tbody className="divide-y divide-divider">
-              <tr><td className="py-3 pr-3 font-medium text-ink">{c.perVideo}</td><td className="py-3 pr-3">{money(currentCost)}</td><td className="py-3">{r.perAd} {c.credits} · {c.about} {money(r.fit.perVideoUsd)} {c.on} {fitName}</td></tr>
-              <tr><td className="py-3 pr-3 font-medium text-ink">{c.moneyPerMonth}</td><td className="py-3 pr-3">{money(r.yourMoney)}</td><td className="py-3">{money(r.fit.monthlyUsd)} ({fitName})</td></tr>
+              <tr><td className="py-3 pr-3 font-medium text-ink">{c.perVideo}</td><td className="py-3 pr-3">{money(currentCost)}</td><td className="py-3">{r.perAd} {c.credits}{r.fit.plan ? <> ≈ {money(r.fitPerVideo)}</> : null}</td></tr>
+              <tr><td className="py-3 pr-3 font-medium text-ink">{c.moneyPerMonth}</td><td className="py-3 pr-3">{money(r.yourMoney)}</td><td className="py-3">{money(r.fit.monthlyUsd)} <span className="text-muted">· {fitName}</span></td></tr>
               <tr><td className="py-3 pr-3 font-medium text-ink">{c.yourTime}</td><td className="py-3 pr-3">{hours(r.yourHours)}</td><td className="py-3">{hours(r.ourHours)} <span className="text-muted">· {c.handsOn.replace("{n}", String(HANDS_ON_MINUTES))}</span></td></tr>
               <tr><td className="py-3 pr-3 font-semibold text-ink">{c.totalPerMonth}</td><td className="py-3 pr-3 font-semibold">{money(r.yourTotal)}</td><td className="py-3 font-semibold">{money(r.ourTotal)}</td></tr>
               <tr><td className="py-3 pr-3 font-medium text-ink">{c.timeToReady}</td><td className="py-3 pr-3">—</td><td className="py-3">{translating ? trTime : `${adTime}${translateMinutes > 0 ? `; ${trTime}` : ""}`}</td></tr>
@@ -138,14 +149,14 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
                   {l.plan.name}
                   {fits && <span className="whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white">{c.ladderFit}</span>}
                 </p>
-                <p className="mt-1 text-[13px] text-muted">{formatMoney(planPrice(l.plan, currency).monthly, currency, locale)} {c.ladderPerMonth}</p>
+                <p className="mt-1 text-[13px] text-muted">{formatMoney(l.price, currency, locale)} {c.ladderPerMonth}</p>
                 <p className="mt-2 text-[13px] text-ink">{c.ladderVideos.replace("{n}", String(l.videos))}</p>
                 <p className="text-[13px] text-muted">{c.ladderPerVideo.replace("{p}", money(l.perVideo))}</p>
               </li>
             );
           })}
         </ul>
-        <p className="mt-3 text-[12px] leading-relaxed text-muted">{c.ladderNote} {c.timeNote.replace("{n}", String(HANDS_ON_MINUTES))} {c.footnote.replace("{n}", r.credits.toLocaleString("en-US"))}</p>
+        <p className="mt-3 text-[12px] leading-relaxed text-muted">{c.ladderNote} {c.timeNote.replace("{n}", String(HANDS_ON_MINUTES))} {c.footnote.replace("{n}", num(r.credits))}</p>
       </div>
     </div>
   );

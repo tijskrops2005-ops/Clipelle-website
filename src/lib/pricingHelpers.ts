@@ -18,6 +18,24 @@ export type PlanFit = {
   withPacks: boolean;
 };
 
+/** How a plan is paid: per month, or per year (shown per month, as on the cards). */
+export type Billing = "monthly" | "annual";
+
+/** A plan's price per month for the chosen billing: the ONE place calculators and cards read it from. */
+export function pricePerMonth(p: Plan, currency: Currency = "usd", billing: Billing = "monthly") {
+  const x = planPrice(p, currency);
+  return billing === "annual" ? x.annualMonthly : x.monthly;
+}
+
+/**
+ * What one video costs on a plan (23 Nov 2026, the ONE definition on the site): the credits the video
+ * uses × what a credit costs on that plan. Not "plan price ÷ videos made": credits that are left stay,
+ * so they are not part of this video's price.
+ */
+export function videoPrice(p: Plan, creditsPerVideo: number, currency: Currency = "usd", billing: Billing = "monthly") {
+  return p.creditsPerMonth > 0 ? (pricePerMonth(p, currency, billing) / p.creditsPerMonth) * creditsPerVideo : 0;
+}
+
 export const INDIVIDUAL_PAID = PLANS.filter((p) => p.monthlyUsd > 0 && p.creditsPerMonth > 0);
 /** Every subscription a customer can buy: the three individual plans and the Business levels. */
 /** Every plan and level a calculator may suggest (levels since 26 Oct 2026). */
@@ -50,9 +68,9 @@ export function cheapestPacks(credits: number, currency: Currency = "usd"): { co
  * Pro, enhancement Scale). Packs are one-off, so they are no longer added to a monthly price; only
  * beyond the biggest plan the rest is shown as packs (Enterprise is the better talk then).
  */
-export function planFit(creditsPerMonth: number, videos: number, candidates: Plan[] = ALL_SUBSCRIPTIONS, currency: Currency = "usd", needs: PlanFeature[] = []): PlanFit {
+export function planFit(creditsPerMonth: number, videos: number, candidates: Plan[] = ALL_SUBSCRIPTIONS, currency: Currency = "usd", needs: PlanFeature[] = [], billing: Billing = "monthly"): PlanFit {
   const allowed = candidates.filter((p) => p.creditsPerMonth > 0 && needs.every((f) => hasFeature(p.key, f)));
-  const price = (p: Plan) => planPrice(p, currency).monthly;
+  const price = (p: Plan) => pricePerMonth(p, currency, billing);
   const covering = allowed.filter((p) => p.creditsPerMonth >= creditsPerMonth).sort((a, b) => price(a) - price(b));
   const fit = (plan: Plan, packs: { count: number; usd: number }): PlanFit => {
     const monthlyUsd = price(plan) + packs.usd;
@@ -73,9 +91,9 @@ export const HANDS_ON_MINUTES = 5;
  * (their minutes per video vs HANDS_ON_MINUTES, valued at their hourly rate). `savingUsd` is
  * negative when Clipelle costs more at these numbers; the page then says so.
  */
-export function compareMonth(input: { costNow: number; videos: number; seconds: AdLength; engine: PresenterEngine; translateMinutes: number; minutesNow: number; hourValue: number; currency?: Currency }) {
+export function compareMonth(input: { costNow: number; videos: number; seconds: AdLength; engine: PresenterEngine; translateMinutes: number; minutesNow: number; hourValue: number; currency?: Currency; billing?: Billing }) {
   const { perAd, total: credits } = creditsNeeded({ ads: input.videos, seconds: input.seconds, engine: input.engine, translateMinutes: input.translateMinutes });
-  const fit = planFit(credits, input.videos, ALL_SUBSCRIPTIONS, input.currency, input.engine === "avatar_iv" ? ["premium"] : []);
+  const fit = planFit(credits, input.videos, ALL_SUBSCRIPTIONS, input.currency, input.engine === "avatar_iv" ? ["premium"] : [], input.billing);
   const yourMoney = input.costNow * input.videos;
   const yourHours = (input.videos * input.minutesNow) / 60;
   const ourHours = (input.videos * HANDS_ON_MINUTES) / 60;
@@ -85,9 +103,9 @@ export function compareMonth(input: { costNow: number; videos: number; seconds: 
 }
 
 /** The same comparison for any video with a known credit price (26 Oct 2026: translations in the calculator). */
-export function compareCredits(input: { costNow: number; videos: number; creditsPerVideo: number; minutesNow: number; hourValue: number; currency?: Currency; needs?: PlanFeature[] }) {
+export function compareCredits(input: { costNow: number; videos: number; creditsPerVideo: number; minutesNow: number; hourValue: number; currency?: Currency; needs?: PlanFeature[]; billing?: Billing }) {
   const credits = input.creditsPerVideo * input.videos;
-  const fit = planFit(credits, input.videos, ALL_SUBSCRIPTIONS, input.currency, input.needs);
+  const fit = planFit(credits, input.videos, ALL_SUBSCRIPTIONS, input.currency, input.needs, input.billing);
   const yourMoney = input.costNow * input.videos;
   const yourHours = (input.videos * input.minutesNow) / 60;
   const ourHours = (input.videos * HANDS_ON_MINUTES) / 60;
@@ -143,7 +161,10 @@ const FAMILY_ORDER: { family: PlanFamily; key: string; name: string }[] = [
 const FEATURE_ORDER: PlanFeature[] = ["precision", "premium", "variations", "api", "removeText", "aiPresenter", "enhance", "team"];
 /** Variations belong to ads: they leave the plan cards while ads are off (27 Oct 2026). */
 const ADS_ON = process.env.NEXT_PUBLIC_ADS_ENABLED === "true";
-const featuresOf = (key: string) => FEATURE_ORDER.filter((f) => hasFeature(key, f) && (ADS_ON || f !== "variations"));
+/** "Premium presenter" is the ad presenter's quality: with ads off the presenter is one row ("AI presenter for translations"). */
+const featuresOf = (key: string) => FEATURE_ORDER.filter((f) => hasFeature(key, f) && (ADS_ON || (f !== "variations" && f !== "premium")));
+/** Locked rows shown on a card; the rest is counted ("+2 more in Pro"), so no card is a wall of locks. */
+export const LOCKED_SHOWN = 2;
 
 /**
  * For a plan card (26 Oct 2026): the plan below it ("Everything in Starter, plus"), the features this
@@ -152,7 +173,7 @@ const featuresOf = (key: string) => FEATURE_ORDER.filter((f) => hasFeature(key, 
  */
 export function featureSteps(family: PlanFamily) {
   const i = FAMILY_ORDER.findIndex((f) => f.family === family);
-  if (i < 0) return { previous: null, added: [] as PlanFeature[], locked: [] as PlanFeature[], next: null };
+  if (i < 0) return { previous: null, added: [] as PlanFeature[], locked: [] as PlanFeature[], lockedMore: 0, next: null };
   const own = featuresOf(FAMILY_ORDER[i].key);
   const prev = i > 0 ? FAMILY_ORDER[i - 1] : null;
   const next = i < FAMILY_ORDER.length - 1 ? FAMILY_ORDER[i + 1] : null;
@@ -160,7 +181,8 @@ export function featureSteps(family: PlanFamily) {
   return {
     previous: prev && prev.family !== "free" ? prev.name : null,
     added: own.filter((f) => !prevFeatures.includes(f)),
-    locked: next ? featuresOf(next.key).filter((f) => !own.includes(f)) : [],
+    locked: (next ? featuresOf(next.key).filter((f) => !own.includes(f)) : []).slice(0, LOCKED_SHOWN),
+    lockedMore: Math.max(0, (next ? featuresOf(next.key).filter((f) => !own.includes(f)) : []).length - LOCKED_SHOWN),
     next: next?.name ?? null,
   };
 }

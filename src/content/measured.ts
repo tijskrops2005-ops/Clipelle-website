@@ -4,9 +4,17 @@
  * Source of the values below: the steps' start and finish times in the database (23 Oct 2026 check).
  */
 export const measured = {
-  /** "Senvia", 19 October 2026: an 8-second video into one language, 271 s from first step to ready. */
-  translationMinutes: 4.5 as number | null,
-  translationNote: "one measured run, an 8-second video into one language, 19 October 2026",
+  /**
+   * THE time the site quotes for a translation (23 Nov 2026, one figure everywhere: stats band,
+   * calculator, FAQ, press, the chooser in the app): a video of about 30 seconds into one language,
+   * the median of the five finished runs on the live site (446 s, four of them with text removal;
+   * see `measuredTranslateRun` below and docs/speed.md), rounded to whole minutes. Before this the
+   * site quoted 4.5 minutes, which was one run of an 8-second video, also next to 30-second prices.
+   */
+  translationMinutes: 7 as number | null,
+  translationNote: "median of five runs on the live site, videos of about 30 seconds into one language, 2 November 2026",
+  /** The one short run, kept for the record: "Senvia", 19 October 2026, an 8-second video into one language, 271 s. */
+  shortTranslationMinutes: 4.5 as number | null,
   /** "Gracewear London", 19 October 2026: a 30-second Standard ad, 356 s from first step to ready. */
   adMinutes: 6 as number | null,
   adNote: "one measured run, a 30-second Standard ad, 19 October 2026",

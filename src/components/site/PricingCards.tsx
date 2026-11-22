@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useBillingAnnual } from "@/lib/useBilling";
 import { BillingSwitch } from "@/components/ui/BillingSwitch";
 import { CreditsSelect } from "@/components/ui/CreditsSelect";
 import { ArrowRight, Check, Gem, Lock, Rocket, Sparkles, Star, Zap, type LucideIcon } from "lucide-react";
@@ -25,6 +26,8 @@ export type PreviewCard = {
   everythingIn: string | null;
   features: string[];
   locked: { text: string; plan: string }[];
+  /** "+2 more in Pro": the locked rows beyond the two shown. */
+  lockedMore?: string | null;
   recommended: boolean;
   cta: string;
   paid: boolean;
@@ -36,7 +39,7 @@ const ICONS: Record<string, LucideIcon> = { free: Zap, starter: Sparkles, pro: R
 
 /** The interactive part of the homepage pricing block: the billing switch and the four cards. */
 export function PricingCards({ cards, labels, currency = "usd" }: { cards: PreviewCard[]; labels: Labels; currency?: Currency }) {
-  const [annual, setAnnual] = useState(true);
+  const [annual, setAnnual] = useBillingAnnual();
   const [picked, setPicked] = useState<Record<string, string>>({});
   const interval = annual ? "annual" : "monthly";
   return (
@@ -67,15 +70,17 @@ export function PricingCards({ cards, labels, currency = "usd" }: { cards: Previ
                 <p className="text-[19px] font-semibold text-ink">{c.name}</p>
               </div>
               <p className="mt-2 min-h-10 text-[13.5px] leading-snug text-muted">{c.tagline}</p>
-              <p className="mt-4 flex items-baseline gap-1">
-                <span className="text-[2.6rem] font-semibold leading-none tracking-[-0.035em] text-ink">{annual ? lv.annual : lv.monthly}</span>
+              <p className="mt-4 flex items-baseline gap-1 whitespace-nowrap">
+                {/* As on /pricing: the monthly price struck through next to the yearly one. */}
+                {annual && c.paid && lv.monthly !== lv.annual && <s className="mr-1 text-[18px] text-muted">{lv.monthly}</s>}
+                <span className={cn("font-semibold leading-none tracking-[-0.035em] text-ink", /[.,]\d\d$/.test(annual ? lv.annual : lv.monthly) ? "text-[1.75rem]" : "text-[2.6rem]")}>{annual ? lv.annual : lv.monthly}</span>
                 <span className="text-[15px] text-muted">{labels.perMonth}</span>
               </p>
               <p className="mt-2 truncate text-[12.5px] text-muted">{annual ? lv.annualNote : lv.monthlyNote}</p>
               <div className="mt-4">
                 <CreditsSelect label={labels.level} options={c.levels.map((l) => ({ key: l.key, label: l.label, hint: `${annual ? l.annual : l.monthly}${labels.perMonth}` }))} value={lv.key} onChange={(k) => setPicked((p) => ({ ...p, [c.key]: k }))} />
               </div>
-              <Button href={href} variant={c.recommended ? "accent" : "secondary"} className="mt-4 w-full">
+              <Button href={href} variant={c.recommended ? "accent" : c.paid ? "primary" : "secondary"} className="mt-4 w-full">
                 {c.cta}<ArrowRight className="size-4" aria-hidden />
               </Button>
               <div className="mt-4 flex-1 border-t border-divider pt-4">
@@ -87,6 +92,7 @@ export function PricingCards({ cards, labels, currency = "usd" }: { cards: Previ
                   {c.locked.map((f) => (
                     <li key={f.text} className="flex items-start gap-2.5 text-muted"><Lock className="mt-0.5 size-4 shrink-0" aria-hidden /><span>{f.text}<span className="block text-[12px] text-muted/80">{f.plan}</span></span></li>
                   ))}
+                  {c.lockedMore && <li className="pl-6.5 text-[12.5px] text-muted">{c.lockedMore}</li>}
                 </ul>
               </div>
             </div>

@@ -1,7 +1,8 @@
 import { BadgeCheck, Captions, CircleDollarSign, Infinity as InfinityIcon, ListChecks, LockKeyhole, RotateCcw, ShieldCheck, Smartphone, Sparkles, VideoOff, type LucideIcon } from "lucide-react";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
-import { PLANS, currencyFor, formatMoney, planPrice } from "@/lib/plans";
+import { PLANS, currencyFor, formatMoney, translateCredits } from "@/lib/plans";
+import { videoPrice } from "@/lib/pricingHelpers";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
 
@@ -21,7 +22,7 @@ export function WhyClipelle({ locale }: { locale: Locale }) {
   const currency = currencyFor(locale);
   // "From" one 30-second video (30 credits) on Pro, billed yearly (12 Nov 2026, Noah: a minute read as
   // "$2 per video"; a typical short video is 30 seconds). Real numbers from plans.ts; follows a price change.
-  const perVideo = Math.round((planPrice(pro, currency).annualMonthly / pro.creditsPerMonth) * 30 * 100) / 100;
+  const perVideo = Math.round(videoPrice(pro, translateCredits({ seconds: 30, quality: "speed", enhance: false }), currency, "annual") * 100) / 100;
   const price = formatMoney(perVideo, currency, locale);
 
   return (
