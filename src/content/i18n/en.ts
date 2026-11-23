@@ -49,7 +49,7 @@ export const en = {
       "/platform/url-to-video": { title: "Ads from a link", text: "Paste a product link; name, description and photos are filled in for you." },
       "/platform/translate": { title: "Translate and lip sync", text: "A video you own, in other languages, with the speaker's own voice and matching lips." },
       "/new": { title: "Dashboard", text: "Where your videos are made and kept." },
-      "/integrations/api": { title: "API", text: "Translate videos from your own code with an API key." },
+      "/integrations/api": { title: "Developer API", text: "Translate videos from your own code with an API key." },
       "/integrations/mcp": { title: "MCP", text: "Let an AI assistant make videos through the Model Context Protocol." },
       "/integrations/slack": { title: "Slack bot", text: "Start a video from a Slack message. Not built yet." },
       "/integrations/ad-launcher": { title: "Ad Launcher", text: "Send a finished ad to an ad account. Not built yet." },

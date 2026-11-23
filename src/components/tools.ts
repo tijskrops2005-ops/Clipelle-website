@@ -1,12 +1,10 @@
-import { ImageUp, Languages, Link2, Palette, Share2, ShoppingBag, UserRoundPen, type LucideIcon } from "lucide-react";
+import { ImageUp, Languages, Link2, Palette, UserRoundPen, type LucideIcon } from "lucide-react";
 import { config } from "@/lib/config";
 
 /**
  * The tools of the app, in one list for the sidebar, the tool search (⌘K) and the dashboard's quick
- * actions. "Soon" items are features announced elsewhere (Settings → Connections, the integration
- * pages); they link to where a visitor can leave a wish and never pretend to work. Since 27 Oct 2026
- * the two ad tools sit in that group while `config.features.ads` is off; their pages explain and offer
- * "Notify me".
+ * actions. "Soon" items never pretend to work: since 27 Oct 2026 the two ad tools sit in that group while
+ * `config.features.ads` is off; their pages explain and offer "Notify me".
  */
 export type Tool = { key: string; href: string; label: string; text: string; icon: LucideIcon; soon?: boolean };
 
@@ -22,16 +20,13 @@ const AD_TOOLS: Tool[] = [
 
 const BRAND_TOOL: Tool = { key: "brand", href: "/settings/brand", label: "Brand style", text: "Accent colour, caption look, font and logo, prefilled on every new ad.", icon: Palette };
 
-const PUBLISH_TOOLS: Tool[] = [
-  { key: "tiktok", href: "/settings/connections", label: "Publish to TikTok", text: "Post a finished video straight from the project page.", icon: Share2, soon: true },
-  { key: "reels", href: "/settings/connections", label: "Publish to Reels", text: "Post a finished video to Instagram Reels from the project page.", icon: Share2, soon: true },
-  { key: "shorts", href: "/settings/connections", label: "Publish to Shorts", text: "Post a finished video to YouTube Shorts from the project page.", icon: Share2, soon: true },
-  { key: "shopify", href: "/settings/connections", label: "Import from Shopify", text: "Pick a product and let its name, description and photos fill the form.", icon: ShoppingBag, soon: true },
-];
+// 24 Nov 2026 (Tijs): the "Publish to TikTok / Reels / Shorts" and "Import from Shopify" announcements
+// are gone from the app; only the two ad tools are announced while ads are off. The notify route still
+// accepts the old feature keys, so stored wishes stay valid.
 
 export const STUDIO_TOOLS: Tool[] = config.features.ads ? [...TRANSLATE_TOOLS, ...AD_TOOLS, BRAND_TOOL] : TRANSLATE_TOOLS;
 
-export const SOON_TOOLS: Tool[] = config.features.ads ? PUBLISH_TOOLS : [...AD_TOOLS.map((t) => ({ ...t, soon: true })), ...PUBLISH_TOOLS];
+export const SOON_TOOLS: Tool[] = config.features.ads ? [] : AD_TOOLS.map((t) => ({ ...t, soon: true }));
 
 /**
  * Which tool is the current page (28 Oct 2026): a tool whose link has a query (`?speaker=presenter`)

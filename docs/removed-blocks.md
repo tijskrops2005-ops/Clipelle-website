@@ -136,3 +136,11 @@ Off the screens, code kept unless said otherwise:
 - Legal: the eyebrow and the draft badge (`LegalPage.tsx`). Sign-in: the glow fields and the `.rise` entrance (`AuthShell.tsx`).
 - Forms (demo, careers, services): the card chrome, the help lines and the success icon circle. Resources hub: the `MenuCard` icons. Solutions: the problem block and the example badge; the FAQ is three questions. Coming-soon pages: the does/does-not lists. Docs: the eyebrow labels. Services: the fact cards are a plain list.
 - Every trailing arrow icon in these components.
+
+## 24 Nov 2026: route audit and coming-soon cleanup (`docs/route-audit.md`)
+
+- **Publish to TikTok / Reels / Shorts and Import from Shopify**: gone from the sidebar, the tool search and Settings (the `PUBLISH_TOOLS` list in `src/components/tools.ts` and `ConnectionsSettings.tsx` were deleted; `src/app/api/settings/notify` still accepts the old feature keys, so stored wishes stay valid). To announce one again, add a `Tool` with `soon: true` to `SOON_TOOLS` and a page that explains it.
+- **Settings → Connections**: menu entry and page removed; `/settings/connections` redirects to `/settings` (`next.config.ts`).
+- **MCP in the menus**: `/integrations/mcp` and `/docs/mcp` left the Platform and Resources menus and the footer (the server is not published as a package); the pages stay, the API docs link to them, the sitemap lists them. Put the two items back in `siteNav.ts` when `@clipelle/mcp` is on npm.
+- **Partner program** moved from Resources to Company. **/customers** left the sitemap until the first story (the page itself is an honest empty state).
+- New redirects for bare section URLs: `/mcp`, `/docs`, `/solutions`, `/integrations`, `/company`, `/creations`, `GET /api` (and the `/nl` twins).

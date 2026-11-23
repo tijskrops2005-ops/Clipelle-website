@@ -46,7 +46,7 @@ export const nl: SiteDict = {
       "/platform/url-to-video": { title: "Advertenties uit een link", text: "Plak een productlink; naam, omschrijving en foto's worden voor je ingevuld." },
       "/platform/translate": { title: "Vertalen en lipsync", text: "Een video van jezelf in andere talen, met de eigen stem van de spreker en kloppende lippen." },
       "/new": { title: "Dashboard", text: "Waar je video's worden gemaakt en bewaard." },
-      "/integrations/api": { title: "API", text: "Vertaal video's vanuit je eigen code met een API-sleutel." },
+      "/integrations/api": { title: "API voor ontwikkelaars", text: "Vertaal video's vanuit je eigen code met een API-sleutel." },
       "/integrations/mcp": { title: "MCP", text: "Laat een AI-assistent video's maken via het Model Context Protocol." },
       "/integrations/slack": { title: "Slack-bot", text: "Start een video vanuit een Slack-bericht. Nog niet gebouwd." },
       "/integrations/ad-launcher": { title: "Ad Launcher", text: "Stuur een afgeronde advertentie naar een advertentieaccount. Nog niet gebouwd." },

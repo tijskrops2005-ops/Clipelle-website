@@ -43,7 +43,7 @@ export function ResourcesPage({ locale }: { locale: Locale }) {
     <div className="space-y-24 sm:space-y-32">
       <div>
         <PageHero title={r.title} text={locale !== "en" ? t.common.articlesEnglish : undefined} />
-        <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((c) => (
             <li key={c.href}>
               <Link href={c.href} className="focus-ring block h-full rounded-card bg-surface p-5 shadow-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">

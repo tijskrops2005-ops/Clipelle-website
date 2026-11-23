@@ -13,7 +13,6 @@ const items: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/settings/usage", label: "Usage", icon: Gauge },
   { href: "/settings/billing", label: "Billing", icon: CreditCard },
   { href: "/settings/api", label: "API keys", icon: KeyRound },
-  { href: "/settings/connections", label: "Connections", icon: Link2 },
 ];
 
 /** Side menu of the settings pages; a pill row on phones. */

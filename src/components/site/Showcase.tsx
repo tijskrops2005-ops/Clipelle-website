@@ -21,11 +21,12 @@ import { cn } from "@/lib/utils";
 
 const SLOTS = [
   { r: -9, y: 56, width: "w-[136px]", show: "hidden xl:block" },
-  { r: -6, y: 34, width: "w-[150px]", show: "hidden md:block" },
+  // Five tiles from lg (24 Nov 2026: at 768 px the five did not fit and the page scrolled sideways), seven from xl.
+  { r: -6, y: 34, width: "w-[150px]", show: "hidden lg:block" },
   { r: -3, y: 14, width: "w-[104px] sm:w-[160px] md:w-[170px]", show: "" },
   { r: 0, y: 0, width: "w-[132px] sm:w-[190px] md:w-[200px]", show: "" },
   { r: 3, y: 14, width: "w-[104px] sm:w-[160px] md:w-[170px]", show: "" },
-  { r: 6, y: 34, width: "w-[150px]", show: "hidden md:block" },
+  { r: 6, y: 34, width: "w-[150px]", show: "hidden lg:block" },
   { r: 9, y: 56, width: "w-[136px]", show: "hidden xl:block" },
 ] as const;
 
@@ -64,7 +65,7 @@ export function HeroShowcase({ sampleLabel, originalLabel, className }: { sample
     content[order[n]] = t;
   });
   return (
-    <div className={cn("relative pb-14 max-sm:overflow-x-clip", className)}>
+    <div className={cn("relative pb-14 overflow-x-clip", className)}>
       <div className="stage-glow pointer-events-none absolute inset-x-[10%] inset-y-[-10%]" aria-hidden />
       <ul className="fan relative" aria-label="Examples">
         {SLOTS.map((slot, i) => {

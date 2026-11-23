@@ -14,13 +14,11 @@ import {
   ListChecks,
   Mail,
   Newspaper,
-  Plug,
   ShieldCheck,
   ShoppingBag,
   Smartphone,
   Store,
   Users,
-  Workflow,
   type LucideIcon,
 } from "lucide-react";
 import { config } from "@/lib/config";
@@ -55,8 +53,9 @@ export const menus: Menu[] = [
       {
         title: "Integrations",
         items: [
-          { href: "/integrations/api", title: "API", text: "Create translations from your own code with an API key.", icon: Code2 },
-          { href: "/integrations/mcp", title: "MCP", text: "Let an AI assistant make videos through the Model Context Protocol.", icon: Workflow },
+          // 24 Nov 2026: the API is real (keys, endpoints, webhooks) and stays in the menu; the MCP server is not
+          // published yet, so /integrations/mcp and /docs/mcp are reachable from the API docs, not from the menus.
+          { href: "/integrations/api", title: "Developer API", text: "Translate videos from your own code with an API key.", icon: Code2 },
         ],
       },
     ],
@@ -111,9 +110,7 @@ export const menus: Menu[] = [
         title: "More",
         items: [
           { href: "/resources/changelog", title: "Changelog", text: "What changed, in plain words.", icon: ListChecks },
-          { href: "/partners", title: "Partner program", text: "Recommend Clipelle and earn a share of subscriptions.", icon: Handshake },
           { href: "/docs/api", title: "API docs", text: "Endpoints, examples, error codes and limits.", icon: Code2 },
-          { href: "/docs/mcp", title: "MCP docs", text: "Install the MCP server and connect an assistant.", icon: Plug },
         ],
       },
     ],
@@ -129,6 +126,7 @@ export const menus: Menu[] = [
           { href: "/contact", title: "Contact", text: "Questions, feedback, press.", icon: Mail },
           { href: "/press", title: "Press", text: "Brand information and press enquiries.", icon: Newspaper },
           { href: "/trust", title: "Trust", text: "Rights, data, files, costs: what we do and do not do.", icon: ShieldCheck },
+          { href: "/partners", title: "Partner program", text: "Recommend Clipelle and earn a share of subscriptions.", icon: Handshake },
         ],
       },
     ],
