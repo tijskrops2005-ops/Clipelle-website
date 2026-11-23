@@ -121,7 +121,7 @@ const allSolutions: Solution[] = [
     slug: "creators-and-localization",
     title: "One video, many languages, your own voice",
     eyebrow: "Creators and localization",
-    intro: "A creator's video works in one language; the audience speaks ten. Clipelle translates a video you own into other languages with your own voice and matching lips, and burns in captions for each.",
+    intro: "Your video in every language your audience speaks, in your own voice, with captions per language.",
     problem: { title: "The problem", points: ["Re-recording in every language is impossible; subtitles alone lose the connection.", "Dubbing with another voice changes who is speaking.", "Each version needs its own captions and a check of names and numbers."] },
     helps: [
       { title: "Your voice, other words", text: "The translation keeps the speaker's own voice and matches the lips to the new language, in Speed or Precision quality." },
@@ -158,7 +158,7 @@ const translationSolutions: Solution[] = [
     slug: "ecommerce-brands",
     title: "One product video, in the language of every market you sell in",
     eyebrow: "E-commerce brands",
-    intro: "A shop that sells in several countries needs the same product video in several languages. Clipelle translates a video you own with the speaker's own voice and matching lips, checks every line, and burns in captions per language.",
+    intro: "The same product video in every language you sell in, with the speaker\'s own voice and checked captions.",
     problem: { title: "The problem", points: ["A product video is made once, in one language; every other market gets subtitles at best.", "Re-recording per language costs a shoot per market.", "Dubbing with another voice changes who is speaking, and names and numbers slip."] },
     helps: [
       { title: "Your voice, every market", text: "The translation keeps the speaker's own voice and matches the lips to the new language, in Speed or Precision quality." },
@@ -188,7 +188,7 @@ const translationSolutions: Solution[] = [
     slug: "agencies",
     title: "Many clients, one process, every video in several languages",
     eyebrow: "Agencies",
-    intro: "An agency runs the same localization steps for every client. Clipelle keeps that process fixed, shows the credits per language before a video starts, and delivers one checked version per language in the client's workspace.",
+    intro: "One fixed process for every client video, the credits per language before it starts, one checked version per language.",
     problem: { title: "The problem", points: ["Every client video goes through translation, voice, lip sync and captions, by hand, in several tools.", "Names, numbers and brand terms need a check per language.", "Clients want to know the cost before the work, not after."] },
     helps: [
       { title: "A fixed process", text: "Upload, translate and check, voice and lip sync, captions: always in that order, with the same check on every line." },

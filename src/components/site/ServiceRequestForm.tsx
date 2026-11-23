@@ -54,7 +54,7 @@ export function ServiceRequestForm({ locale = "en" }: { locale?: Locale }) {
         <Field id="s-name" label={f.name}><Input id="s-name" value={v.name} onChange={set("name")} required maxLength={120} /></Field>
         <Field id="s-email" label={f.email}><Input id="s-email" type="email" value={v.email} onChange={set("email")} required maxLength={200} /></Field>
         <Field id="s-company" label={f.company} optional optionalLabel={optional}><Input id="s-company" value={v.company} onChange={set("company")} maxLength={200} /></Field>
-        <Field id="s-sells" label={f.sells} optional optionalLabel={optional} hint={f.sellsHint}><Input id="s-sells" value={v.sells} onChange={set("sells")} maxLength={300} /></Field>
+        <Field id="s-sells" label={f.sells} optional optionalLabel={optional}><Input id="s-sells" value={v.sells} onChange={set("sells")} maxLength={300} placeholder={f.sellsHint} /></Field>
         <Field id="s-ads" label={f.ads} optional optionalLabel={optional}>
           <select id="s-ads" value={v.adsPerMonth} onChange={set("adsPerMonth")} className="focus-ring h-11 w-full rounded-control border border-border bg-surface px-3 text-[15px] text-ink">
             <option value="">{f.choose}</option>
@@ -65,7 +65,7 @@ export function ServiceRequestForm({ locale = "en" }: { locale?: Locale }) {
           </select>
         </Field>
       </div>
-      <Field id="s-message" label={f.message} optional optionalLabel={optional} hint={f.messageHint}><Textarea id="s-message" value={v.message} onChange={set("message")} maxLength={4000} rows={4} /></Field>
+      <Field id="s-message" label={f.message} optional optionalLabel={optional}><Textarea id="s-message" value={v.message} onChange={set("message")} maxLength={4000} rows={4} placeholder={f.messageHint} /></Field>
       <Honeypot value={v.website} onChange={(website) => setV((p) => ({ ...p, website }))} />
       {error && <p role="alert" className="text-[13px] text-danger">{error}</p>}
       <Button type="submit" variant="primary" size="lg" className="w-full sm:w-auto" disabled={state === "busy"}>

@@ -1,6 +1,5 @@
-import { ArrowRight } from "lucide-react";
 import { config } from "@/lib/config";
-import { IntegrationPage } from "@/components/site/IntegrationPage";
+import { IntegrationPage, WaitlistBlock } from "@/components/site/IntegrationPage";
 import { WaitlistForm } from "@/components/site/WaitlistForm";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
@@ -22,8 +21,8 @@ export function PlatformUrlPage({ locale }: { locale: Locale }) {
   const L = (x: string) => localizePath(x, locale);
   if (!config.features.ads) {
     return (
-      <IntegrationPage locale={locale} soon eyebrow={p.eyebrow} title={p.title} intro={p.intro} stepsTitle={p.stepsTitle} steps={p.steps} does={p.doesItems} doesNot={p.doesNotItems} primary={{ href: L("/platform/translate"), label: p.soon.translateInstead }}>
-        <div className="mt-8 rounded-card bg-surface p-6 shadow-card"><p className="text-[15px] font-semibold text-ink">{t.integrations.waitlistTitle}</p><p className="mb-4 mt-1 text-[13px] text-muted">{t.integrations.waitlistText}</p><WaitlistForm feature="url-to-video" label={p.soon.label} locale={locale} /></div>
+      <IntegrationPage locale={locale} soon title={p.title} intro={p.intro} stepsTitle={p.stepsTitle} steps={p.steps} does={p.doesItems} doesNot={p.doesNotItems} primary={{ href: L("/platform/translate"), label: p.soon.translateInstead }}>
+        <WaitlistBlock text={t.integrations.waitlistText}><WaitlistForm feature="url-to-video" label={p.soon.label} locale={locale} /></WaitlistBlock>
       </IntegrationPage>
     );
   }
@@ -37,7 +36,7 @@ export function PlatformUrlPage({ locale }: { locale: Locale }) {
           <h1 className="mt-5 text-[clamp(2.25rem,5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">{p.title}</h1>
           <p className="mt-6 max-w-xl text-subtitle text-muted">{p.intro}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button href="/signup" variant="accent" size="lg">{t.common.createFirstAd} <ArrowRight className="size-5" aria-hidden /></Button>
+            <Button href="/signup" variant="accent" size="lg">{t.common.createFirstAd}</Button>
             <Button href={L("/platform/ads")} variant="secondary" size="lg">{p.howAdIsMade}</Button>
           </div>
           <p className="mt-3 text-[13px] text-muted">{t.common.noCard}</p>

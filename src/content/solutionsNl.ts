@@ -92,7 +92,7 @@ const solutionsNlWithAds: Record<string, Solution> = {
   },
   "creators-and-localization": {
     slug: "creators-and-localization", eyebrow: "Creators en lokalisatie", title: "Eén video, veel talen, je eigen stem",
-    intro: "De video van een creator werkt in één taal; het publiek spreekt er tien. Clipelle vertaalt een video van jezelf naar andere talen met je eigen stem en kloppende lippen, en zet er voor elke taal ondertitels in.",
+    intro: "Je video in elke taal die je publiek spreekt, met je eigen stem en ondertitels per taal.",
     problem: { title: "Het probleem", points: ["Opnieuw opnemen in elke taal is onmogelijk; met alleen ondertitels raak je de band met de kijker kwijt.", "Nasynchroniseren met een andere stem verandert wie er spreekt.", "Elke versie heeft eigen ondertitels nodig en een controle van namen en getallen."] },
     helps: [
       { title: "Jouw stem, andere woorden", text: "De vertaling behoudt de eigen stem van de spreker en laat de lippen de nieuwe taal volgen, in de kwaliteit 'Speed' (snel) of 'Precision' (precies)." },
@@ -124,7 +124,7 @@ const solutionsNlWithAds: Record<string, Solution> = {
 const solutionsNlTranslation: Record<string, Solution> = {
   "ecommerce-brands": {
     slug: "ecommerce-brands", eyebrow: "E-commercemerken", title: "Eén productvideo, in de taal van elke markt waarin je verkoopt",
-    intro: "Een winkel die in meerdere landen verkoopt, heeft dezelfde productvideo in meerdere talen nodig. Clipelle vertaalt een video van jezelf met de eigen stem van de spreker en kloppende lippen, controleert elke regel en zet er per taal ondertitels in.",
+    intro: "Dezelfde productvideo in elke taal waarin je verkoopt, met de eigen stem van de spreker en gecontroleerde ondertitels.",
     problem: { title: "Het probleem", points: ["Een productvideo wordt één keer gemaakt, in één taal; elke andere markt krijgt hooguit ondertitels.", "Opnieuw opnemen per taal kost een shoot per markt.", "Nasynchroniseren met een andere stem verandert wie er spreekt, en namen en getallen gaan mis."] },
     helps: [
       { title: "Jouw stem, elke markt", text: "De vertaling behoudt de eigen stem van de spreker en laat de lippen de nieuwe taal volgen, in de kwaliteit 'Speed' (snel) of 'Precision' (precies)." },
@@ -152,7 +152,7 @@ const solutionsNlTranslation: Record<string, Solution> = {
   },
   agencies: {
     slug: "agencies", eyebrow: "Bureaus", title: "Veel klanten, één proces, elke video in meerdere talen",
-    intro: "Een bureau doorloopt dezelfde lokalisatiestappen voor elke klant. Clipelle houdt dat proces vast, toont de credits per taal voordat een video start, en levert per taal één gecontroleerde versie in de workspace van de klant.",
+    intro: "Eén vast proces voor elke klantvideo, de credits per taal vooraf, één gecontroleerde versie per taal.",
     problem: { title: "Het probleem", points: ["Elke klantvideo gaat door vertaling, stem, lipsync en ondertitels, met de hand, in meerdere tools.", "Namen, getallen en merktermen vragen een controle per taal.", "Klanten willen de kosten vooraf weten, niet achteraf."] },
     helps: [
       { title: "Een vast proces", text: "Uploaden, vertalen en controleren, stem en lipsync, ondertitels: altijd in die volgorde, met dezelfde controle op elke regel." },

@@ -53,8 +53,7 @@ export default function McpDocsPage() {
   return (
     <DocsLayout current="/docs/mcp" sections={sections}>
       <header>
-        <p className="label-mono text-muted">MCP</p>
-        <h1 className="mt-3 text-display">{config.productName} for AI assistants</h1>
+        <h1 className="text-display">MCP server</h1>
         <p className="mt-4 max-w-2xl">A small server that speaks the Model Context Protocol and calls the <Link href="/docs/api" className="underline">{config.productName} API</Link> with your key. Any assistant that supports MCP over stdio can then translate videos and read projects for you, in a conversation.</p>
       </header>
 

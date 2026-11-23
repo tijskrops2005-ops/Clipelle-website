@@ -45,30 +45,30 @@ export function DemoRequestForm({ variant, locale = "en" }: { variant: Variant; 
 
   if (state === "done") {
     return (
-      <div className="mx-auto max-w-xl rounded-card bg-surface p-10 text-center shadow-card">
-        <span className="mx-auto grid size-12 place-items-center rounded-full bg-success/10 text-success"><CheckCircle2 className="size-6" aria-hidden /></span>
-        <h2 className="mt-5 text-title">{f.thanks}</h2>
+      <div className="mx-auto max-w-xl text-center">
+        <CheckCircle2 className="mx-auto size-7 text-success" aria-hidden />
+        <h2 className="mt-4 text-title">{f.thanks}</h2>
         <p className="mt-2 text-[15px] text-muted">{variant === "demo" ? f.thanksDemo : f.thanksText}</p>
       </div>
     );
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} noValidate className="mx-auto max-w-xl space-y-5 rounded-card bg-surface p-6 shadow-card sm:p-8">
+    <form ref={formRef} onSubmit={onSubmit} noValidate className="mx-auto max-w-xl space-y-5">
       <Honeypot />
       <div className="grid gap-5 sm:grid-cols-2">
         <Field id="name" label={f.name}>
-          <Input id="name" name="name" required autoComplete="name" />
+          <Input id="name" name="name" required autoComplete="name" placeholder={f.namePlaceholder} />
         </Field>
         <Field id="email" label={f.email}>
-          <Input id="email" name="email" type="email" required autoComplete="email" />
+          <Input id="email" name="email" type="email" required autoComplete="email" placeholder={f.emailPlaceholder} />
         </Field>
       </div>
       <Field id="company" label={f.company} optional optionalLabel={f.optional}>
         <Input id="company" name="company" autoComplete="organization" />
       </Field>
       {variant === "demo" && (
-        <Field id="goal" label={goal.goal} hint={goal.goalHint}>
+        <Field id="goal" label={goal.goal}>
           <Input id="goal" name="goal" placeholder={goal.goalPlaceholder} />
         </Field>
       )}
