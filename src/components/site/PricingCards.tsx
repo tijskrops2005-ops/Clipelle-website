@@ -81,7 +81,7 @@ export function PricingCards({ cards, labels, currency = "usd" }: { cards: Previ
                 <CreditsSelect label={labels.level} options={c.levels.map((l) => ({ key: l.key, label: l.label, hint: `${annual ? l.annual : l.monthly}${labels.perMonth}` }))} value={lv.key} onChange={(k) => setPicked((p) => ({ ...p, [c.key]: k }))} />
               </div>
               <Button href={href} variant={c.recommended ? "accent" : c.paid ? "primary" : "secondary"} className="mt-4 w-full">
-                {c.cta}<ArrowRight className="size-4" aria-hidden />
+                {c.cta}
               </Button>
               <div className="mt-4 flex-1 border-t border-divider pt-4">
                 {c.everythingIn && <p className="mb-2 text-[13px] font-semibold text-ink">{c.everythingIn}</p>}

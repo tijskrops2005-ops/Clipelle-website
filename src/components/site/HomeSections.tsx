@@ -109,13 +109,13 @@ export function LatestPosts({ locale = "en", categories, seed }: { locale?: Loca
   if (posts.length === 0) return null;
   return (
     <Reveal as="section">
-      <SectionIntro eyebrow={t.home.blogEyebrow} title={t.home.blogTitle} text={t.home.blogText} />
+      <SectionIntro title={t.home.blogTitle} />
       {locale !== "en" && <p className="mt-3 text-center text-[13px] text-muted">{t.common.articlesEnglish}</p>}
       <div className="mt-10 grid gap-5 md:grid-cols-3">
         {posts.map((p) => <BlogCard key={p.slug} post={p} />)}
       </div>
       <div className="mt-8 text-center">
-        <Button href="/blog" variant="secondary">{t.home.allArticles} <ArrowRight className="size-4" aria-hidden /></Button>
+        <Button href="/blog" variant="secondary">{t.home.allArticles}</Button>
       </div>
     </Reveal>
   );
@@ -126,14 +126,11 @@ export function MidCta({ locale = "en" }: { locale?: Locale }) {
   return (
     <Reveal as="section" className="relative overflow-hidden rounded-card bg-ink px-6 py-12 text-center text-surface sm:py-16">
       {/* The brand gold lives on ink only (brand style guide): two soft gold fields and the light logo. */}
-      <div className="glow-field gold left-[-6%] top-[-30%] h-72 w-72" aria-hidden />
-      <div className="glow-field gold-deep right-[-6%] bottom-[-40%] h-80 w-80" aria-hidden />
-      <div className="bg-dots absolute inset-0 opacity-[0.1] [background-image:radial-gradient(rgba(255,255,255,0.5)_1px,transparent_1px)]" aria-hidden />
       <div className="relative mx-auto mb-8 flex justify-center"><LogoFull tone="light" className="h-12 sm:h-14" /></div>
       <h2 className="relative text-[clamp(1.75rem,3.5vw,2.5rem)] font-semibold tracking-[-0.02em] text-champagne">{t.midCta.title}</h2>
       <p className="mx-auto mt-3 max-w-md text-[15px] text-surface/70">{t.midCta.text}</p>
       <div className="mt-7 flex justify-center">
-        <Button href="/signup" variant="accent" size="lg">{t.common.translateFirst} <ArrowRight className="size-5" aria-hidden /></Button>
+        <Button href="/signup" variant="accent" size="lg">{t.common.translateFirst}</Button>
       </div>
       <p className="mt-3 text-[13px] text-surface/60">{t.common.noCard}</p>
       <p className="mt-6 text-[13px] text-surface/60"><Link href={localizePath("/examples", locale)} className="underline decoration-surface/30 underline-offset-4 hover:decoration-surface">{t.midCta.examplesFirst}</Link></p>

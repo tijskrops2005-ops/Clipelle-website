@@ -156,7 +156,7 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
             );
           })}
         </ul>
-        <p className="mt-3 text-[12px] leading-relaxed text-muted">{c.ladderNote} {c.timeNote.replace("{n}", String(HANDS_ON_MINUTES))} {c.footnote.replace("{n}", num(r.credits))}</p>
+        <p className="mt-3 text-[12px] leading-relaxed text-muted">{c.footnote.replace("{n}", num(r.credits))}</p>
       </div>
     </div>
   );

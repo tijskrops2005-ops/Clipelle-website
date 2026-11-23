@@ -1,4 +1,3 @@
-import { ArrowRight } from "lucide-react";
 import { firstExample, resolvedExamples } from "@/lib/examples";
 import { config } from "@/lib/config";
 import { dict } from "@/content/i18n";
@@ -28,14 +27,12 @@ export function PlatformTranslatePage({ locale }: { locale: Locale }) {
     <div className="space-y-24 sm:space-y-32">
       <section className="grid items-center gap-12 pt-16 sm:pt-24 lg:grid-cols-[1.15fr_1fr]">
         <div>
-          <p className="label-mono text-muted">{p.eyebrow}</p>
-          <h1 className="mt-5 text-[clamp(2.25rem,5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">{p.title}</h1>
+          <h1 className=" text-[clamp(2.25rem,5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">{p.title}</h1>
           <p className="mt-6 max-w-xl text-subtitle text-muted">{p.intro}</p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button href="/signup" variant="accent" size="lg">{t.common.startFree} <ArrowRight className="size-5" aria-hidden /></Button>
-            <Button href={L("/pricing")} variant="secondary" size="lg">{t.common.seePricing}</Button>
+          <div className="mt-8">
+            <Button href="/signup" variant="accent" size="lg">{t.common.startFree}</Button>
           </div>
-          <p className="mt-3 text-[13px] text-muted">{t.common.noCard}</p>
+          <p className="mt-3 text-[13px] text-muted">{t.common.noCardLong}</p>
         </div>
         <HeroStage variant="translate" label={t.common.illustration} plain>
           {sample ? <PhoneFrame src={sample.src} poster={sample.posterSrc} caption={t.common.sampleMadeWith} placeholder={t.common.sampleComingSoon} /> : <div className="float-soft"><TranslateSketch label={t.common.illustration} className="w-[260px]" /></div>}
@@ -49,7 +46,7 @@ export function PlatformTranslatePage({ locale }: { locale: Locale }) {
         <SectionIntro eyebrow={p.rightsEyebrow} title={p.rightsTitle} text={p.rightsText} />
         {/* The sentence itself as what it is: the box you tick in the app (which is English), with its meaning on /nl. */}
         <figure className="mx-auto mt-8 max-w-2xl rounded-card bg-surface p-6 text-center shadow-card">
-          <figcaption className="label-mono text-muted">{p.rightsBox}</figcaption>
+          <figcaption className="text-[13px] font-medium text-muted">{p.rightsBox}</figcaption>
           <blockquote className="mt-3 text-[17px] font-medium leading-snug text-ink">“{config.rightsConfirmationText}”</blockquote>
           {p.rightsGloss && <p className="mt-3 text-[14px] leading-relaxed text-muted">{p.rightsGloss}</p>}
         </figure>
@@ -60,7 +57,7 @@ export function PlatformTranslatePage({ locale }: { locale: Locale }) {
           <div className="rounded-card bg-surface p-6 shadow-card"><p className="text-[17px] font-semibold">Speed · {unit(perSecond.speed)}</p><p className="mt-2 text-[15px] leading-relaxed text-muted">{p.speedText}</p></div>
           <div className="rounded-card bg-surface p-6 shadow-card"><p className="text-[17px] font-semibold">Precision · {unit(perSecond.precision)}</p><p className="mt-2 text-[15px] leading-relaxed text-muted">{p.precisionText}</p></div>
         </div>
-        <ul className="mx-auto mt-8 grid max-w-3xl gap-3 text-[15px] text-ink/85 sm:grid-cols-2">{p.features.map((x) => <li key={x} className="flex items-center gap-2"><span className="size-1.5 rounded-full bg-accent" aria-hidden />{x}</li>)}</ul>
+        <ul className="mx-auto mt-8 grid max-w-3xl gap-x-10 gap-y-2.5 text-[15px] text-ink sm:grid-cols-2">{p.features.map((x) => <li key={x}>{x}</li>)}</ul>
       </Reveal>
       <RealOutput data={realTranslation} kind="translation" locale={locale} />
       <LatestPosts locale={locale} categories={["translation"]} />

@@ -33,7 +33,7 @@ export function RealOutput({ data, kind, locale = "en" }: { data: RealOutputData
         <div className="grid gap-5 sm:grid-cols-2">
           {hasInput && (
             <div className="panel p-4">
-              <p className="label-mono text-muted">{kind === "ad" ? r.photoIn : r.sourceVideo}</p>
+              <p className="text-[13px] font-medium text-muted">{kind === "ad" ? r.photoIn : r.sourceVideo}</p>
               {photo ? (
                 // eslint-disable-next-line @next/next/no-img-element -- our own product photo from a real run
                 <img src={photo} alt="Product photo used for this ad" className="mt-3 aspect-square w-full rounded-tile object-cover" />
@@ -44,19 +44,19 @@ export function RealOutput({ data, kind, locale = "en" }: { data: RealOutputData
             </div>
           )}
           <div className={hasInput ? "panel p-4" : "panel p-4 sm:col-span-2"}>
-            <p className="label-mono text-muted">{r.script}</p>
+            <p className="text-[13px] font-medium text-muted">{r.script}</p>
             {data.script ? <p className="mt-3 text-[15px] leading-relaxed text-ink">“{data.script}”</p> : <p className="mt-3">{missing}</p>}
           </div>
           {/* A number shows only when it was recorded (28 Oct 2026): no "coming soon" box. */}
           {cost && (
             <div className="panel p-4">
-              <p className="label-mono text-muted">{r.cost}</p>
+              <p className="text-[13px] font-medium text-muted">{r.cost}</p>
               <p className="mt-3 text-[22px] font-semibold text-ink">{cost}</p>
             </div>
           )}
           {time && (
             <div className="panel p-4">
-              <p className="label-mono text-muted">{r.time}</p>
+              <p className="text-[13px] font-medium text-muted">{r.time}</p>
               <p className="mt-3 text-[22px] font-semibold text-ink">{time}</p>
             </div>
           )}

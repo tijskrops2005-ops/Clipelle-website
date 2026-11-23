@@ -25,7 +25,7 @@ export function TranslateDemo({ locale }: { locale: Locale }) {
   const picked = ["tdemo-l1", "tdemo-l2", "tdemo-l3"];
   return (
     <Reveal as="section">
-      <SectionIntro eyebrow={d.eyebrow} title={d.title} text={d.text} />
+      <SectionIntro title={d.title} text={d.text || undefined} />
       <div className="demo relative mx-auto mt-12 max-w-5xl overflow-hidden rounded-card border border-border bg-surface shadow-card-hover" aria-label={d.label} role="img">
         {/* browser chrome */}
         <div className="flex items-center gap-2 border-b border-divider bg-bg px-4 py-3" aria-hidden>

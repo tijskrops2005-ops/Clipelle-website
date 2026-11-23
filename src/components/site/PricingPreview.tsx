@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PLANS, TRIAL, currencyFor, formatMoney, planLevels, planPrice } from "@/lib/plans";
 import { ALL_SUBSCRIPTIONS, annualTotals, featureSteps } from "@/lib/pricingHelpers";
@@ -63,7 +62,7 @@ export function PricingPreview({ className, locale = "en" }: { className?: strin
         labels={{ monthly: p.monthly, annual: p.annual, save: p.save.replace("{n}", String(savePct)), billingLabel: p.billingLabel, perMonth: p.perMonth, recommendation: p.recommendation, level: t.pricing.level, terms: t.pricing.trial.terms.replace("{n}", String(TRIAL.days)).replace("{zero}", money(0)) }}
       />
       <p className="mt-8 text-center text-[15px] text-muted">
-        <Link href={L("/pricing")} className="focus-ring inline-flex items-center gap-1 rounded-control underline decoration-border underline-offset-4 hover:decoration-ink">{p.compare} <ArrowRight className="size-4" aria-hidden /></Link>
+        <Link href={L("/pricing")} className="focus-ring inline-flex items-center gap-1 rounded-control underline decoration-border underline-offset-4 hover:decoration-ink">{p.compare}</Link>
       </p>
     </div>
   );
