@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Download, Plus, Scissors, ShieldCheck, SpellCheck } from "lucide-react";
+import { ArrowLeft, Download, Plus, Scissors, ShieldCheck, SpellCheck } from "lucide-react";
 import { config } from "@/lib/config";
 import type { LanguageCode, TranslateProject } from "@/lib/types";
 import { languageLabel, languageOf } from "@/lib/languages";
@@ -22,7 +22,7 @@ import { groupWarnings, plainQa } from "@/lib/plainQa";
 import { downloadHref, useProjects } from "@/lib/data/client";
 import { editVersionsOf, sourceAdOf, sourceTranslationOf } from "@/lib/versions";
 import { ProjectActions } from "@/components/ProjectActions";
-import { formatTook } from "@/components/pipeline/PipelineStep";
+import { readyIn } from "@/components/pipeline/PipelineStep";
 
 /** Project page for the translate workflow: pipeline, automatic quality check, one result per language. */
 export function TranslateProjectView({ project }: { project: TranslateProject }) {
@@ -39,11 +39,11 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
         eyebrow={
           <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link
-              href="/dashboard"
+              href="/projects"
               className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink"
             >
               <ArrowLeft className="size-4" aria-hidden />
-              Dashboard
+              Projects
             </Link>
             {sourceAd && (
               <Link href={`/projects/${sourceAd.id}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
@@ -64,13 +64,13 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
           </span>
         }
         title={project.name}
-        badge={<StatusBadge status={project.status} className="translate-y-1" />}
+        badge={<StatusBadge status={project.status} />}
         description={`Translation into ${project.targetLanguages.map((l) => languageOf(l).label).join(", ")} · created ${formatDate(project.createdAt)}${project.archivedAt ? " · archived" : ""}${project.tags?.length ? ` · ${project.tags.join(", ")}` : ""}`}
         actions={
           project.status === "completed" ? (
             <div className="flex flex-wrap gap-2">
               {/* The edit screen (2 Nov 2026): trim, cut, captions, text and logo on the finished video. */}
-              <Button href={`/projects/${project.id}/edit`} variant="primary">
+              <Button href={`/projects/${project.id}/edit`} variant="secondary">
                 <Scissors className="size-4" aria-hidden />
                 Edit
               </Button>
@@ -156,7 +156,7 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
  * difference is one look away; one row of facts with the credits used; a download per language.
  */
 function ResultSection({ project, sourceLanguage }: { project: TranslateProject; sourceLanguage: LanguageCode }) {
-  const took = projectDurationMs(project);
+  const ready = readyIn(projectDurationMs(project));
   const count = project.translations.length;
   const single = count === 1;
   return (
@@ -178,9 +178,6 @@ function ResultSection({ project, sourceLanguage }: { project: TranslateProject;
                   </figcaption>
                   <VideoPlayer src={project.sourceVideoUrl} simulated={config.demoMode} muted />
                 </figure>
-                <span className="hidden size-9 shrink-0 place-items-center self-center rounded-full bg-ink text-surface shadow-card sm:grid" aria-hidden>
-                  <ArrowRight className="size-4" />
-                </span>
               </>
             )}
             {project.translations.map((t) => (
@@ -199,7 +196,7 @@ function ResultSection({ project, sourceLanguage }: { project: TranslateProject;
                 )}
                 {t.error && <p role="alert" className="mt-2 rounded-[10px] bg-danger/10 p-2.5 text-[12.5px] leading-relaxed text-ink">{t.error}</p>}
                 {t.videoUrl && (
-                  <Button href={downloadHref(project.id, t.videoUrl, t.language)} prefetch={false} variant={single ? "accent" : "primary"} size={single ? "lg" : "md"} download className="mt-3 w-full">
+                  <Button href={downloadHref(project.id, t.videoUrl, t.language)} prefetch={false} variant="accent" size={single ? "lg" : "md"} download className="mt-3 w-full">
                     <Download className="size-4" aria-hidden />
                     Download {languageOf(t.language).tag}
                   </Button>
@@ -207,14 +204,16 @@ function ResultSection({ project, sourceLanguage }: { project: TranslateProject;
               </figure>
             ))}
           </div>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-divider pt-6 text-sm sm:grid-cols-5">
+          {/* The same facts in the same order as a finished ad (23 Nov 2026); "Ready in" is left out when the time cannot be right. */}
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-divider pt-6 text-sm sm:grid-cols-3 lg:grid-cols-6">
             <Fact label="Length" value={formatDuration(project.sourceSeconds)} />
             <Fact label="Format" value={`${project.format === "original" ? "Original size" : "9:16"}${project.captionsOn === false ? "" : " · captions"}`} />
+            <Fact label={count === 1 ? "Language" : "Languages"} value={project.targetLanguages.map((l) => languageOf(l).label).join(", ")} />
             <Fact label="Quality" value={project.quality === "precision" ? "Precision" : "Speed"} />
-            <Fact label="Ready in" value={took !== undefined ? formatTook(took) : "—"} />
+            {ready && <Fact label="Ready in" value={ready} />}
             <Fact label="Credits used" value={`${config.demoMode ? projectCredits(project) : chargedCredits(project)}${config.demoMode ? " · demo" : ""}`} />
           </dl>
-          {config.demoMode && <p className="text-[13px] leading-relaxed text-muted">Stand-in clips. The real translated videos arrive here once the services are connected.</p>}
+          {config.demoMode && <p className="text-[13px] leading-relaxed text-muted">Demo mode: sample clips, nothing was charged.</p>}
         </CardContent>
       </Card>
     </section>
@@ -276,7 +275,7 @@ function StatusCard({ project }: { project: TranslateProject }) {
           {p.languages.map((l) => (
             <li key={l.code} className="flex items-center justify-between gap-3 text-sm">
               <span className="text-ink">{languageOf(l.code).label}</span>
-              <span className="text-[13px] text-muted">{l.state === "ready" ? "Ready" : l.state === "failed" ? "Stopped" : `${l.percent}%`}</span>
+              <span className="text-[13px] text-muted">{l.state === "ready" ? "Ready" : l.state === "failed" ? "Failed" : `${l.percent}%`}</span>
             </li>
           ))}
         </ul>

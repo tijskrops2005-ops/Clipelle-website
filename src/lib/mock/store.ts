@@ -26,9 +26,33 @@ function emit() {
   for (const listener of listeners) listener();
 }
 
+/**
+ * A seed project that is "being made" has its running step start one minute ago in this browser
+ * (23 Nov 2026), so the demo runner finishes it shortly after the page opens. Its
+ * fixed October timestamps made the demo say "Running over an hour" and, once the demo runner
+ * finished it, "Ready in 35577 min". Only in the browser, after hydration, so the server HTML and
+ * the first client render still read the same seed data.
+ */
+function refreshRunning(p: Project, now: number): Project {
+  if (p.status !== "processing") return p;
+  const times = Object.values(p.steps)
+    .flatMap((s) => [s.startedAt, s.finishedAt])
+    .filter((t): t is string => Boolean(t))
+    .map((t) => Date.parse(t));
+  if (times.length === 0) return p;
+  const shift = now - 60_000 - Math.max(...times);
+  if (shift <= 0) return p;
+  const move = (iso?: string) => (iso ? new Date(Date.parse(iso) + shift).toISOString() : iso);
+  const steps = Object.fromEntries(Object.entries(p.steps).map(([k, s]) => [k, { ...s, startedAt: move(s.startedAt), finishedAt: move(s.finishedAt) }]));
+  return { ...p, steps, createdAt: move(p.createdAt) } as Project;
+}
+
 function loadFromStorage() {
   if (hydratedFromStorage || typeof window === "undefined") return;
   hydratedFromStorage = true;
+  const now = Date.now();
+  const seeds = mockProjects.map((p) => refreshRunning(p, now));
+  projects = sortNewestFirst(seeds);
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -36,7 +60,7 @@ function loadFromStorage() {
       // Seed projects always stay; stored ones are the user's demo creations.
       const seedIds = new Set(mockProjects.map((p) => p.id));
       const extra = stored.filter((p) => !seedIds.has(p.id));
-      projects = sortNewestFirst([...mockProjects, ...extra]);
+      projects = sortNewestFirst([...seeds, ...extra]);
     }
   } catch {
     // Corrupt or blocked storage: keep the seed data.

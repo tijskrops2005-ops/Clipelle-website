@@ -44,10 +44,10 @@ const TRANSLATE_DURATION_MS: Record<TranslateStepKey, number> = {
 const DEMO_PHASE_MS = { captions: 3_000, done: 6_000, perLanguage: 2_000 };
 
 const AD_FAIL_MESSAGE =
-  "The presenter video could not be generated. The script was rejected by the voice service. Check the script for unsupported characters and try again.";
+  "The presenter video could not be made this time. Nothing was charged for it. Retry starts this step again; the finished steps are kept.";
 
 const TRANSLATE_FAIL_MESSAGE =
-  "The translation service could not process this video. The audio track was too quiet to transcribe. Check that the speaker is clearly audible and try again.";
+  "This video could not be translated: the speaker was too quiet to write out. Nothing was charged. Retry, or start again with a version with clearer sound.";
 
 function wantsFailure(project: Project) {
   const haystack = `${project.name} ${project.workflow === "ad" ? project.productName : ""}`.toLowerCase();

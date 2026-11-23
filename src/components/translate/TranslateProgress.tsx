@@ -110,7 +110,7 @@ function SourcePoster({ project, percent, failed }: { project: TranslateProject;
       )}
       {!failed && <span className="poster-sheen pointer-events-none absolute inset-0" aria-hidden />}
       <span className="absolute inset-x-2 bottom-2 flex items-center justify-between rounded-full bg-surface/90 px-2 py-1 text-[11px] font-semibold text-ink shadow-card">
-        <span>{failed ? "Stopped" : `${percent}%`}</span>
+        <span>{failed ? "Failed" : `${percent}%`}</span>
         {!failed && <Loader2 className="size-3 animate-spin text-accent motion-reduce:animate-none" aria-hidden />}
       </span>
     </div>
