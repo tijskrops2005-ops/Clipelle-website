@@ -13,7 +13,7 @@ export default function ProjectsPage() {
         title="Projects"
         description="Every video you have started, newest first."
         actions={
-          <Button href="/new" variant="accent" size="lg">
+          <Button href="/new" variant="primary" size="lg">
             <Plus className="size-5" aria-hidden />
             Create new video
           </Button>

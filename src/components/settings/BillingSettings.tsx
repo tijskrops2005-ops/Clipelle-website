@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { Coins, CreditCard, Gift, Loader2, Zap } from "lucide-react";
 import { config } from "@/lib/config";
+import { DEMO_BALANCE, DEMO_PLAN_KEY } from "@/lib/mock/account";
 import { CUSTOM_CREDITS, PLANS, planByKey, planLabel, customCreditsPrice, formatMoney, validCustomCredits, type Currency, type Plan } from "@/lib/plans";
 import { planChange, type Interval, type PlanChange } from "@/lib/planChange";
 import { PlanConfirmModal, StartNowModal, type StartNowQuote } from "@/components/settings/BillingModals";
@@ -40,7 +41,7 @@ const readDutchSite = () => /(?:^|;\s*)clipelle_lang=nl(?:;|$)/.test(document.co
 /** Plan, credits, free ad, checkout and the customer portal. Without payment keys a disabled state. */
 export function BillingSettings() {
   const params = useSearchParams();
-  const demoStatus: Status = { enabled: false, planKey: "free", subscriptionStatus: null, currentPeriodEnd: null, balance: 120, freeAd: { granted: true }, freeAdsPerDay: 10, emailVerified: true };
+  const demoStatus: Status = { enabled: false, planKey: DEMO_PLAN_KEY, subscriptionStatus: null, currentPeriodEnd: null, balance: DEMO_BALANCE, freeAd: { granted: true }, freeAdsPerDay: 10, emailVerified: true };
   const [status, setStatus] = useState<Status | null>(() => (config.demoMode ? demoStatus : null));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -192,7 +193,7 @@ export function BillingSettings() {
           <div className="panel p-4">
             <p className="label-mono text-muted">Free credits</p>
             <p className="mt-1 flex items-center gap-2 text-[17px] font-semibold text-ink"><Gift className="size-4 text-accent" aria-hidden />{status?.freeAd.granted ? "Granted" : status?.freeAd.reason === "unverified" ? "After verification" : status?.freeAd.reason === "cap" ? "Daily cap reached" : "…"}</p>
-            <p className="text-[13px] text-muted">{status?.freeAd.reason === "cap" ? "All free credits for today are given out; you are on the list for tomorrow." : "30 credits per verified e-mail address: half a minute of translation."}</p>
+            <p className="text-[13px] text-muted">{status?.freeAd.reason === "cap" ? "All free credits for today are given out; you are on the list for tomorrow." : "30 credits per verified e-mail address, to use within 30 days."}</p>
           </div>
         </div>
         {enabled && status?.subscriptionStatus === "trialing" && (
@@ -223,15 +224,16 @@ export function BillingSettings() {
       </SectionCard>
 
       {!enabled && (
-        <SectionCard title="Payments" description={config.demoMode ? "Demo mode: payments are simulated away. In database mode with Stripe test keys this card shows checkout." : "Payments are not configured on this server yet. Set STRIPE_SECRET_KEY (test) and STRIPE_WEBHOOK_SECRET in .env.local and run the setup script; until then plans and packs are read-only."}>
-          <Badge tone="warning">Not configured</Badge>
+        <SectionCard title="Payments" description={config.demoMode ? "Demo mode: payments are switched off." : "Payments are not available right now, so plans and credits are read-only. Please try again later."}>
+          <Badge tone="warning">{config.demoMode ? "Switched off" : "Not available"}</Badge>
         </SectionCard>
       )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SegmentedControl label="Billing section" options={BILLING_TABS} value={tab} onChange={setTab} />
+        {/* The VAT line is said once, in the card below (23 Nov 2026); here only the currency. */}
         <div className="flex items-center gap-3">
-          <span className="text-sm text-muted">Prices excluding VAT, in</span>
+          <span className="text-sm text-muted">Currency</span>
           <SegmentedControl label="Currency" size="sm" options={[{ key: "usd", label: "USD $" }, { key: "eur", label: "EUR €" }]} value={currency} onChange={(k) => setCurrency(k as Currency)} />
         </div>
       </div>
@@ -260,13 +262,13 @@ export function BillingSettings() {
         value={status?.autoReload ?? null}
         currency={currency}
         available={enabled && Boolean(status) && status?.planKey !== "free"}
-        unavailableReason={!enabled ? "Payments are not configured on this server yet." : "Auto-reload comes with a paid plan. Choose a plan first."}
+        unavailableReason={!enabled ? (config.demoMode ? "Demo mode: payments are switched off." : "Payments are not available right now.") : "Auto-reload comes with a paid plan. Choose a plan first."}
         onSaved={(next) => setStatus((s) => (s ? { ...s, autoReload: next } : s))}
       />
       )}
 
       {tab === "plans" && (
-      <SectionCard id="plans" title="Plans" description="Monthly credits, cancel any time from the portal.">
+      <SectionCard id="plans" title="Plans" description="Monthly credits. Cancel any time.">
         <PricingTable compact onChoose={enabled ? choose : undefined} busyKey={busy} currency={currency} trial={Boolean(status?.trialAvailable)} initialPlan={params.get("plan")} currentPlan={status?.planKey ?? null} />
         <p className="mt-4 text-[13px] text-muted">What each plan includes: <a href="/pricing" target="_blank" rel="noopener" className="focus-ring rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">compare the plans</a>.</p>
       </SectionCard>

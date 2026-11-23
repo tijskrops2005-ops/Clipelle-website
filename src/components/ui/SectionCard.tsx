@@ -25,7 +25,8 @@ type SectionCardProps = {
 export function SectionCard({ eyebrow, number, title, description, aside, children, id, className, contentClassName }: SectionCardProps) {
   return (
     <Card id={id} className={cn("scroll-mt-24", className)}>
-      <header className="flex items-start justify-between gap-4 px-5 pt-5 sm:px-7 sm:pt-7">
+      {/* Phones (23 Nov 2026): a badge beside the title squeezed the description into a 130 px column; it now sits under it. */}
+      <header className="flex flex-col gap-3 px-5 pt-5 sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:px-7 sm:pt-7">
         <div className="flex items-start gap-4">
           {number !== undefined && (
             <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-ink text-[15px] font-semibold text-surface" aria-hidden>
@@ -38,7 +39,7 @@ export function SectionCard({ eyebrow, number, title, description, aside, childr
             {description && <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{description}</p>}
           </div>
         </div>
-        {aside && <div className="shrink-0">{aside}</div>}
+        {aside && <div className="shrink-0 self-start">{aside}</div>}
       </header>
       <div className={cn("space-y-6 px-5 pb-5 pt-6 sm:px-7 sm:pb-7", contentClassName)}>{children}</div>
     </Card>

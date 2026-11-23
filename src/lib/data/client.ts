@@ -474,7 +474,7 @@ export async function updateProjectMeta(projectId: string, patch: { name?: strin
 
 /** Downloads the finished videos of the selected projects as one ZIP (database mode; demo has no real files). */
 export async function downloadZip(ids: string[]) {
-  if (config.demoMode) throw new Error("Demo mode has no real video files to zip. In database mode this downloads the finished videos in one file.");
+  if (config.demoMode) throw new Error("Demo mode: downloading several videos at once is switched off.");
   const r = await fetch("/api/projects/zip", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids }) });
   if (!r.ok) {
     const body = await r.json().catch(() => ({}));
@@ -497,7 +497,7 @@ export async function listShareLinks(projectId: string): Promise<ShareLinkInfo[]
   return (await api<{ links: ShareLinkInfo[] }>(`/api/projects/${projectId}/share`)).links;
 }
 export async function createShareLink(projectId: string, input: { expiresInDays: number; allowDownload: boolean; language?: string }): Promise<{ id: string; url: string; expiresAt: string }> {
-  if (config.demoMode) throw new Error("Viewing links need the database: a demo project has no real video to show.");
+  if (config.demoMode) throw new Error("Demo mode: viewing links are switched off.");
   return api(`/api/projects/${projectId}/share`, { method: "POST", body: JSON.stringify(input) });
 }
 export async function revokeShareLink(projectId: string, linkId: string) {

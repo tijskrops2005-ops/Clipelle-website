@@ -142,7 +142,8 @@ export function ProjectsGrid() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-4">
           <span id="filter-status-label" className="label-mono w-16 shrink-0 text-muted">Status</span>
-          <SegmentedControl label="Filter by status" options={filters.map((f) => ({ ...f, count: statusCounts[f.key] }))} value={filter} onChange={setFilter} />
+          {/* One row that scrolls on phones (23 Nov 2026): the last chip used to wrap inside the grey track. */}
+          <SegmentedControl label="Filter by status" scroll options={filters.map((f) => ({ ...f, count: statusCounts[f.key] }))} value={filter} onChange={setFilter} />
         </div>
         {/* The type row only matters while there are ads to tell apart (27 Oct 2026: ads are coming soon). */}
         {kindCounts.ad > 0 && (

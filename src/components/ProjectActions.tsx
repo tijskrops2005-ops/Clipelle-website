@@ -11,6 +11,7 @@ import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Field } from "@/components/ui/Field";
+import { Select } from "@/components/ui/Select";
 
 /**
  * Organise one project from its page: rename, tags, archive, duplicate (a new version of an ad)
@@ -170,19 +171,19 @@ function SharePanel({ project, onClose }: { project: Project; onClose: () => voi
         <button type="button" onClick={onClose} aria-label="Close" className="focus-ring rounded-full p-1 text-muted hover:text-ink"><X className="size-4" aria-hidden /></button>
       </div>
       {config.demoMode ? (
-        <p className="text-[13px] text-muted">Demo mode: links need a real finished video, so this is available in database mode only.</p>
+        <p className="text-[13px] text-muted">Demo mode: viewing links are switched off.</p>
       ) : (
         <div className="flex flex-wrap items-end gap-3">
           <Field id="shareDays" label="Valid for">
-            <select id="shareDays" value={days} onChange={(e) => setDays(Number(e.target.value))} className="h-10 rounded-control border border-border bg-surface px-3 text-sm">
+            <Select id="shareDays" size="sm" className="min-w-32" value={days} onChange={(e) => setDays(Number(e.target.value))}>
               {[1, 7, 14, 30, 90].map((d) => <option key={d} value={d}>{d} {d === 1 ? "day" : "days"}</option>)}
-            </select>
+            </Select>
           </Field>
           {project.workflow === "translate" && (
             <Field id="shareLanguage" label="Language version">
-              <select id="shareLanguage" value={language} onChange={(e) => setLanguage(e.target.value)} className="h-10 rounded-control border border-border bg-surface px-3 text-sm">
+              <Select id="shareLanguage" size="sm" className="min-w-36" value={language} onChange={(e) => setLanguage(e.target.value)}>
                 {project.targetLanguages.map((l) => <option key={l} value={l}>{languageOf(l).label}</option>)}
-              </select>
+              </Select>
             </Field>
           )}
           <label className="flex h-10 items-center gap-2 text-sm text-ink"><input type="checkbox" checked={allowDownload} onChange={(e) => setAllowDownload(e.target.checked)} className="size-4" />Allow download</label>

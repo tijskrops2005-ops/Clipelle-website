@@ -4,10 +4,10 @@ import { useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { controlClass, controlStateClass } from "@/components/ui/Field";
 import { cn } from "@/lib/utils";
 import { customCreditsPrice, formatMoney, type Currency } from "@/lib/plans";
 import { AUTO_RELOAD_ADD, AUTO_RELOAD_BELOW, AUTO_RELOAD_MONTHLY_MAX, DEFAULT_AUTO_RELOAD, describeAutoReload, type AutoReload, type AutoReloadSettings } from "@/lib/autoReload";
+import { Select } from "@/components/ui/Select";
 
 /**
  * Auto-reload in Billing (26 Oct 2026): when the balance drops below a number, buy a set amount of
@@ -43,11 +43,11 @@ export function AutoReloadSettings({ value, currency, available, unavailableReas
   const select = (label: string, val: number, options: readonly number[], format: (n: number) => string, onChange: (n: number) => void) => (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
-      <select value={val} onChange={(e) => onChange(Number(e.target.value))} disabled={!available || busy} className={cn(controlClass, controlStateClass(false), "h-11")}>
+      <Select value={val} onChange={(e) => onChange(Number(e.target.value))} disabled={!available || busy}>
         {options.map((o) => (
           <option key={o} value={o}>{format(o)}</option>
         ))}
-      </select>
+      </Select>
     </label>
   );
 

@@ -139,7 +139,7 @@ export function VoicePicker({
                   </span>
                 </span>
                 {selected && (
-                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-accent text-white">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-ink text-surface">
                     <Check className="size-3.5" strokeWidth={3} aria-hidden />
                   </span>
                 )}

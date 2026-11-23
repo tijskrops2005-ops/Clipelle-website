@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
 
 const connections = [
-  { key: "publish_tiktok", title: "Publish to TikTok", text: "Post a finished ad straight from the project page.", icon: Share2 },
-  { key: "publish_instagram", title: "Publish to Instagram Reels", text: "Post a finished ad straight from the project page.", icon: Share2 },
-  { key: "publish_youtube", title: "Publish to YouTube Shorts", text: "Post a finished ad straight from the project page.", icon: Share2 },
+  { key: "publish_tiktok", title: "Publish to TikTok", text: "Post a finished video straight from the project page.", icon: Share2 },
+  { key: "publish_instagram", title: "Publish to Instagram Reels", text: "Post a finished video straight from the project page.", icon: Share2 },
+  { key: "publish_youtube", title: "Publish to YouTube Shorts", text: "Post a finished video straight from the project page.", icon: Share2 },
   { key: "shopify_import", title: "Import from Shopify", text: "Pick a product and let its name, description and photos fill the form.", icon: ShoppingBag },
 ];
 

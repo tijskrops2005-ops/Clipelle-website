@@ -34,7 +34,7 @@ export function DangerZone() {
     }
   }
   return (
-    <SectionCard title="Danger zone" description="Your data, and the way to close the account." className="border border-danger/40">
+    <SectionCard title="Danger zone" description="Your data, and the way to close the account.">
       <div className="flex flex-col gap-3 rounded-panel border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[15px] font-semibold text-ink">Download your data</p>

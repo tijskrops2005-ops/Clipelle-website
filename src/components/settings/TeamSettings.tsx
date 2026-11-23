@@ -89,8 +89,8 @@ export function TeamSettings() {
 
   if (config.demoMode) {
     return (
-      <SectionCard title="Team" description="Workspaces and members need accounts and the database." aside={<DemoBadge>Demo mode</DemoBadge>}>
-        <p className="text-[15px] text-muted">Demo mode runs as one demo user without a database. In database mode this page shows your workspaces, members, invitations and per-member usage.</p>
+      <SectionCard title="Team" description="One credit pool for your team, with members and invitations." aside={<DemoBadge>Demo mode</DemoBadge>}>
+        <p className="text-[15px] text-muted">Demo mode: workspaces and members are switched off.</p>
       </SectionCard>
     );
   }

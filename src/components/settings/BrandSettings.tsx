@@ -8,14 +8,20 @@ import { ColorPicker } from "@/components/ui/ColorPicker";
 import { LOW_CONTRAST } from "@/components/translate/CaptionStylePicker";
 import { getBrandDefaults, removeBrandLogo, saveBrandDefaults, uploadBrandLogo } from "@/lib/data/settingsClient";
 import { detectLogoKind, LOGO_ACCEPT, logoProblem, MAX_LOGO_BYTES } from "@/lib/brandLogo";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import { Field, controlClass, controlStateClass } from "@/components/ui/Field";
+import { Field } from "@/components/ui/Field";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { DemoBadge } from "@/components/DemoModeBadge";
+import { Select } from "@/components/ui/Select";
+import { config } from "@/lib/config";
 
-/** Brand defaults: the ad form starts with these values; the form still sends exactly what you pick there. */
+/**
+ * Brand defaults: the caption colours new translations start with and the logo for the edit screen;
+ * with ads on also the accent, caption look and font the ad form starts with (23 Nov 2026: the
+ * ad-only fields follow `config.features.ads`). A form still sends exactly what is picked there.
+ */
 export function BrandSettings() {
+  const ads = config.features.ads;
   const [accent, setAccent] = useState(DEFAULT_ACCENT);
   // Caption colours for new translations (2 Nov 2026): the spoken word, the words, the background (null = none).
   const [capColor, setCapColor] = useState<string>(DEFAULT_CAPTION_LOOK.color);
@@ -48,7 +54,7 @@ export function BrandSettings() {
     try {
       const { logoUrl: url } = await uploadBrandLogo(file);
       setLogoUrl(url);
-      setLogoMsg({ tone: "ok", text: "Logo saved. New ads start with it, top right; you can still remove it per video." });
+      setLogoMsg({ tone: "ok", text: ads ? "Logo saved. New ads start with it, and you can add it to any video on the edit screen." : "Logo saved. Add it to a finished video on the edit screen." });
     } catch (err) {
       setLogoMsg({ tone: "error", text: err instanceof Error ? err.message : "Could not upload the logo." });
     } finally {
@@ -62,7 +68,7 @@ export function BrandSettings() {
     try {
       await removeBrandLogo();
       setLogoUrl(undefined);
-      setLogoMsg({ tone: "ok", text: "Logo removed. New ads start without one." });
+      setLogoMsg({ tone: "ok", text: "Logo removed." });
     } catch (err) {
       setLogoMsg({ tone: "error", text: err instanceof Error ? err.message : "Could not remove the logo." });
     } finally {
@@ -105,7 +111,7 @@ export function BrandSettings() {
     };
     try {
       await saveBrandDefaults({ accent: effective !== DEFAULT_ACCENT ? effective : undefined, captionStyle: captionStyle !== DEFAULT_CAPTION_STYLE ? captionStyle : undefined, font: font !== DEFAULT_FONT ? font : undefined, captionColors: Object.keys(captionColors).length ? captionColors : undefined });
-      setMsg({ tone: "ok", text: "Brand defaults saved. New ads start with these values." });
+      setMsg({ tone: "ok", text: ads ? "Saved. New videos start with these values." : "Saved. New translations start with these colours." });
     } catch (err) {
       setMsg({ tone: "error", text: err instanceof Error ? err.message : "Could not save." });
     } finally {
@@ -115,7 +121,7 @@ export function BrandSettings() {
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Logo" description="Shown small, top right, for the whole ad. PNG with a transparent background works best; JPG and plain SVG also work. Up to 2 MB." aside={<DemoBadge>Stored in this browser</DemoBadge>}>
+      <SectionCard title="Logo" description="Shown small, top right, for the whole video. PNG with a transparent background works best; JPG and plain SVG also work." aside={<DemoBadge>Stored in this browser</DemoBadge>}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="grid size-28 shrink-0 place-items-center overflow-hidden rounded-[14px] bg-surface-muted" aria-live="polite">
             {logoUrl ? (
@@ -139,7 +145,7 @@ export function BrandSettings() {
                 </Button>
               )}
             </div>
-            <p className="text-[13px] text-muted">The ad form starts with this logo in its brand style; what you leave there is what is sent. Limit {MAX_LOGO_BYTES / (1024 * 1024)} MB.</p>
+            <p className="text-[13px] text-muted">{ads ? "New ads start with this logo; on the edit screen you add it to any finished video." : "On the edit screen you add it to a finished video."} Up to {MAX_LOGO_BYTES / (1024 * 1024)} MB.</p>
             {logoMsg && (
               <p role={logoMsg.tone === "error" ? "alert" : "status"} className={logoMsg.tone === "error" ? "text-[13px] text-danger" : "text-[13px] text-success"}>{logoMsg.text}</p>
             )}
@@ -147,42 +153,49 @@ export function BrandSettings() {
         </div>
       </SectionCard>
 
-      <SectionCard title="Brand defaults" description="Starting values for the brand style on the ad form. You can still change them per video." aside={<DemoBadge>Stored in this browser</DemoBadge>}>
+      <SectionCard title={ads ? "Brand defaults" : "Caption colours"} description={ads ? "What a new video starts with. You can still change it per video." : "What a new translation starts with. You can still change them per video."} aside={<DemoBadge>Stored in this browser</DemoBadge>}>
       <form onSubmit={onSubmit} className="space-y-6" aria-busy={!loaded}>
-        <ColorPicker id="brandAccent" label="Accent colour" value={accent} onChange={(hex) => hex && setAccent(hex)} note={contrastRatio(accent, "#FFFFFF") < 3 ? "Low contrast" : undefined} />
         <div className="space-y-3">
-          <div>
-            <p className="text-sm font-medium text-ink">Caption colours for translations</p>
-            <p className="text-[13px] text-muted">New translations start with these; you can still change them per video.</p>
-          </div>
+          {ads && (
+            <div>
+              <p className="text-sm font-medium text-ink">Caption colours for translations</p>
+              <p className="text-[13px] text-muted">New translations start with these; you can still change them per video.</p>
+            </div>
+          )}
           <div className="flex flex-wrap gap-x-6 gap-y-4">
             <ColorPicker id="brandCaptionHighlight" label="Highlight colour" value={capColor} onChange={(hex) => hex && setCapColor(hex)} />
             <ColorPicker id="brandCaptionText" label="Text colour" value={capText} onChange={(hex) => hex && setCapText(hex)} note={capBar && contrastRatio(capText, capBar) < LOW_CONTRAST ? "Low contrast" : undefined} />
             <ColorPicker id="brandCaptionBackground" label="Background" value={capBar} onChange={setCapBar} allowNone />
           </div>
         </div>
-        <div className="grid gap-5 md:grid-cols-2">
-          <Field id="captionStyle" label="Captions" hint={CAPTION_STYLE_META[captionStyle].blurb}>
-            <select id="captionStyle" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value as CaptionStyle)} className={cn(controlClass, controlStateClass(false), "h-11")}>
-              {CAPTION_STYLES.map((k) => (
-                <option key={k} value={k}>{CAPTION_STYLE_META[k].label}</option>
-              ))}
-            </select>
-          </Field>
-          <Field id="font" label="Font" hint={FONT_META[font].blurb}>
-            <select id="font" value={font} onChange={(e) => setFont(e.target.value as FontKey)} className={cn(controlClass, controlStateClass(false), "h-11")}>
-              {FONT_KEYS.map((k) => (
-                <option key={k} value={k}>{FONT_META[k].label}</option>
-              ))}
-            </select>
-          </Field>
-        </div>
+        {/* Ad-only: the accent, caption look and font of the ad form (hidden while ads are "coming soon"). */}
+        {ads && (
+          <>
+            <ColorPicker id="brandAccent" label="Accent colour for ads" value={accent} onChange={(hex) => hex && setAccent(hex)} note={contrastRatio(accent, "#FFFFFF") < 3 ? "Low contrast" : undefined} />
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field id="captionStyle" label="Captions" hint={CAPTION_STYLE_META[captionStyle].blurb}>
+                <Select id="captionStyle" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value as CaptionStyle)}>
+                  {CAPTION_STYLES.map((k) => (
+                    <option key={k} value={k}>{CAPTION_STYLE_META[k].label}</option>
+                  ))}
+                </Select>
+              </Field>
+              <Field id="font" label="Font" hint={FONT_META[font].blurb}>
+                <Select id="font" value={font} onChange={(e) => setFont(e.target.value as FontKey)}>
+                  {FONT_KEYS.map((k) => (
+                    <option key={k} value={k}>{FONT_META[k].label}</option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+          </>
+        )}
         {msg && (
           <p role={msg.tone === "error" ? "alert" : "status"} className={msg.tone === "error" ? "text-[13px] text-danger" : "text-[13px] text-success"}>{msg.text}</p>
         )}
         <Button type="submit" variant="primary" disabled={busy || !loaded}>
           {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-          Save defaults
+          {ads ? "Save defaults" : "Save colours"}
         </Button>
       </form>
       </SectionCard>

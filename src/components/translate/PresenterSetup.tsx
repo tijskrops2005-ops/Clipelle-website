@@ -4,16 +4,15 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { OptionCard, OptionGrid } from "@/components/ui/OptionCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { controlClass, controlStateClass } from "@/components/ui/Field";
 import { PresenterPicker } from "@/components/PresenterPicker";
 import { VoicePicker } from "@/components/VoicePicker";
 import { PlanHint } from "@/components/PlanHint";
-import { cn } from "@/lib/utils";
 import { DEFAULT_PRESENTER_ENGINE, PRESENTER_QUALITIES, type PresenterEngine } from "@/lib/pricing";
 import { FEATURE_PLAN } from "@/lib/plans";
 import { DEFAULT_SPEED, SPEEDS, type AdLanguageCode, type VoiceOptions } from "@/lib/voiceOptions";
 import { PRESENTER_LAYOUTS, PRESENTER_LAYOUT_META, type PresenterTranslate } from "@/lib/presenterTranslate";
 import type { Presenter } from "@/lib/types";
+import { Select } from "@/components/ui/Select";
 
 export const DEFAULT_PRESENTER_TRANSLATE: PresenterTranslate = { engine: DEFAULT_PRESENTER_ENGINE, layout: "presenter", speed: DEFAULT_SPEED };
 
@@ -64,17 +63,16 @@ export function PresenterSetup({ value, onChange, language, creditsFor, canPremi
       <div className="grid gap-5 md:grid-cols-2">
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium text-ink">Accent</span>
-          <select
+          <Select
             value={value.accent ?? ""}
             onChange={(e) => set({ accent: e.target.value || undefined, voiceId: undefined })}
             disabled={disabled || !voiceOptions || voiceOptions.accents.length === 0}
-            className={cn(controlClass, controlStateClass(false), "h-11")}
           >
             <option value="">Any</option>
             {voiceOptions?.accents.map((a) => (
               <option key={a.key} value={a.key}>{a.label}</option>
             ))}
-          </select>
+          </Select>
           <span className="mt-1.5 block text-[13px] text-muted">{voiceOptions && voiceOptions.accents.length === 0 ? "No regional variants for this language yet." : "Only accents that have voices are listed."}</span>
         </label>
         <fieldset>

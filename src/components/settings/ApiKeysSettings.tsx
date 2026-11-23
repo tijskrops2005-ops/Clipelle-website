@@ -82,9 +82,9 @@ export function ApiKeysSettings() {
   const active = keys.filter((k) => !k.revokedAt);
   return (
     <div className="space-y-6">
-      <SectionCard title="API keys" description="Make ads and translations from your own code. A key acts as you: same credits, same limits, same projects on your dashboard." aside={<DemoBadge>No keys in demo mode</DemoBadge>}>
+      <SectionCard title="API keys" description={`${config.features.ads ? "Make ads and translations" : "Translate videos"} from your own code. A key acts as you: same credits, same limits, same projects on your dashboard.`} aside={<DemoBadge>Demo mode</DemoBadge>}>
         {config.demoMode ? (
-          <p className="text-[15px] text-muted">Demo mode has no accounts and no database, so keys cannot be made here. In database mode this card creates keys for plans with credits.</p>
+          <p className="text-[15px] text-muted">Demo mode: API keys are switched off.</p>
         ) : !loaded ? (
           <p className="text-[15px] text-muted">Loading…</p>
         ) : !allowed ? (
