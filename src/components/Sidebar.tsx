@@ -73,7 +73,7 @@ export function SidebarLinks({ isAdmin, onNavigate }: { isAdmin?: boolean; onNav
         <kbd className="label-mono ml-auto rounded border border-border px-1.5 py-0.5 text-[10px] text-muted">⌘K</kbd>
       </button>
 
-      <p className="label-mono mb-1.5 mt-6 px-3 text-muted">Studio tools</p>
+      <p className="mb-1 mt-6 px-3 text-[12px] font-medium text-muted">Tools</p>
       {STUDIO_TOOLS.map((t) => (
         <ToolRow key={t.key} tool={t} active={t.key === activeTool} onNavigate={onNavigate} />
       ))}
@@ -105,7 +105,7 @@ function SoonGroup({ onNavigate }: { onNavigate?: () => void }) {
       >
         <span className="grid size-6 shrink-0 place-items-center rounded-[7px] bg-ink-soft text-muted"><Clock className="size-3.5" aria-hidden /></span>
         <span className="min-w-0 flex-1 leading-tight">Coming soon</span>
-        <span className="label-mono shrink-0 text-[10px] text-muted">{SOON_TOOLS.length}</span>
+        <span className="shrink-0 text-[12px] text-muted">{SOON_TOOLS.length}</span>
         <ChevronDown className={cn("size-3.5 shrink-0 transition-transform duration-150", open && "rotate-180")} aria-hidden />
       </button>
       {open && (
@@ -154,7 +154,7 @@ function ToolRow({ tool, active, onNavigate }: { tool: Tool; active: boolean; on
         <Icon className="size-3.5" aria-hidden />
       </span>
       <span className="min-w-0 flex-1 leading-tight">{tool.label}</span>
-      {tool.soon && <span className="label-mono shrink-0 rounded-full border border-border px-1.5 py-0.5 text-[9px] text-muted">Soon</span>}
+      {tool.soon && <span className="shrink-0 text-[11px] text-muted">Soon</span>}
     </Link>
   );
 }
@@ -167,8 +167,8 @@ function PlanChip({ planKey, credits }: { planKey?: string; credits: number | nu
     <Link href="/settings/billing" className="focus-ring group flex items-center gap-3 rounded-panel bg-ink px-3 py-2.5 text-champagne transition-transform duration-150 hover:-translate-y-px">
       <span className="grid size-7 shrink-0 place-items-center rounded-full bg-gold/15 text-gold-light"><Sparkles className="size-3.5" aria-hidden /></span>
       <span className="min-w-0 flex-1">
-        <span className="label-mono block text-[10px] text-gold-light">{plan ? `${plan.name} plan` : "Your plan"}</span>
-        <span className="block truncate text-[12.5px] text-champagne/80">{credits === null ? "Plans and credits" : `${credits.toLocaleString("en-US")} credits left`}</span>
+        <span className="block text-[13px] font-medium text-champagne">{plan ? `${plan.name} plan` : "Your plan"}</span>
+        <span className="block truncate text-[12.5px] text-champagne/70">{credits === null ? "Plans and credits" : `${credits.toLocaleString("en-US")} credits`}</span>
       </span>
       <span className="text-[12px] font-medium text-gold-light group-hover:underline">{paid ? "Manage" : "Upgrade"}</span>
     </Link>

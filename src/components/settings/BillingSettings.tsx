@@ -11,12 +11,10 @@ import { PlanConfirmModal, StartNowModal, type StartNowQuote } from "@/component
 import { AutoReloadSettings } from "@/components/settings/AutoReloadSettings";
 import type { AutoReload } from "@/lib/autoReload";
 import { CreditsSlider } from "@/components/site/CreditsSlider";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { PricingTable } from "@/components/site/PricingTable";
-import { DemoBadge } from "@/components/DemoModeBadge";
 
 type Status = { enabled: boolean; planKey: string; trialAvailable?: boolean; autoReload?: AutoReload | null; subscriptionStatus: string | null; currentPeriodEnd: string | null; balance: number; freeAd: { granted: boolean; reason?: string }; freeAdsPerDay: number; emailVerified: boolean };
 
@@ -178,29 +176,29 @@ export function BillingSettings() {
         </div>
       )}
 
-      <SectionCard title="Your plan" description="What you are on, your credits and the free credits." aside={<DemoBadge>Demo numbers</DemoBadge>}>
+      <SectionCard title="Your plan" description={config.demoMode ? "Demo numbers." : undefined}>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="panel p-4">
-            <p className="label-mono text-muted">Plan</p>
+            <p className="text-[13px] text-muted">Plan</p>
             <p className="mt-1 text-[17px] font-semibold text-ink">{planLabel(plan)}</p>
             <p className="text-[13px] text-muted">{subscriptionLine(status?.subscriptionStatus ?? null, status?.currentPeriodEnd ?? null, plan.key === "free")}</p>
           </div>
           <div className="panel p-4">
-            <p className="label-mono text-muted">Credits</p>
+            <p className="text-[13px] text-muted">Credits</p>
             <p className="mt-1 text-[17px] font-semibold text-ink">{status ? status.balance.toLocaleString("en-US") : "…"}</p>
-            <p className="text-[13px] text-muted">One credit = one second of translated video. Paid credits never expire.</p>
+            <p className="text-[13px] text-muted">1 credit = 1 second of translated video. Paid credits never expire.</p>
           </div>
           <div className="panel p-4">
-            <p className="label-mono text-muted">Free credits</p>
+            <p className="text-[13px] text-muted">Free credits</p>
             <p className="mt-1 flex items-center gap-2 text-[17px] font-semibold text-ink"><Gift className="size-4 text-accent" aria-hidden />{status?.freeAd.granted ? "Granted" : status?.freeAd.reason === "unverified" ? "After verification" : status?.freeAd.reason === "cap" ? "Daily cap reached" : "…"}</p>
-            <p className="text-[13px] text-muted">{status?.freeAd.reason === "cap" ? "All free credits for today are given out; you are on the list for tomorrow." : "30 credits per verified e-mail address, to use within 30 days."}</p>
+            <p className="text-[13px] text-muted">{status?.freeAd.reason === "cap" ? "Today's free credits are given out; you are on the list for tomorrow." : "30 credits after e-mail verification, valid 30 days."}</p>
           </div>
         </div>
         {enabled && status?.subscriptionStatus === "trialing" && (
           <div className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-[15px] font-semibold text-ink">Ready to start?</p>
-              <p className="text-[13px] text-muted">Start your plan now and get its credits straight away, instead of after the free trial.</p>
+              <p className="text-[13px] text-muted">Skip the rest of the trial and get your credits now.</p>
             </div>
             <Button type="button" variant="primary" className="shrink-0" onClick={openStartNow} disabled={busy !== null}>
               {busy === "start-now" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Zap className="size-4" aria-hidden />}
@@ -224,8 +222,8 @@ export function BillingSettings() {
       </SectionCard>
 
       {!enabled && (
-        <SectionCard title="Payments" description={config.demoMode ? "Demo mode: payments are switched off." : "Payments are not available right now, so plans and credits are read-only. Please try again later."}>
-          <Badge tone="warning">{config.demoMode ? "Switched off" : "Not available"}</Badge>
+        <SectionCard title="Payments" description={config.demoMode ? "Switched off in demo mode." : "Not available right now. Please try again later."}>
+          <p className="text-[13px] text-muted">Plans and credits are read-only until then.</p>
         </SectionCard>
       )}
 
@@ -239,7 +237,7 @@ export function BillingSettings() {
       </div>
 
       {tab === "credits" && (
-      <SectionCard id="add-credits" title="Add credits" description={status?.planKey === "free" ? "One-off credits on top of a paid plan. Choose a plan first: the free plan runs on its free credits." : "Any amount, one-off, on top of your plan. Credits never expire."}>
+      <SectionCard id="add-credits" title="Add credits" description={status?.planKey === "free" ? "On top of a paid plan. Choose a plan first." : "One-off, on top of your plan. They never expire."}>
         <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr] lg:items-end">
           <div className="panel p-5">
             <CreditsSlider value={credits} onChange={setCredits} currency={currency} labels={{ amount: "How many credits", credits: "credits" }} />
@@ -262,13 +260,13 @@ export function BillingSettings() {
         value={status?.autoReload ?? null}
         currency={currency}
         available={enabled && Boolean(status) && status?.planKey !== "free"}
-        unavailableReason={!enabled ? (config.demoMode ? "Demo mode: payments are switched off." : "Payments are not available right now.") : "Auto-reload comes with a paid plan. Choose a plan first."}
+        unavailableReason={!enabled ? (config.demoMode ? "Switched off in demo mode." : "Payments are not available right now.") : "Comes with a paid plan. Choose a plan first."}
         onSaved={(next) => setStatus((s) => (s ? { ...s, autoReload: next } : s))}
       />
       )}
 
       {tab === "plans" && (
-      <SectionCard id="plans" title="Plans" description="Monthly credits. Cancel any time.">
+      <SectionCard id="plans" title="Plans">
         <PricingTable compact onChoose={enabled ? choose : undefined} busyKey={busy} currency={currency} trial={Boolean(status?.trialAvailable)} initialPlan={params.get("plan")} currentPlan={status?.planKey ?? null} />
         <p className="mt-4 text-[13px] text-muted">What each plan includes: <a href="/pricing" target="_blank" rel="noopener" className="focus-ring rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">compare the plans</a>.</p>
       </SectionCard>

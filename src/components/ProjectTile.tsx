@@ -55,8 +55,8 @@ export function ProjectTile({ project, now, selectable, selected, onToggle, href
         />
         {project.workflow === "translate" && !selectable && (
           <span
-            className="label-mono absolute right-3 top-3 inline-flex h-7 items-center gap-1 rounded-full bg-surface px-2.5 text-ink shadow-card"
-            title={`Translation into ${project.targetLanguages.length} ${project.targetLanguages.length === 1 ? "language" : "languages"}`}
+            className="absolute right-3 top-3 inline-flex h-7 items-center gap-1 rounded-full bg-surface px-2.5 text-[12px] font-medium text-ink shadow-card"
+            title={`${project.targetLanguages.length} ${project.targetLanguages.length === 1 ? "language" : "languages"}`}
           >
             <Languages className="size-3" aria-hidden />
             {project.targetLanguages.length}
@@ -101,14 +101,12 @@ export function ProjectTile({ project, now, selectable, selected, onToggle, href
         >
           {project.name}
         </h3>
-        <p className="flex items-center gap-2 text-[13px] text-muted">
-          {/* Kind label: which workflow made this project */}
-          <span className="label-mono inline-flex shrink-0 items-center gap-1 rounded-full bg-ink/5 px-1.5 py-0.5 text-ink">
-            {project.workflow === "translate" ? <Languages className="size-3" aria-hidden /> : <Clapperboard className="size-3" aria-hidden />}
-            {project.workflow === "translate" ? "Translation" : "Ad"}
-          </span>
-          <span className="truncate">
-            {project.archivedAt ? "Archived · " : ""}{projectSubtitle(project)} · {formatDate(project.createdAt)}
+        {/* One quiet line (23 Nov 2026): the kind as an icon with a tooltip, then what and when, one dot. */}
+        <p className="flex items-center gap-1.5 text-[13px] text-muted">
+          {project.workflow === "translate" ? <Languages className="size-3.5 shrink-0" aria-hidden /> : <Clapperboard className="size-3.5 shrink-0" aria-hidden />}
+          <span className="sr-only">{project.workflow === "translate" ? "Translation" : "Ad"}</span>
+          <span className="truncate" title={project.workflow === "translate" ? "Translation" : "Ad"}>
+            {project.archivedAt ? "Archived, " : ""}{projectSubtitle(project)} · {formatDate(project.createdAt)}
           </span>
         </p>
       </div>

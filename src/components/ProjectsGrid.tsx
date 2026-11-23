@@ -23,22 +23,10 @@ const filters: { key: Filter; label: string }[] = [
 ];
 
 const emptyCopy: Record<Filter, { title: string; description: string }> = {
-  all: {
-    title: "No videos yet",
-    description: "Create your first video and it shows up here.",
-  },
-  processing: {
-    title: "Nothing is processing",
-    description: "Start a new video and follow its steps here.",
-  },
-  completed: {
-    title: "No finished videos yet",
-    description: "Completed videos land here, ready to download.",
-  },
-  failed: {
-    title: "No failed videos",
-    description: "Good news. If a step ever stops, you can retry it from the project page.",
-  },
+  all: { title: "No videos yet", description: "" },
+  processing: { title: "Nothing is processing", description: "" },
+  completed: { title: "No finished videos yet", description: "" },
+  failed: { title: "No failed videos", description: "" },
 };
 
 type KindFilter = "all" | WorkflowKind;
@@ -117,7 +105,7 @@ export function ProjectsGrid() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <label className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, tag, product or language" aria-label="Search projects" className="pl-9" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search" aria-label="Search projects" className="pl-9" />
         </label>
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant={showArchived ? "primary" : "secondary"} size="sm" onClick={() => setShowArchived((v) => !v)} aria-pressed={showArchived}>
@@ -136,19 +124,19 @@ export function ProjectsGrid() {
           )}
         </div>
       </div>
-      {selecting && <p className={cn("text-[13px]", zipError ? "text-danger" : "text-muted")}>{zipError ?? "Tap finished videos to select them (up to 25, 1 GB together). The ZIP holds the finished MP4s; unfinished projects cannot be selected."}</p>}
+      {selecting && <p className={cn("text-[13px]", zipError ? "text-danger" : "text-muted")}>{zipError ?? "Select finished videos, up to 25."}</p>}
 
       {/* Two filters, stacked with a label each, so the row never looks like one long control */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-4">
-          <span id="filter-status-label" className="label-mono w-16 shrink-0 text-muted">Status</span>
+          <span id="filter-status-label" className="w-16 shrink-0 text-[13px] text-muted">Status</span>
           {/* One row that scrolls on phones (23 Nov 2026): the last chip used to wrap inside the grey track. */}
           <SegmentedControl label="Filter by status" scroll options={filters.map((f) => ({ ...f, count: statusCounts[f.key] }))} value={filter} onChange={setFilter} />
         </div>
         {/* The type row only matters while there are ads to tell apart (27 Oct 2026: ads are coming soon). */}
         {kindCounts.ad > 0 && (
           <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-4">
-            <span id="filter-kind-label" className="label-mono w-16 shrink-0 text-muted">Type</span>
+            <span id="filter-kind-label" className="w-16 shrink-0 text-[13px] text-muted">Type</span>
             <SegmentedControl label="Filter by type" options={kindFilters.map((f) => ({ ...f, count: kindCounts[f.key] }))} value={kind} onChange={setKind} size="sm" />
           </div>
         )}
@@ -164,17 +152,7 @@ export function ProjectsGrid() {
         <EmptyState
           icon={<Video className="size-6" aria-hidden />}
           title={nothingAtAll ? emptyCopy.all.title : query.trim() ? "Nothing matches your search" : showArchived ? "No archived projects" : kind !== "all" && filter === "all" ? (kind === "ad" ? "No ads yet" : "No translations yet") : emptyCopy[filter].title}
-          description={
-            nothingAtAll
-              ? emptyCopy.all.description
-              : query.trim()
-                ? "Try another word, or clear the search. Tags are searched too."
-                : showArchived
-                  ? "Archive a project from its page to keep it out of the way without losing it."
-              : kind !== "all"
-                ? `Nothing matches this combination. ${kind === "ad" ? "Ads" : "Translations"} you start show up here.`
-                : emptyCopy[filter].description
-          }
+          description={query.trim() ? "Try another word." : undefined}
           action={
             nothingAtAll || (filter === "processing" && kind === "all") ? (
               <Button href="/new" variant="accent" size="lg">

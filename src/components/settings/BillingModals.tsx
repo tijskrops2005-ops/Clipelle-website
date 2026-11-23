@@ -25,11 +25,11 @@ export function PlanConfirmModal({ change, busy, onConfirm, onClose }: { change:
       open={Boolean(c)}
       onClose={onClose}
       title={title}
-      description={c?.mode === "change" ? "The next screen shows the exact amount before anything changes." : "Secure payment by Stripe. Prices exclude VAT where it applies."}
+      description={c?.mode === "change" ? "The next screen shows the exact amount before anything changes." : "Prices exclude VAT where it applies."}
       footer={
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button type="button" variant="accent" onClick={onConfirm} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}{button}{!busy && <ArrowRight className="size-4" aria-hidden />}</Button>
+          <Button type="button" variant="accent" onClick={onConfirm} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}{button}</Button>
         </div>
       }
     >
@@ -37,13 +37,13 @@ export function PlanConfirmModal({ change, busy, onConfirm, onClose }: { change:
         <div className="space-y-4">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-panel bg-surface-muted p-4">
             <div>
-              <p className="label-mono text-muted">Now</p>
+              <p className="text-[13px] text-muted">Now</p>
               <p className="mt-1 text-[15px] font-semibold text-ink">{planLabel(c.from)}</p>
               <p className="text-[13px] text-muted">{c.creditsBefore > 0 ? `${n(c.creditsBefore)} credits a month` : "No monthly credits"}</p>
             </div>
             <ArrowRight className="size-4 text-muted" aria-hidden />
             <div>
-              <p className="label-mono text-muted">New</p>
+              <p className="text-[13px] text-muted">New</p>
               <p className="mt-1 text-[15px] font-semibold text-ink">{planLabel(c.to)}</p>
               <p className="text-[13px] text-muted">{n(c.creditsAfter)} credits a month</p>
             </div>

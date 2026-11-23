@@ -10,7 +10,6 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Badge } from "@/components/ui/Badge";
-import { DemoBadge } from "@/components/DemoModeBadge";
 import { TwoFactorSettings } from "@/components/settings/TwoFactorSettings";
 import { DangerZone } from "@/components/settings/DangerZone";
 
@@ -68,10 +67,10 @@ export function ProfileSettings() {
           {msg.text}
         </p>
       )}
-      <SectionCard title="Profile" description="How we address you and where we send e-mail." aside={<DemoBadge>Demo user</DemoBadge>}>
+      <SectionCard title="Profile">
         <form onSubmit={onName} className="space-y-5">
           {/* Nothing about verification is shown until the profile has loaded: a default "Unverified" would be wrong for most people. */}
-          <Field id="email" label="E-mail" hint={!profile ? undefined : profile.emailVerified ? "Verified." : "Not verified yet: open the link we sent you."}>
+          <Field id="email" label="E-mail" hint={!profile || profile.emailVerified ? undefined : "Not verified yet: open the link we sent you."}>
             <div className="flex items-center gap-3">
               <Input id="email" value={profile?.email ?? ""} placeholder={profile ? undefined : "Loading…"} readOnly className="bg-surface-muted" />
               {profile && <Badge tone={profile.emailVerified ? "success" : "warning"}>{profile.emailVerified ? "Verified" : "Unverified"}</Badge>}
@@ -87,7 +86,7 @@ export function ProfileSettings() {
         </form>
       </SectionCard>
 
-      <SectionCard title="Notifications" description="One short e-mail per video or batch when it is ready or stops, with a link. Nothing else is ever sent to this address.">
+      <SectionCard title="Notifications">
         <label className="flex cursor-pointer items-start gap-3 rounded-panel border border-border bg-surface-muted/60 p-4 text-sm text-ink transition-colors duration-150 hover:bg-surface">
           <input
             type="checkbox"
@@ -102,12 +101,11 @@ export function ProfileSettings() {
           />
           <span>
             <span className="font-medium">E-mail me when a video is ready or fails</span>
-            <span className="block text-[13px] leading-relaxed text-muted">Sent to {profile?.email ?? "your address"}. Variations in a batch send one e-mail for the whole batch.</span>
           </span>
         </label>
       </SectionCard>
 
-      <SectionCard title="Password" description={config.demoMode ? "Demo mode has no accounts, so there is no password." : "Choose a new password for this account."}>
+      <SectionCard title="Password" description={config.demoMode ? "Not available in demo mode." : undefined}>
         <form onSubmit={onPassword} className="space-y-5">
           <Field id="password" label="New password" hint="At least 8 characters.">
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} autoComplete="new-password" disabled={config.demoMode} />

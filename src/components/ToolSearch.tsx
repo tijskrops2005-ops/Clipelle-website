@@ -99,7 +99,7 @@ export function ToolSearch() {
         >
           <span className="flex items-start justify-between gap-2">
             <span className={cn("grid size-9 place-items-center rounded-[10px]", t.soon ? "bg-ink-soft text-muted" : "bg-accent-soft text-accent")}><Icon className="size-[18px]" aria-hidden /></span>
-            {t.soon && <span className="label-mono rounded-full border border-border px-2 py-1 text-[10px] text-muted">Soon</span>}
+            {t.soon && <span className="text-[12px] text-muted">Soon</span>}
           </span>
           <span>
             <span className="block text-[14px] font-semibold text-ink">{t.label}</span>
@@ -134,13 +134,13 @@ export function ToolSearch() {
 
         {studio.length > 0 && (
           <>
-            <p className="label-mono mb-2 mt-5 text-muted">Studio tools</p>
+            <p className="mb-2 mt-5 text-[12px] font-medium text-muted">Tools</p>
             <ul className="grid gap-2 sm:grid-cols-2">{studio.map((t, n) => tile(t, n))}</ul>
           </>
         )}
         {found.length > 0 && (
           <>
-            <p className="label-mono mb-2 mt-5 text-muted">Projects</p>
+            <p className="mb-2 mt-5 text-[12px] font-medium text-muted">Projects</p>
             <ul className="space-y-1">
               {found.map((p, n) => {
                 const i = projectOffset + n;
@@ -159,7 +159,7 @@ export function ToolSearch() {
         )}
         {soon.length > 0 && (
           <>
-            <p className="label-mono mb-2 mt-5 text-muted">Coming soon</p>
+            <p className="mb-2 mt-5 text-[12px] font-medium text-muted">Coming soon</p>
             <ul className="grid gap-2 sm:grid-cols-3">{soon.map((t, n) => tile(t, soonOffset + n))}</ul>
           </>
         )}

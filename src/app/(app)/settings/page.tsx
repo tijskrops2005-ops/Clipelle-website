@@ -16,7 +16,7 @@ export default async function SettingsProfilePage() {
   return (
     <>
       {admin && (
-        <SectionCard title="Admin" description="Only visible to administrators.">
+        <SectionCard title="Admin">
           <Button href="/admin/customers" variant="primary">
             <ShieldCheck className="size-4" aria-hidden />
             Open customer overview

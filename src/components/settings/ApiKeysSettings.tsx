@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { DemoBadge } from "@/components/DemoModeBadge";
 
 /** Settings → API keys: create (shown once), list with last use, revoke. Plans with credits only. */
 export function ApiKeysSettings() {
@@ -82,19 +81,17 @@ export function ApiKeysSettings() {
   const active = keys.filter((k) => !k.revokedAt);
   return (
     <div className="space-y-6">
-      <SectionCard title="API keys" description={`${config.features.ads ? "Make ads and translations" : "Translate videos"} from your own code. A key acts as you: same credits, same limits, same projects on your dashboard.`} aside={<DemoBadge>Demo mode</DemoBadge>}>
-        {config.demoMode ? (
-          <p className="text-[15px] text-muted">Demo mode: API keys are switched off.</p>
-        ) : !loaded ? (
+      <SectionCard title="API keys" description={config.demoMode ? "Not available in demo mode." : "A key acts as you: same credits, same limits."}>
+        {config.demoMode ? null : !loaded ? (
           <p className="text-[15px] text-muted">Loading…</p>
         ) : !allowed ? (
           <div className="rounded-[14px] bg-surface-muted p-4 text-[15px] text-ink">
-            <p>API keys come with a plan that includes credits. The free plan uses its free credits on the forms, not through the API.</p>
+            <p>API keys come with the Pro plan and up.</p>
             <Button href="/settings/billing" variant="primary" className="mt-3">Choose a plan</Button>
           </div>
         ) : (
           <form onSubmit={onCreate} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <Field id="keyName" label="Name" hint="Where the key is used, e.g. shop sync or Zapier." className="flex-1">
+            <Field id="keyName" label="Name" className="flex-1">
               <Input id="keyName" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder="Shop sync" />
             </Field>
             <Button type="submit" variant="primary" disabled={busy !== null}>
@@ -120,7 +117,7 @@ export function ApiKeysSettings() {
       </SectionCard>
 
       {!config.demoMode && loaded && (
-        <SectionCard title="Your keys" description={active.length ? `${active.length} active. Revoke a key you no longer use.` : keys.length ? "No active keys." : "No keys yet."}>
+        <SectionCard title="Your keys" description={active.length ? `${active.length} active` : "No keys yet."}>
           {keys.length > 0 && (
             <ul className="divide-y divide-divider">
               {keys.map((k) => (

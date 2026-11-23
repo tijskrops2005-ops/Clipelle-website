@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Languages, Sparkles } from "lucide-react";
 import { useProjects } from "@/lib/data/client";
 import type { Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -56,18 +55,16 @@ export function NowCreating() {
           Now creating
           <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[12px] font-medium text-muted">{projects.length}</span>
         </h2>
-        <Link href="/projects?status=processing" className="focus-ring inline-flex items-center gap-1 rounded-control text-[13px] font-medium text-muted hover:text-ink">
-          All in progress <ArrowRight className="size-3.5" aria-hidden />
+        <Link href="/projects?status=processing" className="focus-ring rounded-control text-[13px] font-medium text-muted hover:text-ink">
+          All in progress
         </Link>
       </div>
       <ul className="mt-4 divide-y divide-divider">
         {projects.map((p) => {
           const g = progressOf(p, now);
-          const Icon = p.workflow === "ad" ? Sparkles : Languages;
           return (
             <li key={p.id}>
               <Link href={`/projects/${p.id}`} className="focus-ring group -mx-2 flex items-center gap-4 rounded-[14px] px-2 py-3 hover:bg-surface-muted/60">
-                <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-accent-soft text-accent"><Icon className="size-[18px]" aria-hidden /></span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
                     <span className="truncate text-[15px] font-semibold text-ink">{p.name}</span>
@@ -80,7 +77,6 @@ export function NowCreating() {
                     <span className="block h-full w-full origin-left rounded-full bg-accent transition-transform duration-500" style={{ transform: `scaleX(${g.percent / 100})` }} />
                   </span>
                 </span>
-                <ArrowRight className="size-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" aria-hidden />
               </Link>
             </li>
           );

@@ -18,8 +18,8 @@ function sectionOf(pathname: string, search: string) {
 }
 
 export type TopBarProps = {
-  /** The balance and what a credit is (2 Nov 2026; credits only since 23 Nov): "≈ 3 ads" with ads on, otherwise "1 per second of video". */
-  credits?: { balance: number; approx: string } | null;
+  /** The balance (what a credit is lives on Billing, 23 Nov 2026). */
+  credits?: { balance: number; approx?: string } | null;
   supportHref?: string;
 };
 
@@ -40,7 +40,7 @@ export function TopBar({ credits, supportHref = "/contact" }: TopBarProps) {
           {credits && (
             <Link href="/settings/billing" className="focus-ring hidden h-9 items-center gap-2 rounded-full border border-border bg-surface px-3.5 text-[13px] text-ink shadow-soft transition-colors duration-150 hover:bg-surface-muted xl:inline-flex" title="Your credits">
               <span className="font-mono font-semibold tabular-nums">{credits.balance.toLocaleString("en-US")}</span>
-              <span className="text-muted">credits · {credits.approx}</span>
+              <span className="text-muted">credits</span>
             </Link>
           )}
           <button
@@ -49,7 +49,7 @@ export function TopBar({ credits, supportHref = "/contact" }: TopBarProps) {
             className="focus-ring flex h-9 w-56 items-center gap-2 rounded-full border border-border bg-surface px-3.5 text-left text-[13px] text-muted shadow-soft transition-colors duration-150 hover:text-ink"
           >
             <Search className="size-4" aria-hidden />
-            <span className="flex-1 truncate whitespace-nowrap">Search tools and projects…</span>
+            <span className="flex-1 truncate whitespace-nowrap">Search</span>
             <kbd className="label-mono rounded border border-border px-1.5 py-0.5 text-[10px]">⌘K</kbd>
           </button>
           <Link href={supportHref} className="focus-ring inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 text-[13px] font-medium text-ink shadow-soft transition-colors duration-150 hover:bg-surface-muted">

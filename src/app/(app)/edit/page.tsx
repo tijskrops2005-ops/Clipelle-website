@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Edit a video" };
 export default function EditPage() {
   return (
     <div className="space-y-10">
-      <PageHeader title="Edit a video" description="Pick a finished video. Trim or cut it, change the captions, add text or your logo; the result is saved as a new version next to the original." />
+      <PageHeader title="Edit a video" description="Trim, cut, captions, text and logo. The result is saved as a new version." />
       <EditPicker />
     </div>
   );

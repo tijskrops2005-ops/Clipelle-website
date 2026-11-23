@@ -3,7 +3,6 @@ import { translateFlowSteps } from "@/lib/translateFlow";
 import { SectionHeader } from "@/components/ui/PageHeader";
 import { StepCard } from "@/components/StepCard";
 import { Button } from "@/components/ui/Button";
-import { ArrowRight } from "lucide-react";
 import {
   CaptionsIllustration,
   FinalVideoIllustration,
@@ -38,7 +37,7 @@ const translateSteps: Step[] = translateFlowSteps("en").map((s, i) => ({ title: 
 export function HowItWorks() {
   return (
     <section className="space-y-8">
-      <SectionHeader title="How it works" description="One click starts a fixed set of steps. Everything runs on its own; you follow progress on the project page." />
+      <SectionHeader title="How it works" />
       <WorkflowRow kicker="Translate a video" href="/new/translate" steps={translateSteps} columns={4} />
       {config.features.ads && <WorkflowRow kicker="Make an ad from a product photo" href="/new/ad" steps={adSteps} columns={4} />}
     </section>
@@ -50,10 +49,7 @@ function WorkflowRow({ kicker, href, steps, columns }: { kicker: string; href: s
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-[17px] font-semibold text-ink">{kicker}</h3>
-        <Button href={href} variant="link" size="sm">
-          Start
-          <ArrowRight className="size-4" aria-hidden />
-        </Button>
+        <Button href={href} variant="link" size="sm">Start</Button>
       </div>
       <div className={columns === 4 ? "grid gap-5 sm:grid-cols-2 lg:grid-cols-4 md:gap-6" : "grid gap-5 sm:grid-cols-3 md:gap-6"}>
         {steps.map((s, i) => (
