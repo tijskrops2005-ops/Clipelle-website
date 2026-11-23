@@ -66,6 +66,20 @@ export const examples: Example[] = [
     nl: { title: "Unboxing, vertaald", note: "8 s · Engels naar Nederlands · eigen stem, lipsync, ondertitels" },
   },
   {
+    // 23 Nov 2026: a Dutch video into English, with the old Dutch captions painted out and English captions in their place.
+    id: "car-detailing-en",
+    title: "Car detailing, translated",
+    kind: "translate",
+    file: "translate-car-detailing-en.mp4",
+    poster: "translate-car-detailing-en.jpg",
+    original: "translate-car-detailing-original.mp4",
+    originalPoster: "translate-car-detailing-original.jpg",
+    codes: "NL → EN",
+    originalPace: 0.945,
+    note: "31 s · Dutch to English · old on-screen text removed, own voice, lip sync, captions",
+    nl: { title: "Autodetailing, vertaald", note: "31 s · Nederlands naar Engels · oude tekst in beeld weggehaald, eigen stem, lipsync, ondertitels" },
+  },
+  {
     id: "lounge-chair-nl",
     title: "Product review, translated",
     kind: "translate",
