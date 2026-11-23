@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { DemoBadge } from "@/components/DemoModeBadge";
 
 /** Settings → API keys → Webhooks: endpoints per workspace, secret shown once, last deliveries with Retry. */
 export function WebhooksSettings() {
@@ -76,15 +75,14 @@ export function WebhooksSettings() {
     <>
       <SectionCard
         title="Webhooks"
-        description="We call your URL when a project finishes or fails, with the project exactly as the API returns it and a signature you can check. Retries with backoff for about a day; a delivery can be sent again here."
-        aside={<DemoBadge>Demo: no webhooks</DemoBadge>}
+        description="We call your URL when a project finishes or fails."
       >
         {msg && <p role={msg.tone === "error" ? "alert" : "status"} className={msg.tone === "error" ? "text-[13px] text-danger" : "text-[13px] text-success"}>{msg.text}</p>}
-        {info && !info.allowed && !config.demoMode && <p className="text-[13px] text-muted">Webhooks come with the API on paid plans. Pick a plan in Billing.</p>}
+        {info && !info.allowed && !config.demoMode && <p className="text-[13px] text-muted">Webhooks come with the Pro plan and up.</p>}
         {info?.role !== "owner" && info && <p className="text-[13px] text-muted">Only the workspace owner manages webhooks for a team.</p>}
         {canManage && (
           <form onSubmit={onCreate} className="space-y-3">
-            <Field id="webhookUrl" label="Endpoint URL" hint="A public https:// URL on your server. Private addresses and plain http are refused.">
+            <Field id="webhookUrl" label="Endpoint URL" hint="Public https only.">
               <Input id="webhookUrl" type="url" inputMode="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://yourshop.com/clipelle/webhook" required />
             </Field>
             <fieldset className="flex flex-wrap gap-3">
@@ -128,7 +126,7 @@ export function WebhooksSettings() {
         </ul>
       </SectionCard>
 
-      <SectionCard title="Recent deliveries" description="The last 30 calls to your endpoints, newest first.">
+      <SectionCard title="Recent deliveries">
         <ul className="space-y-1.5">
           {info?.deliveries.map((d) => (
             <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-divider py-2 text-[13px]">

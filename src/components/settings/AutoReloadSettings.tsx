@@ -52,7 +52,7 @@ export function AutoReloadSettings({ value, currency, available, unavailableReas
   );
 
   return (
-    <SectionCard title="Auto-reload" description="Never run out in the middle of a busy week: credits are added automatically when your balance runs low.">
+    <SectionCard title="Auto-reload" description="Credits are added automatically when your balance runs low.">
       {current.failedAt && !current.enabled && <p role="alert" className="rounded-chip bg-danger/10 px-4 py-2.5 text-sm text-ink">{current.lastError ?? "The last automatic top-up did not go through, so auto-reload was switched off."}</p>}
       {!available && <p className="rounded-chip bg-surface-muted px-4 py-2.5 text-sm text-muted">{unavailableReason}</p>}
 
@@ -60,7 +60,7 @@ export function AutoReloadSettings({ value, currency, available, unavailableReas
         <input type="checkbox" className="mt-0.5 size-4 shrink-0" checked={draft.enabled} disabled={!available || busy} onChange={(e) => setDraft((d) => ({ ...d, enabled: e.target.checked }))} />
         <span>
           <span className="flex items-center gap-2 text-sm font-medium text-ink"><RefreshCw className="size-4 text-accent" aria-hidden />Top up automatically</span>
-          <span className="block text-[13px] leading-relaxed text-muted">{describeAutoReload(draft, money)} We charge the card saved for your plan and send an invoice each time. Turn it off here whenever you like.</span>
+          <span className="block text-[13px] leading-relaxed text-muted">{describeAutoReload(draft, money)} Charged to the card on your plan, with an invoice each time.</span>
         </span>
       </label>
 
@@ -78,7 +78,7 @@ export function AutoReloadSettings({ value, currency, available, unavailableReas
         {saved && !dirty && <span role="status" className="text-[13px] text-success">Saved.</span>}
         {error && <span role="alert" className="text-[13px] text-danger">{error}</span>}
       </div>
-      <p className="text-[12.5px] text-muted">Prices exclude VAT. A failed payment switches auto-reload off, so your card is never tried again and again.</p>
+      <p className="text-[12.5px] text-muted">Prices exclude VAT. A failed payment switches auto-reload off.</p>
     </SectionCard>
   );
 }

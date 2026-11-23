@@ -81,27 +81,21 @@ export function OnboardingChecklist({ planKey }: { planKey?: string | null }) {
 
   return (
     <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[17px] font-semibold text-ink">Getting started</p>
-            <p className="text-[13px] text-muted">{done} of {ITEMS.length} done. Close the list whenever you like.</p>
-          </div>
+      <CardContent className="pt-5">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-[15px] font-semibold text-ink">Getting started</p>
           <button type="button" onClick={dismiss} aria-label="Hide the checklist" className="focus-ring rounded-full p-1 text-muted hover:text-ink">
             <X className="size-4" aria-hidden />
           </button>
         </div>
-        <ul className={cn("mt-4 grid gap-2 sm:grid-cols-2", ITEMS.length >= 5 ? "lg:grid-cols-5" : ITEMS.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3")}>
+        <ul className="mt-3 divide-y divide-divider">
           {ITEMS.map((item) => {
             const ok = isDone(item.key);
             return (
               <li key={item.key}>
-                <Link href={item.href} className={cn("focus-ring flex h-full items-start gap-2.5 rounded-panel border p-3 transition-colors duration-150", ok ? "border-success/30 bg-success/5" : "border-border bg-surface-muted/60 hover:bg-surface")}>
-                  {ok ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" aria-hidden /> : <Circle className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden />}
-                  <span>
-                    <span className={cn("block text-sm font-medium", ok ? "text-ink/70 line-through" : "text-ink")}>{item.label}</span>
-                    <span className="block text-[12px] leading-snug text-muted">{item.text}</span>
-                  </span>
+                <Link href={item.href} className="focus-ring -mx-2 flex items-center gap-3 rounded-control px-2 py-2.5 text-sm transition-colors duration-150 hover:bg-surface-muted/60">
+                  {ok ? <CheckCircle2 className="size-4 shrink-0 text-success" aria-hidden /> : <Circle className="size-4 shrink-0 text-muted" aria-hidden />}
+                  <span className={cn("font-medium", ok ? "text-muted line-through" : "text-ink")}>{item.label}</span>
                 </Link>
               </li>
             );

@@ -114,7 +114,7 @@ export function TwoFactorSettings() {
     });
   }
 
-  const description = config.demoMode ? "Demo mode has no accounts, so there is nothing to verify." : state?.required ? "Required for administrators: the admin pages open only after a code from your authenticator app." : "A code from your authenticator app at every sign-in, next to your password.";
+  const description = config.demoMode ? "Not available in demo mode." : state?.required ? "Required for administrators." : "A code from your authenticator app at every sign-in.";
 
   return (
     <SectionCard title="Two-step verification" description={description} aside={state ? <Badge tone={state.enabled ? "success" : "warning"}>{state.enabled ? "On" : state.required ? "Required" : "Off"}</Badge> : undefined}>

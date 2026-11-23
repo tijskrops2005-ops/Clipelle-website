@@ -9,16 +9,7 @@ export const metadata: Metadata = { title: "Projects" };
 export default function ProjectsPage() {
   return (
     <div className="space-y-10">
-      <PageHeader
-        title="Projects"
-        description="Every video you have started, newest first."
-        actions={
-          <Button href="/new" variant="primary" size="lg">
-            <Plus className="size-5" aria-hidden />
-            Create new video
-          </Button>
-        }
-      />
+      <PageHeader title="Projects" actions={<Button href="/new" variant="primary"><Plus className="size-4" aria-hidden />New video</Button>} />
       <ProjectsGrid />
     </div>
   );

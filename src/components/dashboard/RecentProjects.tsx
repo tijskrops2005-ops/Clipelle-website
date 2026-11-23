@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Plus, Video } from "lucide-react";
+import { Plus, Video } from "lucide-react";
 import { useProjects, useProjectsReady } from "@/lib/data/client";
 import { TileGridSkeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
@@ -21,20 +21,7 @@ export function RecentProjects() {
 
   return (
     <section className="space-y-6">
-      <SectionHeader
-        title="Recent projects"
-        description={
-          !ready ? "Loading…" : current.length === 0 ? "Nothing here yet." : current.length > projects.length ? `Showing ${projects.length} of ${current.length}` : `Your ${current.length} latest`
-        }
-        aside={
-          all.length > 0 && (
-            <Button href="/projects" variant="ghost" size="sm">
-              View all
-              <ArrowRight className="size-4" aria-hidden />
-            </Button>
-          )
-        }
-      />
+      <SectionHeader title="Recent projects" aside={all.length > 0 && <Button href="/projects" variant="ghost" size="sm">View all</Button>} />
 
       {!ready ? (
         <TileGridSkeleton />
@@ -42,7 +29,6 @@ export function RecentProjects() {
         <EmptyState
           icon={<Video className="size-6" aria-hidden />}
           title="No videos yet"
-          description="Create your first video and follow its progress here."
           action={
             <Button href="/new" variant="accent" size="lg">
               <Plus className="size-[18px]" aria-hidden />

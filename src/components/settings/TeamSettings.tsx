@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { DemoBadge } from "@/components/DemoModeBadge";
 
 /** Settings → Team: the current workspace's members, invitations, roles, per-member usage, create/leave/transfer/delete. */
 export function TeamSettings() {
@@ -89,8 +88,8 @@ export function TeamSettings() {
 
   if (config.demoMode) {
     return (
-      <SectionCard title="Team" description="One credit pool for your team, with members and invitations." aside={<DemoBadge>Demo mode</DemoBadge>}>
-        <p className="text-[15px] text-muted">Demo mode: workspaces and members are switched off.</p>
+      <SectionCard title="Team" description="Not available in demo mode.">
+        <p className="text-[15px] text-muted">A team shares one credit pool, with members and invitations.</p>
       </SectionCard>
     );
   }
@@ -102,7 +101,7 @@ export function TeamSettings() {
 
   return (
     <div className="space-y-6">
-      <SectionCard title={team.workspace.name} description={isTeam ? `Team workspace · ${teamPlan ? "Business plan" : "no team plan yet"} · ${team.balance.toLocaleString("en-US")} shared credits` : "Your personal workspace. Projects and credits here are yours alone."} aside={<Badge tone={isTeam ? "success" : "neutral"}>{isTeam ? "Team" : "Personal"}</Badge>}>
+      <SectionCard title={team.workspace.name} description={isTeam ? `${teamPlan ? "Business plan" : "No team plan yet"} · ${team.balance.toLocaleString("en-US")} shared credits` : "Your personal workspace."} aside={<Badge tone={isTeam ? "success" : "neutral"}>{isTeam ? "Team" : "Personal"}</Badge>}>
         {spaces.length > 1 && (
           <div className="mb-5 flex flex-wrap items-center gap-2">
             <span className="text-sm text-muted">Switch workspace:</span>
@@ -124,7 +123,7 @@ export function TeamSettings() {
 
       {isTeam ? (
         <>
-          <SectionCard title="Members" description={isOwner ? "Members make and see projects and use the shared credits. Usage this month per member." : "Everyone in this workspace. The owner manages the plan, credits and members."}>
+          <SectionCard title="Members">
             <ul className="divide-y divide-divider">
               {team.members.map((m) => (
                 <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
@@ -144,7 +143,7 @@ export function TeamSettings() {
           </SectionCard>
 
           {isOwner && (
-            <SectionCard title="Invite a member" description={teamPlan ? "An e-mail with a link, valid 7 days. When e-mail is not configured on this server, the link is shown here once to copy." : "Inviting members needs the Business plan on this workspace. Pick it in Billing first."}>
+            <SectionCard title="Invite a member" description={teamPlan ? "An e-mail with a link, valid 7 days." : "Needs the Business plan on this workspace."}>
               <form onSubmit={onInvite} className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <Field id="inviteEmail" label="E-mail" className="flex-1"><Input id="inviteEmail" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required disabled={!teamPlan} /></Field>
                 <Button type="submit" variant="primary" disabled={busy !== null || !teamPlan || !inviteEmail}>{busy === "invite" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <UserPlus className="size-4" aria-hidden />} Invite</Button>
@@ -172,13 +171,13 @@ export function TeamSettings() {
           )}
 
           {!isOwner && (
-            <SectionCard title="Leave this workspace" description="You keep your personal workspace. Projects you made here stay with the team.">
+            <SectionCard title="Leave this workspace" description="Projects you made here stay with the team.">
               <Button type="button" variant="secondary" disabled={busy !== null} onClick={() => run("leave", () => leaveWorkspace(team.workspace.id), "You left the workspace.")}><LogOut className="size-4" aria-hidden /> Leave</Button>
             </SectionCard>
           )}
 
           {isOwner && (
-            <SectionCard title="Delete this workspace" description="Removes every project, file, credit and member of the team. This cannot be undone. Type the workspace name to confirm.">
+            <SectionCard title="Delete this workspace" description="Removes every project, credit and member. This cannot be undone.">
               <form onSubmit={(e) => { e.preventDefault(); void run("delete", async () => { await deleteWorkspace(team.workspace.id, confirmName); }, "Workspace deleted."); }} className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <Field id="confirmName" label={`Type "${team.workspace.name}"`} className="flex-1"><Input id="confirmName" value={confirmName} onChange={(e) => setConfirmName(e.target.value)} /></Field>
                 <Button type="submit" variant="danger" disabled={busy !== null || confirmName !== team.workspace.name}><Trash2 className="size-4" aria-hidden /> Delete workspace</Button>
@@ -187,7 +186,7 @@ export function TeamSettings() {
           )}
         </>
       ) : (
-        <SectionCard title="Create a team workspace" description="A shared space with its own credits, members and billing. No cost per seat; the Business plan is chosen afterwards in Billing.">
+        <SectionCard title="Create a team workspace" description="Shared credits and members, no cost per seat.">
           <form onSubmit={onCreate} className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <Field id="newWs" label="Team name" className="flex-1"><Input id="newWs" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Acme marketing" maxLength={60} required minLength={2} /></Field>
             <Button type="submit" variant="primary" disabled={busy !== null || newName.trim().length < 2}>{busy === "create" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Building2 className="size-4" aria-hidden />} Create team workspace</Button>

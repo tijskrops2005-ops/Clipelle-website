@@ -31,14 +31,13 @@ export function EditPicker() {
       <EmptyState
         icon={<Scissors className="size-6" aria-hidden />}
         title="Nothing to edit yet"
-        description="A video appears here as soon as it is finished. Make one first; the edit screen opens from this page or from the video itself."
+        description="Finished videos appear here."
         action={<Button href="/new" variant="primary"><Plus className="size-4" aria-hidden />Create new video</Button>}
       />
     );
   }
   return (
     <section aria-label="Finished videos">
-      <p className="mb-5 text-[15px] text-muted">{editable.length === 1 ? "One finished video." : `${editable.length} finished videos.`} Click one to open it on the edit screen.</p>
       <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
         {editable.map((project) => (
           <li key={project.id}>

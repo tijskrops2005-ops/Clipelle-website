@@ -34,11 +34,11 @@ export function DangerZone() {
     }
   }
   return (
-    <SectionCard title="Danger zone" description="Your data, and the way to close the account.">
+    <SectionCard title="Your data and account">
       <div className="flex flex-col gap-3 rounded-panel border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[15px] font-semibold text-ink">Download your data</p>
-          <p className="text-[13px] leading-relaxed text-muted">One JSON file with your profile, workspaces, projects, credit history, purchases and settings. Videos and images are links that work for 7 days. Up to three downloads a day.</p>
+          <p className="text-[13px] leading-relaxed text-muted">One file with everything in your account; video links work for 7 days.</p>
         </div>
         <Button href="/api/settings/export" variant="secondary" className="shrink-0" prefetch={false} download aria-disabled={config.demoMode || undefined}>
           <Download className="size-4" aria-hidden /> Download
@@ -47,7 +47,7 @@ export function DangerZone() {
       <form onSubmit={onDelete} className="space-y-4 rounded-panel border border-danger/40 p-4">
         <div>
           <p className="text-[15px] font-semibold text-ink">Delete account</p>
-          <p className="text-[13px] leading-relaxed text-muted">Closes the account now: the subscription ends at the end of the paid period, API keys stop working and running videos are stopped. Everything is removed after {DELETION_GRACE_DAYS} days. Sign in before then to restore it. Invoices are kept as the law requires.</p>
+          <p className="text-[13px] leading-relaxed text-muted">Removed after {DELETION_GRACE_DAYS} days; sign in before then to restore it.</p>
         </div>
         {error && <p role="alert" className="rounded-chip bg-danger/10 px-4 py-2.5 text-sm text-danger">{error}</p>}
         <Field id="confirm" label="Type your e-mail address to confirm">

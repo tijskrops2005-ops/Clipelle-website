@@ -11,7 +11,6 @@ import { detectLogoKind, LOGO_ACCEPT, logoProblem, MAX_LOGO_BYTES } from "@/lib/
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { DemoBadge } from "@/components/DemoModeBadge";
 import { Select } from "@/components/ui/Select";
 import { config } from "@/lib/config";
 
@@ -121,14 +120,14 @@ export function BrandSettings() {
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Logo" description="Shown small, top right, for the whole video. PNG with a transparent background works best; JPG and plain SVG also work." aside={<DemoBadge>Stored in this browser</DemoBadge>}>
+      <SectionCard title="Logo" description="PNG, JPG or SVG, up to 2 MB. Added to a video on the edit screen.">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="grid size-28 shrink-0 place-items-center overflow-hidden rounded-[14px] bg-surface-muted" aria-live="polite">
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- the customer's own logo, served by our own route
               <img src={logoUrl} alt="Your logo" className="max-h-24 max-w-24 object-contain" />
             ) : (
-              <span className="label-mono text-muted">{loaded ? "No logo" : "Loading"}</span>
+              <span className="text-[13px] text-muted">{loaded ? "No logo" : "Loading"}</span>
             )}
           </div>
           <div className="space-y-3">
@@ -145,7 +144,6 @@ export function BrandSettings() {
                 </Button>
               )}
             </div>
-            <p className="text-[13px] text-muted">{ads ? "New ads start with this logo; on the edit screen you add it to any finished video." : "On the edit screen you add it to a finished video."} Up to {MAX_LOGO_BYTES / (1024 * 1024)} MB.</p>
             {logoMsg && (
               <p role={logoMsg.tone === "error" ? "alert" : "status"} className={logoMsg.tone === "error" ? "text-[13px] text-danger" : "text-[13px] text-success"}>{logoMsg.text}</p>
             )}
@@ -153,13 +151,12 @@ export function BrandSettings() {
         </div>
       </SectionCard>
 
-      <SectionCard title={ads ? "Brand defaults" : "Caption colours"} description={ads ? "What a new video starts with. You can still change it per video." : "What a new translation starts with. You can still change them per video."} aside={<DemoBadge>Stored in this browser</DemoBadge>}>
+      <SectionCard title={ads ? "Brand defaults" : "Caption colours"} description="What a new video starts with.">
       <form onSubmit={onSubmit} className="space-y-6" aria-busy={!loaded}>
         <div className="space-y-3">
           {ads && (
             <div>
               <p className="text-sm font-medium text-ink">Caption colours for translations</p>
-              <p className="text-[13px] text-muted">New translations start with these; you can still change them per video.</p>
             </div>
           )}
           <div className="flex flex-wrap gap-x-6 gap-y-4">
@@ -173,14 +170,14 @@ export function BrandSettings() {
           <>
             <ColorPicker id="brandAccent" label="Accent colour for ads" value={accent} onChange={(hex) => hex && setAccent(hex)} note={contrastRatio(accent, "#FFFFFF") < 3 ? "Low contrast" : undefined} />
             <div className="grid gap-5 md:grid-cols-2">
-              <Field id="captionStyle" label="Captions" hint={CAPTION_STYLE_META[captionStyle].blurb}>
+              <Field id="captionStyle" label="Captions">
                 <Select id="captionStyle" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value as CaptionStyle)}>
                   {CAPTION_STYLES.map((k) => (
                     <option key={k} value={k}>{CAPTION_STYLE_META[k].label}</option>
                   ))}
                 </Select>
               </Field>
-              <Field id="font" label="Font" hint={FONT_META[font].blurb}>
+              <Field id="font" label="Font">
                 <Select id="font" value={font} onChange={(e) => setFont(e.target.value as FontKey)}>
                   {FONT_KEYS.map((k) => (
                     <option key={k} value={k}>{FONT_META[k].label}</option>
