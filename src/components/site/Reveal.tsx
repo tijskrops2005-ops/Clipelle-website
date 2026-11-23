@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -6,11 +6,8 @@ import { cn } from "@/lib/utils";
  * no hidden content before hydration, static under "reduce motion" and in browsers without support.
  * `delay` staggers siblings.
  */
-export function Reveal({ children, className, delay = 0, as: Tag = "div" }: { children: ReactNode; className?: string; delay?: number; as?: "div" | "section" | "li" | "article" }) {
-  const style = delay ? ({ "--reveal-delay": `${delay}ms` } as CSSProperties) : undefined;
-  return (
-    <Tag className={cn("reveal", className)} style={style}>
-      {children}
-    </Tag>
-  );
+export function Reveal({ children, className, as: Tag = "div" }: { children: ReactNode; className?: string; /** Kept for call sites; no longer used. */ delay?: number; as?: "div" | "section" | "li" | "article" }) {
+  // Static since 23 Nov 2026 (docs/design-clarity.md): entrances on every section read as generated.
+  // The `.reveal` keyframes stay in globals.css; put the class back here to turn them on again.
+  return <Tag className={cn(className)}>{children}</Tag>;
 }

@@ -8,7 +8,8 @@ type StepCardProps = {
   number: number;
   title: string;
   /** Generic step descriptor from config.stepLabels, rendered as a mono micro-label. Never a provider name. */
-  service: string;
+  /** Ignored since 23 Nov 2026 (no mono descriptor under the title, docs/design-clarity.md). */
+  service?: string;
   description: string;
   /** Shown as a muted inner panel: an illustration (dashboard) or live status details (project page). */
   panel?: ReactNode;
@@ -52,7 +53,6 @@ export function StepCard({
             <h3 className="text-lg font-semibold leading-tight text-ink">
               {title}
             </h3>
-            <p className="label-mono mt-1.5 text-muted">{service}</p>
           </div>
         </div>
         {status && <StatusBadge status={status} />}

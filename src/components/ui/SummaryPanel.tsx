@@ -12,7 +12,7 @@ export function SummaryPanel({ title = "Summary", rows, total, children, footnot
   return (
     <Card className={cn("xl:sticky xl:top-6", className)}>
       <div className="px-5 pt-5 sm:px-6 sm:pt-6">
-        <p className="label-mono text-muted">{title}</p>
+        <p className="text-[15px] font-semibold text-ink">{title}</p>
         <dl className="mt-4 space-y-2.5">
           {rows.map((r, i) => (
             <div key={i} className="flex items-baseline justify-between gap-4 text-sm">

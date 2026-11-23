@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 
 type SectionCardProps = {
-  /** Small mono line above the title, e.g. "Step 1 of 3". */
+  /** Ignored since 23 Nov 2026 (no eyebrow labels, docs/design-clarity.md); kept so call sites compile. */
   eyebrow?: ReactNode;
   /** Ink circle with a number, like the numbered step cards. */
   number?: number;
@@ -22,7 +22,7 @@ type SectionCardProps = {
  * A card with a numbered title row and an explanation, holding one group of related inputs.
  * The forms are built from three of these; the project page uses them for details.
  */
-export function SectionCard({ eyebrow, number, title, description, aside, children, id, className, contentClassName }: SectionCardProps) {
+export function SectionCard({ number, title, description, aside, children, id, className, contentClassName }: SectionCardProps) {
   return (
     <Card id={id} className={cn("scroll-mt-24", className)}>
       {/* Phones (23 Nov 2026): a badge beside the title squeezed the description into a 130 px column; it now sits under it. */}
@@ -34,7 +34,6 @@ export function SectionCard({ eyebrow, number, title, description, aside, childr
             </span>
           )}
           <div className="min-w-0">
-            {eyebrow && <p className="label-mono mb-1.5 text-muted">{eyebrow}</p>}
             <h2 className="text-xl font-semibold leading-tight text-ink">{title}</h2>
             {description && <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{description}</p>}
           </div>
