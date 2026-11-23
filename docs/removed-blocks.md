@@ -89,3 +89,17 @@ De drie tabbladen (What you get / What you decide / What we promise) met swipe z
 ## 31 Oct 2026: dashboard with one job (product polish, `docs/plan-product-polish.md` #3)
 
 Off the dashboard, code kept in `src/components/dashboard/`: the three stat cards with the ring and the seven-day bars (the old `Overview`; the new one is one line with the balance, what it buys, the plan and this month's count; the old version is in git before this commit), the **Activity** feed (`ActivityFeed.tsx`), the **Tip of the day** (`TipCard.tsx`), and the quick-actions card (now one row of pills). **How it works** shows only for an account without projects (`WhenNoProjects.tsx`). Restore: import the component again in `src/app/(app)/dashboard/page.tsx` and place it in the right column.
+
+## 23 Nov 2026: one coherent site and app (consistency round after Noah's review; `docs/build-progress.md`)
+
+Off the screens, code kept:
+
+- **Hero fan illustrations** (`AdSketch` tiles with hook text in `HeroShowcase`, `src/components/site/Showcase.tsx`): the fan shows real videos only (each sample's translation and its original). The drawn tiles promised text cards the product never puts on screen. `AdSketch` and the `showcaseWords` dictionary entries stay for the ads flag.
+- **Tilted illustration cards behind the platform-page phone** (`HeroStage` with `plain`): they were cut off mid-word. Pass `plain={false}` (the default elsewhere) to bring them back.
+- **"Translated videos" grid on /examples** (`ExampleGallery kind="translate"`): every translation sample sits in the before-and-after block (`BeforeAfter`), a sample without its original alone in the same frame. The grid used the browser's own players and repeated the same videos.
+- **The "Done for you" button in the dark band on /pricing** (`EnterpriseBand`): the managed service has its own block right below; the band keeps one action.
+- **The "Credits never expire" line under every plan card on /pricing**: said once in the page intro ("Credits you pay for never expire") and on the Free card as the 30-day rule.
+- **The "Case studies" menu and footer link**: shows again as soon as `src/content/case-studies.ts` has a published story (`HAS_STORIES` in `siteNav.ts`).
+- **The homepage showcase's second red button**: "Translate a video" under the language wall is black now; the hero button is the page's one accent.
+
+Changed numbers, for the record: the site quotes **7 minutes for a 30-second video** (`measured.translationMinutes`, the median of five live runs on 2 Nov 2026) instead of 4.5 minutes for one 8-second run; the one short run is kept as `measured.shortTranslationMinutes`.
