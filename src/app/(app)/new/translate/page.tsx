@@ -15,9 +15,7 @@ export default async function NewTranslatePage({ searchParams }: { searchParams:
   return (
     <div className="space-y-10">
       <CreateHeader
-        eyebrow={presenter ? "Translate with a presenter" : "Translate and lip sync"}
-        title={addLanguage ? "Add a language" : fromId ? "Localize this ad" : presenter ? "Translate with an AI presenter" : "Translate an existing video"}
-        text={addLanguage ? "Pick the extra languages. The video you uploaded is the source, so there is nothing to upload again." : fromId ? "Pick the languages; the finished ad is the source, so there is nothing to upload. The translation is checked automatically." : presenter ? "Upload your video and pick the language. Every line is translated and checked, then a presenter you choose speaks it, with the voice and accent you pick." : "Upload a video you own and pick the languages. The speaker keeps their own voice, every line is checked and captions are added."}
+        title={addLanguage ? "Add a language" : fromId ? "Translate this ad" : presenter ? "Translate with a presenter" : "Translate a video"}
         steps={translateStageStrip(presenter)}
       />
       {fromId ? <LocalizeForm fromId={fromId} /> : <TranslateForm key={presenter ? "presenter" : "original"} initialSpeaker={presenter ? "presenter" : "original"} />}

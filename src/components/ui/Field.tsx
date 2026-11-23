@@ -30,7 +30,7 @@ export function Field({
         <label htmlFor={id} className="text-sm font-medium text-ink">
           {label}
         </label>
-        {optional && <span className="label-mono text-muted">{optionalLabel}</span>}
+        {optional && <span className="text-[12px] text-muted">{optionalLabel}</span>}
       </div>
       {children}
       {error ? (

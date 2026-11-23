@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
-import { DemoBadge } from "@/components/DemoModeBadge";
 import { formatDuration } from "@/components/ui/VideoDropzone";
 import { TranslateProgress } from "./TranslateProgress";
 import { translateProgress } from "@/lib/translateProgress";
@@ -65,7 +64,7 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
         }
         title={project.name}
         badge={<StatusBadge status={project.status} />}
-        description={`Translation into ${project.targetLanguages.map((l) => languageOf(l).label).join(", ")} · created ${formatDate(project.createdAt)}${project.archivedAt ? " · archived" : ""}${project.tags?.length ? ` · ${project.tags.join(", ")}` : ""}`}
+        description={`${project.targetLanguages.map((l) => languageOf(l).label).join(", ")} · ${formatDate(project.createdAt)}${project.archivedAt ? ", archived" : ""}`}
         actions={
           project.status === "completed" ? (
             <div className="flex flex-wrap gap-2">
@@ -81,9 +80,6 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
                 Add a language
               </Button>
               )}
-              <Button href="/new/translate" variant="secondary">
-                Translate another
-              </Button>
             </div>
           ) : undefined
         }
@@ -98,13 +94,13 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
           {/* Open by default (26 Oct 2026): the check of every line is what sets the translation apart. */}
           {project.translations.some((t) => t.qa) && (
             <section className="space-y-5">
-              <SectionHeader title="Quality check" description="Every line was compared with the original before the final render." aside={<DemoBadge>Demo check</DemoBadge>} />
+              <SectionHeader title="Quality check" />
               <QualityCheck project={project} />
             </section>
           )}
           {versions.length > 0 && (
             <section className="space-y-5">
-              <SectionHeader title="Versions" description={`This is version ${project.version ?? 1}. Edited versions made from the same video are listed here.`} />
+              <SectionHeader title="Versions" />
               <Card>
                 <CardContent className="pt-5">
                   <ul className="space-y-1.5">
@@ -121,7 +117,7 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
               </Card>
             </section>
           )}
-          <Collapsible title="Project details" summary="Your source video, file, languages and rights confirmation.">
+          <Collapsible title="Project details">
             <div className="grid gap-6 md:grid-cols-2">
               <DetailsCard project={project} sourceLanguage={sourceLanguage} />
               <StatusCard project={project} />
@@ -135,11 +131,11 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
 
           {project.translations.some((t) => t.qa) && (
             <section className="space-y-5">
-              <SectionHeader title="Quality check" description="Every line was compared with the original before the final render." aside={<DemoBadge>Demo check</DemoBadge>} />
+              <SectionHeader title="Quality check" />
               <QualityCheck project={project} />
             </section>
           )}
-          <Collapsible title="Project details" summary="Your source video, file, languages and rights confirmation.">
+          <Collapsible title="Project details">
             <div className="grid gap-6 md:grid-cols-2">
               <DetailsCard project={project} sourceLanguage={sourceLanguage} />
               <StatusCard project={project} />
@@ -161,11 +157,7 @@ function ResultSection({ project, sourceLanguage }: { project: TranslateProject;
   const single = count === 1;
   return (
     <section className="space-y-5">
-      <SectionHeader
-        title="Your videos"
-        description={`${count} ${single ? "video" : "videos"} with captions, one per language.`}
-        aside={<DemoBadge>Demo placeholders</DemoBadge>}
-      />
+      <SectionHeader title={single ? "Your video" : "Your videos"} />
       <Card>
         <CardContent className="space-y-7 pt-7">
           <div className="flex flex-wrap items-start justify-center gap-5 sm:gap-8">
@@ -213,7 +205,7 @@ function ResultSection({ project, sourceLanguage }: { project: TranslateProject;
             {ready && <Fact label="Ready in" value={ready} />}
             <Fact label="Credits used" value={`${config.demoMode ? projectCredits(project) : chargedCredits(project)}${config.demoMode ? " · demo" : ""}`} />
           </dl>
-          {config.demoMode && <p className="text-[13px] leading-relaxed text-muted">Demo mode: sample clips, nothing was charged.</p>}
+          {config.demoMode && <p className="text-[13px] leading-relaxed text-muted">Demo: sample clips, nothing was charged.</p>}
         </CardContent>
       </Card>
     </section>

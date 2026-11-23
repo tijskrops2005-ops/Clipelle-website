@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowRight, Clock, Coins } from "lucide-react";
 import { config } from "@/lib/config";
 import { measured } from "@/content/measured";
 import { adCredits, translateCredits } from "@/lib/plans";
@@ -43,7 +42,7 @@ const translateWorkflows: Workflow[] = [
     kind: "translate",
     href: "/new/translate",
     title: "Translate a video",
-    text: "The speaker keeps their own voice, the lips follow the new language and captions are added. Several languages at once.",
+    text: "Own voice, lip sync and captions. Several languages at once.",
     price: `from ${FROM_TRANSLATE} credits per language`,
     Preview: TranslatePreview,
   },
@@ -51,7 +50,7 @@ const translateWorkflows: Workflow[] = [
     kind: "translate",
     href: "/new/translate?speaker=presenter",
     title: "Translate with a presenter",
-    text: "The words of your video, translated and spoken by an AI presenter you pick, with the voice and accent you choose.",
+    text: "An AI presenter you pick speaks the translation.",
     price: `from ${FROM_PRESENTER} credits`,
     Preview: PresenterPreview,
   },
@@ -62,7 +61,7 @@ const adWorkflows: Workflow[] = [
     kind: "ad",
     href: "/new/ad",
     title: "Ad from a product photo",
-    text: "Photos and a short description become a finished 9:16 ad with a presenter, product footage and captions.",
+    text: "A photo and a few sentences become a 9:16 ad.",
     price: `from ${FROM_AD} credits`,
     Preview: AdPreview,
   },
@@ -70,7 +69,7 @@ const adWorkflows: Workflow[] = [
     kind: "ad",
     href: "/new/url",
     title: "Ad from a product link",
-    text: "Paste a product page link. Name, description and photos are read for you to check; then the same ad is made.",
+    text: "A product page fills the ad form for you.",
     price: `from ${FROM_AD} credits`,
     Preview: UrlPreview,
   },
@@ -95,7 +94,7 @@ export function WorkflowChooser() {
         {translateWorkflows.map((w) => <WorkflowCard key={w.href} {...w} />)}
       </div>
       <div>
-        <p className="label-mono text-muted">Coming soon</p>
+        <p className="text-[15px] font-semibold text-ink">Coming soon</p>
         <ul className="mt-3 grid gap-4 sm:grid-cols-2">
           {adWorkflows.map(({ href, title, text, Preview }) => (
             <li key={href}>
@@ -126,14 +125,8 @@ function WorkflowCard({ kind, href, title, text, price, Preview }: Workflow) {
       <h2 className="mt-5 text-[19px] font-semibold leading-tight text-ink">{title}</h2>
       <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{text}</p>
       <div className="mt-auto pt-5">
-        <ul className="flex flex-wrap gap-2 text-[12.5px]">
-          <li className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-ink"><Clock className="size-3.5 text-accent" aria-hidden />{formatWait(WAIT[kind].minutes)}<span className="sr-only"> {WAIT[kind].note}</span></li>
-          <li className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-ink"><Coins className="size-3.5 text-accent" aria-hidden />{price}</li>
-        </ul>
-        <span className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-control bg-ink px-4 text-sm font-medium text-surface transition-colors duration-150 group-hover:bg-ink/90">
-          Start
-          <ArrowRight className="size-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden />
-        </span>
+        <p className="text-[13px] text-muted">{formatWait(WAIT[kind].minutes)} · {price}<span className="sr-only"> {WAIT[kind].note}</span></p>
+        <span className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-control bg-ink px-4 text-sm font-medium text-surface transition-colors duration-150 group-hover:bg-ink/90">Start</span>
       </div>
     </Link>
   );

@@ -43,7 +43,7 @@ export function CaptionsPanel({ recipe, onRecipe, time, onSeek, disabled }: { re
             </div>
           </div>
           <div>
-            <p className="mb-2 text-sm font-medium text-ink">Lines <span className="font-normal text-muted">· click a time to jump there</span></p>
+            <p className="mb-2 text-sm font-medium text-ink">Lines <span className="font-normal text-muted">(click a time to jump there)</span></p>
             <ol className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
               {captions.cues.map((cue, i) => {
                 const live = time >= cue.start && time < cue.end;
@@ -62,7 +62,6 @@ export function CaptionsPanel({ recipe, onRecipe, time, onSeek, disabled }: { re
                 );
               })}
             </ol>
-            <p className="mt-2 text-[12.5px] text-muted">The voice stays as it is; only the captions change.</p>
           </div>
         </>
       )}
