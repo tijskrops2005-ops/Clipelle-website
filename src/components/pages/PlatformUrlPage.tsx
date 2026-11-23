@@ -22,7 +22,7 @@ export function PlatformUrlPage({ locale }: { locale: Locale }) {
   const L = (x: string) => localizePath(x, locale);
   if (!config.features.ads) {
     return (
-      <IntegrationPage locale={locale} soon eyebrow={p.eyebrow} title={p.title} intro={p.intro} steps={p.steps} does={p.doesItems} doesNot={p.doesNotItems} secondary={{ href: L("/platform/translate"), label: p.soon.translateInstead }}>
+      <IntegrationPage locale={locale} soon eyebrow={p.eyebrow} title={p.title} intro={p.intro} stepsTitle={p.stepsTitle} steps={p.steps} does={p.doesItems} doesNot={p.doesNotItems} primary={{ href: L("/platform/translate"), label: p.soon.translateInstead }}>
         <div className="mt-8 rounded-card bg-surface p-6 shadow-card"><p className="text-[15px] font-semibold text-ink">{t.integrations.waitlistTitle}</p><p className="mb-4 mt-1 text-[13px] text-muted">{t.integrations.waitlistText}</p><WaitlistForm feature="url-to-video" label={p.soon.label} locale={locale} /></div>
       </IntegrationPage>
     );

@@ -46,9 +46,10 @@ export function WaitlistForm({ feature, label, locale = "en" }: { feature: Waitl
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <label className="sr-only" htmlFor={`waitlist-${feature}`}>E-mail</label>
-      <Input id={`waitlist-${feature}`} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className="sm:max-w-xs" disabled={state === "busy"} />
+      <Input id={`waitlist-${feature}`} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t.emailPlaceholder} className="sm:max-w-xs" disabled={state === "busy"} />
       <Honeypot value={website} onChange={setWebsite} />
-      <Button type="submit" variant="primary" disabled={state === "busy" || !email}>
+      {/* Never greyed out while the field is empty (23 Nov 2026: it read as a dead button); the browser asks for the address on submit. */}
+      <Button type="submit" variant="primary" disabled={state === "busy"}>
         {state === "busy" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
         {t.tellMe}
       </Button>
