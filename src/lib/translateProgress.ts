@@ -56,14 +56,14 @@ const LABELS: Record<StageKey, { label: string; doneLabel: string; short: string
 
 /**
  * How long the work has been running, in words a customer expects for a five-minute job: never
- * hours. "Just started" under a minute, "Running 3 min" up to an hour, then "Running over an hour"
+ * hours. "Just started" under a minute, "Running 3 min" up to an hour, then "Running longer than usual"
  * (that is a problem, and the page says so next to it).
  */
 export function runningLabel(ms: number): string {
   const m = Math.floor(Math.max(0, ms) / 60_000);
   if (m < 1) return "Just started";
   if (m < 60) return `Running ${m} min`;
-  return "Running over an hour";
+  return "Running longer than usual";
 }
 
 const K = 2.2;
@@ -197,14 +197,14 @@ export function translateProgress(p: ProgressInput, now = Date.now()): Translate
     const pct = Math.round((l.parts.reduce((a, x) => a + x.weight * x.fraction, 0) / w) * 100);
     const active = l.parts.find((x) => x.state === "active");
     if (l.t?.status === "completed") return { code: l.code, state: "ready", percent: 100, label: "Ready", short: "ready" };
-    if (l.t?.status === "failed") return { code: l.code, state: "failed", percent: pct, label: "Stopped", short: "stopped", error: l.t.error };
+    if (l.t?.status === "failed") return { code: l.code, state: "failed", percent: pct, label: "Failed", short: "failed", error: l.t.error };
     if (active) return { code: l.code, state: "active", percent: Math.min(99, pct), label: labelOf(active.key, presenter, false), short: shortOf(active.key, presenter) };
     const sharedActive = shared.find((x) => x.state === "active");
     return { code: l.code, state: "waiting", percent: Math.min(99, pct), label: "Waiting for the translation", short: sharedActive ? shortOf(sharedActive.key, presenter) : "waiting" };
   });
 
   const activeShared = shared.find((x) => x.state === "active");
-  const current = p.status === "completed" ? "Ready" : p.status === "failed" ? "Stopped" : activeShared ? labelOf(activeShared.key, presenter, false) : languages.find((l) => l.state === "active")?.label ?? (p.status === "draft" ? "Not started" : "Starting");
+  const current = p.status === "completed" ? "Ready" : p.status === "failed" ? "Failed" : activeShared ? labelOf(activeShared.key, presenter, false) : languages.find((l) => l.state === "active")?.label ?? (p.status === "draft" ? "Not started" : "Starting");
 
   const starts = Object.values(p.steps).map((s) => (s?.startedAt ? Date.parse(s.startedAt) : NaN)).filter((t) => Number.isFinite(t));
   const startedAt = starts.length ? Math.min(...starts) : null;

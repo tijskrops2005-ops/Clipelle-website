@@ -1,4 +1,5 @@
 import { config } from "@/lib/config";
+import { translateFlowSteps } from "@/lib/translateFlow";
 import { SectionHeader } from "@/components/ui/PageHeader";
 import { StepCard } from "@/components/StepCard";
 import { Button } from "@/components/ui/Button";
@@ -24,18 +25,21 @@ const adSteps: Step[] = [
   { title: "Final edit", service: config.stepLabels.finalEdit, description: "Both clips become one 9:16 ad with captions of what is said. Nothing else is placed on screen.", Illustration: FinalVideoIllustration },
 ];
 
-const translateSteps: Step[] = [
-  { title: "Upload", service: config.stepLabels.upload, description: "Your video is checked and stored safely, together with your rights confirmation.", Illustration: UploadIllustration },
-  { title: "Translate", service: config.stepLabels.translate, description: "The speech is translated and every line is checked automatically against the original.", Illustration: TranslateIllustration },
-  { title: "Captions and 9:16", service: config.stepLabels.captions, description: "Voice and lips are matched to the new language; captions and the vertical format are added.", Illustration: CaptionsIllustration },
+/** The four steps of a translation come from the one list (src/lib/translateFlow.ts, 23 Nov 2026); only the mono label and the drawing are added here. */
+const FLOW_EXTRAS: { service: string; Illustration: typeof ScriptIllustration }[] = [
+  { service: config.stepLabels.upload, Illustration: UploadIllustration },
+  { service: config.stepLabels.translate, Illustration: TranslateIllustration },
+  { service: "Own voice", Illustration: PresenterIllustration },
+  { service: "Your caption style", Illustration: CaptionsIllustration },
 ];
+const translateSteps: Step[] = translateFlowSteps("en").map((s, i) => ({ title: s.title, description: s.text, ...FLOW_EXTRAS[i] }));
 
 /** Explainer: the fixed steps of each workflow, one row per workflow. */
 export function HowItWorks() {
   return (
     <section className="space-y-8">
       <SectionHeader title="How it works" description="One click starts a fixed set of steps. Everything runs on its own; you follow progress on the project page." />
-      <WorkflowRow kicker="Translate a video" href="/new/translate" steps={translateSteps} columns={3} />
+      <WorkflowRow kicker="Translate a video" href="/new/translate" steps={translateSteps} columns={4} />
       {config.features.ads && <WorkflowRow kicker="Make an ad from a product photo" href="/new/ad" steps={adSteps} columns={4} />}
     </section>
   );

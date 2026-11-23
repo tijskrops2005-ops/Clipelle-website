@@ -5,7 +5,8 @@ import { getCreditBalance } from "@/lib/credits";
 import { config } from "@/lib/config";
 import { getOrCreateProfile } from "@/lib/data/profile";
 import { ensureFreeAd } from "@/lib/billing";
-import { adCredits } from "@/lib/plans";
+import { creditsWorth } from "@/lib/projectCredits";
+import { DEMO_BALANCE } from "@/lib/mock/account";
 import { deletionDate } from "@/lib/accountDeletion";
 import { supportEmail } from "@/lib/brand";
 import { Sidebar } from "@/components/Sidebar";
@@ -20,13 +21,6 @@ import { ViewingBar } from "@/components/ViewingBar";
 import { DeletionBanner } from "@/components/DeletionBanner";
 import { AppFooter } from "@/components/AppFooter";
 import { DraftScopeProvider } from "@/lib/forms/DraftScope";
-
-/** "≈ 3 ads" while ads are on (a 30 s Standard ad), else "≈ 4 min of translation": the balance in plain units. */
-function approxLabel(credits: number) {
-  if (config.features.ads) return `≈ ${Math.floor(credits / adCredits({ seconds: 30, engine: "avatar_iii" }))} ads`;
-  const min = credits / 60;
-  return `≈ ${min < 10 ? Math.round(min * 10) / 10 : Math.round(min)} min of translation`;
-}
 
 /**
  * Persistent frame for every app page. The sidebar sits on the page background;
@@ -48,7 +42,8 @@ export async function AppShell({ children }: { children: ReactNode }) {
     if (profile?.deletionRequestedAt && !scope.viewing) deletionAt = deletionDate(profile.deletionRequestedAt).toISOString();
     workspaces = await listWorkspacesFor(user.id).catch(() => []);
   }
-  const credits = user && scope && !config.demoMode ? await getCreditBalance(scope.workspaceId).catch(() => null) : null;
+  // Demo mode shows the one demo balance everywhere (src/lib/mock/account.ts).
+  const credits = user && scope ? (config.demoMode ? DEMO_BALANCE : await getCreditBalance(scope.workspaceId).catch(() => null)) : null;
   const who = user && scope ? { email: user.email, name: user.name, credits, planKey: scope.planKey, workspace: { id: scope.workspaceId, name: scope.workspaceName, kind: scope.workspaceKind, role: scope.role }, workspaces, isAdmin: !config.demoMode && isAdmin(user.email) } : null;
   const support = supportEmail();
   // Form drafts belong to this user in this workspace (2 Nov 2026, src/lib/forms/formDraft.ts).
@@ -78,7 +73,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
         {/* desktop: section, credits, tool search, support and updates */}
         <div className="hidden lg:block">
           <Suspense fallback={<div className="h-14" aria-hidden />}>
-            <TopBar credits={credits !== null ? { balance: credits, approx: approxLabel(credits) } : null} supportHref={support ? `mailto:${support}` : "/contact"} />
+            <TopBar credits={credits !== null ? { balance: credits, approx: creditsWorth(credits, config.features.ads) } : null} supportHref={support ? `mailto:${support}` : "/contact"} />
           </Suspense>
         </div>
         <div className="mx-auto w-full max-w-[1180px] px-4 pb-16 pt-5 sm:px-6 md:px-8 lg:px-10 lg:pb-20 lg:pt-10">

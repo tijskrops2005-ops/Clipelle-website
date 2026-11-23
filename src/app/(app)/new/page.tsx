@@ -25,7 +25,7 @@ export default async function NewVideoPage() {
     );
   }
   return (
-    <div className="mx-auto max-w-5xl space-y-10">
+    <div className="space-y-10">
       <ClearDrafts />
       <CreateHeader eyebrow="New video" title="What do you want to make?" text={config.features.ads ? "Translate a video you own, or make a new ad. Everything runs on its own after you click start." : "Translate a video you own, with the speaker's own voice or an AI presenter. Everything runs on its own after you click start."} />
       <WorkflowChooser />
