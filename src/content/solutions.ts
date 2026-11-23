@@ -12,6 +12,10 @@ export type Solution = {
   problem: { title: string; points: string[] };
   helps: { title: string; text: string }[];
   example: { title: string; stepTitles: string[]; steps: string[] };
+  /** One block that only this audience gets (23 Nov 2026): facts that are true in the product today. */
+  extra?: { eyebrow: string; title: string; items: { title: string; text: string }[] };
+  /** Blog categories for the three articles under the page, most fitting first. */
+  reads?: string[];
   faq: { q: string; a: string }[];
 };
 
@@ -109,7 +113,7 @@ const allSolutions: Solution[] = [
     example: { title: "A feature launch in four steps", stepTitles: ["Upload a screenshot", "Set tone and presenter", "Review the script", "Download and translate"], steps: ["Upload one screenshot of the new dashboard; describe what it does and for whom.", "Choose 30 seconds, a Warm tone, the presenter who matches the brand.", "Review the script; keep the hook that names the pain point.", "Download the ad; translate it into Spanish for the Latin American launch."] },
     faq: [
       { q: "Can the product clip show a screen recording?", a: "The product clip is generated from one still image. Use a clean screenshot; a recording is not an input today." },
-      { q: "Can the presenter say technical terms?", a: "Yes; write them in the description or your own script. For translations, add them as terms to keep." },
+      { q: "Can the presenter say technical terms?", a: "Yes; write them in the description or your own script. For translations, add them under Words to keep." },
       { q: "Is there an end card with a button?", a: "No. The only text on screen is the captions; the call to action is spoken." },
     ],
   },
@@ -123,14 +127,24 @@ const allSolutions: Solution[] = [
       { title: "Your voice, other words", text: "The translation keeps the speaker's own voice and matches the lips to the new language, in Speed or Precision quality." },
       { title: "190 languages and variants", text: "Several at once; each version renders in parallel and gets its own captions." },
       { title: "An automatic check per line", text: "Every translated line is compared with the original for missing or added words, meaning, numbers and names, and corrected within the timing." },
-      { title: "Terms to keep", text: "Your name, your product names and your catchphrases stay as they are." },
-      { title: "Rights first", text: "You confirm you own the video and have the speaker's permission before anything starts." },
+      { title: "Words to keep", text: "Your name, your product names and your catchphrases stay as they are." },
     ],
-    example: { title: "One video into three languages", stepTitles: ["Upload the video", "Pick three languages", "Check the corrections", "Download three versions"], steps: ["Upload the 60-second video; leave the spoken language on Detect automatically.", "Pick German, French and Portuguese (Brazil); keep Speed; add the channel name to Terms to keep.", "The quality check lists two corrected lines and one warning about a number; check them.", "Download three videos, each with captions, ready for the regional channels."] },
+    extra: {
+      eyebrow: "For creators",
+      title: "Your style, your channels",
+      items: [
+        { title: "Captions in your style", text: "Highlight colour, text colour, size and capitals; the preview on the form shows the result." },
+        { title: "Old on-screen text removed", text: "Optional: old captions and titles are painted out and your new captions go where they were." },
+        { title: "Change the captions afterwards", text: "On the edit screen you correct a caption line or trim the video; the voice stays as it is." },
+        { title: "Rights first", text: "You confirm you own the video and have the speaker's permission before anything starts." },
+      ],
+    },
+    reads: ["translation", "captions-and-formats"],
+    example: { title: "One video into three languages", stepTitles: ["Upload the video", "Three languages", "Read the check", "Three versions"], steps: ["Upload the 60-second video; leave the spoken language on Detect automatically.", "Pick German, French and Portuguese (Brazil); keep Speed; add the channel name to Words to keep.", "The quality check lists two corrected lines and one warning about a number; check them.", "Download three videos, each with captions, ready for the regional channels."] },
     faq: [
-      { q: "Does my accent survive?", a: "The voice stays yours; the pronunciation follows the new language. Listen to the result and adjust terms to keep if a name is read oddly." },
+      { q: "Does my accent survive?", a: "The voice stays yours; the pronunciation follows the new language. Listen to the result and add a name under Words to keep if it is read oddly." },
       { q: "How long can the video be?", a: "Up to 32 MB and three minutes per upload today." },
-      { q: "Can I edit the translation?", a: "The automatic check corrects lines within the timing and shows what it changed. Manual editing per line is not part of the flow." },
+      { q: "Can I edit the translation?", a: "The automatic check corrects lines within the timing and shows what it changed. On the edit screen you can change the caption text afterwards; the voice stays as it is." },
     ],
   },
 ];
@@ -149,11 +163,21 @@ const translationSolutions: Solution[] = [
     helps: [
       { title: "Your voice, every market", text: "The translation keeps the speaker's own voice and matches the lips to the new language, in Speed or Precision quality." },
       { title: "Several languages in one go", text: "Pick every market at once; each version renders in parallel and gets its own captions." },
-      { title: "Brand names stay", text: "Put your brand and product names under Words to keep, and they are read exactly as they are." },
       { title: "Every line checked", text: "Each translated line is compared with the original for missing words, numbers and names, and corrected before the render." },
-      { title: "Costs before you click", text: "The form shows the credits per language before you start; a version that fails costs nothing." },
+      { title: "Credits before you click", text: "The form shows the credits per language before you start; a version that fails costs nothing." },
     ],
-    example: { title: "One launch video, four markets", stepTitles: ["Upload the video", "Pick the markets", "Check the corrections", "Download four versions"], steps: ["Upload the 45-second launch video; leave the spoken language on Detect automatically.", "Pick German, French, Spanish and Italian; keep Speed; add the brand name to Words to keep.", "The quality check lists the corrected lines per language; read them on the project page.", "Download four videos with captions, one per shop, ready to post."] },
+    extra: {
+      eyebrow: "For shops",
+      title: "Markets and product names",
+      items: [
+        { title: "Regional variants", text: "Spanish for Spain or for Mexico, English for the UK or the US: pick the variant your market speaks." },
+        { title: "Product names stay", text: "Put your brand and product names under Words to keep and they are said exactly as written." },
+        { title: "A word per shop", text: "Words to replace swaps one word for another in the translation, for example the name of the shop." },
+        { title: "9:16 or the original size", text: "Vertical for TikTok, Reels and Shorts, or the size the video already has." },
+      ],
+    },
+    reads: ["translation", "captions-and-formats"],
+    example: { title: "One launch video, four markets", stepTitles: ["Upload the video", "Pick the markets", "Read the check", "Four versions"], steps: ["Upload the 45-second launch video; leave the spoken language on Detect automatically.", "Pick German, French, Spanish and Italian; keep Speed; add the brand name to Words to keep.", "The quality check lists the corrected lines per language; read them on the project page.", "Download four videos with captions, one per shop, ready to post."] },
     faq: [
       { q: "Does the product name stay the same in every language?", a: "Yes, when you add it under Words to keep. The check also flags names and numbers that changed." },
       { q: "Can I keep the original size instead of 9:16?", a: "Yes. Pick the original format on the form; captions are placed the same way." },
@@ -164,20 +188,30 @@ const translationSolutions: Solution[] = [
     slug: "agencies",
     title: "Many clients, one process, every video in several languages",
     eyebrow: "Agencies",
-    intro: "An agency runs the same localisation steps for every client. Clipelle keeps that process fixed, shows the credits per language before a video starts, and delivers one checked version per language in the client's workspace.",
+    intro: "An agency runs the same localization steps for every client. Clipelle keeps that process fixed, shows the credits per language before a video starts, and delivers one checked version per language in the client's workspace.",
     problem: { title: "The problem", points: ["Every client video goes through translation, voice, lip sync and captions, by hand, in several tools.", "Names, numbers and brand terms need a check per language.", "Clients want to know the cost before the work, not after."] },
     helps: [
-      { title: "A fixed process", text: "Upload, translation, voice and lip sync, check, captions: always in that order, with the same quality check." },
-      { title: "A workspace per client", text: "A team workspace shares projects and credits; one per client keeps their videos and usage apart." },
+      { title: "A fixed process", text: "Upload, translate and check, voice and lip sync, captions: always in that order, with the same check on every line." },
+      { title: "Several languages in one go", text: "Pick every language the client needs at once; each version renders in parallel." },
       { title: "Credits on every form", text: "The credits per language before you click; the project page shows what each version used." },
-      { title: "The API for volume", text: "Translate from your own tooling with an API key; projects stay per workspace." },
       { title: "Words to keep per client", text: "Brand names and catchphrases stay as they are, per project." },
     ],
-    example: { title: "One client video, three languages", stepTitles: ["Upload the client's video", "Pick the languages", "Read the check", "Deliver three versions"], steps: ["Upload the client's 60-second video into their workspace.", "Pick German, French and Portuguese; add the client's brand terms to Words to keep.", "Read the corrected lines and warnings per language on the project page.", "Share a viewing link for approval, then download the three versions."] },
+    extra: {
+      eyebrow: "For client work",
+      title: "Workspaces, links and the API",
+      items: [
+        { title: "A workspace per client", text: "A team workspace shares projects and credits; one per client keeps their videos and usage apart." },
+        { title: "Viewing links for approval", text: "Share a finished video with a link that expires and can be revoked, with or without download." },
+        { title: "The API and webhooks", text: "Start translations from your own tooling with an API key and get a signal when a video is ready." },
+        { title: "Several downloads at once", text: "Select finished projects on the Projects page and download them as one ZIP." },
+      ],
+    },
+    reads: ["translation", "costs-and-process"],
+    example: { title: "One client video, three languages", stepTitles: ["Upload the video", "Pick the languages", "Read the check", "Deliver"], steps: ["Upload the client's 60-second video into their workspace.", "Pick German, French and Portuguese; add the client's brand names to Words to keep.", "Read the corrected lines and warnings per language on the project page.", "Share a viewing link for approval, then download the three versions."] },
     faq: [
       { q: "Can several people work in one account?", a: "Yes. A team workspace shares projects and credits; the owner manages the plan, credits and members. One team workspace per client or per agency." },
       { q: "Can we white-label Clipelle?", a: "No. The finished videos carry no Clipelle branding; the app itself is Clipelle." },
-      { q: "How do we bill clients?", a: "The project page shows the credits per language version; the Usage page shows spend per project for your own invoicing." },
+      { q: "How do we bill clients?", a: "The project page shows the credits per language version; the Usage page shows the credits per project for your own invoicing." },
     ],
   },
   allSolutions.find((s) => s.slug === "creators-and-localization")!,

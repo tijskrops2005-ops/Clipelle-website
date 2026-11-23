@@ -17,7 +17,8 @@ type Mode = "login" | "signup";
 type Method = "password" | "code";
 
 /**
- * Sign in / sign up: Google first, then e-mail with a password or a one-time login code. Everything goes
+ * Sign in / sign up: Google first, then e-mail with a password or a one-time login code (one noun
+ * everywhere: "login code"; on the sign-up card the switch reads "Sign up with a login code"). Everything goes
  * through our /api/auth routes (rate limited); the session cookie is set by the server. The Google
  * button works once Google is switched on in Supabase and NEXT_PUBLIC_AUTH_GOOGLE=true; until then
  * it is hidden for visitors and shown with a setup note in development only.
@@ -84,7 +85,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
   if (config.demoMode) {
     return (
-      <AuthCard title="No accounts in demo mode" text="The app runs as a demo user. Open the dashboard to try it; set NEXT_PUBLIC_DEMO_MODE=false for real sign-in.">
+      <AuthCard title="No accounts in demo mode" text="The app runs as a demo user. Open the dashboard to try it.">
         <DemoBadge>Demo mode</DemoBadge>
         <Button href="/dashboard" variant="accent" size="lg" className="mt-5 w-full">Open the demo</Button>
       </AuthCard>
@@ -162,10 +163,10 @@ export function AuthForm({ mode }: { mode: Mode }) {
         {error && <p role="alert" className="text-[13px] text-danger">{error}</p>}
         <Button type="submit" variant="accent" size="lg" className="w-full" disabled={busy}>
           {busy ? <Loader2 className="size-5 animate-spin" aria-hidden /> : null}
-          {method === "code" ? (codeSent ? "Log in with this code" : "E-mail me a login code") : mode === "signup" ? "Create account" : "Log in"}
+          {method === "code" ? (codeSent ? (mode === "signup" ? "Continue with this code" : "Log in with this code") : "E-mail me a login code") : mode === "signup" ? "Create account" : "Log in"}
         </Button>
         <button type="button" onClick={() => { setMethod(method === "password" ? "code" : "password"); setCodeSent(false); setCode(""); setError(null); }} className="focus-ring mx-auto block rounded-control text-[13px] text-muted underline decoration-border underline-offset-4 hover:text-ink hover:decoration-ink">
-          {method === "password" ? "E-mail me a login code instead" : "Use a password instead"}
+          {method === "password" ? (mode === "signup" ? "Sign up with a login code instead" : "E-mail me a login code instead") : "Use a password instead"}
         </button>
       </form>
 

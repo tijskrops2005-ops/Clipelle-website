@@ -14,6 +14,7 @@ import { Honeypot } from "@/components/site/Honeypot";
 /** Open application: name, e-mail, area, link, message. Stored, nothing else. */
 export function CareersForm({ locale = "en" }: { locale?: Locale }) {
   const f = dict(locale).careers.form;
+  const optional = dict(locale).forms.optional;
   const [v, setV] = useState({ name: "", email: "", area: "", link: "", message: "", website: "" });
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -49,13 +50,13 @@ export function CareersForm({ locale = "en" }: { locale?: Locale }) {
       <div className="grid gap-5 sm:grid-cols-2">
         <Field id="c-name" label={f.name}><Input id="c-name" value={v.name} onChange={set("name")} required maxLength={120} /></Field>
         <Field id="c-email" label={f.email}><Input id="c-email" type="email" value={v.email} onChange={set("email")} required maxLength={200} /></Field>
-        <Field id="c-area" label={f.area} optional hint={f.areaHint}><Input id="c-area" value={v.area} onChange={set("area")} maxLength={120} /></Field>
-        <Field id="c-link" label={f.link} optional hint={f.linkHint}><Input id="c-link" type="url" value={v.link} onChange={set("link")} maxLength={300} /></Field>
+        <Field id="c-area" label={f.area} optional optionalLabel={optional} hint={f.areaHint}><Input id="c-area" value={v.area} onChange={set("area")} maxLength={120} /></Field>
+        <Field id="c-link" label={f.link} optional optionalLabel={optional} hint={f.linkHint}><Input id="c-link" type="url" value={v.link} onChange={set("link")} maxLength={300} /></Field>
       </div>
       <Field id="c-message" label={f.message} hint={f.messageHint}><Textarea id="c-message" value={v.message} onChange={set("message")} required minLength={10} maxLength={4000} rows={5} /></Field>
       <Honeypot value={v.website} onChange={(website) => setV((p) => ({ ...p, website }))} />
       {error && <p role="alert" className="text-[13px] text-danger">{error}</p>}
-      <Button type="submit" variant="primary" disabled={state === "busy"}>
+      <Button type="submit" variant="primary" size="lg" className="w-full sm:w-auto" disabled={state === "busy"}>
         {state === "busy" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
         {f.send}
       </Button>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { Check } from "lucide-react";
 import { brand } from "@/lib/brand";
+import { TRANSLATE_LANGUAGES } from "@/lib/translateLanguages";
 import { LogoFull } from "@/components/Logo";
 import { Year } from "@/components/site/Year";
 
@@ -13,11 +14,11 @@ import { Year } from "@/components/site/Year";
 const PANELS = {
   login: {
     title: "Welcome back. Your videos are where you left them.",
-    points: ["Every finished video stays in your projects", "Credits never expire", "The cost is shown before anything starts"],
+    points: ["Every finished video stays in your projects", "Paid credits never expire", "Credits are shown before anything starts"],
   },
   signup: {
     title: "Your video, in every language, with your own voice.",
-    points: ["30 free credits after you verify your e-mail", "No credit card required", "Every translated line is checked before the render"],
+    points: ["The speaker's own voice, with lip sync", `${TRANSLATE_LANGUAGES.length} languages and regional variants`, "Every translated line is checked before the render"],
   },
 } as const;
 
@@ -45,7 +46,7 @@ export function AuthShell({ panel = "signup", children }: { panel?: keyof typeof
         <p className="relative text-[13px] text-champagne/50">© <Year /> {brand.name}</p>
       </aside>
 
-      <main className="flex flex-col items-center justify-center px-4 py-10 sm:px-8">
+      <main className="flex flex-col items-center justify-start px-4 py-10 sm:px-8 lg:justify-center">
         <Link href="/" aria-label={`${brand.name} home`} className="focus-ring mb-8 rounded-control lg:hidden">
           <LogoFull className="h-10" />
         </Link>

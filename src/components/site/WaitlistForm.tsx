@@ -46,9 +46,9 @@ export function WaitlistForm({ feature, label, locale = "en" }: { feature: Waitl
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <label className="sr-only" htmlFor={`waitlist-${feature}`}>E-mail</label>
-      <Input id={`waitlist-${feature}`} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className="sm:max-w-xs" disabled={state === "busy"} />
+      <Input id={`waitlist-${feature}`} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={locale === "nl" ? "jij@bedrijf.nl" : "you@company.com"} className="sm:max-w-xs" disabled={state === "busy"} />
       <Honeypot value={website} onChange={setWebsite} />
-      <Button type="submit" variant="primary" disabled={state === "busy" || !email}>
+      <Button type="submit" variant="primary" className="w-full sm:w-auto" disabled={state === "busy"}>
         {state === "busy" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
         {t.tellMe}
       </Button>

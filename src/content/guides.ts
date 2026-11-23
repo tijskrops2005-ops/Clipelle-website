@@ -28,15 +28,17 @@ export const guides: Guide[] = [
     ],
   },
   {
+    // 23 Nov 2026: this guide used to walk the same steps as "Translating a video you own, step by step". It now covers the check only; the slug stays so old links keep working.
     slug: "translating-a-video-rights-languages-check",
-    title: "Translating a video: rights, languages and the automatic check",
-    summary: "What happens between uploading a video you own and downloading it in another language.",
+    title: "The automatic check: what it corrects and how you steer it",
+    summary: "Every translated line is compared with the original before the video is made. What the check looks at, and the three fields that steer it.",
     minutes: 4,
     sections: [
-      { heading: "You confirm the rights first", paragraphs: ["The voice and face in your video are cloned for the translation. Before anything starts you tick that you own the video and have the speaker's permission. The confirmation is stored with the project, with a timestamp."] },
-      { heading: "Pick languages and a quality", paragraphs: ["You can choose several target languages at once, including regional variants that change the accent and spelling. Speed is the recommended quality: fast, affordable, good for one person talking to the camera. Precision re-renders the mouth and is better for faces that move or side angles; it takes about twice as long."] },
-      { heading: "Every line is checked automatically", paragraphs: ["The translated lines are compared with the original for missing words, numbers, names and natural phrasing, and corrected within the timing of each line. The corrections and any warnings are shown on the project page. Nothing waits for you."] },
-      { heading: "Captions and format", paragraphs: ["Captions of what is said are the only thing added to the picture. You choose vertical 9:16 for TikTok, Reels and Shorts, or keep the original size. Silence at the start and end can be removed; the speech and the lip-sync stay untouched."] },
+      { heading: "What is compared", paragraphs: ["After the translation, every line is put next to the line it came from. The check looks for missing or added words, a changed meaning, numbers and names that differ, and phrasing that no native speaker would use. It runs for every language you picked, before the paid part of the work starts."] },
+      { heading: "Corrections stay inside the timing", paragraphs: ["A corrected line has to fit the moment it is spoken in. The check takes a correction when it fits the timing or is shorter than the line it replaces, and it drops filler words before it drops meaning. A sentence, a reason, a feeling or the closing call to action is never cut."] },
+      { heading: "Words to keep", paragraphs: ["Brand names, product names and catchphrases go in Words to keep, separated by commas. They are left exactly as written in every language, and the check treats a changed name as an error."] },
+      { heading: "Words to replace, and anything to change", paragraphs: ["Words to replace swaps one word for another in the translation: the name of a shop per market, for example. Anything to change is a short instruction in plain words, such as leaving out the sentence about free shipping. A line changes only where the result still fits its moment."] },
+      { heading: "Where you see the result", paragraphs: ["The project page lists the corrected lines and any warnings per language. The captions on screen are always built from the checked lines, so what you read is what was checked. Look at the warnings first, especially numbers and names."] },
     ],
   },
   {
@@ -57,16 +59,16 @@ export const guides: Guide[] = [
   {
     slug: "translating-a-video-you-own",
     title: "Translating a video you own, step by step",
-    summary: "What to upload, how to pick languages and quality, what the automatic check does, and what you get back.",
+    summary: "What to upload, how to pick languages and quality, the options on the form, and what you get back.",
     minutes: 5,
     sections: [
       { heading: "Before you start: the rights", paragraphs: ["Only videos you own, with the speaker's permission to use their voice and face. The form has a checkbox with exactly that sentence; without it the button stays disabled and the server refuses the request. The confirmation is stored with the project."] },
       { heading: "1. Upload", paragraphs: ["MP4, WebM or QuickTime, up to 32 MB and three minutes. The limit is explained before you pick a file. A preview plays in the form so you can check it is the right cut."] },
       { heading: "2. Spoken language and targets", paragraphs: ["Leave \"Detect automatically\" on unless the detection has been wrong for this speaker before. Then pick one or more of the 190 target languages and regional variants; the most used ones are at the top and the list is searchable. A target equal to the source is refused."] },
-      { heading: "3. Speed or Precision", paragraphs: ["Speed is the standard lip-sync and the recommended choice for most videos. Precision redraws the mouth for close-ups, takes longer and costs more. The estimate updates live per language."] },
-      { heading: "4. The options", paragraphs: ["Terms to keep: brand names and product names the translation must leave as they are. Format: 9:16 for TikTok, Reels and Shorts, or the original size. Remove silence at the start and end (on by default). Caption position Low or Middle. Picture enhancement for soft footage."] },
-      { heading: "5. What happens after you click", paragraphs: ["Upload → Translate → Captions and 9:16. In the translate step every line is compared with the original by an automatic check: missing or added words, meaning, numbers, names and natural phrasing are corrected within the timing. The changes and warnings are shown on the project page per language. Language versions render in parallel; one failing version does not stop the others."] },
-      { heading: "6. The result", paragraphs: ["One video per language, each with its own captions, download button and the amount spent. Check a few lines against the warnings the quality check raised, especially numbers and names."] },
+      { heading: "3. Speed or Precision", paragraphs: ["Speed is the standard lip sync and the recommended choice for most videos. Precision redraws the mouth for close-ups and side angles, takes longer and uses twice the credits. The credits on the button update per language as you choose."] },
+      { heading: "4. The options", paragraphs: ["Format: 9:16 for TikTok, Reels and Shorts, or the original size. Captions: on or off, the highlight of the spoken word, the colours, the size and a Low or Middle position, with a preview next to them. Words to keep: brand names and product names the translation must leave as they are. Optional extras: remove silence at the start and end, clean up the sound, sharpen the picture."] },
+      { heading: "5. What happens after you click", paragraphs: ["Four steps run on their own: upload, translate and check, voice and lip sync, captions and 9:16. One progress bar on the project page shows where the video is and how long it still takes. Every line is checked against the original before the voice is made. Language versions render side by side; one failing version does not stop the others and costs nothing."] },
+      { heading: "6. The result", paragraphs: ["One video per language, each with its own captions and download button, and the credits it used. Check a few lines against the warnings the quality check raised, especially numbers and names. On the edit screen you can still change a caption line or trim the video."] },
     ],
   },
   {
@@ -86,7 +88,11 @@ export const guides: Guide[] = [
 
 /** The guides the index and the sitemap show: the ad guides only while ads are on (27 Oct 2026); their pages stay reachable. */
 const AD_GUIDES = new Set(["product-description-that-makes-a-good-script", "standard-or-premium-presenter", "your-first-ad-step-by-step", "brand-style-colour-captions-font-logo"]);
-export const listedGuides: Guide[] = guides.filter((g) => config.features.ads || !AD_GUIDES.has(g.slug));
+/** The walk-through comes first on the index; the rest keep their order. */
+const FIRST_GUIDE = "translating-a-video-you-own";
+export const listedGuides: Guide[] = guides
+  .filter((g) => config.features.ads || !AD_GUIDES.has(g.slug))
+  .sort((a, b) => Number(b.slug === FIRST_GUIDE) - Number(a.slug === FIRST_GUIDE));
 
 export function guideBySlug(slug: string) {
   return guides.find((g) => g.slug === slug);

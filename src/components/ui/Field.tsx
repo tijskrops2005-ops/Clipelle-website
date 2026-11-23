@@ -7,6 +7,8 @@ type FieldProps = {
   hint?: string;
   error?: string;
   optional?: boolean;
+  /** The word for the "Optional" tag; the Dutch site passes its own. */
+  optionalLabel?: string;
   children: ReactNode;
   className?: string;
 };
@@ -18,6 +20,7 @@ export function Field({
   hint,
   error,
   optional,
+  optionalLabel = "Optional",
   children,
   className,
 }: FieldProps) {
@@ -27,7 +30,7 @@ export function Field({
         <label htmlFor={id} className="text-sm font-medium text-ink">
           {label}
         </label>
-        {optional && <span className="label-mono text-muted">Optional</span>}
+        {optional && <span className="label-mono text-muted">{optionalLabel}</span>}
       </div>
       {children}
       {error ? (

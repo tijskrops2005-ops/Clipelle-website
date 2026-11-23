@@ -1,11 +1,13 @@
 import { ArrowRight } from "lucide-react";
 import { services } from "@/content/services";
 import { dict } from "@/content/i18n";
-import { localizePath, type Locale } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/Button";
 import { StepList } from "@/components/ui/StepList";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionIntro } from "@/components/site/SectionIntro";
+import { PageHero } from "@/components/site/PageHero";
+import { FinalCta } from "@/components/site/Persuasion";
 import { ServiceRequestForm } from "@/components/site/ServiceRequestForm";
 
 export function ServicePage({ locale }: { locale: Locale }) {
@@ -14,13 +16,8 @@ export function ServicePage({ locale }: { locale: Locale }) {
   const facts = [services.volumeRange && { label: t.service.volume, value: services.volumeRange }, services.turnaround && { label: t.service.turnaround, value: services.turnaround }].filter(Boolean) as { label: string; value: string }[];
   return (
     <div className="space-y-24 sm:space-y-32">
-      <section className="pt-16 sm:pt-24">
-        <p className="label-mono text-muted">{t.service.eyebrow}</p>
-        <h1 className="mt-5 max-w-3xl text-[clamp(2.25rem,5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">{t.service.title}</h1>
-        <p className="mt-6 max-w-2xl text-subtitle text-muted">{s.intro}</p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Button href={localizePath("/demo", locale)} variant="accent" size="lg">{t.common.bookDemo} <ArrowRight className="size-5" aria-hidden /></Button><Button href="#request" variant="secondary" size="lg">{s.requestCall}</Button></div>
-        <p className="mt-3 text-[13px] text-muted">{s.note}</p>
-      </section>
+      {/* One accent action: "Request a call" scrolls to the form (23 Nov 2026; "Book a demo" competed with it). */}
+      <PageHero eyebrow={t.service.eyebrow} title={t.service.title} text={s.intro} note={s.note} actions={<Button href="#request" variant="accent" size="lg">{s.requestCall} <ArrowRight className="size-5" aria-hidden /></Button>} />
       <Reveal as="section">
         <SectionIntro eyebrow={t.common.howItWorks} title={s.stepsTitle} />
         <StepList className="mt-10 [&>li]:bg-surface [&>li]:px-6 [&>li]:py-6 [&>li]:shadow-card" columns={4} items={s.steps} />
@@ -43,6 +40,7 @@ export function ServicePage({ locale }: { locale: Locale }) {
         <p className="mb-6 mt-2 text-[15px] text-muted">{s.formText}</p>
         <ServiceRequestForm locale={locale} />
       </Reveal>
+      <FinalCta locale={locale} />
     </div>
   );
 }
