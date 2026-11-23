@@ -44,7 +44,7 @@ export function ResourcesPage({ locale }: { locale: Locale }) {
     <div className="space-y-16">
       <PageHero eyebrow={t.nav.resources.label} title={r.title} />
       {locale !== "en" && <p className="text-center text-[13px] text-muted">{t.common.articlesEnglish}</p>}
-      <ul className="grid gap-5 md:grid-cols-3">
+      <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((c) => (
           <li key={c.href} className="rounded-card bg-surface shadow-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card-hover"><MenuCard card={c} soonLabel={t.common.soon} /></li>
         ))}

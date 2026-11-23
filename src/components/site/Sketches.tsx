@@ -124,7 +124,7 @@ export function ProofChips({ items, className }: { items: string[]; className?: 
 /** The hero phone with two illustrated cards tilted behind it, on soft colour fields. */
 export function HeroStage({ children, className, variant = "ads", label = "Illustration", plain }: { children: React.ReactNode; className?: string; variant?: "ads" | "translate"; label?: string; /** The glow and the phone only: no tilted illustration cards behind it (23 Nov 2026: they were cut off mid-word). */ plain?: boolean }) {
   return (
-    <div className={cn("relative mx-auto flex h-[480px] w-full max-w-[520px] items-center justify-center sm:h-[560px]", !plain && "overflow-hidden", className)}>
+    <div className={cn("relative mx-auto flex h-[480px] w-full max-w-[520px] items-center justify-center overflow-x-clip sm:h-[560px]", !plain && "overflow-hidden", className)}>
       <div className="glow-field accent left-[-10%] top-[10%] h-72 w-72" />
       <div className="glow-field warm bottom-[0%] right-[-8%] h-64 w-64" />
       {plain ? null : variant === "ads" ? (

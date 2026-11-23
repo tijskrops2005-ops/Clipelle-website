@@ -188,7 +188,7 @@ export function BillingSettings() {
           <div className="panel p-4">
             <p className="label-mono text-muted">Credits</p>
             <p className="mt-1 text-[17px] font-semibold text-ink">{status ? status.balance.toLocaleString("en-US") : "…"}</p>
-            <p className="text-[13px] text-muted">One credit = one second of translated video. Credits never expire.</p>
+            <p className="text-[13px] text-muted">One credit = one second of translated video. Paid credits never expire.</p>
           </div>
           <div className="panel p-4">
             <p className="label-mono text-muted">Free credits</p>
