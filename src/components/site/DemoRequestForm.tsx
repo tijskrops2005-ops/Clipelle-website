@@ -1,14 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
-import { CheckCircle2, Loader2, Send } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
+import { config } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Honeypot } from "@/components/site/Honeypot";
 import { dict } from "@/content/i18n";
-import type { Locale } from "@/lib/i18n";
+import { localizePath, type Locale } from "@/lib/i18n";
 
 type Variant = "demo" | "contact";
 
@@ -18,6 +20,8 @@ type Variant = "demo" | "contact";
  */
 export function DemoRequestForm({ variant, locale = "en" }: { variant: Variant; locale?: Locale }) {
   const f = dict(locale).forms;
+  // The question about what to make follows the product: translations today, ads when they are switched on again.
+  const goal = config.features.ads ? f.ads : f;
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -60,26 +64,27 @@ export function DemoRequestForm({ variant, locale = "en" }: { variant: Variant; 
           <Input id="email" name="email" type="email" required autoComplete="email" />
         </Field>
       </div>
-      <Field id="company" label={f.company} optional>
+      <Field id="company" label={f.company} optional optionalLabel={f.optional}>
         <Input id="company" name="company" autoComplete="organization" />
       </Field>
       {variant === "demo" && (
-        <Field id="goal" label={f.goal} hint={f.goalHint}>
-          <Input id="goal" name="goal" placeholder={f.goalPlaceholder} />
+        <Field id="goal" label={goal.goal} hint={goal.goalHint}>
+          <Input id="goal" name="goal" placeholder={goal.goalPlaceholder} />
         </Field>
       )}
-      <Field id="message" label={f.message} optional={variant === "demo"}>
+      <Field id="message" label={f.message} optional={variant === "demo"} optionalLabel={f.optional}>
         <Textarea id="message" name="message" placeholder={variant === "demo" ? f.demoPlaceholder : f.contactPlaceholder} required={variant === "contact"} />
       </Field>
       {error && (
         <p role="alert" className="text-[13px] text-danger">{error}</p>
       )}
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[13px] text-muted">We use this only to answer you. See the privacy statement.</p>
-        <Button type="submit" variant="accent" size="lg" disabled={state === "sending"}>
-          {state === "sending" ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Send className="size-5" aria-hidden />}
+      {/* The black primary, full width on phones, with the note under it (the page's one accent pill is in the closing band). */}
+      <div className="flex flex-col gap-3 sm:flex-row-reverse sm:items-center sm:justify-between">
+        <Button type="submit" variant="primary" size="lg" disabled={state === "sending"}>
+          {state === "sending" ? <Loader2 className="size-5 animate-spin" aria-hidden /> : null}
           {variant === "demo" ? f.requestDemo : f.send}
         </Button>
+        <p className="text-[13px] text-muted">{f.privacyNote} <Link href={localizePath("/legal/privacy", locale)} className="focus-ring rounded-control underline decoration-border underline-offset-4 hover:decoration-ink">{f.privacyLink}</Link>.</p>
       </div>
     </form>
   );
