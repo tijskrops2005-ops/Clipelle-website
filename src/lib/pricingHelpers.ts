@@ -156,7 +156,7 @@ const FAMILY_ORDER: { family: PlanFamily; key: string; name: string }[] = [
   { family: "starter", key: "starter", name: "Starter" },
   { family: "pro", key: "pro", name: "Pro" },
   { family: "scale", key: "scale", name: "Scale" },
-  { family: "business", key: "business_249", name: "Business" },
+  { family: "business", key: "business_349", name: "Business" },
 ];
 const FEATURE_ORDER: PlanFeature[] = ["precision", "premium", "variations", "api", "removeText", "aiPresenter", "enhance", "team"];
 /** Variations belong to ads: they leave the plan cards while ads are off (27 Oct 2026). */

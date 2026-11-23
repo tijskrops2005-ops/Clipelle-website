@@ -76,10 +76,13 @@ export const CREDIT_COST_USD = Math.round(
  * are what an upgrade buys. Every level keeps MIN_MARGIN (tested).
  */
 export const PLAN_MINUTES: Partial<Record<PlanKey, number>> = {
-  starter: 7, starter_2: 12, starter_3: 17,
-  pro: 22, pro_2: 33, pro_3: 44,
-  scale: 60, scale_2: 90, scale_3: 120,
-  business_249: 96, business_499: 193, business_999: 386,
+  // 23 Nov 2026 (Tijs: plans at $59, $149, $269, then Enterprise): the minutes are the most a price can
+  // buy while every plan keeps MIN_MARGIN on the most expensive product per credit and a minute stays
+  // between $2 and $3 (the tests). Starter $2.81/min, Pro $2.71, Scale $2.69; levels a little cheaper.
+  starter: 21, starter_2: 32, starter_3: 43,
+  pro: 55, pro_2: 74, pro_3: 89,
+  scale: 100, scale_2: 149, scale_3: 198,
+  business_349: 130, business_699: 262, business_1299: 490,
 };
 /** One-off packs: $0.05 a credit (3 minutes 20 seconds of Speed translation for $10). */
 export const TOPUP_USD_PER_CREDIT = 0.05;
@@ -92,20 +95,20 @@ export type Currency = "usd" | "eur";
  * Stripe holds them as `currency_options.eur` on the same prices (scripts/stripe-setup.ts).
  */
 export const EUR_MONTHLY: Partial<Record<PlanKey, number>> = {
-  starter: 19, starter_2: 32, starter_3: 45,
-  pro: 59, pro_2: 87, pro_3: 115,
-  scale: 159, scale_2: 236, scale_3: 312,
-  business_249: 249, business_499: 499, business_999: 999,
+  starter: 59, starter_2: 89, starter_3: 119,
+  pro: 149, pro_2: 199, pro_3: 239,
+  scale: 269, scale_2: 399, scale_3: 529,
+  business_349: 349, business_699: 699, business_1299: 1299,
 };
 /** Dollar prices per month for the higher levels (the same numbers as the euro prices, like the base plans). */
-const LEVEL_USD: Partial<Record<PlanKey, number>> = { starter_2: 32, starter_3: 45, pro_2: 87, pro_3: 115, scale_2: 236, scale_3: 312 };
+const LEVEL_USD: Partial<Record<PlanKey, number>> = { starter_2: 89, starter_3: 119, pro_2: 199, pro_3: 239, scale_2: 399, scale_3: 529 };
 
 export type PlanKey =
   | "free" | "enterprise"
   | "starter" | "starter_2" | "starter_3"
   | "pro" | "pro_2" | "pro_3"
   | "scale" | "scale_2" | "scale_3"
-  | "business_249" | "business_499" | "business_999";
+  | "business_349" | "business_699" | "business_1299";
 
 /** The plan a key belongs to, whatever its level: what a workspace may do depends on the family. */
 export type PlanFamily = "free" | "starter" | "pro" | "scale" | "business" | "enterprise";
@@ -174,9 +177,9 @@ function minutesBullets(key: PlanKey, extra: string) {
 
 export const PLANS: Plan[] = [
   plan("free", "Free", "Try it once", 0, ["30 free credits after e-mail verification", ADS_ON ? "Half a minute of translation, or one 10-second ad" : "Half a minute of translation", "No card; use them within 30 days"], { creditsNote: "30 free credits" }),
-  plan("starter", "Starter", "For a shop translating its first videos", 19, minutesBullets("starter", "Every language, Speed translation")),
-  plan("pro", "Pro", "For a brand selling in several languages", 59, minutesBullets("pro", ADS_ON ? "Precision, the Premium presenter, variations and the API" : "Precision, the AI presenter and the API"), { recommended: true }),
-  plan("scale", "Scale", "For agencies and several brands", 159, minutesBullets("scale", "Everything in Pro, plus picture enhancement")),
+  plan("starter", "Starter", "For a shop translating its first videos", 59, minutesBullets("starter", "Every language, Speed translation")),
+  plan("pro", "Pro", "For a brand selling in several languages", 149, minutesBullets("pro", ADS_ON ? "Precision, the Premium presenter, variations and the API" : "Precision, the AI presenter and the API"), { recommended: true }),
+  plan("scale", "Scale", "For agencies and several brands", 269, minutesBullets("scale", "Everything in Pro, plus picture enhancement")),
   plan("enterprise", "Enterprise", "Custom volume and terms", 0, ["Custom credits and billing", "Onboarding and a direct line", "Book a demo to talk"], { creditsNote: "Custom", stripeLookup: undefined }),
 ];
 
@@ -184,7 +187,7 @@ export const PLANS: Plan[] = [
  * Business: one plan with three credit levels for a team workspace (shared credits, members, no cost
  * per seat). Credits follow PLAN_MINUTES like every subscription.
  */
-export const BUSINESS_TIERS: Plan[] = [249, 499, 999].map((usd, i) =>
+export const BUSINESS_TIERS: Plan[] = [349, 699, 1299].map((usd, i) =>
   plan(`business_${usd}` as PlanKey, "Business", "For teams sharing one credit pool", usd, ["Shared credits for the whole team", "Members with their own sign-in, no cost per seat", "Per-member usage for the owner", "API keys for the workspace", "Credits never expire"], { team: true, level: (i + 1) as 1 | 2 | 3 }),
 );
 

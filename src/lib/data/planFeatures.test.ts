@@ -13,6 +13,6 @@ describe("plan features on the server", () => {
     expect(lockedFeature(tr("precision"), "pro_2")).toBeNull();
     expect(lockedFeature(tr("speed", true), "pro_3")).toMatch(/enhancement comes with the Scale plan/);
     expect(lockedFeature(tr("speed", true), "scale")).toBeNull();
-    expect(lockedFeature(tr("precision", true), "business_249")).toBeNull();
+    expect(lockedFeature(tr("precision", true), "business_349")).toBeNull();
   });
 });

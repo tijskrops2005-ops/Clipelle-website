@@ -16,16 +16,24 @@ Vertalen is het hoofdproduct. Eén credit is daarom één seconde afgeronde vide
 
 Een advertentie van 30 seconden (Standard) kost dus precies evenveel als een minuut vertalen: 60 credits.
 
-**Plannen in minuten vertaling** (prijzen ongewijzigd):
+**Plannen in minuten vertaling** (prijzen van 23 nov 2026, Tijs: $59 / $149 / $269, daarna Enterprise; de minuten zijn het maximum dat een prijs kan kopen met MIN_MARGIN 1,7× op het duurste product per credit en een minuut tussen $2 en $3):
 
-| Plan | Prijs | Minuten | Credits | Per minuut |
-|---|---|---|---|---|
-| Starter | $19 | 7 | 420 | $2,71 |
-| Pro | $59 | 22 | 1.320 | $2,68 |
-| Scale | $159 | 60 | 3.600 | $2,65 |
-| Business 249 | $249 | 96 | 5.760 | $2,59 |
-| Business 499 | $499 | 193 | 11.580 | $2,59 |
-| Business 999 | $999 | 386 | 23.160 | $2,59 |
+| Plan | Prijs | Minuten | Credits | Per minuut | Marge |
+|---|---|---|---|---|---|
+| Starter | $59 | 21 | 1.260 | $2,81 | 1,85× |
+| Starter, niveau 2 | $89 | 32 | 1.920 | $2,78 | 1,83× |
+| Starter, niveau 3 | $119 | 43 | 2.580 | $2,77 | 1,82× |
+| Pro | $149 | 55 | 3.300 | $2,71 | 1,78× |
+| Pro, niveau 2 | $199 | 74 | 4.440 | $2,69 | 1,77× |
+| Pro, niveau 3 | $239 | 89 | 5.340 | $2,69 | 1,77× |
+| Scale | $269 | 100 | 6.000 | $2,69 | 1,77× |
+| Scale, niveau 2 | $399 | 149 | 8.940 | $2,68 | 1,76× |
+| Scale, niveau 3 | $529 | 198 | 11.880 | $2,67 | 1,76× |
+| Business 349 | $349 | 130 | 7.800 | $2,68 | 1,77× |
+| Business 699 | $699 | 262 | 15.720 | $2,67 | 1,76× |
+| Business 1299 | $1.299 | 490 | 29.400 | $2,65 | 1,75× |
+
+Europrijzen zijn dezelfde getallen in euro (excl. btw); jaarbetaling is tien maanden. De oude tabel ($19 / $59 / $159, Business 249/499/999) staat in git vóór 23 nov 2026. `npm run stripe:setup` is op 23 nov 2026 gedraaid: nieuwe prijzen onder dezelfde lookup keys, de oude gearchiveerd; de Business-keys heten nu `business_349/699/1299`.
 
 - **Pakketten:** $0,05 per credit ($10 = 200, $25 = 500, $50 = 1.000).
 - **Gratis:** 30 credits na e-mailbevestiging, 30 dagen geldig: een halve minuut vertalen of één advertentie van 10 seconden. Op het gratis plan mag nu ook vertaald worden; advertenties blijven 10 s Standard.

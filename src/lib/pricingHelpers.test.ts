@@ -27,8 +27,9 @@ describe("pricing helpers match plans.ts for every combination", () => {
       // No covering subscription is cheaper.
       for (const p of ALL_SUBSCRIPTIONS) if (p.creditsPerMonth >= credits) expect(p.monthlyUsd).toBeGreaterThanOrEqual(fit.monthlyUsd);
     }
-    // Ten 30-second ads (600 credits): the second Starter level, $32, not Starter plus a one-off pack.
-    expect(planFit(600, 10).plan?.key).toBe("starter_2");
+    // Ten 30-second ads (600 credits) fit the first Starter level since 23 Nov 2026 (1,260 credits), not Starter plus a one-off pack.
+    expect(planFit(600, 10).plan?.key).toBe("starter");
+    expect(planFit(1500, 10).plan?.key).toBe("starter_2");
   });
 
   it("only suggests plans that have the features the choices need", () => {
@@ -39,7 +40,7 @@ describe("pricing helpers match plans.ts for every combination", () => {
 
   it("shows packs only beyond the biggest plan", () => {
     const fit = planFit(30_000, 50);
-    expect(fit.plan?.key).toBe("business_999");
+    expect(fit.plan?.key).toBe("business_1299");
     expect(fit.withPacks).toBe(true);
   });
 
