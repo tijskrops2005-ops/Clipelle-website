@@ -6,13 +6,13 @@ import { WaitlistForm } from "@/components/site/WaitlistForm";
 export function IntegrationApiPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
   const i = t.integrations.api;
-  return <IntegrationPage locale={locale} eyebrow={i.eyebrow} title={i.title} intro={i.intro} primary={{ href: "/docs/api", label: i.primary }} secondary={{ href: "/signup", label: i.secondary }} steps={i.steps} does={i.does} doesNot={i.doesNot} />;
+  return <IntegrationPage locale={locale} eyebrow={i.eyebrow} title={i.title} intro={i.intro} primary={{ href: "/docs/api", label: i.primary }} secondary={{ href: "/signup", label: i.secondary }} stepsTitle={i.stepsTitle} steps={i.steps} does={i.does} doesNot={i.doesNot} />;
 }
 
 export function IntegrationMcpPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
   const i = t.integrations.mcp;
-  return <IntegrationPage locale={locale} eyebrow={i.eyebrow} title={i.title} intro={i.intro} primary={{ href: "/docs/mcp", label: i.primary }} secondary={{ href: "/docs/api", label: i.secondary }} steps={i.steps} does={i.does} doesNot={i.doesNot} />;
+  return <IntegrationPage locale={locale} eyebrow={i.eyebrow} title={i.title} intro={i.intro} primary={{ href: "/docs/mcp", label: i.primary }} secondary={{ href: "/docs/api", label: i.secondary }} stepsTitle={i.stepsTitle} steps={i.steps} does={i.does} doesNot={i.doesNot} />;
 }
 
 export function IntegrationSlackPage({ locale }: { locale: Locale }) {

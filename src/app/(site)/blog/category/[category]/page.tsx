@@ -6,7 +6,7 @@ import { absoluteUrl } from "@/lib/site";
 import { SectionIntro } from "@/components/site/SectionIntro";
 import { BlogCard } from "@/components/site/BlogCard";
 import { FinalCta } from "@/components/site/Persuasion";
-import { CategoryChips } from "../../page";
+import { CategoryChips } from "@/components/site/BlogIndex";
 
 export function generateStaticParams() {
   return blogCategories.map((c) => ({ category: c.slug }));

@@ -1,28 +1,25 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Own-design cover for an article: a tinted panel with a 9:16 "phone" and caption bars, coloured by
- * category. No photos from anywhere; it is CSS only, so it never shifts the layout.
+ * Own-design cover for an article (23 Nov 2026): one typographic mark per category on a tinted
+ * panel, built from the tokens only. It replaces the black phone with a two-letter code, which read
+ * as a missing image. No photos from anywhere; CSS only, so it never shifts the layout.
+ * Gold sits on ink only (brand rule), so the translation cover is the one dark tile.
  */
-const TINTS: Record<string, string> = {
-  "product-video": "from-accent-soft to-surface-muted",
-  "scripts-and-hooks": "from-ink-soft to-surface-muted",
-  "captions-and-formats": "from-surface-muted to-accent-soft",
-  translation: "from-success/10 to-surface-muted",
-  "costs-and-process": "from-warning/10 to-surface-muted",
+const COVERS: Record<string, { panel: string; mark: string; markClass: string; line: string; lineClass: string }> = {
+  translation: { panel: "bg-ink", mark: "EN → NL", markClass: "text-champagne", line: "same voice, new language", lineClass: "text-surface/60" },
+  "captions-and-formats": { panel: "bg-surface-muted", mark: "9:16", markClass: "text-ink", line: "the only text on screen", lineClass: "text-muted" },
+  "scripts-and-hooks": { panel: "bg-accent-soft", mark: "“hook”", markClass: "text-accent", line: "said, not shown", lineClass: "text-ink/60" },
+  "product-video": { panel: "bg-warning/10", mark: "photo → video", markClass: "text-ink", line: "from one product photo", lineClass: "text-ink/60" },
+  "costs-and-process": { panel: "bg-success/10", mark: "1 · 2 · 3", markClass: "text-ink", line: "plan, test, check", lineClass: "text-ink/60" },
 };
 
-export function BlogCover({ title, category, className }: { title: string; category: string; className?: string }) {
-  const initials = title.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
+export function BlogCover({ category, className }: { category: string; className?: string }) {
+  const c = COVERS[category] ?? COVERS["captions-and-formats"];
   return (
-    <div className={cn("relative overflow-hidden bg-gradient-to-br", TINTS[category] ?? TINTS["product-video"], className)} aria-hidden>
-      <div className="absolute left-1/2 top-1/2 h-[82%] w-[26%] -translate-x-1/2 -translate-y-1/2 rounded-[10px] border-[3px] border-ink bg-ink shadow-card">
-        <div className="absolute inset-x-[12%] bottom-[14%] space-y-1">
-          <div className="h-1 rounded-full bg-white/80" />
-          <div className="mx-auto h-1 w-3/4 rounded-full bg-accent" />
-        </div>
-      </div>
-      <span className="label-mono absolute left-3 top-3 rounded-full bg-surface/90 px-2 py-1 text-ink">{initials}</span>
+    <div className={cn("relative flex flex-col justify-end overflow-hidden p-5", c.panel, className)} aria-hidden>
+      <span className={cn("text-[clamp(1.6rem,3.4vw,2.25rem)] font-semibold leading-none tracking-[-0.04em]", c.markClass)}>{c.mark}</span>
+      <span className={cn("label-mono mt-2.5", c.lineClass)}>{c.line}</span>
     </div>
   );
 }

@@ -14,6 +14,8 @@ type Props = {
   title: string;
   intro: string;
   soon?: boolean;
+  /** A descriptive title for the steps; the mono label above it already says "How it works" (23 Nov 2026: never the label twice). */
+  stepsTitle?: string;
   steps: { title: string; text: string }[];
   does: string[];
   doesNot: string[];
@@ -24,7 +26,7 @@ type Props = {
 };
 
 /** One layout for the four integration pages: what it is, how it works, what it does and does not do, then the CTA or the waitlist. */
-export function IntegrationPage({ eyebrow, title, intro, soon, steps, does, doesNot, primary, secondary, children, locale = "en" }: Props) {
+export function IntegrationPage({ eyebrow, title, intro, soon, stepsTitle, steps, does, doesNot, primary, secondary, children, locale = "en" }: Props) {
   const t = dict(locale);
   return (
     <div className="space-y-24 sm:space-y-32">
@@ -41,7 +43,7 @@ export function IntegrationPage({ eyebrow, title, intro, soon, steps, does, does
         {children}
       </section>
       <Reveal as="section">
-        <SectionIntro eyebrow={t.common.howItWorks} title={soon ? t.integrations.howWill : t.common.howItWorks} />
+        <SectionIntro eyebrow={t.common.howItWorks} title={stepsTitle ?? t.integrations.howWill} />
         <StepList className="mt-10 [&>li]:bg-surface [&>li]:px-6 [&>li]:py-6 [&>li]:shadow-card" columns={steps.length as 3 | 4} items={steps} />
       </Reveal>
       <Reveal as="section">

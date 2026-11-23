@@ -6,8 +6,8 @@ import { allPosts, BLOG_AUTHOR, postBySlug, relatedPosts, splitAtHeading } from 
 import { absoluteUrl } from "@/lib/site";
 import { formatDate } from "@/lib/utils";
 import { config } from "@/lib/config";
+import { LogoMark } from "@/components/Logo";
 import { BlogCard } from "@/components/site/BlogCard";
-import { BlogCover } from "@/components/site/BlogCover";
 import { FinalCta } from "@/components/site/Persuasion";
 import { InlineCta } from "@/components/site/InlineCta";
 import { JsonLd } from "@/components/site/JsonLd";
@@ -37,6 +37,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const post = postBySlug(slug);
   if (!post) notFound();
   const url = absoluteUrl(`/blog/${post.slug}`);
+  // While ads are switched off, an article about the ad tools says so above its first line: such an
+  // article describes the ad form from its first section on. Nothing in the markdown changes.
+  const soonNote = !config.features.ads && post.aboutAds;
   const [first, second] = splitAtHeading(post.html, 3);
   const related = relatedPosts(post);
   const ctaVariant = post.category === "translation" ? "translate" : "ad";
@@ -69,15 +72,15 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <h1 className="text-[clamp(2rem,4.5vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em]">{post.title}</h1>
         <p className="mt-4 text-subtitle text-muted">{post.summary}</p>
         <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted">
-          <span className="inline-flex items-center gap-2"><span className="grid size-6 place-items-center rounded-full bg-ink text-[11px] font-bold text-surface" aria-hidden>R</span>{BLOG_AUTHOR}</span>
+          <span className="inline-flex items-center gap-2"><LogoMark size={24} className="rounded-full" />{BLOG_AUTHOR}</span>
           <span aria-hidden>·</span>
           <time dateTime={post.date}>{formatDate(post.date)}</time>
           <span aria-hidden>·</span>
           <span>{post.readingMinutes} min read</span>
         </p>
       </header>
-      <BlogCover title={post.title} category={post.category} className="mt-8 aspect-[21/9] rounded-card shadow-card" />
-      <div className="mt-10 grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+      {/* No cover band here (23 Nov 2026): it was a wide empty panel; the cards keep their covers. */}
+      <div className="mt-10 grid gap-10 border-t border-divider pt-10 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-24 lg:self-start">
           {post.toc.length > 1 && (
             <nav aria-label="On this page">
@@ -89,18 +92,23 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               </ol>
             </nav>
           )}
-          <div className="mt-6 hidden lg:block"><ShareLinks url={url} title={post.title} /></div>
         </aside>
-        <div className="prose-clipelle max-w-2xl">
-          <div dangerouslySetInnerHTML={{ __html: first }} />
+        {/* Only the article text sits in the prose styles; the call to action, tags and share pills keep their own look. */}
+        <div className="min-w-0 max-w-2xl">
+          {soonNote && (
+            <p className="mb-8 rounded-[12px] border border-warning/30 bg-warning/5 px-4 py-3 text-[15px] leading-relaxed text-ink">
+              <strong className="font-semibold">Coming soon.</strong> Ads from a photo and from a link are not open yet, so this article describes how they will work. Translating a video you own works today: <Link href="/platform/translate" className="underline underline-offset-4">how translation works</Link>.
+            </p>
+          )}
+          <div className="prose-clipelle"><div dangerouslySetInnerHTML={{ __html: first }} /></div>
           {second && <InlineCta variant={ctaVariant} />}
-          <div dangerouslySetInnerHTML={{ __html: second }} />
+          {second && <div className="prose-clipelle"><div dangerouslySetInnerHTML={{ __html: second }} /></div>}
           <div className="mt-10 flex flex-wrap items-center gap-2">
             {post.tags.map((t) => (
               <Link key={t} href={`/blog/tag/${encodeURIComponent(t)}`} className="focus-ring inline-flex rounded-full bg-surface px-3 py-1.5 text-[13px] text-ink shadow-card hover:bg-surface-muted">#{t}</Link>
             ))}
           </div>
-          <div className="mt-8 lg:hidden"><ShareLinks url={url} title={post.title} /></div>
+          <div className="mt-8"><ShareLinks url={url} title={post.title} /></div>
         </div>
       </div>
       {related.length > 0 && (
