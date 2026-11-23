@@ -51,18 +51,21 @@ export function ResourcesPage({ locale }: { locale: Locale }) {
 
 export function ChangelogPage({ locale }: { locale: Locale }) {
   const t = dict(locale);
+  // The same date form as the blog ("21 Oct 2026", Dutch "21 okt 2026"), in a fixed time zone so the page prerenders.
+  const day = new Intl.DateTimeFormat(locale === "nl" ? "nl-NL" : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Amsterdam" });
   return (
     <div className="space-y-16 pt-16 sm:pt-24">
       <SectionIntro eyebrow={t.changelog.metaTitle} title={t.changelog.title} text={t.changelog.text} />
       <ol className="mx-auto max-w-2xl space-y-8">
         {changelogFor(locale).map((e) => (
           <li key={e.date + e.title} className="rounded-card bg-surface p-6 shadow-card">
-            <p className="label-mono text-muted">{e.date}</p>
+            <p className="text-[13px] text-muted"><time dateTime={e.date}>{day.format(new Date(e.date))}</time></p>
             <h2 className="mt-2 text-[17px] font-semibold text-ink">{e.title}</h2>
             <ul className="mt-3 space-y-1.5 text-[15px] text-ink/85">{e.items.map((i) => <li key={i} className="flex items-start gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" aria-hidden />{i}</li>)}</ul>
           </li>
         ))}
       </ol>
+      <FinalCta locale={locale} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Captions, Clock3, Languages, Palette, ShieldCheck, Smartphone, UserRound, Wallet, type LucideIcon } from "lucide-react";
 import { menusFor, type MenuItem } from "@/components/site/siteNav";
-import { allPosts } from "@/lib/blog";
+import { pickPosts } from "@/lib/blog";
 import { resolvedExamples } from "@/lib/examples";
 import { BlogCard } from "@/components/site/BlogCard";
 import { Marquee } from "@/components/site/Marquee";
@@ -98,13 +98,14 @@ export function IntegrationsRow({ locale = "en" }: { locale?: Locale }) {
 
 /**
  * Three articles on a site page (not on the homepage since 24 Oct 2026): from the given categories
- * first, newest first, topped up with the newest others so there are always three.
+ * first, newest first, topped up with the newest others so there are always three. While ads are
+ * switched off only translation and caption articles are picked (23 Nov 2026: pricing and the
+ * solution pages showed ad articles), and `seed` (a page's own key) turns the list so two pages with
+ * the same categories do not show the same three (`pickPosts` in src/lib/blog.ts).
  */
-export function LatestPosts({ locale = "en", categories }: { locale?: Locale; categories?: string[] }) {
+export function LatestPosts({ locale = "en", categories, seed }: { locale?: Locale; categories?: string[]; seed?: string }) {
   const t = dict(locale);
-  const all = allPosts();
-  const matching = categories ? all.filter((p) => categories.includes(p.category)) : [];
-  const posts = [...matching, ...all.filter((p) => !matching.includes(p))].slice(0, 3);
+  const posts = pickPosts(categories, seed);
   if (posts.length === 0) return null;
   return (
     <Reveal as="section">
