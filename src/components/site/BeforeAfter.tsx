@@ -34,7 +34,7 @@ export function BeforeAfter({ locale }: { locale: Locale }) {
               lipSync={s.lipSync}
               soundOn={s.soundOn}
               soundOff={s.soundOff}
-              soundHint={s.soundHint}
+              soundHint=""
             />
           </li>
         ))}

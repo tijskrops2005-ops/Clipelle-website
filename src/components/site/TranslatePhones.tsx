@@ -42,7 +42,7 @@ export function TranslatePhones({ original, result, codes, lipSync, soundOn, sou
           <p className="mt-3 flex items-center justify-center gap-1.5 text-[13px] font-medium text-ink"><Sparkles className="size-4 text-accent" aria-hidden />{lipSync}</p>
         </div>
       </div>
-      <p className="relative mt-6 flex items-center justify-center gap-2 text-center text-[13px] text-muted"><Volume2 className="size-4 shrink-0" aria-hidden />{soundHint}</p>
+      {soundHint && <p className="relative mt-6 flex items-center justify-center gap-2 text-center text-[13px] text-muted"><Volume2 className="size-4 shrink-0" aria-hidden />{soundHint}</p>}
     </>
   );
 }

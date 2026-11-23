@@ -50,8 +50,8 @@ export const examples: Example[] = [
     originalPoster: "translate-coffee-gift-original.jpg",
     codes: "EN → NL",
     originalPace: 1.155,
-    note: "11 s · English to Dutch · own voice, lip sync, captions",
-    nl: { title: "Cadeauverhaal, vertaald", note: "11 s · Engels naar Nederlands · eigen stem, lipsync, ondertitels" },
+    note: "11 s, English to Dutch",
+    nl: { title: "Cadeauverhaal, vertaald", note: "11 s, Engels naar Nederlands" },
   },
   {
     id: "unboxing-nl",
@@ -62,8 +62,8 @@ export const examples: Example[] = [
     original: "translate-unboxing-original.mp4",
     originalPoster: "translate-unboxing-original.jpg",
     codes: "EN → NL",
-    note: "8 s · English to Dutch · own voice, lip sync, captions",
-    nl: { title: "Unboxing, vertaald", note: "8 s · Engels naar Nederlands · eigen stem, lipsync, ondertitels" },
+    note: "8 s, English to Dutch",
+    nl: { title: "Unboxing, vertaald", note: "8 s, Engels naar Nederlands" },
   },
   {
     // 23 Nov 2026: a Dutch video into English, with the old Dutch captions painted out and English captions in their place.
@@ -76,8 +76,8 @@ export const examples: Example[] = [
     originalPoster: "translate-car-detailing-original.jpg",
     codes: "NL → EN",
     originalPace: 0.945,
-    note: "31 s · Dutch to English · old on-screen text removed, own voice, lip sync, captions",
-    nl: { title: "Autodetailing, vertaald", note: "31 s · Nederlands naar Engels · oude tekst in beeld weggehaald, eigen stem, lipsync, ondertitels" },
+    note: "31 s, Dutch to English, old on-screen text removed",
+    nl: { title: "Autodetailing, vertaald", note: "31 s, Nederlands naar Engels, oude tekst in beeld weggehaald" },
   },
   {
     id: "lounge-chair-nl",
@@ -86,8 +86,8 @@ export const examples: Example[] = [
     file: "translate-lounge-chair-nl.mp4",
     poster: "translate-lounge-chair-nl.jpg",
     codes: "EN → NL",
-    note: "30 s · English to Dutch · own voice, lip sync, captions",
-    nl: { title: "Productreview, vertaald", note: "30 s · Engels naar Nederlands · eigen stem, lipsync, ondertitels" },
+    note: "30 s, English to Dutch",
+    nl: { title: "Productreview, vertaald", note: "30 s, Engels naar Nederlands" },
   },
 ];
 

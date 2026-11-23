@@ -88,7 +88,7 @@ export type Stat = { value: number; decimals?: number; suffix?: string; label: s
 export function StatsBand({ items, className }: { items: Stat[]; className?: string }) {
   return (
     <Reveal className={className}>
-      <dl className="grid gap-px overflow-hidden rounded-card bg-surface-muted sm:grid-cols-2 lg:grid-cols-4">
+      <dl className={cn("grid gap-px overflow-hidden rounded-card bg-surface-muted", items.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-4")}>
         {items.map((f) => (
           <div key={f.label} className="bg-surface-muted px-6 py-8 text-center sm:px-8">
             <dd className="text-display text-ink"><CountUp value={f.value} decimals={f.decimals} suffix={f.suffix} duration={1400} /></dd>

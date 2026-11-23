@@ -1,4 +1,3 @@
-import { ArrowRight, Languages } from "lucide-react";
 import { resolveExampleFile } from "@/lib/examples";
 import { translationShowcase } from "@/content/translationShowcase";
 import { LanguageWall } from "@/components/site/Persuasion";
@@ -46,8 +45,7 @@ export function TranslateShowcase({ locale }: { locale: Locale }) {
 
       <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
         {/* Black, not a second red pill: the hero button above is the page's one accent (23 Nov 2026). */}
-        <Button href={viaLogin("/new/translate")} variant="primary" size="lg" className="w-full max-w-[280px] sm:w-auto sm:max-w-none"><Languages className="size-5" aria-hidden />{s.cta}</Button>
-        <Button href={localizePath("/platform/translate", locale)} variant="secondary" size="lg" className="w-full max-w-[280px] sm:w-auto sm:max-w-none">{s.how}<ArrowRight className="size-5" aria-hidden /></Button>
+        <Button href={viaLogin("/new/translate")} variant="primary" size="lg" className="w-full max-w-[280px] sm:w-auto sm:max-w-none">{s.cta}</Button>
       </div>
     </Reveal>
   );

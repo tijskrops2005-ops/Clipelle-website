@@ -150,7 +150,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en", curren
             <p className="mt-1 text-[13px] text-muted">{t.enterprise.tagline}</p>
             <p className="mt-5 text-display">{t.enterprise.talk}</p>
             <ul className="mt-5 flex-1 space-y-2 text-[14px] text-ink/85">{t.enterprise.items.map((b) => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />{b}</li>)}</ul>
-            <div className="mt-6"><Button href={L("/demo")} variant="secondary" className="w-full">{dict(locale).common.contactSales} <ArrowRight className="size-4" aria-hidden /></Button></div>
+            <div className="mt-6"><Button href={L("/demo")} variant="secondary" className="w-full">{dict(locale).common.contactSales}</Button></div>
           </div>
         </div>
       </div>
@@ -283,15 +283,14 @@ function PlanCard({ plan, interval, cta, onLevel, t, m }: { plan: Plan; interval
 function EnterpriseBand({ t, locale }: { t: T; locale: Locale }) {
   return (
     <div className="relative mt-8 overflow-hidden rounded-card bg-ink p-7 text-champagne sm:p-9">
-      <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-gold/15 blur-3xl" />
       <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div className="max-w-xl">
-          <p className="flex items-center gap-2 text-[20px] font-semibold text-champagne"><Building2 className="size-5 text-gold-light" aria-hidden />{t.band.title}</p>
+          <p className="text-[20px] font-semibold text-champagne">{t.band.title}</p>
           <p className="mt-2 text-[15px] leading-relaxed text-champagne/75">{t.band.text}</p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-3">
           {/* One action, the white button every dark band uses for its second action; the managed service has its own block below. */}
-          <Link href={localizePath("/demo", locale)} className="focus-ring inline-flex h-11 items-center gap-1.5 rounded-control bg-surface px-5 text-[14px] font-semibold text-ink transition-transform duration-150 hover:-translate-y-px">{t.band.sales} <ArrowRight className="size-4" aria-hidden /></Link>
+          <Link href={localizePath("/demo", locale)} className="focus-ring inline-flex h-11 items-center gap-1.5 rounded-control bg-surface px-5 text-[14px] font-semibold text-ink transition-transform duration-150 hover:-translate-y-px">{t.band.sales}</Link>
         </div>
       </div>
     </div>
