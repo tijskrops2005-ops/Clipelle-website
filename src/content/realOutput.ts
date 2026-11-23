@@ -46,7 +46,7 @@ export const realTranslation: RealOutput = {
   sourceVideoFile: "translate-coffee-gift-original.mp4",
   // The checked Dutch lines, as spoken and shown in the result.
   script: "Mijn moeder is stiekem een beetje boos op me, omdat ik mijn vader de Coffee Special Deal Ritual Set heb gegeven. Hij kreeg hem van mij en nu kijkt ze me scheef aan, want zijn opgeblazen gevoel verdween sneller dan verwacht.",
-  settings: "11 s · English to Dutch · captions",
-  settingsNl: "11 s · Engels naar Nederlands · ondertitels",
+  settings: "11 s, English to Dutch",
+  settingsNl: "11 s, Engels naar Nederlands",
   madeOn: "2026-10-27",
 };

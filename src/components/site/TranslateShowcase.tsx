@@ -46,7 +46,6 @@ export function TranslateShowcase({ locale }: { locale: Locale }) {
       <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
         {/* Black, not a second red pill: the hero button above is the page's one accent (23 Nov 2026). */}
         <Button href={viaLogin("/new/translate")} variant="primary" size="lg" className="w-full max-w-[280px] sm:w-auto sm:max-w-none">{s.cta}</Button>
-        <Button href={localizePath("/platform/translate", locale)} variant="secondary" size="lg" className="w-full max-w-[280px] sm:w-auto sm:max-w-none">{s.how}</Button>
       </div>
     </Reveal>
   );
