@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Clapperboard, Languages, Play } from "lucide-react";
+import { Check, Clapperboard, Languages, Play, Scissors } from "lucide-react";
 import type { Project } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
 import { projectLengthLabel, projectMonogram, projectPosterUrl, projectSubtitle, projectVideoCount } from "@/lib/projectMeta";
@@ -13,7 +13,7 @@ import { dataClock, translateProgress } from "@/lib/translateProgress";
  * list's clock (`useClock`); without one the progress is read from the data alone, so the server
  * HTML and the browser agree.
  */
-export function ProjectTile({ project, now, selectable, selected, onToggle }: { project: Project; now?: number | null; selectable?: boolean; selected?: boolean; onToggle?: () => void }) {
+export function ProjectTile({ project, now, selectable, selected, onToggle, href, action }: { project: Project; now?: number | null; selectable?: boolean; selected?: boolean; onToggle?: () => void; /** Where the tile goes (default: the project page). */ href?: string; /** "edit": a scissors mark instead of the play button (the Edit a video page, 23 Nov 2026). */ action?: "play" | "edit" }) {
   const isCompleted = project.status === "completed";
   const posterUrl = projectPosterUrl(project);
   // A translation being made shows its one progress on the tile too (27 Oct 2026).
@@ -24,7 +24,7 @@ export function ProjectTile({ project, now, selectable, selected, onToggle }: { 
 
   return (
     <Link
-      href={`/projects/${project.id}`}
+      href={href ?? `/projects/${project.id}`}
       className="focus-ring group relative block rounded-tile"
       onClick={selectable ? (e) => { e.preventDefault(); onToggle?.(); } : undefined}
       aria-pressed={selectable ? Boolean(selected) : undefined}
@@ -85,7 +85,7 @@ export function ProjectTile({ project, now, selectable, selected, onToggle }: { 
                 </p>
               </div>
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-surface text-ink shadow-card transition-transform group-hover:scale-105">
-                <Play className="ml-0.5 size-4" fill="currentColor" aria-hidden />
+                {action === "edit" ? <Scissors className="size-4" aria-hidden /> : <Play className="ml-0.5 size-4" fill="currentColor" aria-hidden />}
               </span>
             </div>
           </>
