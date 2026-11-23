@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { getUser } from "@/lib/auth";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
@@ -26,7 +25,6 @@ export async function HeaderAccount({ locale = "en" }: { locale?: Locale }) {
       </Link>
       <Button href="/dashboard" variant="accent" size="md">
         Dashboard
-        <ArrowRight className="size-4" aria-hidden />
       </Button>
     </>
   );
@@ -39,7 +37,6 @@ export function HeaderAuthButtons({ locale = "en" }: { locale?: Locale }) {
       <Link href="/login" className="focus-ring hidden rounded-full px-3.5 py-2 text-sm font-medium text-ink transition-colors duration-150 hover:bg-ink/5 sm:inline-flex">{t.common.logIn}</Link>
       <Button href="/signup" variant="accent" size="md">
         {t.common.startFree}
-        <ArrowRight className="size-4" aria-hidden />
       </Button>
     </>
   );
