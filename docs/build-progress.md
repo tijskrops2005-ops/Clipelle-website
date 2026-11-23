@@ -61,3 +61,20 @@ Tag `pre-translate-form-colours` marks the state before. One commit per point; t
 | 4 | Step 3 always open, no explanation under Background | done (266211b) |
 | 5 | One colour picker everywhere, free hex colours, brand caption colours, Low contrast, server validation, render tests | done (f13e901) |
 | 6 | Chrome checks on laptop and 390 px, screenshots, docs, report | done |
+
+# One coherent site and app (23 Nov 2026, after Noah's review and five screenshot reviews)
+
+Assignment (Tijs, 23 Nov 2026): "ga overal overheen, zorg dat het één goed geheel wordt", parts 1–8 in one run, push when everything is green. Input: five reviewer reports over 384 screenshots (EN site, NL site, app; 1440 and 390 px), summarised in the session of 12 Nov. Four lanes worked in parallel (site core; app; docs/blog/legal; company and resource pages), merged into `main`.
+
+| # | Part | Status | Where |
+|---|---|---|---|
+| 1 | Prices and numbers from one place: one monthly/yearly switch for cards, calculator and plan finder (`src/lib/useBilling.ts`), one definition of "per video" (`videoPrice`), one measured time (`measured.translationMinutes` = 7 min for a 30-second video) | done | commit "Prices and numbers from one place" |
+| 2 | One step list (`src/lib/translateFlow.ts`) on homepage, platform page, form strip, demo, dashboard; one red button per page; stacked buttons equal width on phones | done | commits "One list of translation steps", "Homepage, examples and platform page…" |
+| 3 | Ads leftovers behind `config.features.ads`: press, customers, demo and service forms, docs/MCP, changelog, blog CTA and "How this works", settings, menu names ("Ads from a photo (soon)") | done | lanes B1, B2, A |
+| 4 | Same closing band (`FinalCta`) on every site page, one hero rule (`PageHero`), "HOW IT WORKS" label with a descriptive title | done | lane B2, B1 |
+| 5 | Dutch: example words per sample (`Example.nl`), language wall in Dutch (`languageLabel`), form chrome, number formats, menu labels, /nl/blog = /blog | done | site core, B1, B2 |
+| 6 | App: one number system in demo (`src/lib/mock/account.ts`), download as the accent action, failed/draft pages with one clear action, settings badges and bottom bar on phones, one `ui/Select`, folded "Coming soon" | done | lane A |
+| 7 | Docs and footer: webhooks documented without contradiction, no placeholder domains, code blocks scroll on phones, terms §3 on the credit rule (terms version 2026-11-23), footer two columns on phones, "Dashboard" instead of "Studio" | done | lane B1, site core |
+| 8 | Second screenshot round on the merged code, link crawl, full checks, push | done | this session |
+
+Open after this round (needs Tijs): Next.js 16.4.2 has published advisories (fixed in 16.4.6; `npm audit`); more sample videos (`npm run samples:list:prod`); the plan prices themselves are unchanged (Noah's $59/$149 would break the 1.7× margin rule with today's credits: 149 ÷ 3,600 credits = 1.64×).
