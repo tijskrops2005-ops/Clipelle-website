@@ -20,37 +20,37 @@ export function OverlaysPanel({ recipe, onRecipe, time, logoUrl, disabled }: { r
   const setCta = (patch: Partial<typeof cta>) => onRecipe({ ...recipe, cta: { ...cta, ...patch } });
   return (
     <div className="space-y-6">
-      <Block title="Text on screen" hint="A name, a claim or a note, in a soft bar." on={lt.enabled} onToggle={(v) => setLt({ enabled: v })} disabled={disabled}>
-        <Input value={lt.text} maxLength={OVERLAY_MAX_CHARS} onChange={(e) => setLt({ text: e.target.value })} placeholder="e.g. Dr. Sam, dermatologist" disabled={disabled} aria-label="Text on screen" />
+      <Block title="Text on screen" on={lt.enabled} onToggle={(v) => setLt({ enabled: v })} disabled={disabled}>
+        <Input value={lt.text} maxLength={OVERLAY_MAX_CHARS} onChange={(e) => setLt({ text: e.target.value })} placeholder="Dr. Sam, dermatologist" disabled={disabled} aria-label="Text on screen" />
         <div className="flex flex-wrap items-center gap-3">
           <SegmentedControl label="Where" size="sm" options={[{ key: "bottom", label: "Bottom" }, { key: "top", label: "Top" }]} value={lt.position} onChange={(k) => setLt({ position: k })} disabled={disabled} />
           <TimeRange from={lt.from} to={lt.to} total={total} time={time} onChange={(from, to) => setLt({ from, to })} disabled={disabled} />
         </div>
       </Block>
-      <Block title="Call to action" hint="A short line in your accent colour, near the bottom." on={cta.enabled} onToggle={(v) => setCta({ enabled: v })} disabled={disabled}>
-        <Input value={cta.text} maxLength={OVERLAY_MAX_CHARS} onChange={(e) => setCta({ text: e.target.value })} placeholder="e.g. Shop now at glowco.com" disabled={disabled} aria-label="Call to action" />
+      <Block title="Call to action" on={cta.enabled} onToggle={(v) => setCta({ enabled: v })} disabled={disabled}>
+        <Input value={cta.text} maxLength={OVERLAY_MAX_CHARS} onChange={(e) => setCta({ text: e.target.value })} placeholder="Shop now at glowco.com" disabled={disabled} aria-label="Call to action" />
         <TimeRange from={cta.from} to={cta.to} total={total} time={time} onChange={(from, to) => setCta({ from, to })} disabled={disabled} />
       </Block>
-      <Block title="Brand logo" hint={logoUrl ? "Your logo from Settings, top right, the whole video." : "No logo yet."} on={logo.enabled} onToggle={(v) => onRecipe({ ...recipe, logo: { enabled: v } })} disabled={disabled || !logoUrl}>
+      <Block title="Brand logo" hint={logoUrl ? "Top right, the whole video." : undefined} on={logo.enabled} onToggle={(v) => onRecipe({ ...recipe, logo: { enabled: v } })} disabled={disabled || !logoUrl}>
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt="Your logo" className="max-h-10 max-w-[140px] object-contain" />
         ) : (
-          <p className="text-[13px] text-muted">Upload one under <Link href="/settings/brand" className="font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Settings → Brand</Link>, then come back here.</p>
+          <p className="text-[13px] text-muted">No logo yet. Upload one under <Link href="/settings/brand" className="font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Settings → Brand</Link>.</p>
         )}
       </Block>
     </div>
   );
 }
 
-function Block({ title, hint, on, onToggle, disabled, children }: { title: string; hint: string; on: boolean; onToggle: (v: boolean) => void; disabled?: boolean; children: React.ReactNode }) {
+function Block({ title, hint, on, onToggle, disabled, children }: { title: string; hint?: string; on: boolean; onToggle: (v: boolean) => void; disabled?: boolean; children: React.ReactNode }) {
   return (
     <section className="space-y-3 rounded-panel border border-border p-4">
       <label className="flex cursor-pointer items-start gap-3">
         <input type="checkbox" checked={on} onChange={(e) => onToggle(e.target.checked)} disabled={disabled} className="mt-0.5 size-4 shrink-0" />
         <span>
           <span className="block text-sm font-medium text-ink">{title}</span>
-          <span className="block text-[13px] text-muted">{hint}</span>
+          {hint && <span className="block text-[13px] text-muted">{hint}</span>}
         </span>
       </label>
       {on && <div className="space-y-3 pl-7">{children}</div>}

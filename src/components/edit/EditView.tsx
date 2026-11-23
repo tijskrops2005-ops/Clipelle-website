@@ -10,7 +10,6 @@ import type { Project, TranslateProject } from "@/lib/types";
 import { exportEdit, useProject, useProjects, useProjectsReady } from "@/lib/data/client";
 import { getAccountStatus, getBrandDefaults } from "@/lib/data/settingsClient";
 import { defaultRecipe, exportCredits, keptRanges, outputSeconds, recipeSummary, type EditRecipe } from "@/lib/editRecipe";
-import { TOPUP_USD_PER_CREDIT } from "@/lib/plans";
 import { languageOf } from "@/lib/languages";
 import { clearDraft, readDraft, writeDraft } from "@/lib/forms/formDraft";
 import { useDraftScope } from "@/lib/forms/DraftScope";
@@ -18,7 +17,6 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ProjectSkeleton } from "@/components/ProjectView";
-import { DemoBadge } from "@/components/DemoModeBadge";
 import { formatDuration } from "@/components/ui/VideoDropzone";
 import { EditPreview } from "./EditPreview";
 import { EditTimeline } from "./EditTimeline";
@@ -162,8 +160,6 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
           </Link>
         }
         title="Edit video"
-        badge={<DemoBadge>Demo</DemoBadge>}
-        description="Trim, cut, change the captions, add a line of text or your logo. Export makes a new version; the original stays as it is."
         actions={
           isTranslate && languages.length > 1 ? (
             <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Language version">
@@ -182,7 +178,7 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
         <div className="space-y-4 xl:sticky xl:top-6">
           <EditPreview src={src} recipe={recipe} time={time} onTime={setTime} videoRef={videoRef} logoUrl={logoUrl} aspect={isTranslate && (project as TranslateProject).format === "original" ? "original" : "9:16"} captionsAreBurnedIn={captionsAreBurnedIn} />
           {restored && <p className="text-center text-[13px] text-muted" role="status">Picked up where you left off. <button type="button" onClick={() => { setRecipe(fresh()); setRestored(false); }} className="focus-ring rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Start over</button></p>}
-          {captionsAreBurnedIn && isTranslate && <p className="text-center text-[13px] text-muted">The captions of this version are part of the picture; its text cannot be changed here.</p>}
+          {captionsAreBurnedIn && isTranslate && <p className="text-center text-[13px] text-muted">The captions of this version are part of the picture.</p>}
         </div>
 
         {/* tools */}
@@ -201,10 +197,7 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
             </div>
             <div className="p-5 sm:p-6">
               {tab === "cut" && (
-                <div className="space-y-2 text-[14px] text-muted">
-                  <p>Use the strip above: drag the start and end, or press <span className="text-ink">Cut from here</span> at one point and <span className="text-ink">Cut until here</span> at another to take a piece out. The preview skips what is cut.</p>
-                  <p>The export keeps {formatDuration(seconds)} of {formatDuration(recipe.sourceSeconds)}{keptRanges(recipe).length > 1 ? ` in ${keptRanges(recipe).length} pieces` : ""}.</p>
-                </div>
+                <p className="text-[14px] text-muted">Drag the start and end, or cut a piece out with the buttons above. Keeps {formatDuration(seconds)} of {formatDuration(recipe.sourceSeconds)}{keptRanges(recipe).length > 1 ? ` in ${keptRanges(recipe).length} pieces` : ""}.</p>
               )}
               {tab === "captions" && <CaptionsPanel recipe={recipe} onRecipe={setRecipe} time={time} onSeek={seek} disabled={exporting} />}
               {tab === "text" && <OverlaysPanel recipe={recipe} onRecipe={setRecipe} time={time} logoUrl={logoUrl} disabled={exporting} />}
@@ -216,18 +209,18 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-[15px] font-semibold text-ink">Export as a new version</p>
-                <p className="text-[13px] text-muted">{summary.join(" · ")} · {formatDuration(seconds)} · <span className="text-ink">{credits} credits</span> (≈ ${(credits * TOPUP_USD_PER_CREDIT).toFixed(2)} at the pack price){balance !== null ? ` · ${balance.toLocaleString("en-US")} available` : ""}</p>
+                <p className="text-[13px] text-muted">{[...summary, formatDuration(seconds)].join(", ")}{balance !== null ? ` · ${balance.toLocaleString("en-US")} credits available` : ""}</p>
                 {exportRunning && <p className="mt-1 text-[13px] text-warning">An export of this video is still running; the next one can start when it is done.</p>}
                 {shortOfCredits && <p className="mt-1 text-[13px] text-danger">Not enough credits. Add credits in Billing to export.</p>}
                 {nothingLeft && <p className="mt-1 text-[13px] text-danger">Nothing is left of the video. Keep at least half a second.</p>}
                 {error && <p role="alert" className="mt-1 text-[13px] text-danger">{error}</p>}
               </div>
               <Button type="button" variant="accent" size="lg" onClick={onExport} disabled={exporting || exportRunning || nothingLeft || shortOfCredits} className="shrink-0">
-                {exporting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
+                {exporting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : null}
                 {exporting ? "Starting…" : `Export · ${credits} credits`}
               </Button>
             </div>
-            <p className="mt-3 text-[12.5px] text-muted">The export takes about a minute. {config.demoMode ? "Demo: simulated, nothing is charged." : "Credits are only charged for a finished export."}</p>
+            <p className="mt-3 text-[12.5px] text-muted">{config.demoMode ? "Demo: nothing is charged." : "Charged only when the export finishes."}</p>
           </section>
         </div>
       </div>

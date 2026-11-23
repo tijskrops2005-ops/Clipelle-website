@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Download, Loader2, Plus, RotateCcw, TriangleAlert } from "lucide-react";
+import { Check, Download, Loader2, RotateCcw, TriangleAlert } from "lucide-react";
 import { Poster } from "@/components/Poster";
 import { config } from "@/lib/config";
 import type { TranslateProject, TranslateStepKey } from "@/lib/types";
@@ -58,7 +58,6 @@ export function TranslateProgress({ project }: { project: TranslateProject }) {
               <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-surface-muted" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label="Progress">
                 <div className="h-full w-full origin-left rounded-full bg-accent transition-transform duration-700 ease-out motion-reduce:transition-none" style={{ transform: `scaleX(${percent / 100})` }} />
               </div>
-              <p className="mt-2 text-[14px] font-medium text-ink">{p.current}{p.current.endsWith("…") ? "" : "…"}</p>
             </>
           )}
           {failed && <FailedPanel project={project} />}
@@ -78,7 +77,6 @@ export function TranslateProgress({ project }: { project: TranslateProject }) {
               <div className="w-[120px] shrink-0"><VideoPlayer src={picked.videoUrl!} simulated={config.demoMode} /></div>
               <div className="min-w-0">
                 <p className="text-[15px] font-semibold text-ink">{languageOf(picked.language).label} is ready</p>
-                <p className="mt-1 text-[13px] text-muted">{many ? "The other languages carry on; you can watch and download this one now." : "Watch it here while the page finishes up."}</p>
                 <Button href={downloadHref(project.id, picked.videoUrl!, picked.language)} prefetch={false} variant="primary" size="sm" download className="mt-3">
                   <Download className="size-4" aria-hidden /> Download {languageOf(picked.language).tag}
                 </Button>
@@ -88,10 +86,8 @@ export function TranslateProgress({ project }: { project: TranslateProject }) {
 
           {!failed && (
             <div className="mt-6 flex flex-col gap-3 border-t border-divider pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[13px] leading-relaxed text-muted">{notify ? "You can close this page. We e-mail you when it is ready." : "You can close this page. The finished video lands in your projects."}</p>
-              <Button href="/new/translate" variant="secondary" size="md" className="shrink-0">
-                <Plus className="size-4" aria-hidden /> Translate another while you wait
-              </Button>
+              <p className="text-[13px] leading-relaxed text-muted">{notify ? "You can close this page; we e-mail you when it is ready." : "You can close this page."}</p>
+              <Button href="/new/translate" variant="secondary" size="md" className="shrink-0">Translate another</Button>
             </div>
           )}
         </div>
@@ -162,8 +158,7 @@ function FailedPanel({ project }: { project: TranslateProject }) {
   const error = key ? project.steps[key].error : project.translations.find((t) => t.error)?.error;
   return (
     <div className="mt-4 space-y-3 rounded-panel border border-danger/30 bg-danger/5 p-4">
-      <p className="text-[14.5px] leading-relaxed text-ink">{error ?? "Something went wrong. Retry; if it keeps failing, contact support."}</p>
-      <p className="text-[13px] text-muted">Credits for a stopped video are refunded. Retry uses them again and picks up where it stopped.</p>
+      <p className="text-[14.5px] leading-relaxed text-ink">{error ?? "Something went wrong. Retry picks up where it stopped; a stopped video costs nothing."}</p>
       {key && (
         <Button type="button" variant="primary" size="sm" onClick={() => retryStep(project.id, key)}>
           <RotateCcw className="size-4" aria-hidden /> Retry

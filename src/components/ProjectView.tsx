@@ -21,7 +21,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
 import { PageHeaderSkeleton, Skeleton } from "@/components/ui/Skeleton";
-import { DemoBadge } from "@/components/DemoModeBadge";
 import { AD_LANGUAGES, isAdLanguage, SPEEDS } from "@/lib/voiceOptions";
 import { DEFAULT_TONE, TONE_META } from "@/lib/adOptions";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
@@ -99,7 +98,7 @@ export function ProjectView({ id }: { id: string }) {
             </Button>
           ) : undefined
         }
-        description={`${project.productName} · created ${formatDate(project.createdAt)}${project.archivedAt ? " · archived" : ""}${project.tags?.length ? ` · ${project.tags.join(", ")}` : ""}`}
+        description={`${project.productName} · ${formatDate(project.createdAt)}${project.archivedAt ? ", archived" : ""}`}
       />
       <ProjectActions project={project} />
 
@@ -108,17 +107,17 @@ export function ProjectView({ id }: { id: string }) {
           {/* The result first: the player and the facts about the video, then the rest folded away. */}
           <ResultHero project={project} />
           <RelatedProjects project={project} />
-          <Collapsible title="Pipeline" summary={pipelineSummary(project)}>
+          <Collapsible title="How it was made">
             <Pipeline project={project} />
           </Collapsible>
-          <Collapsible title="Project details" summary="Your input: product, presenter, brand style and script.">
+          <Collapsible title="Project details">
             <DetailsCard project={project} />
           </Collapsible>
         </>
       ) : project.status === "draft" ? (
         <>
           <NotStarted />
-          <Collapsible title="Project details" summary="What was filled in: product, presenter, brand style and script.">
+          <Collapsible title="Project details">
             <DetailsCard project={project} />
           </Collapsible>
         </>
@@ -126,7 +125,7 @@ export function ProjectView({ id }: { id: string }) {
         <div className="grid gap-8 xl:grid-cols-3">
           <section className="space-y-5 xl:col-span-2">
             {project.steps.script.status === "needs_input" && <ScriptReviewPanel project={project} />}
-            <SectionHeader title="Pipeline" description={pipelineSummary(project)} />
+            <SectionHeader title="Progress" description={pipelineSummary(project)} />
             <Pipeline project={project} />
           </section>
 
@@ -148,7 +147,7 @@ function ResultHero({ project }: { project: AdProject }) {
   const quality = project.engine === "avatar_iv" ? "Premium" : "Standard";
   return (
     <section className="space-y-5">
-      <SectionHeader title="Your video" description="Ready to download. 9:16, captions included." aside={<DemoBadge>Demo placeholder</DemoBadge>} />
+      <SectionHeader title="Your video" />
       <Card>
         <CardContent className="grid gap-8 pt-7 md:grid-cols-[auto_1fr] md:items-center">
           {/* The player keeps its position in the tree, so polls never remount it. */}
@@ -168,7 +167,7 @@ function ResultHero({ project }: { project: AdProject }) {
               {ready && <Fact label="Ready in" value={ready} />}
               <Fact label="Credits used" value={`${config.demoMode ? adProjectCredits(project) : chargedCredits(project)}${config.demoMode ? " · demo" : ""}`} />
             </dl>
-            {config.demoMode && <p className="text-[13px] leading-relaxed text-muted">Demo mode: a sample clip, nothing was charged.</p>}
+            {config.demoMode && <p className="text-[13px] leading-relaxed text-muted">Demo: a sample clip, nothing was charged.</p>}
             {/* One row (26 Oct 2026): the download is the one accent button, the next steps sit beside it. */}
             <div className="space-y-3">
               <Button href={downloadHref(project.id, project.finalVideoUrl!)} prefetch={false} variant="accent" size="lg" download className="w-full sm:w-auto">
@@ -220,17 +219,17 @@ function pipelineSummary(project: AdProject) {
   ).length;
   switch (project.status) {
     case "completed":
-      return "All four steps finished. Your video is above.";
+      return "Four steps, all done.";
     case "failed": {
       const failed = (["script", "productClip", "presenter", "finalEdit"] as const).find(
         (k) => project.steps[k].status === "failed",
       );
       return failed
-        ? `Step ${stepMeta[failed].number} failed. Read the message in the card, then retry.`
+        ? `Step ${stepMeta[failed].number} failed.`
         : "A step failed.";
     }
     case "processing":
-      return `${done} of 4 steps done. You can leave this page; progress continues.`;
+      return `${done} of 4 steps done.`;
     default:
       return "This project has not been started yet.";
   }
@@ -291,7 +290,7 @@ function RelatedProjects({ project, compact }: { project: AdProject; compact?: b
   }
   return (
     <section className="space-y-5">
-      <SectionHeader title="Versions and translations" description={`This ad is version ${project.version ?? 1}. Other versions and translations made from it are listed here.`} />
+      <SectionHeader title="Versions and translations" />
       <Card>{body}</Card>
     </section>
   );
@@ -313,9 +312,8 @@ function ResultCard({ project }: { project: AdProject }) {
   if (project.status === "completed" && project.finalVideoUrl) {
     return (
       <Card>
-        <CardHeader className="flex items-start justify-between gap-3">
+        <CardHeader>
           <CardTitle>Your video</CardTitle>
-          <DemoBadge>Demo placeholder</DemoBadge>
         </CardHeader>
         <CardContent className="space-y-5">
           <VideoPlayer
@@ -324,7 +322,7 @@ function ResultCard({ project }: { project: AdProject }) {
             simulated={config.demoMode}
             className="mx-auto w-full max-w-xs"
           />
-          {config.demoMode && <p className="text-[13px] leading-relaxed text-muted">Demo mode: a sample clip, nothing was charged.</p>}
+          {config.demoMode && <p className="text-[13px] leading-relaxed text-muted">Demo: a sample clip, nothing was charged.</p>}
           <SpentLine project={project} />
           <div className="grid gap-3">
             <Button href={downloadHref(project.id, project.finalVideoUrl)} prefetch={false} variant="accent" size="lg" download>
@@ -359,8 +357,8 @@ function ResultCard({ project }: { project: AdProject }) {
           </div>
           <p className="text-sm leading-relaxed text-muted">
             {failedKey
-              ? `${stepMeta[failedKey].title} did not finish. Retry starts it again; the finished steps are kept.`
-              : "Your finished video appears here when step 4 is done. You can leave this page."}
+              ? `${stepMeta[failedKey].title} did not finish. Retry keeps the finished steps.`
+              : "Your video appears here when step 4 is done."}
           </p>
         </div>
         {failedKey && (
@@ -392,7 +390,7 @@ function NotStarted() {
       <CardContent className="flex flex-col gap-5 pt-7 sm:flex-row sm:items-center sm:justify-between">
         <div className="max-w-xl">
           <p className="text-[17px] font-semibold text-ink">This project was never started</p>
-          <p className="mt-1.5 text-[15px] leading-relaxed text-muted">Nothing was made and no credits were used. Start a new video, or put this one away with Archive above.</p>
+          <p className="mt-1.5 text-[15px] leading-relaxed text-muted">Nothing was made and no credits were used.</p>
         </div>
         <Button href="/new" variant="primary" size="lg" className="shrink-0">
           <Plus className="size-5" aria-hidden />

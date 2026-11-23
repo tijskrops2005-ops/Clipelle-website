@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellRing, Check, Languages } from "lucide-react";
+import { Check } from "lucide-react";
 import { addNotifyWish, getNotifyWishes } from "@/lib/data/settingsClient";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -36,10 +36,10 @@ export function ComingSoonPanel({ feature, title, text, points }: { feature: str
         ))}
       </ul>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Button href="/new/translate" variant="accent" size="lg"><Languages className="size-5" aria-hidden /> Translate a video instead</Button>
+        <Button href="/new/translate" variant="accent" size="lg">Translate a video instead</Button>
         <Button type="button" variant={done ? "secondary" : "primary"} size="lg" onClick={notify} disabled={done}>
-          {done ? <Check className="size-4" aria-hidden /> : <BellRing className="size-4" aria-hidden />}
-          {done ? "We will let you know" : "Notify me when it is ready"}
+          {done ? <Check className="size-4" aria-hidden /> : null}
+          {done ? "We will let you know" : "Notify me"}
         </Button>
       </div>
     </section>

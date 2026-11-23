@@ -28,11 +28,10 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, over
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium text-ink">Captions</legend>
         {overOldText ? (
-          <p className="text-[13px] text-muted">Always on, on a background: they cover the spot where the old text was.</p>
+          <p className="text-[13px] text-muted">Always on, over the spot where the old text was.</p>
         ) : (
           <>
         <SegmentedControl label="Captions" size="sm" options={[{ key: "on", label: "On" }, { key: "off", label: "Off" }]} value={value.show ? "on" : "off"} onChange={(k) => set({ show: k === "on" })} disabled={disabled} />
-        {!value.show && <p className="text-[13px] text-muted">The translated video without captions.</p>}
           </>
         )}
       </fieldset>

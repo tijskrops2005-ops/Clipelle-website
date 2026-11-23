@@ -10,7 +10,7 @@ type StepCardProps = {
   /** Generic step descriptor from config.stepLabels, rendered as a mono micro-label. Never a provider name. */
   /** Ignored since 23 Nov 2026 (no mono descriptor under the title, docs/design-clarity.md). */
   service?: string;
-  description: string;
+  description?: string;
   /** Shown as a muted inner panel: an illustration (dashboard) or live status details (project page). */
   panel?: ReactNode;
   /** When provided the card reflects pipeline state; omitted on the dashboard explainer. */
@@ -62,7 +62,7 @@ export function StepCard({
         <div className="panel mt-5 p-5">{panel}</div>
       )}
 
-      <p className="mt-4 text-sm leading-relaxed text-muted">{description}</p>
+      {description && <p className="mt-4 text-sm leading-relaxed text-muted">{description}</p>}
       {footer && <div className="mt-5">{footer}</div>}
     </article>
   );

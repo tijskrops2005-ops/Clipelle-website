@@ -27,8 +27,8 @@ export const stepMeta: Record<StepKey, StepMeta> = {
     title: "Script",
     service: config.stepLabels.script,
     description: "The presenter's lines, written from your product description: a hook, three benefits and a call to action, all spoken.",
-    waitingNote: "Queued. Starts as soon as the workflow begins.",
-    needsInputNote: "Your review: pick a hook, adjust the text if you like, and approve. Nothing paid starts before that.",
+    waitingNote: "Waiting to start.",
+    needsInputNote: "Waiting for your approval of the script.",
     doneLabel: "Script ready",
   },
   productClip: {
@@ -43,14 +43,14 @@ export const stepMeta: Record<StepKey, StepMeta> = {
     title: "AI presenter",
     service: config.stepLabels.presenter,
     description: "A realistic presenter speaks your script on camera, with natural voice and lip-sync.",
-    waitingNote: "Starts when the script is ready, at the same time as the product clip.",
+    waitingNote: "Starts when the script is ready.",
   },
   finalEdit: {
     number: 4,
     title: "Final edit",
     service: config.stepLabels.finalEdit,
     description: "Combines both clips into one 9:16 ad with captions of what the presenter says. Nothing else is placed on screen.",
-    waitingNote: "Waits until the product clip and the presenter are both ready.",
+    waitingNote: "Starts when the clip and the presenter are ready.",
   },
 };
 
@@ -147,9 +147,7 @@ export function StepProgressCard({
           <div className="h-1.5 overflow-hidden rounded-full bg-surface">
             <div className="h-full w-1/3 animate-[slide_1.6s_ease-in-out_infinite] rounded-full bg-accent" />
           </div>
-          <p className="text-[13px] text-muted">
-            {config.demoMode ? "Demo mode: this takes seconds here. The real service usually needs a few minutes." : "This usually takes a few minutes. You can leave this page; progress continues."}
-          </p>
+          <p className="text-[13px] text-muted">{config.demoMode ? "Demo: seconds here, a few minutes for real." : "Usually a few minutes."}</p>
         </div>
       );
       break;
@@ -207,8 +205,7 @@ export function StepProgressCard({
     <StepCard
       number={meta.number}
       title={meta.title}
-      service={meta.service}
-      description={meta.description}
+      description=""
       status={step.status}
       panel={panel}
       footer={footer}

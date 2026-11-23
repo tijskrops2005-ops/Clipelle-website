@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/components/ui/Badge";
 import { OptionCard, OptionGrid } from "@/components/ui/OptionCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { PresenterPicker } from "@/components/PresenterPicker";
@@ -38,7 +37,6 @@ export function PresenterSetup({ value, onChange, language, creditsFor, canPremi
               disabled={disabled}
               lockedTo={q.key === "avatar_iv" && !canPremium ? FEATURE_PLAN.premium : undefined}
               title={q.label}
-              badge={q.key === DEFAULT_PRESENTER_ENGINE ? <Badge tone="success">Recommended</Badge> : undefined}
               meta={<span className="label-mono text-muted">{creditsFor(q.key)} credits</span>}
               description={q.blurb}
             />
@@ -73,7 +71,7 @@ export function PresenterSetup({ value, onChange, language, creditsFor, canPremi
               <option key={a.key} value={a.key}>{a.label}</option>
             ))}
           </Select>
-          <span className="mt-1.5 block text-[13px] text-muted">{voiceOptions && voiceOptions.accents.length === 0 ? "No regional variants for this language yet." : "Only accents that have voices are listed."}</span>
+          {voiceOptions && voiceOptions.accents.length === 0 && <span className="mt-1.5 block text-[13px] text-muted">No accents for this language yet.</span>}
         </label>
         <fieldset>
           <legend className="mb-1.5 text-sm font-medium text-ink">Speaking speed</legend>
