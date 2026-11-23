@@ -23,3 +23,11 @@ export function companyLine(locale: "en" | "nl") {
     ? `Clipelle wordt geëxploiteerd door ${c.operator}, ${c.street}, ${c.postcode} ${c.city}, ${c.country.nl}. KvK ${c.kvk}, btw ${c.vat}.`
     : `Clipelle is operated by ${c.operator}, ${c.street}, ${c.postcode} ${c.city}, ${c.country.en}. Chamber of Commerce (KvK) ${c.kvk}, VAT ${c.vat}.`;
 }
+
+/** The operator and the postal address without the registration numbers (the footer under it carries those). */
+export function companyAddressLine(locale: "en" | "nl") {
+  const c = company;
+  return locale === "nl"
+    ? `Clipelle wordt geëxploiteerd door ${c.operator}, ${c.street}, ${c.postcode} ${c.city}, ${c.country.nl}.`
+    : `Clipelle is operated by ${c.operator}, ${c.street}, ${c.postcode} ${c.city}, ${c.country.en}.`;
+}
