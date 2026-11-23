@@ -129,3 +129,10 @@ Off the screens, code kept unless said otherwise:
 - Ad pipeline: the mono connector captions ("The script feeds steps 2 and 3"), the step-card description paragraphs.
 - The "Recommended" badges on the quality and presenter-quality cards; the Demo badges on the result sections, the edit screen, the presenter and voice pickers.
 - The helper sentences under form fields that repeated the label (both translate flows, the chooser, the edit screen).
+
+**Company, resource, docs, blog, legal and sign-in pages (lane D of the clarity round; restore from the diff `ff11ef9..b013500` of the named file)**
+- Partners: the benefit cards and the "Opens soon" badge card (`CompanyPages.tsx`; `partners.benefits*` keys kept). Careers: the value cards (`careers.values` kept). About: the value cards are a plain list. Trust: the icon cards are a `FactList`. Press: pillars and audiences show only with `config.features.ads`; the brand-info card merged into the fact table. Customers: the icon card.
+- Blog: the subtitle, the tag cloud, the article summary and tag row; related articles are a list; cards lost category and summary (`BlogIndex.tsx`, `BlogCard.tsx`, `blog/[slug]/page.tsx`).
+- Legal: the eyebrow and the draft badge (`LegalPage.tsx`). Sign-in: the glow fields and the `.rise` entrance (`AuthShell.tsx`).
+- Forms (demo, careers, services): the card chrome, the help lines and the success icon circle. Resources hub: the `MenuCard` icons. Solutions: the problem block and the example badge; the FAQ is three questions. Coming-soon pages: the does/does-not lists. Docs: the eyebrow labels. Services: the fact cards are a plain list.
+- Every trailing arrow icon in these components.
