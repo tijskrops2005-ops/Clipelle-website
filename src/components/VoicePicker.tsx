@@ -5,7 +5,6 @@ import { Check, Loader2, Pause, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { listVoices } from "@/lib/data/client";
 import type { AdLanguageCode, VoiceOptions } from "@/lib/voiceOptions";
-import { DemoBadge } from "@/components/DemoModeBadge";
 
 const VISIBLE_VOICES = 6;
 
@@ -93,10 +92,6 @@ export function VoicePicker({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[13px] text-muted">{gender ? `Voices that match your presenter first.` : "Voices for this language."}</p>
-        <DemoBadge>Demo voices</DemoBadge>
-      </div>
       {error && (
         <p role="alert" className="text-sm text-danger">
           Could not load voices: {error}
@@ -135,7 +130,7 @@ export function VoicePicker({
                   <span className="block text-[12px] text-muted">
                     {v.gender === "female" ? "Female" : v.gender === "male" ? "Male" : "Voice"}
                     {v.accent ? ` · ${v.accent.toUpperCase()}` : ""}
-                    {v.id === options.defaultId ? " · recommended for this presenter" : ""}
+                    {v.id === options.defaultId ? " · matches the presenter" : ""}
                   </span>
                 </span>
                 {selected && (

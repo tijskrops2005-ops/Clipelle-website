@@ -209,7 +209,7 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-[15px] font-semibold text-ink">Export as a new version</p>
-                <p className="text-[13px] text-muted">{[...summary, formatDuration(seconds)].join(", ")}{balance !== null ? ` · ${balance.toLocaleString("en-US")} credits available` : ""}</p>
+                <p className="text-[13px] text-muted">{[...summary.filter((s) => !/^\d+ s$/.test(s)), formatDuration(seconds)].join(", ")}{balance !== null ? ` · ${balance.toLocaleString("en-US")} credits available` : ""}</p>
                 {exportRunning && <p className="mt-1 text-[13px] text-warning">An export of this video is still running; the next one can start when it is done.</p>}
                 {shortOfCredits && <p className="mt-1 text-[13px] text-danger">Not enough credits. Add credits in Billing to export.</p>}
                 {nothingLeft && <p className="mt-1 text-[13px] text-danger">Nothing is left of the video. Keep at least half a second.</p>}

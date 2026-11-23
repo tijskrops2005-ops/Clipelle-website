@@ -8,7 +8,6 @@ import type { Presenter } from "@/lib/types";
 import type { PresenterEngine } from "@/lib/pricing";
 import { Button } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { DemoBadge } from "@/components/DemoModeBadge";
 import { Poster } from "@/components/Poster";
 
 type Gender = "all" | "female" | "male";
@@ -113,7 +112,6 @@ export function PresenterPicker({
           onChange={setGender}
           disabled={disabled}
         />
-        <DemoBadge>Demo presenters</DemoBadge>
       </div>
 
       {notice && (
@@ -168,7 +166,7 @@ export function PresenterPicker({
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <p className="text-[13px] text-muted">{items.length === 0 && !loading ? "No presenters match this filter." : "The voice, script and captions follow the presenter you pick."}</p>
+        <p className="text-[13px] text-muted">{items.length === 0 && !loading ? "No presenters match this filter." : ""}</p>
         {hasMore && (
           <Button type="button" variant="secondary" size="sm" onClick={loadMore} disabled={loading || disabled}>
             {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}

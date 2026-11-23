@@ -169,7 +169,7 @@ export function VideoDropzone({
       </span>
       <p className="mt-4 text-[15px] font-medium text-ink">Drop your video here, or click to choose</p>
       <p className="mt-1 text-[13px] text-muted">
-        MP4, WebM or MOV, up to {maxSizeMb} MB{maxSeconds ? ` and ${formatDuration(maxSeconds)}` : ""}. Any aspect ratio; we make it 9:16.
+        MP4, WebM or MOV · up to {maxSizeMb} MB{maxSeconds ? ` and ${formatDuration(maxSeconds)}` : ""}
       </p>
       <input
         ref={inputRef}
