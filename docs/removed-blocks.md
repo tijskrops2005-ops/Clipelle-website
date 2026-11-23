@@ -103,3 +103,29 @@ Off the screens, code kept:
 - **The homepage showcase's second red button**: "Translate a video" under the language wall is black now; the hero button is the page's one accent.
 
 Changed numbers, for the record: the site quotes **7 minutes for a 30-second video** (`measured.translationMinutes`, the median of five live runs on 2 Nov 2026) instead of 4.5 minutes for one 8-second run; the one short run is kept as `measured.shortTranslationMinutes`.
+
+## 23 Nov 2026: clarity round (Tijs: "te veel tekst, te AI-achtig"; rules in `docs/design-clarity.md`)
+
+Off the screens, code kept unless said otherwise:
+
+**Homepage and site core**
+- Hero proof chips (`ProofChips`, `home.proof`): mount `<ProofChips items={h.proof} />` under the small print to bring them back.
+- "Built for brands that sell online" chips and "Made for TikTok / Reels / Shorts" (`BuiltFor` in `Persuasion.tsx`): mount `<BuiltFor locale={locale} />` after `TranslateDemo` in `HomePage.tsx`.
+- "Why Clipelle": the "What we promise" list and the "On the form you pick" chips (`home.why.promise*`, `decide*` keys kept; markup in git before commit `de83ce7`); the "0 reshoots" fact.
+- Stats band: the "1 upload" fact (`home.translate.stats`).
+- Closing band: glow fields, the falling language codes and the three check lines (`home.finalPoints` kept).
+- Showcase: the secondary "How translation works" button (`home.translate.how` kept). Translate demo: its sentence (`home.translateDemo.text` is empty now).
+- Managed-service block on /pricing: the volume and turnaround facts, the feature list and the second button (content stays in `src/content/services.ts` and on /services/done-for-you).
+- Homepage plan cards: the plan icons and the "Extra credit packs" row (`pricingPreview.packs` kept).
+- Every mono eyebrow above a heading (`SectionIntro` ignores the prop) and every scroll-reveal entrance (`Reveal` is static; `.reveal` keyframes stay in `globals.css`).
+
+**App shell, dashboard, settings**
+- Dashboard: the quick-action pill row (`dashboard/QuickActions.tsx` kept, not mounted), the header "Create new video" button, the credit-rule line and the "N running" count in the credit strip, the checklist item descriptions.
+- Settings: the `DemoBadge` pills on Profile, Usage, Billing, Brand, API keys, Webhooks and Team (one quiet demo line per page instead); the "Switched off" badge under Payments; the icon circles and "Coming soon" badges on the Connections cards.
+- Projects: the mono kind pill under each tile (an icon with a tooltip now).
+
+**Creation flow, progress and result pages**
+- Translation result page: the "Translate another" header button (the sidebar has it); the description lines under "Your videos", "Quality check" and "Versions".
+- Ad pipeline: the mono connector captions ("The script feeds steps 2 and 3"), the step-card description paragraphs.
+- The "Recommended" badges on the quality and presenter-quality cards; the Demo badges on the result sections, the edit screen, the presenter and voice pickers.
+- The helper sentences under form fields that repeated the label (both translate flows, the chooser, the edit screen).
