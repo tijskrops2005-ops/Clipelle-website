@@ -28,7 +28,7 @@ export function DocsLayout({ current, sections, children }: { current: string; s
     <>
       <div className="grid gap-8 pt-12 sm:pt-16 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
         <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-          <p className="label-mono hidden text-muted lg:block">Docs</p>
+          <p className="hidden text-[13px] font-medium text-ink lg:block">Docs</p>
           <ul className="flex gap-2 lg:mt-3 lg:block lg:space-y-1">
             {pages.map((p) => (
               <li key={p.href}>
@@ -44,7 +44,7 @@ export function DocsLayout({ current, sections, children }: { current: string; s
             <div className="px-1 pb-2">{sectionLinks}</div>
           </details>
           <div className="hidden lg:block">
-            <p className="label-mono mt-6 text-muted">On this page</p>
+            <p className="mt-6 text-[13px] font-medium text-ink">On this page</p>
             {sectionLinks}
           </div>
         </aside>

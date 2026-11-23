@@ -1,27 +1,19 @@
-import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/utils";
 import type { LegalDoc } from "@/content/legal";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
 import { FinalCta } from "@/components/site/Persuasion";
 
-/**
- * Renders a legal document from src/content/legal/ (with a "Draft, to be reviewed" badge while it is
- * one), then the site's closing band at content width (23 Nov 2026: legal pages ended without it).
- */
+/** Renders a legal document from src/content/legal/: title, one line, the date, the sections, the closing band. No badges (23 Nov 2026). */
 export function LegalPage({ doc, locale = "en" }: { doc: LegalDoc; locale?: Locale }) {
   const t = dict(locale).legal;
   // The date in the reader's language ("23 Nov 2026", Dutch "23 nov 2026"), fixed time zone so the page prerenders.
   const updated = locale === "nl" ? new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Amsterdam" }).format(new Date(doc.updated)) : formatDate(doc.updated);
   return (
-    <div className="space-y-24 pt-16 sm:space-y-32 sm:pt-24">
+    <div className="space-y-24 pt-14 sm:space-y-32 sm:pt-20">
       <article className="mx-auto max-w-2xl space-y-10">
         <header>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="label-mono text-muted">{t.eyebrow}</p>
-            {doc.draft && <Badge tone="warning">{t.draft}</Badge>}
-          </div>
-          <h1 className="text-display mt-3">{doc.title}</h1>
+          <h1 className="text-display">{doc.title}</h1>
           <p className="mt-4 text-subtitle text-muted">{doc.summary}</p>
           <p className="mt-2 text-[13px] text-muted">{t.updated} {updated}</p>
         </header>

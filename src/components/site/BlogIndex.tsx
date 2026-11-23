@@ -1,17 +1,16 @@
 import Link from "next/link";
 import { blogCategories } from "@/content/blogCategories";
-import { orderedPosts, topTags } from "@/lib/blog";
+import { orderedPosts } from "@/lib/blog";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
-import { SectionIntro } from "@/components/site/SectionIntro";
+import { PageHero } from "@/components/site/PageHero";
 import { BlogCard } from "@/components/site/BlogCard";
 import { FinalCta } from "@/components/site/Persuasion";
 
 /**
- * The blog overview, one page for /blog and /nl/blog (23 Nov 2026; the Dutch page used to be a bare
- * list): three featured articles, category chips, every article, the most used tags, the closing
- * band. The articles themselves are English; the Dutch page says so. Translation articles lead while
- * ads are switched off (`orderedPosts`).
+ * The blog overview, one page for /blog and /nl/blog: the title, the category row, three featured
+ * articles, the rest, the closing band (23 Nov 2026: no subtitle, no tag cloud). The articles are
+ * English; the Dutch page says so in one line. Translation articles lead while ads are off.
  */
 export function BlogIndex({ locale = "en" }: { locale?: Locale }) {
   const t = dict(locale);
@@ -19,47 +18,30 @@ export function BlogIndex({ locale = "en" }: { locale?: Locale }) {
   const posts = orderedPosts();
   const featured = posts.slice(0, 3);
   const rest = posts.slice(3);
-  const tags = topTags(12);
   return (
-    <div className="space-y-16 pt-16 sm:pt-24">
-      <div>
-        <SectionIntro eyebrow={b.eyebrow} title={b.title} text={b.text} />
-        {locale !== "en" && <p className="mt-3 text-center text-[13px] text-muted">{t.common.articlesEnglish}</p>}
-      </div>
-      <CategoryChips locale={locale} />
-      {posts.length === 0 ? (
-        <p className="text-center text-muted">{b.empty}</p>
-      ) : (
-        <>
-          <section aria-label={b.featured} className="grid gap-5 md:grid-cols-3">
-            {featured.map((p) => (
-              <BlogCard key={p.slug} post={p} featured />
-            ))}
-          </section>
-          {rest.length > 0 && (
-            <section aria-label={b.allArticles} className="space-y-6">
-              <h2 className="text-title">{b.allArticles}</h2>
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-24 sm:space-y-32">
+      <div className="space-y-10">
+        <PageHero title={b.title} text={locale !== "en" ? t.common.articlesEnglish : undefined} />
+        <CategoryChips locale={locale} />
+        {posts.length === 0 ? (
+          <p className="text-center text-muted">{b.empty}</p>
+        ) : (
+          <>
+            <section aria-label={b.featured} className="grid gap-5 md:grid-cols-3">
+              {featured.map((p) => (
+                <BlogCard key={p.slug} post={p} featured />
+              ))}
+            </section>
+            {rest.length > 0 && (
+              <section aria-label={b.allArticles} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {rest.map((p) => (
                   <BlogCard key={p.slug} post={p} />
                 ))}
-              </div>
-            </section>
-          )}
-        </>
-      )}
-      {tags.length > 0 && (
-        <section aria-label={b.tags} className="space-y-3">
-          <p className="label-mono text-muted">{b.tags}</p>
-          <ul className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <li key={tag}>
-                <Link href={`/blog/tag/${encodeURIComponent(tag)}`} className="focus-ring inline-flex rounded-full bg-surface px-3 py-1.5 text-[13px] text-ink shadow-card hover:bg-surface-muted">#{tag}</Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+              </section>
+            )}
+          </>
+        )}
+      </div>
       <FinalCta locale={locale} />
     </div>
   );

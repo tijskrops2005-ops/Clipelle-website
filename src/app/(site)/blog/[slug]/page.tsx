@@ -7,7 +7,6 @@ import { absoluteUrl } from "@/lib/site";
 import { formatDate } from "@/lib/utils";
 import { config } from "@/lib/config";
 import { LogoMark } from "@/components/Logo";
-import { BlogCard } from "@/components/site/BlogCard";
 import { FinalCta } from "@/components/site/Persuasion";
 import { InlineCta } from "@/components/site/InlineCta";
 import { JsonLd } from "@/components/site/JsonLd";
@@ -31,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-/** Article page: cover, meta, table of contents, body with one CTA block in the middle, share, related. */
+/** Article page: title, date, reading time, the text with one call-to-action block, share, related (23 Nov 2026: no summary, no tag row). */
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = postBySlug(slug);
@@ -70,12 +69,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       </nav>
       <header className="mt-6 max-w-3xl">
         <h1 className="text-[clamp(2rem,4.5vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em]">{post.title}</h1>
-        <p className="mt-4 text-subtitle text-muted">{post.summary}</p>
         <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted">
           <span className="inline-flex items-center gap-2"><LogoMark size={24} className="rounded-full" />{BLOG_AUTHOR}</span>
-          <span aria-hidden>·</span>
           <time dateTime={post.date}>{formatDate(post.date)}</time>
-          <span aria-hidden>·</span>
           <span>{post.readingMinutes} min read</span>
         </p>
       </header>
@@ -84,7 +80,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <aside className="lg:sticky lg:top-24 lg:self-start">
           {post.toc.length > 1 && (
             <nav aria-label="On this page">
-              <p className="label-mono text-muted">On this page</p>
+              <p className="text-[13px] font-medium text-ink">On this page</p>
               <ol className="mt-3 space-y-1.5">
                 {post.toc.map((h) => (
                   <li key={h.id}><a href={`#${h.id}`} className="focus-ring block rounded-control text-[14px] text-muted hover:text-ink">{h.text}</a></li>
@@ -103,20 +99,22 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <div className="prose-clipelle"><div dangerouslySetInnerHTML={{ __html: first }} /></div>
           {second && <InlineCta variant={ctaVariant} />}
           {second && <div className="prose-clipelle"><div dangerouslySetInnerHTML={{ __html: second }} /></div>}
-          <div className="mt-10 flex flex-wrap items-center gap-2">
-            {post.tags.map((t) => (
-              <Link key={t} href={`/blog/tag/${encodeURIComponent(t)}`} className="focus-ring inline-flex rounded-full bg-surface px-3 py-1.5 text-[13px] text-ink shadow-card hover:bg-surface-muted">#{t}</Link>
-            ))}
-          </div>
-          <div className="mt-8"><ShareLinks url={url} title={post.title} /></div>
+          <div className="mt-10"><ShareLinks url={url} title={post.title} /></div>
         </div>
       </div>
       {related.length > 0 && (
-        <section className="mt-20 space-y-6">
+        <section className="mt-20 max-w-2xl">
           <h2 className="text-title">Related articles</h2>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {related.map((p) => <BlogCard key={p.slug} post={p} />)}
-          </div>
+          <ul className="mt-6 divide-y divide-divider border-y border-divider">
+            {related.map((p) => (
+              <li key={p.slug}>
+                <Link href={`/blog/${p.slug}`} className="focus-ring flex flex-col gap-1 rounded-control py-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
+                  <span className="text-[16px] font-medium text-ink">{p.title}</span>
+                  <span className="shrink-0 text-[13px] text-muted">{formatDate(p.date)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
       <div className="mt-20"><FinalCta /></div>

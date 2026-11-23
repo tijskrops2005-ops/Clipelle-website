@@ -229,9 +229,8 @@ export default function ApiDocsPage() {
   return (
     <DocsLayout current="/docs/api" sections={sections}>
       <header>
-        <p className="label-mono text-muted">API v1</p>
-        <h1 className="mt-3 text-display">The {config.productName} API</h1>
-        <p className="mt-4 max-w-2xl">Translate a video you own from your own code and read the result. A key acts as your workspace: the same credits, the same limits, the same projects on your dashboard. Keys are made on <Link href={viaLogin("/settings/api")} className="underline">Settings → API keys</Link> and come with the plans that include the API.</p>
+        <h1 className="text-display">{config.productName} API</h1>
+        <p className="mt-4 max-w-2xl">Translate videos you own from your own code. A key is your workspace: the same credits, limits and projects. Keys are made on <Link href={viaLogin("/settings/api")} className="underline">Settings → API keys</Link>, on plans that include the API.</p>
       </header>
 
       <section id="auth" className="space-y-4">

@@ -1,20 +1,17 @@
 import type { ReactNode } from "react";
-import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { StepList } from "@/components/ui/StepList";
-import { Reveal } from "@/components/site/Reveal";
-import { SectionIntro } from "@/components/site/SectionIntro";
+import { PageHero, PageSection, StepLines } from "@/components/site/PageHero";
 import { FinalCta } from "@/components/site/Persuasion";
 import { SoonBadge } from "@/components/site/SiteHeader";
 import { dict } from "@/content/i18n";
 import type { Locale } from "@/lib/i18n";
 
 type Props = {
-  eyebrow: string;
+  /** Ignored since 23 Nov 2026 (no eyebrow labels); kept for the call sites. */
+  eyebrow?: string;
   title: string;
   intro: string;
   soon?: boolean;
-  /** A descriptive title for the steps; the mono label above it already says "How it works" (23 Nov 2026: never the label twice). */
   stepsTitle?: string;
   steps: { title: string; text: string }[];
   does: string[];
@@ -25,40 +22,54 @@ type Props = {
   locale?: Locale;
 };
 
-/** One layout for the four integration pages: what it is, how it works, what it does and does not do, then the CTA or the waitlist. */
-export function IntegrationPage({ eyebrow, title, intro, soon, stepsTitle, steps, does, doesNot, primary, secondary, children, locale = "en" }: Props) {
+/**
+ * One layout for the integration pages and the coming-soon pages (23 Nov 2026): title, one line,
+ * the buttons or the waitlist, the steps in a line each. A live integration also lists what it does
+ * and does not do; a coming-soon page stops after the steps.
+ */
+export function IntegrationPage({ title, intro, soon, stepsTitle, steps, does, doesNot, primary, secondary, children, locale = "en" }: Props) {
   const t = dict(locale);
   return (
     <div className="space-y-24 sm:space-y-32">
-      <section className="pt-16 sm:pt-24">
-        <p className="label-mono flex items-center gap-2 text-muted">{eyebrow}{soon && <SoonBadge label={t.common.soon} />}</p>
-        <h1 className="mt-5 max-w-3xl text-[clamp(2.25rem,5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">{title}</h1>
-        <p className="mt-6 max-w-2xl text-subtitle text-muted">{intro}</p>
-        {(primary || secondary) && (
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            {primary && <Button href={primary.href} variant="accent" size="lg">{primary.label} <ArrowRight className="size-5" aria-hidden /></Button>}
-            {secondary && <Button href={secondary.href} variant="secondary" size="lg">{secondary.label}</Button>}
-          </div>
-        )}
+      <div>
+        {soon && <div className="pt-14 sm:pt-20"><SoonBadge label={t.common.soon} /></div>}
+        <PageHero
+          align="left"
+          className={soon ? "!pt-4" : undefined}
+          title={title}
+          text={intro}
+          actions={(primary || secondary) ? <>{primary && <Button href={primary.href} variant="accent" size="lg">{primary.label}</Button>}{secondary && <Button href={secondary.href} variant="secondary" size="lg">{secondary.label}</Button>}</> : undefined}
+        />
         {children}
-      </section>
-      <Reveal as="section">
-        <SectionIntro eyebrow={t.common.howItWorks} title={stepsTitle ?? t.integrations.howWill} />
-        <StepList className="mt-10 [&>li]:bg-surface [&>li]:px-6 [&>li]:py-6 [&>li]:shadow-card" columns={steps.length as 3 | 4} items={steps} />
-      </Reveal>
-      <Reveal as="section">
-        <div className="grid gap-5 md:grid-cols-2">
-          <div className="rounded-card bg-surface p-6 shadow-card">
-            <h3 className="text-[17px] font-semibold">{soon ? t.integrations.will : t.integrations.does}</h3>
-            <ul className="mt-3 space-y-2 text-[15px] text-ink/85">{does.map((t) => <li key={t} className="flex items-start gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-success" aria-hidden />{t}</li>)}</ul>
+      </div>
+      <PageSection title={stepsTitle ?? t.integrations.howWill}>
+        <StepLines className={steps.length === 3 ? "lg:grid-cols-3" : undefined} items={steps} />
+      </PageSection>
+      {!soon && (
+        <PageSection>
+          <div className="grid gap-10 md:grid-cols-2">
+            <div>
+              <h3 className="text-[15px] font-semibold text-ink">{t.integrations.does}</h3>
+              <ul className="mt-3 space-y-2 text-[15px] leading-relaxed text-ink/85">{does.map((x) => <li key={x}>{x}</li>)}</ul>
+            </div>
+            <div>
+              <h3 className="text-[15px] font-semibold text-ink">{t.integrations.doesNot}</h3>
+              <ul className="mt-3 space-y-2 text-[15px] leading-relaxed text-ink/85">{doesNot.map((x) => <li key={x}>{x}</li>)}</ul>
+            </div>
           </div>
-          <div className="rounded-card bg-surface p-6 shadow-card">
-            <h3 className="text-[17px] font-semibold">{t.integrations.doesNot}</h3>
-            <ul className="mt-3 space-y-2 text-[15px] text-ink/85">{doesNot.map((t) => <li key={t} className="flex items-start gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" aria-hidden />{t}</li>)}</ul>
-          </div>
-        </div>
-      </Reveal>
+        </PageSection>
+      )}
       <FinalCta locale={locale} />
+    </div>
+  );
+}
+
+/** The waitlist under a coming-soon title: one line and the form, no card. */
+export function WaitlistBlock({ text, children }: { text: string; children: ReactNode }) {
+  return (
+    <div className="mt-8 max-w-lg">
+      <p className="text-[15px] text-muted">{text}</p>
+      <div className="mt-3">{children}</div>
     </div>
   );
 }
