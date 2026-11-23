@@ -32,9 +32,11 @@ export function IntegrationPage({ title, intro, soon, stepsTitle, steps, does, d
   return (
     <div className="space-y-24 sm:space-y-32">
       <div>
+        {soon && <div className="pt-14 sm:pt-20"><SoonBadge label={t.common.soon} /></div>}
         <PageHero
           align="left"
-          title={soon ? <span className="inline-flex flex-wrap items-center gap-3">{title}<SoonBadge label={t.common.soon} /></span> : title}
+          className={soon ? "!pt-4" : undefined}
+          title={title}
           text={intro}
           actions={(primary || secondary) ? <>{primary && <Button href={primary.href} variant="accent" size="lg">{primary.label}</Button>}{secondary && <Button href={secondary.href} variant="secondary" size="lg">{secondary.label}</Button>}</> : undefined}
         />

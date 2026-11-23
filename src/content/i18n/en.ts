@@ -358,7 +358,7 @@ export const en = {
     metaDescription: "From one product photo to a finished 9:16 ad with a presenter and captions.",
     eyebrow: "Ads from a photo",
     title: "A presenter, your product, captions. One form.",
-    intro: "Upload a product photo, describe the product in a few sentences, pick a presenter and a length. The script, the product footage, the presenter video and the edit are made for you.",
+    intro: "One product photo and a few sentences become a 9:16 ad with a presenter and captions. Coming soon.",
     stepsTitle: "Four steps, one click",
     stepsText: "You follow them on one page; the finished ad lands on your dashboard.",
     steps: [
@@ -393,7 +393,7 @@ export const en = {
     metaDescription: "Paste a product link; name, description and photos are read from the page, you check them, and the ad is made.",
     eyebrow: "Ads from a link",
     title: "Paste a product link. Check the facts. Get the ad.",
-    intro: "The product name, description, photos and price are read from your own product page, so the form starts filled in. You correct what you want, pick the photos you own, and the rest is the same ad as always: a presenter, product footage and captions in 9:16.",
+    intro: "Paste a product page; name, description and photos fill the ad form for you. Coming soon.",
     howAdIsMade: "How the ad is made",
     useDetails: "Use these details",
     stepsTitle: "Three checks, then the usual four steps",
@@ -712,7 +712,7 @@ export const en = {
   },
   servicePage: {
     metaTitle: "Translations, made for you", metaDescription: "A managed service: you send the videos, we run Clipelle for you and deliver finished translations. Scope agreed on a call.",
-    intro: "Paste a product page; name, description and photos fill the ad form for you. Coming soon.",
+    intro: "You send the videos, we run Clipelle for you and deliver the checked versions, ready to post.",
     requestCall: "Request a call", note: "Scope and price are agreed per brand on a call.",
     stepsTitle: "How it works",
     steps: [{ title: "A call", text: "What you sell, where, and which languages you need. We say honestly whether Clipelle fits." }, { title: "Your videos", text: "You share the videos you own and the words to keep (brand and product names) once; we set them up in a workspace for you." }, { title: "We translate", text: "Languages and quality picked per video, every corrected line read by a person, every version checked before delivery." }, { title: "You post", text: "Finished videos with captions per language in your workspace, ready to download; you run the campaigns." }],

@@ -349,7 +349,7 @@ export const nl: SiteDict = {
     metaDescription: "Van één productfoto naar een afgeronde 9:16-advertentie met presentator en ondertitels.",
     eyebrow: "Advertenties uit een foto",
     title: "Een presentator, jouw product, ondertitels. Eén formulier.",
-    intro: "Upload een productfoto, omschrijf het product in een paar zinnen, kies een presentator en een lengte. Het script, de productbeelden, de presentatorvideo en de montage worden voor je gemaakt.",
+    intro: "Eén productfoto en een paar zinnen worden een 9:16-advertentie met presentator en ondertitels. Binnenkort.",
     stepsTitle: "Vier stappen, één klik",
     stepsText: "Je volgt ze op één pagina; de afgeronde advertentie verschijnt op je dashboard.",
     steps: [
@@ -382,7 +382,7 @@ export const nl: SiteDict = {
     metaDescription: "Plak een productlink; naam, omschrijving en foto's worden van de pagina gelezen, jij controleert ze, en de advertentie wordt gemaakt.",
     eyebrow: "Advertenties uit een link",
     title: "Plak een productlink. Controleer de feiten. Krijg de advertentie.",
-    intro: "Productnaam, omschrijving, foto's en prijs worden van je eigen productpagina gelezen, zodat het formulier ingevuld begint. Je corrigeert wat je wilt, kiest de foto's die van jou zijn, en de rest is dezelfde advertentie als altijd: een presentator, productbeelden en ondertitels in 9:16.",
+    intro: "Plak een productpagina; naam, omschrijving en foto's vullen het advertentieformulier voor je in. Binnenkort.",
     howAdIsMade: "Zo wordt de advertentie gemaakt",
     useDetails: "Gebruik deze gegevens",
     stepsTitle: "Drie controles, dan de gebruikelijke vier stappen",
@@ -695,7 +695,7 @@ export const nl: SiteDict = {
   },
   servicePage: {
     metaTitle: "Vertalingen, voor je gemaakt", metaDescription: "Een beheerde dienst: jij stuurt de video's, wij draaien Clipelle voor je en leveren afgeronde vertalingen. Omvang afgesproken in een gesprek.",
-    intro: "Plak een productpagina; naam, omschrijving en foto\'s vullen het advertentieformulier voor je in. Binnenkort.",
+    intro: "Jij stuurt de video's, wij draaien Clipelle voor je en leveren de gecontroleerde versies, klaar om te plaatsen.",
     requestCall: "Vraag een gesprek aan", note: "Omvang en prijs spreken we per merk af in een gesprek.",
     stepsTitle: "Zo werkt het",
     steps: [{ title: "Een gesprek", text: "Wat je verkoopt, waar, en welke talen je nodig hebt. We zeggen eerlijk of Clipelle past." }, { title: "Je video's", text: "Je deelt één keer de video's van jezelf en de woorden die zo moeten blijven (merk- en productnamen); wij zetten ze voor je klaar in een workspace." }, { title: "Wij vertalen", text: "Talen en kwaliteit per video gekozen, elke gecorrigeerde regel door een mens gelezen, elke versie gecontroleerd vóór levering." }, { title: "Jij plaatst", text: "Afgeronde video's met ondertitels per taal in je workspace, klaar om te downloaden; jij draait de campagnes." }],
