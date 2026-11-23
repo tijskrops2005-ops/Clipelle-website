@@ -11,7 +11,6 @@ import { PlanConfirmModal, StartNowModal, type StartNowQuote } from "@/component
 import { AutoReloadSettings } from "@/components/settings/AutoReloadSettings";
 import type { AutoReload } from "@/lib/autoReload";
 import { CreditsSlider } from "@/components/site/CreditsSlider";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -224,7 +223,7 @@ export function BillingSettings() {
 
       {!enabled && (
         <SectionCard title="Payments" description={config.demoMode ? "Switched off in demo mode." : "Not available right now. Please try again later."}>
-          <Badge tone="warning">{config.demoMode ? "Switched off" : "Not available"}</Badge>
+          <p className="text-[13px] text-muted">Plans and credits are read-only until then.</p>
         </SectionCard>
       )}
 

@@ -81,10 +81,8 @@ export function ApiKeysSettings() {
   const active = keys.filter((k) => !k.revokedAt);
   return (
     <div className="space-y-6">
-      <SectionCard title="API keys" description="A key acts as you: same credits, same limits.">
-        {config.demoMode ? (
-          <p className="text-[15px] text-muted">Not available in demo mode.</p>
-        ) : !loaded ? (
+      <SectionCard title="API keys" description={config.demoMode ? "Not available in demo mode." : "A key acts as you: same credits, same limits."}>
+        {config.demoMode ? null : !loaded ? (
           <p className="text-[15px] text-muted">Loading…</p>
         ) : !allowed ? (
           <div className="rounded-[14px] bg-surface-muted p-4 text-[15px] text-ink">

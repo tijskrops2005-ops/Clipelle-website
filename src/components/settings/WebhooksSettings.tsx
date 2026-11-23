@@ -75,7 +75,7 @@ export function WebhooksSettings() {
     <>
       <SectionCard
         title="Webhooks"
-        description="We call your URL when a project finishes or fails."
+        description={config.demoMode ? "Not available in demo mode." : "We call your URL when a project finishes or fails."}
       >
         {msg && <p role={msg.tone === "error" ? "alert" : "status"} className={msg.tone === "error" ? "text-[13px] text-danger" : "text-[13px] text-success"}>{msg.text}</p>}
         {info && !info.allowed && !config.demoMode && <p className="text-[13px] text-muted">Webhooks come with the Pro plan and up.</p>}

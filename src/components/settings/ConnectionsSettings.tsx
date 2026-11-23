@@ -36,7 +36,7 @@ export function ConnectionsSettings() {
             <li key={key} className="flex flex-col rounded-panel border border-border p-5">
               <p className="flex items-center gap-2 text-[15px] font-semibold text-ink"><Icon className="size-4 text-muted" aria-hidden />{title}</p>
               <p className="mt-1 flex-1 text-[13px] leading-relaxed text-muted">{text}</p>
-              <Button type="button" variant={done ? "secondary" : "primary"} size="sm" className="mt-4 w-fit" onClick={() => notify(key)} disabled={done}>
+              <Button type="button" variant="secondary" size="sm" className="mt-4 w-fit" onClick={() => notify(key)} disabled={done}>
                 {done ? <Check className="size-4" aria-hidden /> : <BellRing className="size-4" aria-hidden />}
                 {done ? "We will let you know" : "Notify me"}
               </Button>
