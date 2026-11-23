@@ -20,10 +20,9 @@ export function PageHeader({ title, description, eyebrow, badge, actions, classN
       {eyebrow}
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="max-w-xl space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-display text-ink">{title}</h1>
-            {badge}
-          </div>
+          {/* Always its own line (23 Nov 2026): next to the title it dropped under long names and stayed inline on short ones. */}
+          {badge && <div className="flex [&>*]:translate-y-0">{badge}</div>}
+          <h1 className="text-display text-ink">{title}</h1>
           {description && (
             <p className="text-[17px] leading-relaxed text-muted">{description}</p>
           )}

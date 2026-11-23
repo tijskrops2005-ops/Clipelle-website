@@ -1,6 +1,8 @@
 "use client";
 
 import { config } from "@/lib/config";
+import { demoUsage } from "@/lib/mock/account";
+import { getProjectsSnapshot } from "@/lib/mock/store";
 
 /**
  * Settings access for screens, with the demo switch like src/lib/data/client.ts: demo mode keeps
@@ -220,7 +222,8 @@ export const revokeInvite = async (id: string, inviteId: string) => { await api(
 export type UsageInfo = { balance: number; projectsThisMonth: number; projects: { projectId: string; name: string; workflow: string; credits: number; last: string }[]; ledger: { id: string; credits: number; kind: string; note: string | null; createdAt: string; expiresAt: string | null }[] };
 
 export async function getUsage(): Promise<UsageInfo> {
-  if (config.demoMode) return { balance: 120, projectsThisMonth: 4, projects: [], ledger: [{ id: "demo", credits: 120, kind: "grant_manual", note: "Demo credits (simulated)", createdAt: new Date().toISOString(), expiresAt: null }] };
+  // Demo mode (23 Nov 2026): the same balance and the same projects as the dashboard and the project pages.
+  if (config.demoMode) return demoUsage(getProjectsSnapshot(), Date.now());
   return api<UsageInfo>("/api/settings/usage");
 }
 
@@ -235,7 +238,7 @@ export async function getWebhooks(): Promise<WebhooksInfo> {
   return api("/api/settings/webhooks");
 }
 export async function createWebhookEndpoint(url: string, events: string[]): Promise<{ id: string; url: string; events: string[]; secret: string }> {
-  if (config.demoMode) throw new Error("Webhooks need the database and a paid plan; demo mode has neither.");
+  if (config.demoMode) throw new Error("Demo mode: webhooks are switched off.");
   return api("/api/settings/webhooks", { method: "POST", body: JSON.stringify({ url, events }) });
 }
 export async function deleteWebhookEndpoint(id: string) {

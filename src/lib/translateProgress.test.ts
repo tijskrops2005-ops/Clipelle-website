@@ -80,7 +80,7 @@ describe("translateProgress", () => {
     const r = translateProgress(project({ status: "failed", speaker: "presenter", steps: { upload: { status: "completed", startedAt: iso(0), finishedAt: iso(10) }, translate: { status: "failed", startedAt: iso(10), error: "The audio was too quiet." }, captions: { status: "waiting" } } }), T0 + 100_000);
     expect(r.stages.find((s) => s.key === "translate")?.state).toBe("failed");
     expect(r.stages.find((s) => s.key === "voice")?.label).toBe("Recording the presenter");
-    expect(r.current).toBe("Stopped");
+    expect(r.current).toBe("Failed");
   });
 
   it("scales the expectation with the source length", () => {
@@ -90,7 +90,7 @@ describe("translateProgress", () => {
   it("says how long the work runs in minutes, never hours", () => {
     expect(runningLabel(30_000)).toBe("Just started");
     expect(runningLabel(3 * 60_000 + 5_000)).toBe("Running 3 min");
-    expect(runningLabel(90 * 60_000)).toBe("Running over an hour");
+    expect(runningLabel(90 * 60_000)).toBe("Running longer than usual");
   });
 
   it("gives every language chip the word for its own stage and the project its start time", () => {

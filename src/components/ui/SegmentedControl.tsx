@@ -16,6 +16,7 @@ export function SegmentedControl<K extends string>({
   onChange,
   disabled,
   size = "md",
+  scroll,
   className,
 }: {
   label: string;
@@ -24,6 +25,8 @@ export function SegmentedControl<K extends string>({
   onChange: (key: K) => void;
   disabled?: boolean;
   size?: "sm" | "md";
+  /** One row that scrolls sideways instead of wrapping (phones: a filter with four chips). */
+  scroll?: boolean;
   className?: string;
 }) {
   function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
@@ -35,7 +38,7 @@ export function SegmentedControl<K extends string>({
     if (next) onChange(next.key);
   }
   return (
-    <div role="radiogroup" aria-label={label} onKeyDown={onKeyDown} className={cn("inline-flex flex-wrap gap-1 rounded-full bg-surface-muted p-1", className)}>
+    <div role="radiogroup" aria-label={label} onKeyDown={onKeyDown} className={cn("gap-1 rounded-full bg-surface-muted p-1", scroll ? "flex max-w-full flex-nowrap overflow-x-auto [scrollbar-width:none]" : "inline-flex flex-wrap", className)}>
       {options.map((o) => {
         const active = o.key === value;
         return (
@@ -48,7 +51,7 @@ export function SegmentedControl<K extends string>({
             disabled={disabled || o.disabled}
             onClick={() => onChange(o.key)}
             className={cn(
-              "focus-ring inline-flex items-center gap-2 rounded-full font-medium transition-[background-color,color,box-shadow] duration-150",
+              "focus-ring inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full font-medium transition-[background-color,color,box-shadow] duration-150",
               size === "md" ? "h-9 px-4 text-sm" : "h-8 px-3 text-[13px]",
               active ? "bg-surface text-ink shadow-soft" : "text-muted hover:text-ink",
               (disabled || o.disabled) && "opacity-50",

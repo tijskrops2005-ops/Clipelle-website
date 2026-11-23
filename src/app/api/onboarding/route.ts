@@ -22,7 +22,7 @@ export async function GET() {
     const brand = me?.brand ?? {};
     return Response.json({
       firstAd: Number(ads?.n ?? 0) > 0,
-      brand: Boolean(brand.accent || brand.captionStyle || brand.font || brand.logoPath),
+      brand: Boolean(brand.accent || brand.captionStyle || brand.font || brand.logoPath || brand.captionColors),
       translation: Number(tr?.n ?? 0) > 0,
       team: Number(members?.n ?? 0) > 1 || Number(invites?.n ?? 0) > 0,
       apiKey: Number(keys?.n ?? 0) > 0,

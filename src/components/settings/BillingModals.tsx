@@ -25,7 +25,7 @@ export function PlanConfirmModal({ change, busy, onConfirm, onClose }: { change:
       open={Boolean(c)}
       onClose={onClose}
       title={title}
-      description={c?.mode === "change" ? "Your billing portal shows the exact amount before anything changes." : "Secure payment by Stripe. Prices exclude VAT where it applies."}
+      description={c?.mode === "change" ? "The next screen shows the exact amount before anything changes." : "Secure payment by Stripe. Prices exclude VAT where it applies."}
       footer={
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
@@ -66,7 +66,7 @@ export function PlanConfirmModal({ change, busy, onConfirm, onClose }: { change:
             {c.mode === "change" && <Row label="When">{c.direction === "downgrade" ? "From your next renewal; your credits stay" : "Right away; the new credits come with your next renewal"}</Row>}
           </dl>
           {c.mode === "trial" && c.trialEnds && <p className="rounded-panel bg-success/10 px-4 py-3 text-[13px] text-ink">Cancel any time before {date(c.trialEnds)} under Billing and you pay nothing. One free trial per account; a card is needed to start it.</p>}
-          <p className="text-[13px] text-muted">Credits never expire. Cancel any time from the billing portal.</p>
+          <p className="text-[13px] text-muted">Credits never expire. Cancel any time in Billing.</p>
         </div>
       )}
     </Modal>
@@ -102,7 +102,7 @@ export function StartNowModal({ quote, planName, busy, onConfirm, onClose }: { q
             <Row label="Credits">{q.credits ? `${n(q.credits)} credits` : "Your plan's credits"} as soon as the payment is confirmed, then every month</Row>
             <Row label="Next payment">{q.interval === "annual" ? "In a year" : "In a month"}, then every {q.interval === "annual" ? "year" : "month"}</Row>
           </dl>
-          <p className="text-[13px] text-muted">We charge the card you added for the trial. Prices exclude VAT where it applies. Credits never expire; cancel any time from the billing portal.</p>
+          <p className="text-[13px] text-muted">We charge the card you added for the trial. Prices exclude VAT where it applies. Credits never expire; cancel any time in Billing.</p>
         </div>
       )}
     </Modal>

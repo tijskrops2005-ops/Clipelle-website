@@ -17,7 +17,7 @@ import type { StagedUpload } from "@/lib/data/uploads";
 import { clearScopedDraft, readScopedDraft, useDraftSaver, useDraftScope } from "@/lib/forms/DraftScope";
 import { ServiceStatusBanner } from "@/components/ServiceStatusBanner";
 import { Button } from "@/components/ui/Button";
-import { Field, controlClass, controlStateClass } from "@/components/ui/Field";
+import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { MobileActionBar } from "@/components/ui/MobileActionBar";
 import { Textarea } from "@/components/ui/Textarea";
@@ -38,6 +38,7 @@ import { CREDIT_RULES, FEATURE_PLAN, hasFeature, translateCredits, type PlanFeat
 import { PlanHint } from "@/components/PlanHint";
 import { getAccountStatus, getBrandDefaults } from "@/lib/data/settingsClient";
 import { barMeta, isBarOn } from "@/lib/captionOptions";
+import { Select } from "@/components/ui/Select";
 
 type Errors = TranslateFormErrors;
 
@@ -51,7 +52,7 @@ type Errors = TranslateFormErrors;
  */
 const QUALITY: Array<{ key: TranslationQuality; title: string; text: string }> = [
   { key: "speed", title: "Speed", text: "Fast. Best for one person facing the camera." },
-  { key: "precision", title: "Precision", text: "Most real lip sync. For movement and side angles; twice as long." },
+  { key: "precision", title: "Precision", text: "Most real lip sync. For movement and side angles; takes about twice as long to make." },
 ];
 
 /**
@@ -192,7 +193,12 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
         if (speakerNow === "presenter") setTargets((t) => (t.find((c) => (PRESENTER_LANGUAGES as string[]).includes(c)) ? [t.find((c) => (PRESENTER_LANGUAGES as string[]).includes(c))!] : ["en"]));
         if (d.presenterSetup) setPresenterSetup(d.presenterSetup);
         if (d.staged?.path && d.staged.fileName) setStaged(d.staged);
-        setRestoredAt(draft.savedAt);
+        // "Picked up where you left off" only when the draft brought something back (23 Nov 2026): a draft is
+        // written as soon as the form opens, so an untouched form used to say it too. The presenter tool's
+        // own start language does not count.
+        const pickedLanguages = Array.isArray(d.targets) && d.targets.length > 0 && !(initialSpeaker === "presenter" && d.targets.length === 1);
+        const broughtBack = Boolean((d.staged?.path && d.staged.fileName) || d.projectName?.trim() || pickedLanguages || d.keepTerms?.trim() || d.instructions?.trim() || d.replaceRows?.some((r) => r.from.trim() || r.to.trim()));
+        if (broughtBack) setRestoredAt(draft.savedAt);
         return;
       }
       // No draft: the caption colours from Settings → Brand (2 Nov 2026), never the colours of the last video.
@@ -344,6 +350,23 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
   const shortOfCredits = balance !== null && balance < totalCredits;
   const knownLength = Boolean(sourceAd || video || staged);
   const staging = stagingPct !== null;
+  // The phone bar (23 Nov 2026): one line that says what is missing, and a button that looks ready only when the form is.
+  const barBlocked = overBudget || shortOfCredits;
+  const barReady = knownLength && targets.length > 0 && rights && !barBlocked;
+  const languagesWord = `${targets.length} ${targets.length === 1 ? "language" : "languages"}`;
+  const barHint = overBudget
+    ? "Not available for a video this long yet."
+    : shortOfCredits
+      ? `This needs ${totalCredits} credits and you have ${balance}.`
+      : !knownLength
+        ? "Add your video to start."
+        : targets.length === 0
+          ? "Pick a language to start."
+          : !rights
+            ? "Tick the rights box to start."
+            : confirming
+              ? `${Math.round(seconds)} s · ${languagesWord}. ${config.demoMode ? "Demo: nothing is charged." : "A language that fails costs nothing."}`
+              : `${languagesWord}${balance !== null ? ` · ${(balance - totalCredits).toLocaleString("en-US")} credits left after this` : ""}`;
   // Short and calm (28 Oct 2026): what was picked in a word or two; the extras on one line.
   const extras = [removeText && "Text removed", cleanReplace(replaceRows).length > 0 && "Words replaced", removeMusic && "No music", cleanVoice && "Clean voice", enhance && "Enhanced"].filter(Boolean) as string[];
   const summaryRows = [
@@ -509,17 +532,17 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
           {withPresenter ? (
             <>
               <Field id="targets" label="Translate into" hint="One language per video; these have presenter voices." error={errors.targets}>
-                <select
+                <Select
                   id="targets"
                   value={targets[0] ?? ""}
                   onChange={(e) => setTargets([e.target.value as LanguageCode])}
                   disabled={submitting}
-                  className={cn(controlClass, controlStateClass(Boolean(errors.targets)), "h-11")}
+                  invalid={Boolean(errors.targets)}
                 >
                   {PRESENTER_LANGUAGES.filter((c) => c !== source).map((c) => (
                     <option key={c} value={c}>{AD_LANGUAGES[c].label}</option>
                   ))}
-                </select>
+                </Select>
               </Field>
               <PresenterSetup
                 value={presenterSetup}
@@ -571,7 +594,7 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
         </SectionCard>
 
         {/* 3. Captions, format and sound: always open (2 Nov 2026, Tijs), like steps 1 and 2. */}
-        <SectionCard number={3} title={withPresenter ? "Captions and wording" : "Captions, format and sound"} description={withPresenter ? "How the captions look, and the words you want kept or changed." : "The format, how the captions look, the words you want kept or changed, and the sound."}>
+        <SectionCard number={3} title={withPresenter ? "Captions and wording" : "Captions, format and sound"} description={withPresenter ? "How the captions look and what is said." : "How the result looks and sounds."}>
           <div className="space-y-6">
           {!withPresenter && (<fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">Format</legend>
@@ -591,10 +614,10 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
             <legend className="flex w-full items-center justify-between text-sm font-medium text-ink">Words to replace <span className="label-mono text-muted">Optional</span></legend>
             <div className="space-y-2">
               {replaceRows.map((row, i) => (
-                <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2">
+                <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
                   <Input aria-label={`Word ${i + 1} in the video`} value={row.from} maxLength={60} onChange={(e) => setReplaceRows((rows) => rows.map((r, j) => (j === i ? { ...r, from: e.target.value } : r)))} placeholder="In the video, e.g. GlowCo" disabled={submitting} />
-                  <ArrowRight className="size-4 text-muted" aria-hidden />
-                  <Input aria-label={`Word ${i + 1} to say instead`} value={row.to} maxLength={60} onChange={(e) => setReplaceRows((rows) => rows.map((r, j) => (j === i ? { ...r, to: e.target.value } : r)))} placeholder="Say instead, e.g. your brand" disabled={submitting} />
+                  <ArrowRight className="hidden size-4 text-muted sm:block" aria-hidden />
+                  <Input aria-label={`Word ${i + 1} to say instead`} className="order-3 col-span-2 sm:order-none sm:col-span-1" value={row.to} maxLength={60} onChange={(e) => setReplaceRows((rows) => rows.map((r, j) => (j === i ? { ...r, to: e.target.value } : r)))} placeholder="Say instead, e.g. your brand" disabled={submitting} />
                   <button type="button" onClick={() => setReplaceRows((rows) => (rows.length === 1 ? [{ from: "", to: "" }] : rows.filter((_, j) => j !== i)))} disabled={submitting} aria-label={`Remove word ${i + 1}`} className="focus-ring grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-muted hover:text-ink">
                     <X className="size-4" aria-hidden />
                   </button>
@@ -730,23 +753,15 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
 
       {/* Phones and tablets (27 Oct 2026): the credits and the button stay in view; a missing rights tick scrolls to the box. */}
       <MobileActionBar>
-        {confirming && (
-          <p className="mb-2 text-[12.5px] leading-snug text-muted">
-            {Math.round(seconds)} s · {targets.length} {targets.length === 1 ? "language" : "languages"} · {totalCredits} credits{balance !== null && !shortOfCredits ? ` · ${(balance - totalCredits).toLocaleString("en-US")} left after this` : ""}. {config.demoMode ? "Demo: nothing is charged." : "A language that fails costs nothing."}
-          </p>
-        )}
+        <p className={cn("mb-2 truncate text-[12.5px] leading-snug", barBlocked ? "text-danger" : "text-muted")} role="status">
+          {barHint}
+        </p>
         <div className="flex items-center gap-3">
-          {confirming ? (
-            <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={submitting}>Back</Button>
-          ) : (
-            <div className="min-w-0 flex-1">
-              <p className="text-[12px] text-muted">{targets.length > 1 ? `Credits · ${targets.length} languages` : "Credits"}</p>
-              <p className={cn("text-[20px] font-semibold leading-none tracking-[-0.02em]", overBudget || shortOfCredits ? "text-danger" : "text-ink")}>{totalCredits}</p>
-            </div>
-          )}
-          <Button type="button" variant="accent" size="lg" className={cn("shrink-0", confirming && "flex-1")} onClick={() => formRef.current?.requestSubmit()} disabled={submitting || staging || overBudget || shortOfCredits}>
-            {submitting || staging ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Languages className="size-5" aria-hidden />}
-            {staging ? `Uploading ${stagingPct}%` : submitting ? (uploadPct !== null && uploadPct < 100 ? `Uploading ${uploadPct}%` : "Starting…") : confirming ? "Start now" : "Start translation"}
+          {confirming && <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={submitting}>Back</Button>}
+          {/* Not ready (no video, no language, rights unticked): the button stays tappable so the tap scrolls to what is missing, but it is drawn quiet, like the disabled button in the summary (23 Nov 2026). */}
+          <Button type="button" variant={barReady ? "accent" : "secondary"} size="lg" aria-disabled={!barReady || undefined} className={cn("min-w-0 flex-1", !barReady && "text-muted shadow-none")} onClick={() => formRef.current?.requestSubmit()} disabled={submitting || staging || overBudget || shortOfCredits}>
+            {submitting || staging ? <Loader2 className="size-5 shrink-0 animate-spin" aria-hidden /> : <Languages className="size-5 shrink-0" aria-hidden />}
+            <span className="truncate">{staging ? `Uploading ${stagingPct}%` : submitting ? (uploadPct !== null && uploadPct < 100 ? `Uploading ${uploadPct}%` : "Starting…") : confirming ? `Start now · ${totalCredits} credits` : `Start translation · ${totalCredits} credits`}</span>
           </Button>
         </div>
         {submitting && uploadPct !== null && (

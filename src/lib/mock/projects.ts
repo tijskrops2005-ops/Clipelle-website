@@ -80,8 +80,7 @@ export const mockProjects: Project[] = [
         status: "failed",
         startedAt: "2026-10-15T14:00:00Z",
         finishedAt: "2026-10-15T14:03:00Z",
-        error:
-          "The presenter video could not be generated because the script was empty. Add a script and retry.",
+        error: "The presenter video could not be made this time. Nothing was charged for it. Retry starts this step again; the finished steps are kept.",
       },
       finalEdit: { status: "waiting" },
     },

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { LayoutGrid, Plus, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, Clock, LayoutGrid, Plus, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { planByKey } from "@/lib/plans";
 import { Button } from "@/components/ui/Button";
@@ -77,16 +78,44 @@ export function SidebarLinks({ isAdmin, onNavigate }: { isAdmin?: boolean; onNav
         <ToolRow key={t.key} tool={t} active={t.key === activeTool} onNavigate={onNavigate} />
       ))}
 
-      <p className="label-mono mb-1.5 mt-6 px-3 text-muted">Coming soon</p>
-      {SOON_TOOLS.map((t) => (
-        <ToolRow key={t.key} tool={t} active={false} onNavigate={onNavigate} />
-      ))}
+      <SoonGroup onNavigate={onNavigate} />
 
       <div className="mt-6 flex flex-col gap-0.5">
         <NavRow item={settingsNavItem} active={isActivePath(pathname, settingsNavItem.href)} onNavigate={onNavigate} />
         {isAdmin && <NavRow item={adminNavItem} active={isActivePath(pathname, adminNavItem.href)} onNavigate={onNavigate} />}
       </div>
     </nav>
+  );
+}
+
+/**
+ * What is coming, as one quiet row that opens (23 Nov 2026): six "Soon" rows used to be taller than
+ * the real tools. Closed by default; the rows link to where a wish can be left.
+ */
+function SoonGroup({ onNavigate }: { onNavigate?: () => void }) {
+  const [open, setOpen] = useState(false);
+  if (SOON_TOOLS.length === 0) return null;
+  return (
+    <div className="mt-4">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="focus-ring group flex min-h-9 w-full items-center gap-3 rounded-control px-3 py-1.5 text-left text-[13.5px] text-muted transition-[background-color,color] duration-150 hover:bg-ink/5 hover:text-ink"
+      >
+        <span className="grid size-6 shrink-0 place-items-center rounded-[7px] bg-ink-soft text-muted"><Clock className="size-3.5" aria-hidden /></span>
+        <span className="min-w-0 flex-1 leading-tight">Coming soon</span>
+        <span className="label-mono shrink-0 text-[10px] text-muted">{SOON_TOOLS.length}</span>
+        <ChevronDown className={cn("size-3.5 shrink-0 transition-transform duration-150", open && "rotate-180")} aria-hidden />
+      </button>
+      {open && (
+        <div className="fold-in mt-0.5 flex flex-col gap-0.5">
+          {SOON_TOOLS.map((t) => (
+            <ToolRow key={t.key} tool={t} active={false} onNavigate={onNavigate} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -139,7 +168,7 @@ function PlanChip({ planKey, credits }: { planKey?: string; credits: number | nu
       <span className="grid size-7 shrink-0 place-items-center rounded-full bg-gold/15 text-gold-light"><Sparkles className="size-3.5" aria-hidden /></span>
       <span className="min-w-0 flex-1">
         <span className="label-mono block text-[10px] text-gold-light">{plan ? `${plan.name} plan` : "Your plan"}</span>
-        <span className="block truncate text-[12.5px] text-champagne/80">{credits === null ? "Credits on the billing page" : `${credits.toLocaleString("en-US")} credits left`}</span>
+        <span className="block truncate text-[12.5px] text-champagne/80">{credits === null ? "Plans and credits" : `${credits.toLocaleString("en-US")} credits left`}</span>
       </span>
       <span className="text-[12px] font-medium text-gold-light group-hover:underline">{paid ? "Manage" : "Upgrade"}</span>
     </Link>

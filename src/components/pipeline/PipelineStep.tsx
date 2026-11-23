@@ -62,6 +62,15 @@ export function formatTook(ms: number) {
   return `${min < 10 ? Math.round(min * 10) / 10 : Math.round(min)} min`;
 }
 
+/**
+ * "Ready in" for a finished project: the duration, or nothing when it cannot be right (above three
+ * hours: a project picked up again much later, or demo data). A page then leaves the fact out
+ * instead of printing "35577 min" (23 Nov 2026).
+ */
+export function readyIn(ms: number | undefined) {
+  return ms !== undefined && ms <= 3 * 3_600_000 ? formatTook(ms) : undefined;
+}
+
 export function formatSeconds(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(total / 60);

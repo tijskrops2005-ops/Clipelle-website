@@ -39,7 +39,6 @@ import {
   type CaptionStyle,
   type FontKey,
 } from "@/lib/adOptions";
-import { controlClass, controlStateClass } from "@/components/ui/Field";
 import { FormatPicker } from "@/components/FormatPicker";
 import { formatByKey, type FormatKey } from "@/content/formats";
 import { VariationsPicker } from "@/components/VariationsPicker";
@@ -56,6 +55,7 @@ import { OptionCard, OptionGrid } from "@/components/ui/OptionCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Disclosure } from "@/components/ui/Disclosure";
 import { SummaryPanel } from "@/components/ui/SummaryPanel";
+import { Select } from "@/components/ui/Select";
 
 type Values = AdFormValues;
 type Errors = AdFormErrors;
@@ -539,7 +539,7 @@ function ProjectFormFields({ initial, onFresh }: { initial?: ProjectFormInitial;
 
           <div className="grid gap-5 md:grid-cols-2">
             <Field id="language" label="Language" hint="One language for the script, the captions and the voice.">
-              <select
+              <Select
                 id="language"
                 value={language}
                 onChange={(e) => {
@@ -548,15 +548,14 @@ function ProjectFormFields({ initial, onFresh }: { initial?: ProjectFormInitial;
                   setVoiceId(undefined);
                 }}
                 disabled={submitting}
-                className={cn(controlClass, controlStateClass(false), "h-11")}
               >
                 {(voiceOptions?.languages.length ? voiceOptions.languages.map((l) => l.code) : AD_LANGUAGE_CODES).map((code) => (
                   <option key={code} value={code}>{AD_LANGUAGES[code].label}</option>
                 ))}
-              </select>
+              </Select>
             </Field>
             <Field id="accent" label="Accent" hint={voiceOptions && voiceOptions.accents.length === 0 ? "No regional variants for this language yet." : "Only variants that have voices are listed."}>
-              <select
+              <Select
                 id="accent"
                 value={voiceAccent ?? ""}
                 onChange={(e) => {
@@ -564,13 +563,12 @@ function ProjectFormFields({ initial, onFresh }: { initial?: ProjectFormInitial;
                   setVoiceId(undefined);
                 }}
                 disabled={submitting || !voiceOptions || voiceOptions.accents.length === 0}
-                className={cn(controlClass, controlStateClass(false), "h-11")}
               >
                 <option value="">Any</option>
                 {voiceOptions?.accents.map((a) => (
                   <option key={a.key} value={a.key}>{a.label}</option>
                 ))}
-              </select>
+              </Select>
             </Field>
           </div>
 
@@ -699,18 +697,18 @@ function ProjectFormFields({ initial, onFresh }: { initial?: ProjectFormInitial;
             <ColorPicker id="brandAccent" label="Accent colour" value={effectiveAccent} onChange={(hex) => { if (hex) { setAccent(hex); setCustomAccent(""); } }} disabled={submitting} note={lowContrast ? "Low contrast" : undefined} />
             <div className="grid gap-5 md:grid-cols-2">
               <Field id="captionStyle" label="Captions" hint={CAPTION_STYLE_META[captionStyle].blurb}>
-                <select id="captionStyle" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value as CaptionStyle)} disabled={submitting} className={cn(controlClass, controlStateClass(false), "h-11")}>
+                <Select id="captionStyle" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value as CaptionStyle)} disabled={submitting}>
                   {CAPTION_STYLES.map((k) => (
                     <option key={k} value={k}>{CAPTION_STYLE_META[k].label}</option>
                   ))}
-                </select>
+                </Select>
               </Field>
               <Field id="font" label="Font" hint={FONT_META[font].blurb}>
-                <select id="font" value={font} onChange={(e) => setFont(e.target.value as FontKey)} disabled={submitting} className={cn(controlClass, controlStateClass(false), "h-11")}>
+                <Select id="font" value={font} onChange={(e) => setFont(e.target.value as FontKey)} disabled={submitting}>
                   {FONT_KEYS.map((k) => (
                     <option key={k} value={k}>{FONT_META[k].label}</option>
                   ))}
-                </select>
+                </Select>
               </Field>
             </div>
             <Field id="logo" label="Logo" optional hint="PNG with a transparent background works best. Shown small, top right, for the whole video.">

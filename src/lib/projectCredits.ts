@@ -27,3 +27,21 @@ export function projectCredits(p: Project) {
 export function chargedCredits(p: Project) {
   return p.creditsUsed ?? projectCredits(p);
 }
+
+/**
+ * What a credit is, in the one sentence every screen uses next to a balance (23 Nov 2026): credits
+ * only, never minutes or hours. With ads on, the balance also reads as a number of 30 s Standard ads.
+ */
+export const CREDIT_RULE = "1 credit = 1 second of translated video";
+export function creditsWorth(credits: number, ads: boolean) {
+  if (ads) return `≈ ${Math.floor(credits / adCredits({ seconds: 30, engine: "avatar_iii" }))} ads`;
+  return "1 per second of video";
+}
+
+/** Projects started since the 1st of this month (archived ones stay out, as on the Projects list). */
+export function projectsThisMonth(projects: Pick<Project, "createdAt" | "archivedAt">[], now: number) {
+  const start = new Date(now);
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+  return projects.filter((p) => !p.archivedAt && Date.parse(p.createdAt) >= start.getTime()).length;
+}

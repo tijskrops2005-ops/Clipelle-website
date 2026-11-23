@@ -143,7 +143,7 @@ export function PresenterPicker({
               }}
               className={cn(
                 "focus-ring group relative overflow-hidden rounded-tile bg-surface-muted text-left transition-[box-shadow,transform] duration-150",
-                selected ? "ring-2 ring-accent" : "hover:-translate-y-px hover:shadow-card",
+                selected ? "ring-2 ring-ink" : "hover:-translate-y-px hover:shadow-card",
               )}
             >
               <div className="relative aspect-[3/4]">
@@ -157,7 +157,7 @@ export function PresenterPicker({
               <p className="truncate px-2 py-1.5 text-xs font-medium text-ink" title={p.name}>{names.get(p.id) ?? p.name}</p>
               {p.id === defaultId && <span className="absolute left-1.5 top-1.5 rounded-full bg-surface/90 px-1.5 py-0.5 text-[10px] font-medium text-ink shadow-soft">Default</span>}
               {selected && (
-                <span className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-accent text-white">
+                <span className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-ink text-surface">
                   <Check className="size-3.5" strokeWidth={3} aria-hidden />
                 </span>
               )}

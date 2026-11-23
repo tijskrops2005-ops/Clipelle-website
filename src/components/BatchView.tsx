@@ -147,8 +147,8 @@ export function BatchView({ id }: { id: string }) {
                       <dd className="text-ink/90">{took !== undefined && p.status === "completed" ? formatTook(took) : "—"}</dd>
                       {p.status === "failed" && (
                         <>
-                          <dt className="text-muted">Stopped</dt>
-                          <dd className="text-danger">{Object.values(p.steps).find((s) => s.status === "failed")?.error ?? "A step stopped."}</dd>
+                          <dt className="text-muted">Failed</dt>
+                          <dd className="text-danger">{Object.values(p.steps).find((s) => s.status === "failed")?.error ?? "A step failed."}</dd>
                         </>
                       )}
                     </dl>

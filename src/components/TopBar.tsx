@@ -5,19 +5,20 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Bell, LifeBuoy, Search } from "lucide-react";
 import { useUnseenCount } from "@/lib/notificationStore";
 import { navItems, settingsNavItem } from "@/components/nav";
-import { SOON_TOOLS, STUDIO_TOOLS, activeToolKey, openToolSearch } from "@/components/tools";
+import { STUDIO_TOOLS, activeToolKey, openToolSearch } from "@/components/tools";
 
 /** Where you are: the active tool (path and query, 28 Oct 2026), else the longest matching link, for the top bar's left side. */
 function sectionOf(pathname: string, search: string) {
   const tool = activeToolKey(pathname, search, STUDIO_TOOLS);
   if (tool) return STUDIO_TOOLS.find((t) => t.key === tool)!.label;
-  const all = [...SOON_TOOLS, ...navItems, settingsNavItem, { href: "/new", label: "New video" }];
+  // "Soon" tools are not places: their links point at Settings → Connections, which is "Settings" (23 Nov 2026).
+  const all = [...navItems, settingsNavItem, { href: "/new", label: "New video" }];
   const match = all.filter((i) => i.href !== "/" && (pathname === i.href || pathname.startsWith(`${i.href}/`))).sort((a, b) => b.href.length - a.href.length)[0];
   return match?.label ?? "";
 }
 
 export type TopBarProps = {
-  /** The balance and what it is worth in plain units (2 Nov 2026): "≈ 3 ads" with ads on, otherwise minutes of translation. */
+  /** The balance and what a credit is (2 Nov 2026; credits only since 23 Nov): "≈ 3 ads" with ads on, otherwise "1 per second of video". */
   credits?: { balance: number; approx: string } | null;
   supportHref?: string;
 };

@@ -6,7 +6,6 @@ const LINKS = [
   { href: "/legal/privacy", label: "Privacy" },
   { href: "/legal/cookies", label: "Cookies" },
   { href: "/legal/data", label: "Files and data" },
-  { href: "/legal/affiliate-terms", label: "Partner terms" },
 ];
 
 /** The app's footer (2 Nov 2026): the legal texts and the support address when one is set. */

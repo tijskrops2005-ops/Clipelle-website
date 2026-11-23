@@ -4,12 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CreditCard, Gauge, KeyRound, Link2, Palette, UserRound, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { config } from "@/lib/config";
 
-/** Brand defaults only prefill the ad form, so the entry shows only while ads are on (27 Oct 2026). */
+/** Brand always shows (23 Nov 2026): it holds the caption colours new translations start with and the logo for the edit screen; the ad-only fields inside it follow the ads switch. */
 const items: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/settings", label: "Profile", icon: UserRound },
-  ...(config.features.ads ? [{ href: "/settings/brand", label: "Brand", icon: Palette }] : []),
+  { href: "/settings/brand", label: "Brand", icon: Palette },
   { href: "/settings/team", label: "Team", icon: Users },
   { href: "/settings/usage", label: "Usage", icon: Gauge },
   { href: "/settings/billing", label: "Billing", icon: CreditCard },

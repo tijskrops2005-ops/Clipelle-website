@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { config } from "@/lib/config";
 
-const labels: Record<string, string> = { draft: "Draft", processing: "Processing", review: "Waiting for you", completed: "Ready", failed: "Stopped", partial: "Partly done" };
+const labels: Record<string, string> = { draft: "Draft", processing: "Processing", review: "Waiting for you", completed: "Ready", failed: "Failed", partial: "Partly done" };
 
 /** The browser tab shows the status in front of the project or batch name, and updates as it changes. */
 export function useStatusTitle(item: { status: string; name: string } | null) {

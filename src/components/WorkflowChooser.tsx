@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Clock, Coins } from "lucide-react";
 import { config } from "@/lib/config";
 import { measured } from "@/content/measured";
-import { CREDIT_RULES, adCredits } from "@/lib/plans";
+import { adCredits, translateCredits } from "@/lib/plans";
 import type { WorkflowKind } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { PresenterIllustration, ProductVideoIllustration } from "@/components/StepIllustrations";
@@ -24,7 +24,9 @@ function formatWait(min: number | null) {
 
 /** What the customer pays, in credits (plans.ts): the shortest Standard ad, and Speed translation per second. */
 const FROM_AD = adCredits({ seconds: 10, engine: "avatar_iii" });
-const TRANSLATE_PER_SECOND = CREDIT_RULES.translate.speed;
+/** The least a translation can use (plans.ts): per language in the own voice, and with a Standard presenter. */
+const FROM_TRANSLATE = translateCredits({ seconds: 1, quality: "speed", enhance: false });
+const FROM_PRESENTER = translateCredits({ seconds: 1, quality: "speed", enhance: false, presenterEngine: "avatar_iii" });
 
 type Workflow = {
   /** Which wait to show; "URL to video" is the ad workflow with a different start. */
@@ -42,7 +44,7 @@ const translateWorkflows: Workflow[] = [
     href: "/new/translate",
     title: "Translate a video",
     text: "The speaker keeps their own voice, the lips follow the new language and captions are added. Several languages at once.",
-    price: `${TRANSLATE_PER_SECOND} credit per second, per language`,
+    price: `from ${FROM_TRANSLATE} credits per language`,
     Preview: TranslatePreview,
   },
   {
@@ -50,7 +52,7 @@ const translateWorkflows: Workflow[] = [
     href: "/new/translate?speaker=presenter",
     title: "Translate with a presenter",
     text: "The words of your video, translated and spoken by an AI presenter you pick, with the voice and accent you choose.",
-    price: `from ${FROM_AD} credits`,
+    price: `from ${FROM_PRESENTER} credits`,
     Preview: PresenterPreview,
   },
 ];

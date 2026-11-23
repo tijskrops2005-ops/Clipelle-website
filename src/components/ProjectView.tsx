@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Copy, Download, FolderOpen, Languages, LayoutGrid, Plus, Scissors } from "lucide-react";
+import { ArrowLeft, Copy, Download, FolderOpen, Languages, LayoutGrid, Plus, RotateCcw, Scissors } from "lucide-react";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { projectDurationMs } from "@/lib/projectMeta";
-import { formatTook } from "@/components/pipeline/PipelineStep";
+import { readyIn } from "@/components/pipeline/PipelineStep";
 import { adProjectCredits, chargedCredits } from "@/lib/projectCredits";
 import { config } from "@/lib/config";
 import type { AdProject } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
-import { downloadHref, useProject, useProjects, useProjectsReady } from "@/lib/data/client";
+import { downloadHref, retryStep, useProject, useProjects, useProjectsReady } from "@/lib/data/client";
 import { useStatusTitle } from "@/lib/useStatusTitle";
 import { useDownloadFromLink } from "@/lib/useDownloadFromLink";
 import { otherVersionsOf, translationsOf } from "@/lib/versions";
@@ -25,11 +25,15 @@ import { DemoBadge } from "@/components/DemoModeBadge";
 import { AD_LANGUAGES, isAdLanguage, SPEEDS } from "@/lib/voiceOptions";
 import { DEFAULT_TONE, TONE_META } from "@/lib/adOptions";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
+import { formatDuration } from "@/components/ui/VideoDropzone";
+import { Poster } from "@/components/Poster";
 import { Pipeline } from "@/components/pipeline/Pipeline";
 import { stepMeta } from "@/components/pipeline/PipelineStep";
 import { TranslateProjectView } from "@/components/translate/TranslateProjectView";
 import { ScriptReviewPanel } from "@/components/ScriptReviewPanel";
 import { ProjectActions } from "@/components/ProjectActions";
+
+const AD_STEP_KEYS = ["script", "productClip", "presenter", "finalEdit"] as const;
 
 export function ProjectView({ id }: { id: string }) {
   const project = useProject(id);
@@ -57,6 +61,7 @@ export function ProjectView({ id }: { id: string }) {
   }
 
   if (project.workflow === "translate") return <TranslateProjectView project={project} />;
+  const failedKey = project.status === "failed" ? AD_STEP_KEYS.find((k) => project.steps[k].status === "failed") : undefined;
 
   return (
     <div className="space-y-10">
@@ -64,11 +69,11 @@ export function ProjectView({ id }: { id: string }) {
         eyebrow={
           <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link
-              href="/dashboard"
+              href="/projects"
               className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink"
             >
               <ArrowLeft className="size-4" aria-hidden />
-              Dashboard
+              Projects
             </Link>
             {project.batchId && (
               <Link href={`/batches/${project.batchId}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
@@ -85,7 +90,15 @@ export function ProjectView({ id }: { id: string }) {
           </span>
         }
         title={project.name}
-        badge={<StatusBadge status={project.status} className="translate-y-1" />}
+        badge={<StatusBadge status={project.status} />}
+        actions={
+          failedKey ? (
+            <Button type="button" variant="primary" onClick={() => retryStep(project.id, failedKey)}>
+              <RotateCcw className="size-4" aria-hidden />
+              Retry
+            </Button>
+          ) : undefined
+        }
         description={`${project.productName} · created ${formatDate(project.createdAt)}${project.archivedAt ? " · archived" : ""}${project.tags?.length ? ` · ${project.tags.join(", ")}` : ""}`}
       />
       <ProjectActions project={project} />
@@ -99,6 +112,13 @@ export function ProjectView({ id }: { id: string }) {
             <Pipeline project={project} />
           </Collapsible>
           <Collapsible title="Project details" summary="Your input: product, presenter, brand style and script.">
+            <DetailsCard project={project} />
+          </Collapsible>
+        </>
+      ) : project.status === "draft" ? (
+        <>
+          <NotStarted />
+          <Collapsible title="Project details" summary="What was filled in: product, presenter, brand style and script.">
             <DetailsCard project={project} />
           </Collapsible>
         </>
@@ -123,7 +143,7 @@ export function ProjectView({ id }: { id: string }) {
 
 /** Facts about a finished video, next to the player: length, format, language, quality and what it cost. */
 function ResultHero({ project }: { project: AdProject }) {
-  const took = projectDurationMs(project);
+  const ready = readyIn(projectDurationMs(project));
   const language = isAdLanguage(project.language) ? AD_LANGUAGES[project.language].label : "English";
   const quality = project.engine === "avatar_iv" ? "Premium" : "Standard";
   return (
@@ -139,26 +159,16 @@ function ResultHero({ project }: { project: AdProject }) {
             className="mx-auto w-full max-w-[280px] md:mx-0"
           />
           <div className="space-y-6">
+            {/* The same facts in the same order as a finished translation (23 Nov 2026). */}
             <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm sm:grid-cols-3">
-              <Fact label="Length" value={`${project.seconds ?? 30} s`} />
-              <Fact label="Format" value="9:16 · 1080p" />
+              <Fact label="Length" value={formatDuration(project.seconds ?? 30)} />
+              <Fact label="Format" value="9:16 · captions" />
               <Fact label="Language" value={`${language}${project.accent ? ` · ${project.accent.toUpperCase()}` : ""}`} />
-              <Fact label="Presenter quality" value={quality} />
-              <Fact label="Tone" value={TONE_META[project.tone ?? DEFAULT_TONE].label} />
-              <Fact label="Ready in" value={took !== undefined ? formatTook(took) : "—"} />
+              <Fact label="Quality" value={quality} />
+              {ready && <Fact label="Ready in" value={ready} />}
+              <Fact label="Credits used" value={`${config.demoMode ? adProjectCredits(project) : chargedCredits(project)}${config.demoMode ? " · demo" : ""}`} />
             </dl>
-            <div className="panel p-4">
-              <p className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <span className="text-muted">Credits used</span>
-                <span className="font-medium text-ink">
-                  {config.demoMode ? adProjectCredits(project) : chargedCredits(project)} credits
-                  {config.demoMode && <span className="text-muted"> · demo, nothing was charged</span>}
-                </span>
-              </p>
-              {config.demoMode && (
-                <p className="mt-2 text-[13px] leading-relaxed text-muted">This clip is a stand-in. The real ad arrives here once the services are connected.</p>
-              )}
-            </div>
+            {config.demoMode && <p className="text-[13px] leading-relaxed text-muted">Demo mode: a sample clip, nothing was charged.</p>}
             {/* One row (26 Oct 2026): the download is the one accent button, the next steps sit beside it. */}
             <div className="space-y-3">
               <Button href={downloadHref(project.id, project.finalVideoUrl!)} prefetch={false} variant="accent" size="lg" download className="w-full sm:w-auto">
@@ -216,8 +226,8 @@ function pipelineSummary(project: AdProject) {
         (k) => project.steps[k].status === "failed",
       );
       return failed
-        ? `Step ${stepMeta[failed].number} stopped. Read the message in the card and retry when ready.`
-        : "A step stopped.";
+        ? `Step ${stepMeta[failed].number} failed. Read the message in the card, then retry.`
+        : "A step failed.";
     }
     case "processing":
       return `${done} of 4 steps done. You can leave this page; progress continues.`;
@@ -314,11 +324,7 @@ function ResultCard({ project }: { project: AdProject }) {
             simulated={config.demoMode}
             className="mx-auto w-full max-w-xs"
           />
-          {config.demoMode && (
-            <p className="text-[13px] leading-relaxed text-muted">
-              This clip is a stand-in. The real ad arrives here once the final edit is connected.
-            </p>
-          )}
+          {config.demoMode && <p className="text-[13px] leading-relaxed text-muted">Demo mode: a sample clip, nothing was charged.</p>}
           <SpentLine project={project} />
           <div className="grid gap-3">
             <Button href={downloadHref(project.id, project.finalVideoUrl)} prefetch={false} variant="accent" size="lg" download>
@@ -329,9 +335,9 @@ function ResultCard({ project }: { project: AdProject }) {
               <Plus className="size-4" aria-hidden />
               {config.features.ads ? "Make another" : "Translate a video"}
             </Button>
-            <Button href="/dashboard" variant="ghost">
+            <Button href="/projects" variant="ghost">
               <ArrowLeft className="size-4" aria-hidden />
-              Back to dashboard
+              Back to projects
             </Button>
           </div>
         </CardContent>
@@ -339,25 +345,33 @@ function ResultCard({ project }: { project: AdProject }) {
     );
   }
 
-  const failed = project.status === "failed";
+  const failedKey = project.status === "failed" ? AD_STEP_KEYS.find((k) => project.steps[k].status === "failed") : undefined;
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{failed ? "Paused" : "Your video"}</CardTitle>
+        <CardTitle>{failedKey ? "Failed" : "Your video"}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="relative mx-auto aspect-[9/16] w-full max-w-xs overflow-hidden rounded-tile bg-surface-muted">
-          <div className="absolute inset-0 grid place-items-center p-6 text-center">
-            <p className="text-sm text-muted">
-              {failed
-                ? "The video will continue once the failed step is retried."
-                : "Your finished video appears here when step 4 is done."}
-            </p>
+        {/* A small tile and one sentence (23 Nov 2026): the empty 9:16 box filled a whole phone screen with nothing. */}
+        <div className="flex items-center gap-4">
+          <div className="relative aspect-[9/16] w-14 shrink-0 overflow-hidden rounded-[10px] shadow-card">
+            <Poster monogram={project.productName.charAt(0)} imageUrl={project.imageUrls[0]} />
           </div>
+          <p className="text-sm leading-relaxed text-muted">
+            {failedKey
+              ? `${stepMeta[failedKey].title} did not finish. Retry starts it again; the finished steps are kept.`
+              : "Your finished video appears here when step 4 is done. You can leave this page."}
+          </p>
         </div>
+        {failedKey && (
+          <Button type="button" variant="primary" className="w-full" onClick={() => retryStep(project.id, failedKey)}>
+            <RotateCcw className="size-4" aria-hidden />
+            Retry {stepMeta[failedKey].title}
+          </Button>
+        )}
         <SpentLine project={project} />
         <ul className="space-y-2">
-          {(["script", "productClip", "presenter", "finalEdit"] as const).map((k) => (
+          {AD_STEP_KEYS.map((k) => (
             <li key={k} className="flex items-center justify-between text-sm">
               <span className="text-ink">
                 {stepMeta[k].number}. {stepMeta[k].title}
@@ -366,6 +380,24 @@ function ResultCard({ project }: { project: AdProject }) {
             </li>
           ))}
         </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** A project that was saved but never started (23 Nov 2026): say so, and give the one next action. */
+function NotStarted() {
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-5 pt-7 sm:flex-row sm:items-center sm:justify-between">
+        <div className="max-w-xl">
+          <p className="text-[17px] font-semibold text-ink">This project was never started</p>
+          <p className="mt-1.5 text-[15px] leading-relaxed text-muted">Nothing was made and no credits were used. Start a new video, or put this one away with Archive above.</p>
+        </div>
+        <Button href="/new" variant="primary" size="lg" className="shrink-0">
+          <Plus className="size-5" aria-hidden />
+          Create new video
+        </Button>
       </CardContent>
     </Card>
   );
