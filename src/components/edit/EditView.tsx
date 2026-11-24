@@ -176,7 +176,7 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
       <div className="grid gap-8 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
         {/* preview */}
         <div className="space-y-4 xl:sticky xl:top-6">
-          <EditPreview src={src} recipe={recipe} time={time} onTime={setTime} videoRef={videoRef} logoUrl={logoUrl} aspect={isTranslate && (project as TranslateProject).format === "original" ? "original" : "9:16"} captionsAreBurnedIn={captionsAreBurnedIn} />
+          <EditPreview src={src} recipe={recipe} time={time} onTime={setTime} videoRef={videoRef} logoUrl={logoUrl} aspect={isTranslate && (project as TranslateProject).format === "original" ? "original" : "9:16"} captionsAreBurnedIn={captionsAreBurnedIn} coverBox={isTranslate ? (project as TranslateProject).coverBox : undefined} />
           {restored && <p className="text-center text-[13px] text-muted" role="status">Picked up where you left off. <button type="button" onClick={() => { setRecipe(fresh()); setRestored(false); }} className="focus-ring rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Start over</button></p>}
           {captionsAreBurnedIn && isTranslate && <p className="text-center text-[13px] text-muted">The captions of this version are part of the picture.</p>}
         </div>
@@ -199,7 +199,7 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
               {tab === "cut" && (
                 <p className="text-[14px] text-muted">Drag the start and end, or cut a piece out with the buttons above. Keeps {formatDuration(seconds)} of {formatDuration(recipe.sourceSeconds)}{keptRanges(recipe).length > 1 ? ` in ${keptRanges(recipe).length} pieces` : ""}.</p>
               )}
-              {tab === "captions" && <CaptionsPanel recipe={recipe} onRecipe={setRecipe} time={time} onSeek={seek} disabled={exporting} />}
+              {tab === "captions" && <CaptionsPanel recipe={recipe} onRecipe={setRecipe} time={time} onSeek={seek} disabled={exporting} covered={isTranslate && Boolean((project as TranslateProject).coverBox)} />}
               {tab === "text" && <OverlaysPanel recipe={recipe} onRecipe={setRecipe} time={time} logoUrl={logoUrl} disabled={exporting} />}
             </div>
           </section>

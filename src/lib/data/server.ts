@@ -6,7 +6,7 @@ import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { AdProject, LanguageCode, Project, Step, StepKey, TranslateProject, TranslateStepKey, TranslationQuality } from "@/lib/types";
 import { assets, db, projects, steps, translations, type AdInput, type AssetRow, type ProjectRow, type StepRow, type TranslateInput, type TranslationRow } from "@/lib/db";
 import { adProjectCreated, adScriptApproved, autoReloadCheck, editRequested, inngest, stepRetry, translateProjectCreated } from "@/lib/inngest/client";
-import { exportCredits, outputSeconds } from "@/lib/editRecipe";
+import { coverBoxOf, exportCredits, outputSeconds } from "@/lib/editRecipe";
 import { captionsUsd } from "@/lib/pricing";
 import { applyScriptReview, countWords, normaliseHooks, type AdScript } from "@/lib/services/script";
 import { maxSpokenWords } from "@/lib/pricing";
@@ -202,6 +202,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     quality: input.quality,
     enhance: input.enhance,
     removeText: input.removeText,
+    coverBox: coverBoxOf(input),
     format: input.format ?? "9:16",
     captionsOn: input.captionStyle?.show !== false,
     captionStyle: input.captionStyle,

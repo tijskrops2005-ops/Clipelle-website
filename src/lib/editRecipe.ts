@@ -1,4 +1,6 @@
-import { barMeta, CAPTION_SIZE_PX, captionStyleOf, DEFAULT_CAPTION_STYLE, readableOn, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { barMeta, CAPTION_SIZE_PX, captionStyleOf, DEFAULT_CAPTION_STYLE, effectiveBar, readableOn, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { fitCaptionToCover, type CoverBox } from "@/lib/captionFit";
+import { fillGaps } from "@/lib/captionChunks";
 
 /**
  * The edit screen's recipe (2 Nov 2026): what the customer changed on a finished video, as data. The
@@ -189,7 +191,31 @@ export type RecipeEditInput = {
   /** The brand logo, reachable by the render service; absent = no logo even when the recipe asks for one. */
   logoUrl?: string;
   colors?: { accent?: string; ink?: string; light?: string };
+  /**
+   * Where on-screen text was removed from the source (24 Nov 2026): the captions then sit on one fixed,
+   * opaque box over that spot for the whole video, as in the caption render, so leftover letters never show.
+   */
+  coverBox?: CoverBox;
 };
+
+/**
+ * The caption lines an export renders, on the output's clock (24 Nov 2026). Over removed text the
+ * captions stay on (they are what covers the cleaned spot) and run on from line to line, from the
+ * first frame to the last, as in the caption render.
+ */
+export function exportCues(recipe: EditRecipe, covered: boolean): RecipeCue[] {
+  if (!covered) return recipeCues(recipe);
+  if (!recipe.captions) return [];
+  const cues = recipeCues({ ...recipe, captions: { ...recipe.captions, enabled: true } });
+  if (cues.length === 0) return [];
+  return fillGaps(cues, outputSeconds(recipe)).map((c, i) => ({ ...c, index: i + 1, start: r1(c.start), end: r1(c.end) }));
+}
+
+/** The spot of the removed text (24 Nov 2026): measured after the removal, else the guess from before it; none without text removal. */
+export function coverBoxOf(input: { removeText?: boolean; removedTextBox?: CoverBox | null; oldTextBox?: CoverBox | null }): CoverBox | undefined {
+  if (!input.removeText) return undefined;
+  return input.removedTextBox ?? input.oldTextBox ?? undefined;
+}
 
 export type RecipeEdit = { timeline: Record<string, unknown>; output: Record<string, unknown>; meta: { totalSeconds: number; pieces: number } };
 
@@ -223,8 +249,9 @@ export function buildEditFromRecipe(recipe: EditRecipe, input: RecipeEditInput):
     tracks.push({ clips: [textClip(recipe.cta.text.trim(), cta, { frame, y: -0.36, font: Math.round(frame.width * 0.046), color: light, background: input.colors?.accent ?? "#D43F1B", weight: 700 })] });
   }
   // Captions in the chosen style, on the output's clock.
-  if (recipe.captions?.enabled && input.srtUrl) {
-    tracks.push({ clips: [captionClip(recipe.captions.style, recipe.captions.position, input.srtUrl, total, frame, ink, light, input.colors?.accent)] });
+  // Over removed text the captions are always on: the srtUrl then comes from exportCues(recipe, true).
+  if (recipe.captions && (recipe.captions.enabled || input.coverBox) && input.srtUrl) {
+    tracks.push({ clips: [captionClip(recipe.captions.style, recipe.captions.position, input.srtUrl, total, frame, ink, light, input.colors?.accent, input.coverBox)] });
   }
   // Lower third: a line of text in a soft dark bar at the top or the bottom.
   const lt = recipe.lowerThird?.enabled && recipe.lowerThird.text.trim() ? overlayWindow(recipe.lowerThird.from, recipe.lowerThird.to, recipe) : null;
@@ -255,16 +282,22 @@ function textClip(text: string, window: Range, o: { frame: { width: number; heig
   };
 }
 
-function captionClip(style: CaptionStyleChoice, position: "low" | "middle", srtUrl: string, total: number, frame: { width: number; height: number }, ink: string, light: string, accent?: string) {
+function captionClip(style: CaptionStyleChoice, position: "low" | "middle", srtUrl: string, total: number, frame: { width: number; height: number }, ink: string, light: string, accent?: string, coverBox?: CoverBox) {
   const look = captionStyleOf(style);
-  const fontPx = CAPTION_SIZE_PX[look.size];
   // A background behind the words (any colour since 2 Nov 2026): the words then take a colour that reads on it, without outline.
-  const bar = barMeta(look.bar);
+  // Over removed text there is always one, fully opaque and fixed on the old text's spot (same rule as buildCaptionEdit).
+  const bar = barMeta(effectiveBar(look, Boolean(coverBox)));
+  const fit = coverBox && bar.color ? fitCaptionToCover(coverBox, frame, look.size) : null;
+  const fontPx = fit ? fit.fontPx : CAPTION_SIZE_PX[look.size];
   const text = bar.color ? readableOn(look.textColor ?? light, bar.color) : look.textColor ?? light;
   const stroke = bar.color ? { width: 0, color: light, opacity: 0 } : { width: 8, color: ink, opacity: 1 };
-  const color = look.color ?? accent ?? "#D43F1B";
+  const chosen = look.color ?? accent ?? "#D43F1B";
+  // A highlight in the box's own colour would vanish: it turns red (or white on red), as in the caption render.
+  const color = bar.color && chosen.toLowerCase() === bar.color.toLowerCase() ? (bar.color.toUpperCase() === "#D43F1B" ? "#FFFFFF" : "#D43F1B") : chosen;
   const active =
     look.highlight === "box" ? { font: { color: text, background: color }, stroke } : look.highlight === "color" ? { font: { color }, stroke } : look.highlight === "underline" ? { font: { color, textDecoration: "underline" }, stroke } : undefined;
+  const background = !bar.color ? null : fit ? { color: bar.color, opacity: 1, borderRadius: 18 } : { color: bar.color, opacity: bar.opacity, borderRadius: 18, wrap: true, padding: 18 };
+  const lines = Math.round(fontPx * 2 * 1.25 + 12);
   return {
     asset: {
       type: "rich-caption",
@@ -274,15 +307,15 @@ function captionClip(style: CaptionStyleChoice, position: "low" | "middle", srtU
       stroke,
       animation: { style: bar.color ? "highlight" : "pop" },
       ...(active ? { active } : {}),
-      ...(bar.color ? { background: { color: bar.color, opacity: bar.opacity, borderRadius: 18, wrap: true, padding: 18 } } : { border: { width: 0, color: ink, opacity: 1, radius: 16 } }),
-      padding: { top: 6, right: 10, bottom: 6, left: 10 },
+      ...(background ? { background } : { border: { width: 0, color: ink, opacity: 1, radius: 16 } }),
+      padding: fit ? { top: 8, right: 14, bottom: 8, left: 14 } : { top: 6, right: 10, bottom: 6, left: 10 },
       align: { horizontal: "center", vertical: "middle" },
     },
     start: 0,
     length: total,
-    width: Math.round(frame.width * 0.833),
-    height: Math.round(fontPx * 2 * 1.25 + 12),
-    offset: { x: 0, y: position === "middle" ? 0 : -0.18 },
+    width: fit ? fit.widthPx : Math.round(frame.width * 0.833),
+    height: fit ? Math.max(lines, fit.heightPx) : lines,
+    offset: { x: 0, y: fit ? fit.offsetY : position === "middle" ? 0 : -0.18 },
   };
 }
 

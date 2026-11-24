@@ -4,6 +4,9 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { Pause, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isKept, keptRanges, type EditRecipe } from "@/lib/editRecipe";
+import { fitCaptionToCover, type CoverBox } from "@/lib/captionFit";
+import { fillGaps } from "@/lib/captionChunks";
+import { barMeta, effectiveBar } from "@/lib/captionOptions";
 import { activeWordIndex, captionCss } from "./captionPreview";
 
 /**
@@ -12,7 +15,7 @@ import { activeWordIndex, captionCss } from "./captionPreview";
  * action and the logo drawn over it in HTML and CSS, so every change shows at once without a render.
  * `time` is the source clock; the parent owns it so the timeline and the panels can seek.
  */
-export function EditPreview({ src, recipe, time, onTime, videoRef, logoUrl, aspect, captionsAreBurnedIn }: { src: string; recipe: EditRecipe; time: number; onTime: (t: number) => void; videoRef: RefObject<HTMLVideoElement | null>; logoUrl?: string | null; aspect: "9:16" | "original"; /** Ads: the captions are part of the picture; the preview draws none. */ captionsAreBurnedIn?: boolean }) {
+export function EditPreview({ src, recipe, time, onTime, videoRef, logoUrl, aspect, captionsAreBurnedIn, coverBox }: { src: string; recipe: EditRecipe; time: number; onTime: (t: number) => void; videoRef: RefObject<HTMLVideoElement | null>; logoUrl?: string | null; aspect: "9:16" | "original"; /** Ads: the captions are part of the picture; the preview draws none. */ captionsAreBurnedIn?: boolean; /** Where on-screen text was removed: the captions sit on one fixed, opaque box there, as in the render. */ coverBox?: CoverBox }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState(false);
   const [width, setWidth] = useState(300);
@@ -80,9 +83,17 @@ export function EditPreview({ src, recipe, time, onTime, videoRef, logoUrl, aspe
     } else v.pause();
   }
 
-  const captions = recipe.captions?.enabled && !captionsAreBurnedIn ? recipe.captions : null;
-  const cue = captions?.cues.find((c) => time >= c.start && time < c.end && c.text.trim());
-  const css = captions ? captionCss(captions.style, width) : null;
+  // Over removed text the captions stay on and run on from line to line (as the export renders them, 24 Nov 2026).
+  const covered = Boolean(coverBox) && !captionsAreBurnedIn && Boolean(recipe.captions);
+  const captions = covered ? recipe.captions! : recipe.captions?.enabled && !captionsAreBurnedIn ? recipe.captions : null;
+  const lines = captions ? captions.cues.filter((c) => c.text.trim()) : [];
+  const shown = covered ? fillGaps(lines, recipe.sourceSeconds) : lines;
+  const cue = shown.find((c) => time >= c.start && time < c.end);
+  const style = captions && covered ? { ...captions.style, bar: effectiveBar(captions.style, true) } : captions?.style;
+  const css = captions ? captionCss(style, width) : null;
+  // The same box as the render: font and size from the old text, centred on its spot, fully opaque.
+  const frameSize = aspect === "9:16" ? { width: 1080, height: 1920 } : { width: 1920, height: 1080 };
+  const fit = covered && coverBox ? fitCaptionToCover(coverBox, frameSize, captions!.style.size) : null;
   const wordAt = cue ? activeWordIndex(cue, time) : -1;
   const lt = recipe.lowerThird?.enabled && recipe.lowerThird.text.trim() && time >= recipe.lowerThird.from && time < recipe.lowerThird.to ? recipe.lowerThird : null;
   const cta = recipe.cta?.enabled && recipe.cta.text.trim() && time >= recipe.cta.from && time < recipe.cta.to ? recipe.cta : null;
@@ -102,7 +113,24 @@ export function EditPreview({ src, recipe, time, onTime, videoRef, logoUrl, aspe
           <span className="rounded-[10px] bg-ink/80 px-3 py-1.5 text-center font-semibold text-white" style={{ fontSize: `${Math.max(9, 45 * scale)}px` }}>{lt.text}</span>
         </div>
       )}
-      {cue && css && (
+      {fit && css && lines.length > 0 && (
+        <div
+          className="pointer-events-none absolute flex items-center justify-center overflow-hidden"
+          style={{ left: `${50 - (fit.widthPx / frameSize.width) * 50}%`, width: `${(fit.widthPx / frameSize.width) * 100}%`, top: `${(0.5 - fit.offsetY) * 100}%`, height: `${(fit.heightPx / frameSize.height) * 100}%`, transform: "translateY(-50%)", background: barMeta(style?.bar).color ?? "#FFFFFF", borderRadius: `${18 * (width / frameSize.width)}px` }}
+          data-testid="caption-cover"
+        >
+          {cue && (
+            <p style={{ ...css.box, background: "none", width: "auto", padding: `0 ${14 * (width / frameSize.width)}px`, fontSize: `${Math.max(8, fit.fontPx * (width / frameSize.width))}px` }}>
+              {cue.text.trim().split(/\s+/).map((w, i) => (
+                <span key={i} style={css.word(i === wordAt)}>
+                  {w}{" "}
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+      )}
+      {!fit && cue && css && (
         <div className="pointer-events-none absolute inset-x-0 flex justify-center" style={{ top: captions!.position === "middle" ? "50%" : "68%", transform: "translateY(-50%)" }}>
           <p style={css.box}>
             {cue.text.trim().split(/\s+/).map((w, i) => (

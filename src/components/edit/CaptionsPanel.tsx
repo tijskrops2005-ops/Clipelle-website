@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { CAPTION_PRESETS, type EditRecipe } from "@/lib/editRecipe";
-import { barFromHex, barMeta, contrastRatio, isDefaultCaptionStyle, type CaptionBar } from "@/lib/captionOptions";
+import { barFromHex, barMeta, contrastRatio, effectiveBar, isDefaultCaptionStyle, type CaptionBar } from "@/lib/captionOptions";
 import { ColorPicker } from "@/components/ui/ColorPicker";
 import { LOW_CONTRAST } from "@/components/translate/CaptionStylePicker";
 import { formatDuration } from "@/components/ui/VideoDropzone";
@@ -12,16 +12,19 @@ import { formatDuration } from "@/components/ui/VideoDropzone";
  * Captions on the edit screen (2 Nov 2026): on or off, a few style presets, the position, and every
  * line with its text and times. The preview follows at once; the export renders the lines as left here.
  */
-export function CaptionsPanel({ recipe, onRecipe, time, onSeek, disabled }: { recipe: EditRecipe; onRecipe: (next: EditRecipe) => void; time: number; onSeek: (t: number) => void; disabled?: boolean }) {
-  const captions = recipe.captions;
+export function CaptionsPanel({ recipe, onRecipe, time, onSeek, disabled, covered }: { recipe: EditRecipe; onRecipe: (next: EditRecipe) => void; time: number; onSeek: (t: number) => void; disabled?: boolean; /** Text was removed from this video: the captions cover that spot, so they stay on with a background. */ covered?: boolean }) {
+  const stored = recipe.captions;
+  // Over removed text the captions are always on (24 Nov 2026): the render and the preview cover the spot with them.
+  const captions = stored && covered ? { ...stored, enabled: true } : stored;
   if (!captions) return <p className="text-[13px] text-muted">This video has no caption lines to edit.</p>;
   const set = (patch: Partial<NonNullable<EditRecipe["captions"]>>) => onRecipe({ ...recipe, captions: { ...captions, ...patch } });
   const presetKey = CAPTION_PRESETS.find((p) => JSON.stringify(p.style) === JSON.stringify(captions.style))?.key ?? (isDefaultCaptionStyle(captions.style) ? "bold" : "custom");
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
-        <SegmentedControl label="Captions" size="sm" options={[{ key: "on", label: "On" }, { key: "off", label: "Off" }]} value={captions.enabled ? "on" : "off"} onChange={(k) => set({ enabled: k === "on" })} disabled={disabled} />
-        {captions.enabled && <SegmentedControl label="Caption position" size="sm" options={[{ key: "low", label: "Low" }, { key: "middle", label: "Middle" }]} value={captions.position} onChange={(k) => set({ position: k })} disabled={disabled} />}
+        {!covered && <SegmentedControl label="Captions" size="sm" options={[{ key: "on", label: "On" }, { key: "off", label: "Off" }]} value={captions.enabled ? "on" : "off"} onChange={(k) => set({ enabled: k === "on" })} disabled={disabled} />}
+        {covered && <p className="text-[13px] text-muted">Captions stay on: they cover the spot where the old text was.</p>}
+        {captions.enabled && !covered && <SegmentedControl label="Caption position" size="sm" options={[{ key: "low", label: "Low" }, { key: "middle", label: "Middle" }]} value={captions.position} onChange={(k) => set({ position: k })} disabled={disabled} />}
       </div>
       {captions.enabled && (
         <>
@@ -39,7 +42,7 @@ export function CaptionsPanel({ recipe, onRecipe, time, onSeek, disabled }: { re
             <div className="mt-4 flex flex-wrap gap-x-6 gap-y-4">
               {captions.style.highlight !== "none" && <ColorPicker id="editHighlight" label="Highlight colour" value={captions.style.color} onChange={(hex) => hex && set({ style: { ...captions.style, color: hex } })} disabled={disabled} />}
               <ColorPicker id="editText" label="Text colour" value={captions.style.textColor ?? "#FFFFFF"} onChange={(hex) => hex && set({ style: { ...captions.style, textColor: hex } })} disabled={disabled} note={barMeta(captions.style.bar).color && contrastRatio(captions.style.textColor ?? "#FFFFFF", barMeta(captions.style.bar).color!) < LOW_CONTRAST ? "Low contrast" : undefined} />
-              <ColorPicker id="editBackground" label="Background" value={barMeta(captions.style.bar).color} onChange={(hex) => set({ style: { ...captions.style, bar: barFromHex(hex) as CaptionBar } })} allowNone disabled={disabled} />
+              <ColorPicker id="editBackground" label="Background" value={barMeta(covered ? effectiveBar(captions.style, true) : captions.style.bar).color} onChange={(hex) => hex !== null || !covered ? set({ style: { ...captions.style, bar: barFromHex(hex) as CaptionBar } }) : undefined} allowNone={!covered} disabled={disabled} />
             </div>
           </div>
           <div>

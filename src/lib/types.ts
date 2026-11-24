@@ -182,6 +182,8 @@ export interface TranslateProject extends ProjectBase {
   captionPosition?: "low" | "middle";
   /** On-screen text removed from the source before translating (+1 credit per second). */
   removeText?: boolean;
+  /** Where that text was, as fractions of the frame (24 Nov 2026): the edit screen draws the caption box over it, as the render does. */
+  coverBox?: import("@/lib/captionFit").CoverBox;
   /** Who speaks: the original speaker (lip-synced) or an AI presenter (26 Oct 2026). */
   speaker?: "original" | "presenter";
   presenter?: import("@/lib/presenterTranslate").PresenterTranslate;

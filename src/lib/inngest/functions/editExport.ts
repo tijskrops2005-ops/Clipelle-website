@@ -1,7 +1,7 @@
 import { editRequested, inngest } from "@/lib/inngest/client";
 import { and, eq } from "drizzle-orm";
 import { assets, db, profiles, projects, translations, type AdInput, type EditMeta, type TranslateInput } from "@/lib/db";
-import { buildEditFromRecipe, outputSeconds, recipeCues } from "@/lib/editRecipe";
+import { buildEditFromRecipe, coverBoxOf, exportCues, outputSeconds } from "@/lib/editRecipe";
 import { buildSrt } from "@/lib/services/translate";
 import { getRender, shotstackEnv, startRender } from "@/lib/services/finalEdit";
 import { reserveSpend, settleSpend } from "@/lib/services/costGuard";
@@ -45,8 +45,10 @@ export const editExport = inngest.createFunction(
         await markProcessing(projectId, key);
         const source = await sourceAssetOf(projectId, project.workflow, edit, input);
         const videoUrl = await providerUrl(source);
+        // Where on-screen text was removed: the captions stay on and cover that spot (24 Nov 2026).
+        const coverBox = project.workflow === "translate" ? coverBoxOf(input as TranslateInput) : undefined;
         // Captions on the output's clock, stored as this version's SRT.
-        const cues = recipeCues(edit.recipe);
+        const cues = exportCues(edit.recipe, Boolean(coverBox));
         let srtUrl: string | undefined;
         if (cues.length > 0) {
           const srt = await storeBytes({ projectId, stepId: stepRow.id, kind: "srt", data: new TextEncoder().encode(buildSrt(cues)), mime: "application/x-subrip", fileName: `captions-edited.srt`, language: edit.language });
@@ -59,7 +61,7 @@ export const editExport = inngest.createFunction(
           if (p?.brand?.logoPath) logoUrl = await signedDownloadUrl(p.brand.logoPath, 6 * 3600);
         }
         const size = project.workflow === "translate" && (input as TranslateInput).format === "original" && source.width && source.height ? { width: source.width, height: source.height } : undefined;
-        const job = buildEditFromRecipe(edit.recipe, { videoUrl, srtUrl, logoUrl, size });
+        const job = buildEditFromRecipe(edit.recipe, { videoUrl, srtUrl, logoUrl, size, coverBox });
         const estimate = Math.round(job.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000;
         const reserved = await reserveSpend({ service: "shotstack", action: "edit_export", estimatedUsd: estimate, fingerprintInput: { projectId, recipe: edit.recipe }, projectId, stepId: stepRow.id, language: edit.language, meta: { env: shotstackEnv(), seconds: job.meta.totalSeconds, pieces: job.meta.pieces } });
         try {
@@ -126,3 +128,4 @@ async function sourceAssetOf(projectId: string, workflow: "ad" | "translate", ed
   if (!src?.finalAssetId) throw new Error("The video to edit is missing from storage.");
   return loadAsset(src.finalAssetId);
 }
+
