@@ -60,6 +60,7 @@ function Row({ project: p }: { project: Project }) {
           <span className="mt-0.5 block truncate text-[13px] text-muted">{what} · {formatDate(p.createdAt)}</span>
         </span>
         <span className="hidden shrink-0 text-[13px] tabular-nums text-muted sm:block">{projectLengthLabel(p)}</span>
+        {p.status === "completed" && p.creditsUsed !== undefined && <span className="hidden shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-[12px] font-medium tabular-nums text-accent md:inline">{p.creditsUsed} credits</span>}
         <StatusBadge status={p.status} className="shrink-0" />
         <ChevronRight className="size-4 shrink-0 text-muted transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden />
       </Link>

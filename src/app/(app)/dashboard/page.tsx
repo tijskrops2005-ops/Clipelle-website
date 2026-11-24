@@ -10,6 +10,7 @@ import { HowItWorks } from "@/components/dashboard/HowItWorks";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { RecentList } from "@/components/dashboard/RecentList";
 import { WhatsNew } from "@/components/dashboard/WhatsNew";
+import { QuickStart } from "@/components/dashboard/QuickStart";
 import { NowCreating } from "@/components/dashboard/NowCreating";
 import { DashboardStats } from "@/components/dashboard/DashboardStats";
 import { Button } from "@/components/ui/Button";
@@ -47,6 +48,7 @@ export default async function DashboardPage() {
           button is the quiet black one. */}
       <PageHeader
         title={name ? `Welcome back, ${name}` : "Welcome back"}
+        description="Your videos, in every language you sell in."
         actions={
           <Button href="/new" variant="primary">
             <Plus className="size-4" aria-hidden />
@@ -56,6 +58,8 @@ export default async function DashboardPage() {
       />
 
       <DashboardStats credits={credits} plan={plan} demo={config.demoMode} />
+
+      <QuickStart />
 
       <OnboardingChecklist planKey={scope?.planKey} />
 

@@ -65,16 +65,16 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
   const translating = mode === "translate";
 
   const saving = r.savingUsd >= 0;
-  const hoursBack = Math.round(r.hoursBack);
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[1fr_1fr]">
-      {/* Left: what you make and what it costs you today. Two short groups, nothing else (24 Nov 2026, Tijs: fewer numbers). */}
-      <div className="rounded-card bg-surface p-6 shadow-card sm:p-7">
-        {config.features.ads && (
-          <div className="mb-5"><SegmentedControl label={c.modeLabel} size="sm" options={[{ key: "translate", label: c.modeTranslate }, { key: "ad", label: c.modeAds }]} value={mode} onChange={(k) => setMode(k as "translate" | "ad")} /></div>
-        )}
-        <p className="text-[15px] font-semibold text-ink">{c.groupVideos}</p>
-        <div className="mt-4 space-y-5">
+    // One card (24 Nov 2026, Tijs: "te druk"): the inputs in two columns, then three answers in a row.
+    // Same sums as before (compareCredits / compareMonth, the plan prices of plans.ts, the measured time).
+    <div className="overflow-hidden rounded-card bg-surface shadow-card">
+      {config.features.ads && (
+        <div className="px-6 pt-6 sm:px-8"><SegmentedControl label={c.modeLabel} size="sm" options={[{ key: "translate", label: c.modeTranslate }, { key: "ad", label: c.modeAds }]} value={mode} onChange={(k) => setMode(k as "translate" | "ad")} /></div>
+      )}
+      <div className="grid gap-x-12 gap-y-8 p-6 sm:p-8 md:grid-cols-2">
+        <fieldset className="space-y-5">
+          <legend className="mb-4 text-[15px] font-semibold text-ink">{c.groupVideos}</legend>
           <Range id="videos" label={c.videosPerMonth} value={videos} min={1} max={100} step={1} onChange={setVideos} format={(v) => String(v)} />
           {translating ? (
             <>
@@ -91,42 +91,33 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
               {!compact && <Range id="minutes" label={c.translateMinutes} value={translateMinutes} min={0} max={120} step={1} onChange={setTranslateMinutes} format={(v) => `${v} min`} />}
             </>
           )}
-        </div>
-        <p className="mt-8 text-[15px] font-semibold text-ink">{c.groupToday}</p>
-        <div className="mt-4 space-y-5">
+        </fieldset>
+        <fieldset className="space-y-5">
+          <legend className="mb-4 text-[15px] font-semibold text-ink">{c.groupToday}</legend>
           <Range id="cost" label={translating ? c.costNowTranslate : c.costNow} value={currentCost} min={1} max={20} step={0.5} onChange={setCurrentCost} format={cents} />
           <Range id="time" label={c.timeNow} value={minutesNow} min={0} max={180} step={5} onChange={setMinutesNow} format={(v) => `${v} min`} />
           <Range id="hour" label={c.hourValue} value={hourValue} min={0} max={100} step={5} onChange={setHourValue} format={(v) => `${sym}${v}`} />
-        </div>
+        </fieldset>
       </div>
 
-      {/* Right: one answer, then the two numbers behind it. */}
-      <div className="flex flex-col rounded-card bg-surface p-6 shadow-card sm:p-7">
-        <div className={cn("rounded-panel p-5", saving ? "bg-success/10" : "bg-surface-muted")}>
-          <p className={cn("text-[2.25rem] font-semibold leading-none tracking-[-0.03em]", saving ? "text-success" : "text-ink")} style={{ fontVariantNumeric: "tabular-nums" }}>
-            {money(Math.abs(r.savingUsd))}
-          </p>
-          <p className="mt-2 text-[15px] text-ink">{saving ? c.resultSaved : c.resultMore}</p>
-          {hoursBack > 0 && <p className="mt-0.5 text-[14px] text-muted">{c.resultHours.replace("{h}", String(hoursBack))}</p>}
-        </div>
-
-        <dl className="mt-6 grid grid-cols-[1fr_auto_auto] items-baseline gap-x-6 gap-y-3 text-[15px]">
-          <span />
-          <dt className="text-right text-[13px] text-muted">{c.today}</dt>
-          <dt className="text-right text-[13px] text-muted">{c.withClipelle}</dt>
-          <dd className="text-ink">{c.costMonth}</dd>
-          <dd className="text-right tabular-nums text-muted">{money(r.yourMoney)}</dd>
-          <dd className="text-right font-semibold tabular-nums text-ink">{money(r.fit.monthlyUsd)}</dd>
-          <dd className="text-ink">{c.timeMonth}</dd>
-          <dd className="text-right tabular-nums text-muted">{hours(r.yourHours)}</dd>
-          <dd className="text-right font-semibold tabular-nums text-ink">{hours(r.ourHours)}</dd>
-        </dl>
-
-        <div className="mt-6 space-y-1.5 border-t border-divider pt-5 text-[13px] text-muted">
-          <p><span className="font-medium text-ink">{fitName}</span> · {annual ? c.billedYearly : c.billedMonthly}</p>
-          <p>{translating ? trTime : adTime}. {c.footnote.replace("{n}", num(r.credits))}</p>
-        </div>
+      <div className="grid divide-y divide-divider border-t border-divider md:grid-cols-3 md:divide-x md:divide-y-0">
+        <Answer label={c.today} value={money(r.yourMoney)} sub={c.timeLine.replace("{h}", hours(r.yourHours))} />
+        <Answer label={c.withClipelle} value={money(r.fit.monthlyUsd)} sub={`${c.timeLine.replace("{h}", hours(r.ourHours))} · ${fitName}`} />
+        <Answer label={saving ? c.youSave : c.costsMore} value={money(Math.abs(r.savingUsd))} sub={saving ? c.resultSaved : c.resultMore} tone={saving ? "good" : "plain"} />
       </div>
+      <p className="border-t border-divider px-6 py-4 text-[12.5px] leading-relaxed text-muted sm:px-8">
+        {annual ? c.billedYearly : c.billedMonthly}. {translating ? trTime : adTime}. {c.footnote.replace("{n}", num(r.credits))}
+      </p>
+    </div>
+  );
+}
+
+function Answer({ label, value, sub, tone = "plain" }: { label: string; value: string; sub: string; tone?: "plain" | "good" }) {
+  return (
+    <div className={cn("px-6 py-6 sm:px-8", tone === "good" && "bg-success/10")}>
+      <p className="text-[13px] text-muted">{label}</p>
+      <p className={cn("mt-2 text-[2rem] font-semibold leading-none tracking-[-0.03em] tabular-nums", tone === "good" ? "text-success" : "text-ink")}>{value}</p>
+      <p className="mt-2 text-[13px] text-muted">{sub}</p>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Clock3, Coins, Film, Languages, type LucideIcon } from "lucide-react";
 import { useProjects, useProjectsReady } from "@/lib/data/client";
 import { planLabel, type Plan } from "@/lib/plans";
 import { projectDurationMs } from "@/lib/projectMeta";
@@ -36,6 +37,7 @@ export function DashboardStats({ credits, plan, demo }: Props) {
   return (
     <section aria-label="Your numbers" className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
       <Stat
+        icon={Coins}
         label="Credits"
         value={credits === null ? "—" : <CountUp value={credits} />}
         sub={
@@ -47,19 +49,21 @@ export function DashboardStats({ credits, plan, demo }: Props) {
           </>
         }
       />
-      <Stat label="Finished videos" value={ready ? finished.length : "—"} sub={finishedThisMonth === null || !ready ? " " : `${finishedThisMonth} this month`} />
-      <Stat label="Language versions" value={ready ? versions.length : "—"} sub={!ready ? " " : languages === 0 ? "None yet" : `In ${languages} ${languages === 1 ? "language" : "languages"}`} />
-      <Stat label="Average time to ready" value={!ready || avg === null ? "—" : `${avg} min`} sub={!ready ? " " : durations.length === 0 ? "After your first video" : `Over ${durations.length} ${durations.length === 1 ? "video" : "videos"}`} />
+      <Stat icon={Film} label="Finished videos" value={ready ? finished.length : "—"} sub={finishedThisMonth === null || !ready ? " " : `${finishedThisMonth} this month`} />
+      <Stat icon={Languages} label="Language versions" value={ready ? versions.length : "—"} sub={!ready ? " " : languages === 0 ? "None yet" : `In ${languages} ${languages === 1 ? "language" : "languages"}`} />
+      <Stat icon={Clock3} label="Average time to ready" value={!ready || avg === null ? "—" : `${avg} min`} sub={!ready ? " " : durations.length === 0 ? "After your first video" : `Over ${durations.length} ${durations.length === 1 ? "video" : "videos"}`} />
     </section>
   );
 }
 
-function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub: React.ReactNode }) {
+function Stat({ icon: Icon, label, value, sub }: { icon: LucideIcon; label: string; value: React.ReactNode; sub: React.ReactNode }) {
   return (
     <div className="rounded-card bg-surface p-5 shadow-card sm:p-6">
-      <p className="text-[13px] text-muted">{label}</p>
-      <p className="mt-2 text-[30px] font-semibold leading-none tracking-[-0.03em] text-ink tabular-nums">{value}</p>
-      <p className="mt-2 text-[13px] leading-snug text-muted">{sub}</p>
+      {/* A small icon square per number, in the style of splister.com/app (24 Nov 2026, Tijs). */}
+      <span className="grid size-10 place-items-center rounded-[12px] bg-accent-soft text-accent" aria-hidden><Icon className="size-[18px]" /></span>
+      <p className="mt-5 text-[30px] font-semibold leading-none tracking-[-0.03em] text-ink tabular-nums">{value}</p>
+      <p className="mt-2 text-[13px] font-medium text-ink">{label}</p>
+      <p className="mt-0.5 text-[13px] leading-snug text-muted">{sub}</p>
     </div>
   );
 }
