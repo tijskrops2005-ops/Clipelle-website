@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { measured } from "@/content/measured";
 import { AD_LENGTHS, type AdLength, type PresenterEngine } from "@/lib/pricing";
 import { currencyFor, formatMoney, planLabel, translateCredits } from "@/lib/plans";
-import { HANDS_ON_MINUTES, INDIVIDUAL_PAID, compareCredits, compareMonth, pricePerMonth, videoPrice, type Billing } from "@/lib/pricingHelpers";
+import { compareCredits, compareMonth, type Billing } from "@/lib/pricingHelpers";
 import { useBillingAnnual } from "@/lib/useBilling";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { dict } from "@/content/i18n";
@@ -35,7 +35,8 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
   const [mode, setMode] = useState<"translate" | "ad">("translate");
   const [trSeconds, setTrSeconds] = useState<number>(30);
   const [languages, setLanguages] = useState(2);
-  const [quality, setQuality] = useState<"speed" | "precision">("speed");
+  // Speed only since 24 Nov 2026 (fewer controls); Precision is on the form and on /pricing.
+  const quality = "speed" as const;
   const [currentCost, setCurrentCost] = useState(5);
   const [videos, setVideos] = useState(10);
   const [seconds, setSeconds] = useState<AdLength>(30);
@@ -49,12 +50,9 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
   const r = useMemo(() => {
     const month =
       mode === "translate"
-        ? compareCredits({ costNow: currentCost, videos, creditsPerVideo: translateCredits({ seconds: trSeconds, quality, enhance: false }) * languages, minutesNow, hourValue, currency, needs: quality === "precision" ? ["precision"] : [], billing })
+        ? compareCredits({ costNow: currentCost, videos, creditsPerVideo: translateCredits({ seconds: trSeconds, quality, enhance: false }) * languages, minutesNow, hourValue, currency, billing })
         : compareMonth({ costNow: currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue, currency, billing });
-    const ladder = INDIVIDUAL_PAID.map((p) => ({ plan: p, price: pricePerMonth(p, currency, billing), videos: Math.floor(p.creditsPerMonth / month.perAd), perVideo: videoPrice(p, month.perAd, currency, billing) }));
-    // One video on the plan that fits: its credits × that plan's price per credit (the same definition as the ladder).
-    const fitPerVideo = month.fit.plan ? videoPrice(month.fit.plan, month.perAd, currency, billing) : 0;
-    return { ...month, ladder, fitPerVideo };
+    return month;
   }, [mode, trSeconds, languages, quality, currentCost, videos, seconds, engine, translateMinutes, minutesNow, hourValue, currency, billing]);
 
   const adTime = measured.adMinutes !== null ? c.adTimeMeasured.replace("{n}", String(measured.adMinutes)) : c.adTimeUnmeasured;
@@ -66,97 +64,68 @@ export function SavingsCalculator({ compact, locale = "en" }: { compact?: boolea
   const fitName = r.fit.plan ? (r.fit.withPacks ? `${planLabel(r.fit.plan)} ${c.plus} ${r.fit.packs} ${r.fit.packs === 1 ? c.pack : c.packs}` : planLabel(r.fit.plan)) : c.aPlan;
   const translating = mode === "translate";
 
+  const saving = r.savingUsd >= 0;
+  const hoursBack = Math.round(r.hoursBack);
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[1fr_1.15fr]">
-      <div className="rounded-card bg-surface p-6 shadow-card">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[17px] font-semibold text-ink">{c.yourNumbers}</p>
-          {config.features.ads && <SegmentedControl label={c.modeLabel} size="sm" options={[{ key: "translate", label: c.modeTranslate }, { key: "ad", label: c.modeAds }]} value={mode} onChange={(k) => setMode(k as "translate" | "ad")} />}
-        </div>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">{translating ? c.yourNumbersTextTranslate : c.yourNumbersText}</p>
-        <div className="mt-5 space-y-5">
-          <Range id="cost" label={translating ? c.costNowTranslate : c.costNow} value={currentCost} min={1} max={20} step={0.5} onChange={setCurrentCost} format={cents} />
-          <Range id="time" label={c.timeNow} value={minutesNow} min={0} max={180} step={5} onChange={setMinutesNow} format={(v) => `${v} min`} />
-          <Range id="hour" label={c.hourValue} value={hourValue} min={0} max={100} step={5} onChange={setHourValue} format={(v) => `${sym}${v}`} />
+    <div className="grid items-start gap-5 lg:grid-cols-[1fr_1fr]">
+      {/* Left: what you make and what it costs you today. Two short groups, nothing else (24 Nov 2026, Tijs: fewer numbers). */}
+      <div className="rounded-card bg-surface p-6 shadow-card sm:p-7">
+        {config.features.ads && (
+          <div className="mb-5"><SegmentedControl label={c.modeLabel} size="sm" options={[{ key: "translate", label: c.modeTranslate }, { key: "ad", label: c.modeAds }]} value={mode} onChange={(k) => setMode(k as "translate" | "ad")} /></div>
+        )}
+        <p className="text-[15px] font-semibold text-ink">{c.groupVideos}</p>
+        <div className="mt-4 space-y-5">
           <Range id="videos" label={c.videosPerMonth} value={videos} min={1} max={100} step={1} onChange={setVideos} format={(v) => String(v)} />
           {translating ? (
             <>
-              <div>
-                <Range id="tr-seconds" label={c.adLength} value={TRANSLATE_LENGTHS.indexOf(trSeconds as (typeof TRANSLATE_LENGTHS)[number])} min={0} max={TRANSLATE_LENGTHS.length - 1} step={1} onChange={(i) => setTrSeconds(TRANSLATE_LENGTHS[i])} format={(i) => `${TRANSLATE_LENGTHS[i]} s`} />
-                <div className="mt-1 flex justify-between px-0.5 text-[11px] text-muted" aria-hidden>
-                  {TRANSLATE_LENGTHS.map((l) => <span key={l}>{l}s</span>)}
-                </div>
-              </div>
+              <Range id="tr-seconds" label={c.adLength} value={TRANSLATE_LENGTHS.indexOf(trSeconds as (typeof TRANSLATE_LENGTHS)[number])} min={0} max={TRANSLATE_LENGTHS.length - 1} step={1} onChange={(i) => setTrSeconds(TRANSLATE_LENGTHS[i])} format={(i) => `${TRANSLATE_LENGTHS[i]} s`} />
               <Range id="languages" label={c.languages} value={languages} min={1} max={5} step={1} onChange={setLanguages} format={(v) => String(v)} />
-              <div>
-                <p className="mb-2 text-sm font-medium text-ink">{c.quality}</p>
-                <SegmentedControl label={c.quality} size="sm" options={[{ key: "speed", label: "Speed" }, { key: "precision", label: "Precision" }]} value={quality} onChange={(k) => setQuality(k as "speed" | "precision")} />
-              </div>
             </>
           ) : (
-          <>
-          {/* A slider over the lengths a video can have (AD_LENGTHS), with the stops marked underneath. */}
-          <div>
-            <Range id="seconds" label={c.adLength} value={AD_LENGTHS.indexOf(seconds)} min={0} max={AD_LENGTHS.length - 1} step={1} onChange={(i) => setSeconds(AD_LENGTHS[i] as AdLength)} format={(i) => `${AD_LENGTHS[i]} s`} />
-            <div className="mt-1 flex justify-between px-0.5 text-[11px] text-muted" aria-hidden>
-              {AD_LENGTHS.map((l) => <span key={l}>{l}s</span>)}
-            </div>
-          </div>
-          <div>
-            <p className="mb-2 text-sm font-medium text-ink">{c.presenter}</p>
-            <SegmentedControl label={c.presenter} size="sm" options={[{ key: "avatar_iii", label: c.standard }, { key: "avatar_iv", label: c.premium }]} value={engine} onChange={(k) => setEngine(k as PresenterEngine)} />
-          </div>
-          {!compact && <Range id="minutes" label={c.translateMinutes} value={translateMinutes} min={0} max={120} step={1} onChange={setTranslateMinutes} format={(v) => `${v} min`} />}
-          </>
+            <>
+              <Range id="seconds" label={c.adLength} value={AD_LENGTHS.indexOf(seconds)} min={0} max={AD_LENGTHS.length - 1} step={1} onChange={(i) => setSeconds(AD_LENGTHS[i] as AdLength)} format={(i) => `${AD_LENGTHS[i]} s`} />
+              <div>
+                <p className="mb-2 text-sm font-medium text-ink">{c.presenter}</p>
+                <SegmentedControl label={c.presenter} size="sm" options={[{ key: "avatar_iii", label: c.standard }, { key: "avatar_iv", label: c.premium }]} value={engine} onChange={(k) => setEngine(k as PresenterEngine)} />
+              </div>
+              {!compact && <Range id="minutes" label={c.translateMinutes} value={translateMinutes} min={0} max={120} step={1} onChange={setTranslateMinutes} format={(v) => `${v} min`} />}
+            </>
           )}
+        </div>
+        <p className="mt-8 text-[15px] font-semibold text-ink">{c.groupToday}</p>
+        <div className="mt-4 space-y-5">
+          <Range id="cost" label={translating ? c.costNowTranslate : c.costNow} value={currentCost} min={1} max={20} step={0.5} onChange={setCurrentCost} format={cents} />
+          <Range id="time" label={c.timeNow} value={minutesNow} min={0} max={180} step={5} onChange={setMinutesNow} format={(v) => `${v} min`} />
+          <Range id="hour" label={c.hourValue} value={hourValue} min={0} max={100} step={5} onChange={setHourValue} format={(v) => `${sym}${v}`} />
         </div>
       </div>
 
-      <div className="rounded-card bg-surface p-6 shadow-card">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <p className="text-[17px] font-semibold text-ink">{c.sideBySide}</p>
-          <p className="text-[12.5px] text-muted">{annual ? c.billedYearly : c.billedMonthly}</p>
-        </div>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-[15px]">
-            <thead className="text-[13px] text-muted"><tr><th className="py-2 pr-3 font-medium"> </th><th className="py-2 pr-3 font-medium">{c.diy}</th><th className="py-2 font-medium">{c.withClipelle}</th></tr></thead>
-            <tbody className="divide-y divide-divider">
-              <tr><td className="py-3 pr-3 font-medium text-ink">{c.perVideo}</td><td className="py-3 pr-3">{money(currentCost)}</td><td className="py-3">{r.perAd} {c.credits}{r.fit.plan ? <> ≈ {money(r.fitPerVideo)}</> : null}</td></tr>
-              <tr><td className="py-3 pr-3 font-medium text-ink">{c.moneyPerMonth}</td><td className="py-3 pr-3">{money(r.yourMoney)}</td><td className="py-3">{money(r.fit.monthlyUsd)} <span className="text-muted">· {fitName}</span></td></tr>
-              <tr><td className="py-3 pr-3 font-medium text-ink">{c.yourTime}</td><td className="py-3 pr-3">{hours(r.yourHours)}</td><td className="py-3">{hours(r.ourHours)} <span className="text-muted">· {c.handsOn.replace("{n}", String(HANDS_ON_MINUTES))}</span></td></tr>
-              <tr><td className="py-3 pr-3 font-semibold text-ink">{c.totalPerMonth}</td><td className="py-3 pr-3 font-semibold">{money(r.yourTotal)}</td><td className="py-3 font-semibold">{money(r.ourTotal)}</td></tr>
-              <tr><td className="py-3 pr-3 font-medium text-ink">{c.timeToReady}</td><td className="py-3 pr-3">—</td><td className="py-3">{translating ? trTime : `${adTime}${translateMinutes > 0 ? `; ${trTime}` : ""}`}</td></tr>
-            </tbody>
-          </table>
-        </div>
-        {/* The difference, said plainly in both directions: a saving, or how much more Clipelle costs at these numbers. */}
-        <div className={cn("mt-5 rounded-[14px] p-4", r.savingUsd >= 0 ? "bg-success/10" : "bg-surface-muted")}>
-          <p className="text-[13px] text-muted">{r.savingUsd >= 0 ? c.savedLabel : c.moreLabel}</p>
-          <p className={cn("mt-1 text-[26px] font-semibold", r.savingUsd >= 0 ? "text-success" : "text-ink")}>
-            {r.savingUsd >= 0 ? money(r.savingUsd) : c.moreText.replace("{n}", money(-r.savingUsd))}
+      {/* Right: one answer, then the two numbers behind it. */}
+      <div className="flex flex-col rounded-card bg-surface p-6 shadow-card sm:p-7">
+        <div className={cn("rounded-panel p-5", saving ? "bg-success/10" : "bg-surface-muted")}>
+          <p className={cn("text-[2.25rem] font-semibold leading-none tracking-[-0.03em]", saving ? "text-success" : "text-ink")} style={{ fontVariantNumeric: "tabular-nums" }}>
+            {money(Math.abs(r.savingUsd))}
           </p>
-          {r.hoursBack > 0 && <p className="mt-1 text-[13px] text-ink">{c.hoursBack.replace("{h}", String(Math.round(r.hoursBack)))}</p>}
+          <p className="mt-2 text-[15px] text-ink">{saving ? c.resultSaved : c.resultMore}</p>
+          {hoursBack > 0 && <p className="mt-0.5 text-[14px] text-muted">{c.resultHours.replace("{h}", String(hoursBack))}</p>}
         </div>
 
-        {/* Every plan for the chosen video: price, how many such videos it covers, the price per video. */}
-        <p className="mt-6 text-[13px] font-medium text-ink">{c.ladderTitle}</p>
-        <ul className="mt-2 grid gap-2 sm:grid-cols-3">
-          {r.ladder.map((l) => {
-            const fits = r.fit.plan?.key === l.plan.key;
-            return (
-              <li key={l.plan.key} className={cn("rounded-[14px] border p-3 transition-[border-color,box-shadow] duration-200", fits ? "border-accent/50 bg-accent-soft/40 shadow-soft" : "border-border")}>
-                <p className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[14px] font-semibold text-ink">
-                  {l.plan.name}
-                  {fits && <span className="whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white">{c.ladderFit}</span>}
-                </p>
-                <p className="mt-1 text-[13px] text-muted">{formatMoney(l.price, currency, locale)} {c.ladderPerMonth}</p>
-                <p className="mt-2 text-[13px] text-ink">{c.ladderVideos.replace("{n}", String(l.videos))}</p>
-                <p className="text-[13px] text-muted">{c.ladderPerVideo.replace("{p}", money(l.perVideo))}</p>
-              </li>
-            );
-          })}
-        </ul>
-        <p className="mt-3 text-[12px] leading-relaxed text-muted">{c.footnote.replace("{n}", num(r.credits))}</p>
+        <dl className="mt-6 grid grid-cols-[1fr_auto_auto] items-baseline gap-x-6 gap-y-3 text-[15px]">
+          <span />
+          <dt className="text-right text-[13px] text-muted">{c.today}</dt>
+          <dt className="text-right text-[13px] text-muted">{c.withClipelle}</dt>
+          <dd className="text-ink">{c.costMonth}</dd>
+          <dd className="text-right tabular-nums text-muted">{money(r.yourMoney)}</dd>
+          <dd className="text-right font-semibold tabular-nums text-ink">{money(r.fit.monthlyUsd)}</dd>
+          <dd className="text-ink">{c.timeMonth}</dd>
+          <dd className="text-right tabular-nums text-muted">{hours(r.yourHours)}</dd>
+          <dd className="text-right font-semibold tabular-nums text-ink">{hours(r.ourHours)}</dd>
+        </dl>
+
+        <div className="mt-6 space-y-1.5 border-t border-divider pt-5 text-[13px] text-muted">
+          <p><span className="font-medium text-ink">{fitName}</span> · {annual ? c.billedYearly : c.billedMonthly}</p>
+          <p>{translating ? trTime : adTime}. {c.footnote.replace("{n}", num(r.credits))}</p>
+        </div>
       </div>
     </div>
   );

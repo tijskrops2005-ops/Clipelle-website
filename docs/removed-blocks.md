@@ -144,3 +144,11 @@ Off the screens, code kept unless said otherwise:
 - **MCP in the menus**: `/integrations/mcp` and `/docs/mcp` left the Platform and Resources menus and the footer (the server is not published as a package); the pages stay, the API docs link to them, the sitemap lists them. Put the two items back in `siteNav.ts` when `@clipelle/mcp` is on npm.
 - **Partner program** moved from Resources to Company. **/customers** left the sitemap until the first story (the page itself is an honest empty state).
 - New redirects for bare section URLs: `/mcp`, `/docs`, `/solutions`, `/integrations`, `/company`, `/creations`, `GET /api` (and the `/nl` twins).
+
+## 24 Nov 2026: dashboard, hero, calculator, company menu (Tijs)
+
+- **Dashboard**: the one-line credit strip (`Overview.tsx`) and the big 9:16 tiles under "Recent projects" (`RecentProjects.tsx`) are replaced by four stat cards and a list; both components stay in `src/components/dashboard/`.
+- **Hero**: the lounge-chair sample (no original) left the fan; it is on /examples.
+- **Calculator**: the Speed/Precision switch, the "Per video" and "Per month, money and time" rows, the "Every plan for this video" cards and the tick marks under the length slider.
+- **Company menu**: Careers (`/careers` keeps the open application by URL). **Platform menu**: Dashboard (the header has it); MCP server added.
+- **Copy that promised what we cannot back**: "We reply within two working days" (contact, done-for-you), "Deleting a project removes its files" (there is no project delete; archiving hides), the duplicate partner questions.

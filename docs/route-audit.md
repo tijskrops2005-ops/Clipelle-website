@@ -14,7 +14,7 @@ Classes: **keep** · **improved** (changed in this round) · **hidden** (reachab
 | `/examples` | Four real translations next to their originals | real | keep |
 | `/pricing` | Plans, credits, calculator, managed service, FAQ | real | keep |
 | `/integrations/api` | The public API, what it does and does not | real (keys, endpoints, webhooks) | **improved**: menu label "Developer API" |
-| `/integrations/mcp` | The MCP server | real code in `mcp/`, not published as a package | **hidden**: out of the menus, linked from the API docs, in the sitemap |
+| `/integrations/mcp` | The MCP server | real code in `mcp/`, not published as a package (the page says: on request) | in the Platform menu as "MCP server" since 24 Nov 2026 (Tijs), next to the Developer API |
 | `/docs/api` | API reference | real | keep (Resources → API docs) |
 | `/docs/mcp` | MCP reference | real, install on request | **hidden** from the menus, linked from `/docs/api` |
 | `/solutions/ecommerce-brands`, `/solutions/agencies`, `/solutions/creators-and-localization` | Three audiences, one page each | real, short | keep (three more solution pages exist only with the ads flag) |
@@ -25,7 +25,8 @@ Classes: **keep** · **improved** (changed in this round) · **hidden** (reachab
 | `/resources/changelog` | What changed | real | keep |
 | `/partners` | Partner program, opens soon, waitlist | announced, says so | **moved** from Resources to Company |
 | `/customers` | Customer stories | empty until the first story | **hidden**: not in menus or sitemap; honest empty state by URL |
-| `/about`, `/contact`, `/press`, `/trust`, `/careers` | Company pages | real | keep (careers has no roles and says so; open application form) |
+| `/about`, `/contact`, `/press`, `/trust` | Company pages | real; claims checked against the code on 24 Nov 2026 | keep |
+| `/careers` | Open application | no roles | **hidden** from the menu and sitemap (no filler); the form still works by URL |
 | `/demo` | Book a demo | real form | keep |
 | `/services/done-for-you` | Managed service, request a call | real form, no prices | keep |
 | `/legal/terms`, `/legal/privacy`, `/legal/cookies`, `/legal/data`, `/legal/affiliate-terms` | Legal texts | real | keep |
@@ -59,4 +60,4 @@ Classes: **keep** · **improved** (changed in this round) · **hidden** (reachab
 ## API and MCP, the facts
 
 - **API**: `/api/v1/translations`, `/api/v1/ads` (403 while ads are off), `/api/v1/projects`, `/api/v1/projects/[id]`; keys per workspace from Pro (`/settings/api`), bearer auth, idempotency keys, outgoing webhooks for `project.completed` / `project.failed` with signatures. Documented on `/docs/api`, tested in `src/lib/api/v1.test.ts`. Real; stays in the Platform menu as "Developer API" and in Resources as "API docs".
-- **MCP**: `mcp/` builds a stdio server with `create_ad`, `translate_video`, `get_project`, `list_projects` against the same API. It is not on npm and the docs say it is available on request. Real but not self-serve: pages stay, menus do not point at them, the API docs do.
+- **MCP**: `mcp/` builds a stdio server with `create_ad`, `translate_video`, `get_project`, `list_projects` against the same API. It is not on npm and the docs say it is available on request. Listed in the Platform menu as "MCP server" (24 Nov 2026, Tijs); `/docs/mcp` is linked from it and from the API docs.

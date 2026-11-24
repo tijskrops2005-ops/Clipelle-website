@@ -1,6 +1,5 @@
 import {
   BookOpen,
-  Briefcase,
   Building2,
   Captions,
   Clapperboard,
@@ -9,7 +8,6 @@ import {
   Handshake,
   HelpCircle,
   Languages,
-  LayoutDashboard,
   Link2,
   ListChecks,
   Mail,
@@ -19,6 +17,7 @@ import {
   Smartphone,
   Store,
   Users,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 import { config } from "@/lib/config";
@@ -47,15 +46,15 @@ export const menus: Menu[] = [
           { href: "/platform/translate", title: "Translate and lip sync", text: "A video you own, in other languages, with the speaker's own voice and matching lips.", icon: Languages },
           ifAds({ href: "/platform/ads", title: "Ads from a photo", text: "One product photo becomes a finished 9:16 ad with a presenter and captions.", icon: Clapperboard }),
           ifAds({ href: "/platform/url-to-video", title: "Ads from a link", text: "Paste a product link; name, description and photos are filled in for you.", icon: Link2 }),
-          { href: "/new", title: "Dashboard", text: "Where your videos are made and kept.", icon: LayoutDashboard },
         ],
       },
       {
         title: "Integrations",
         items: [
-          // 24 Nov 2026: the API is real (keys, endpoints, webhooks) and stays in the menu; the MCP server is not
-          // published yet, so /integrations/mcp and /docs/mcp are reachable from the API docs, not from the menus.
+          // 24 Nov 2026 (Tijs): Dashboard left the Platform menu (the header has it); the MCP server is listed
+          // next to the API. It is not on npm yet; its page says so and offers it on request.
           { href: "/integrations/api", title: "Developer API", text: "Translate videos from your own code with an API key.", icon: Code2 },
+          { href: "/integrations/mcp", title: "MCP server", text: "Let your AI assistant translate videos for you.", icon: Workflow },
         ],
       },
     ],
@@ -122,7 +121,7 @@ export const menus: Menu[] = [
       {
         items: [
           { href: "/about", title: "About", text: "Why Clipelle exists and how it is built.", icon: Building2 },
-          { href: "/careers", title: "Careers", text: "How we work and how to get in touch.", icon: Briefcase },
+          // Careers left the menu on 24 Nov 2026 (Tijs: no filler; there are no roles). /careers still takes an open application.
           { href: "/contact", title: "Contact", text: "Questions, feedback, press.", icon: Mail },
           { href: "/press", title: "Press", text: "Brand information and press enquiries.", icon: Newspaper },
           { href: "/trust", title: "Trust", text: "Rights, data, files, costs: what we do and do not do.", icon: ShieldCheck },

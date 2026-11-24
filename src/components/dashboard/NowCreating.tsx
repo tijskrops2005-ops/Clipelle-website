@@ -38,12 +38,21 @@ function progressOf(p: Project, now: number | null): { percent: number; label: s
   return { percent: Math.max(6, Math.round((done / order.length) * 100)), label: `Step ${order.indexOf(current) + 1} of ${order.length} · ${label}`, waiting: Boolean(waiting), since: started.length ? Math.min(...started) : Date.parse(p.createdAt) };
 }
 
-export function NowCreating() {
+export function NowCreating({ showEmpty = false }: { /** The dashboard's side column keeps the card with one quiet line when nothing runs. */ showEmpty?: boolean }) {
   const projects = useProjects().filter((p) => !p.archivedAt && (p.status === "processing" || p.status === "review"));
   // Null until React is attached (the server HTML carries no running time), then every 15 s.
   const now = useClock(15_000);
 
-  if (projects.length === 0) return null;
+  if (projects.length === 0) {
+    if (!showEmpty) return null;
+    return (
+      <section aria-labelledby="now-creating" className="rounded-card bg-surface p-5 shadow-card sm:p-6">
+        <h2 id="now-creating" className="text-[15px] font-semibold text-ink">In progress</h2>
+        <p className="mt-2 text-[14px] text-muted">Nothing is being made right now.</p>
+        <Link href="/new/translate" className="focus-ring mt-4 inline-block rounded-control text-[13px] font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Translate a video</Link>
+      </section>
+    );
+  }
   return (
     <section aria-labelledby="now-creating" className="rounded-card bg-surface p-5 shadow-card sm:p-6">
       <div className="flex items-center justify-between gap-3">
@@ -52,11 +61,11 @@ export function NowCreating() {
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-60 motion-reduce:hidden" />
             <span className="relative inline-flex size-2.5 rounded-full bg-accent" />
           </span>
-          Now creating
+          In progress
           <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[12px] font-medium text-muted">{projects.length}</span>
         </h2>
         <Link href="/projects?status=processing" className="focus-ring rounded-control text-[13px] font-medium text-muted hover:text-ink">
-          All in progress
+          View all
         </Link>
       </div>
       <ul className="mt-4 divide-y divide-divider">
@@ -66,7 +75,7 @@ export function NowCreating() {
             <li key={p.id}>
               <Link href={`/projects/${p.id}`} className="focus-ring group -mx-2 flex items-center gap-4 rounded-[14px] px-2 py-3 hover:bg-surface-muted/60">
                 <span className="min-w-0 flex-1">
-                  <span className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+                  <span className="flex flex-col gap-0.5">
                     <span className="truncate text-[15px] font-semibold text-ink">{p.name}</span>
                     <span className="shrink-0 text-[12.5px] text-muted">{p.workflow === "ad" ? "Ad" : `${g.percent}%`}{now !== null && ` · ${runningLabel(now - g.since)}`}</span>
                   </span>

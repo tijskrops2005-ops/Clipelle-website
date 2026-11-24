@@ -19,60 +19,55 @@ import { cn } from "@/lib/utils";
 
 /* ---------- hero: fanned row of tiles ---------- */
 
+// Six tiles as three pairs (24 Nov 2026, Tijs: "iets mooier neerzetten"): each original next to its
+// translation, the pairs mirrored around the middle, the middle pair biggest. Phones show the middle
+// pair, tablets the middle four, laptops all six. The gap between pairs is a little wider.
 const SLOTS = [
-  { r: -9, y: 56, width: "w-[136px]", show: "hidden xl:block" },
-  // Five tiles from lg (24 Nov 2026: at 768 px the five did not fit and the page scrolled sideways), seven from xl.
-  { r: -6, y: 34, width: "w-[150px]", show: "hidden lg:block" },
-  { r: -3, y: 14, width: "w-[104px] sm:w-[160px] md:w-[170px]", show: "" },
-  { r: 0, y: 0, width: "w-[132px] sm:w-[190px] md:w-[200px]", show: "" },
-  { r: 3, y: 14, width: "w-[104px] sm:w-[160px] md:w-[170px]", show: "" },
-  { r: 6, y: 34, width: "w-[150px]", show: "hidden lg:block" },
-  { r: 9, y: 56, width: "w-[136px]", show: "hidden xl:block" },
+  { r: -8, y: 48, width: "w-[140px] xl:w-[150px]", show: "hidden lg:block" },
+  { r: -5, y: 22, width: "w-[140px] lg:w-[160px]", show: "hidden md:block" },
+  { r: -1.5, y: 4, width: "w-[150px] sm:w-[180px] md:w-[170px] lg:w-[190px]", show: "md:ml-4" },
+  { r: 1.5, y: 4, width: "w-[150px] sm:w-[180px] md:w-[170px] lg:w-[190px]", show: "" },
+  { r: 5, y: 22, width: "w-[140px] lg:w-[160px]", show: "hidden md:block md:ml-4" },
+  { r: 8, y: 48, width: "w-[140px] xl:w-[150px]", show: "hidden lg:block" },
 ] as const;
 
 /** One real video in the hero frame, with a short label that fits the narrow tiles on a phone. */
-function VideoTile({ src, poster, alt, label, original }: { src: string; poster?: string; alt: string; label: string; original?: boolean }) {
+function VideoTile({ src, poster, alt, label, original, pair, pace }: { src: string; poster?: string; alt: string; label: string; original?: boolean; /** Hero only: the pair this tile belongs to; without it the tile plays on its own. */ pair?: string; pace?: number }) {
   return (
     <div className="relative aspect-[9/16] overflow-hidden rounded-[28px] border-[5px] border-ink bg-ink shadow-card-hover">
-      <LazyVideo src={src} poster={poster} label={alt} />
+      {/* All six start at the same moment; within a pair the original follows its translation. */}
+      {pair ? <LazyVideo src={src} poster={poster} label={alt} startTogether="hero" syncGroup={pair} syncRole={original ? "follower" : "leader"} syncRate={original ? pace : undefined} /> : <LazyVideo src={src} poster={poster} label={alt} />}
       <span className={cn("label-mono absolute left-2.5 top-2.5 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px]", original ? "bg-ink/70 text-surface" : "bg-surface/90 text-ink")}>{label}</span>
     </div>
   );
 }
 
 /**
- * The fan under the hero. Since 23 Nov 2026 it shows real videos only (Tijs): each sample's
- * translation and, where we have it, the original it came from, the first pair side by side in the
- * middle. The drawn ad tiles with hook text are gone: they showed text cards the product never puts
- * on screen (AdSketch stays in Sketches.tsx; docs/removed-blocks.md). More samples in
- * src/content/examples.ts fill the outer slots on their own.
+ * The fan under the hero: real videos only, as three pairs (an original and its translation). The
+ * first sample in src/content/examples.ts is the middle pair; samples without an original are not in
+ * the hero (they are on /examples). The drawn ad tiles of October are gone (docs/removed-blocks.md).
  */
 export function HeroShowcase({ sampleLabel, originalLabel, className }: { sampleLabel: string; originalLabel: string; className?: string }) {
   const pairs = examples.filter((e) => e.kind === "translate").flatMap((e) => {
     const pair = resolvedPair(e.id);
-    return pair ? [pair] : [];
+    return pair?.original ? [pair] : [];
   });
   const codesOf = (codes?: string) => (codes ?? "").split("→").map((c) => c.trim());
-  type Tile = { src: string; poster?: string; alt: string; label: string; original?: boolean };
-  const result = (p: (typeof pairs)[number]): Tile => ({ src: p.result, poster: p.resultPoster, alt: `${p.example.title}: ${p.example.note}`, label: [sampleLabel, codesOf(p.example.codes)[1]].filter(Boolean).join(" · ") });
-  const original = (p: (typeof pairs)[number]): Tile | null => (p.original ? { src: p.original, poster: p.originalPoster, alt: `${originalLabel}: ${p.example.title}`, label: [originalLabel, codesOf(p.example.codes)[0]].filter(Boolean).join(" · "), original: true } : null);
-  // In order of importance: the first pair (translation in the middle, its original beside it), then the others.
-  const tiles = [pairs[0] && result(pairs[0]), pairs[0] && original(pairs[0]), pairs[1] && result(pairs[1]), pairs[1] && original(pairs[1]), ...pairs.slice(2).map(result)].filter((t): t is Tile => Boolean(t)).slice(0, SLOTS.length);
-  // Slots from the centre outwards: middle, left of it, right of it, further right, further left, the two edges.
-  const order = [3, 2, 4, 5, 1, 0, 6];
-  const content: (Tile | undefined)[] = new Array(SLOTS.length);
-  tiles.forEach((t, n) => {
-    content[order[n]] = t;
-  });
+  type Tile = { src: string; poster?: string; alt: string; label: string; original?: boolean; pair: string; pace?: number };
+  const result = (p: (typeof pairs)[number]): Tile => ({ src: p.result, poster: p.resultPoster, alt: `${p.example.title}: ${p.example.note}`, label: [sampleLabel, codesOf(p.example.codes)[1]].filter(Boolean).join(" · "), pair: `hero-${p.example.id}` });
+  const original = (p: (typeof pairs)[number]): Tile => ({ src: p.original!, poster: p.originalPoster, alt: `${originalLabel}: ${p.example.title}`, label: [originalLabel, codesOf(p.example.codes)[0]].filter(Boolean).join(" · "), original: true, pair: `hero-${p.example.id}`, pace: p.pace });
+  const [mid, right, left] = pairs;
+  // Translations next to the middle, originals on the outside of the side pairs: [left orig, left result] [mid orig, mid result] [right result, right orig].
+  const content: (Tile | undefined)[] = [left && original(left), left && result(left), mid && original(mid), mid && result(mid), right && result(right), right && original(right)];
   return (
-    <div className={cn("relative pb-14 overflow-x-clip", className)}>
+    <div className={cn("relative overflow-x-clip pb-14", className)}>
       <div className="stage-glow pointer-events-none absolute inset-x-[10%] inset-y-[-10%]" aria-hidden />
       <ul className="fan relative" aria-label="Examples">
         {SLOTS.map((slot, i) => {
           const tile = content[i];
           if (!tile) return null;
           return (
-            <li key={i} className={cn("shrink-0", slot.width, slot.show)} style={{ "--r": `${slot.r}deg`, "--y": `${slot.y}px`, "--rise-delay": `${Math.abs(i - 3) * 90}ms` } as CSSProperties}>
+            <li key={i} className={cn("shrink-0", slot.width, slot.show)} style={{ "--r": `${slot.r}deg`, "--y": `${slot.y}px`, "--rise-delay": `${Math.abs(i - 2.5) * 80}ms` } as CSSProperties}>
               <div><VideoTile {...tile} /></div>
             </li>
           );

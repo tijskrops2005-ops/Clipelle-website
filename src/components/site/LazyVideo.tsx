@@ -76,6 +76,38 @@ function wire(g: Group) {
   };
 }
 
+/**
+ * Start groups (24 Nov 2026, Tijs: the six hero videos start together): a video with `startGroup`
+ * does not start on its own. Once every member that is on screen (not hidden by a breakpoint) can
+ * play, they all start from the first frame at the same moment; each then loops on its own. After
+ * four seconds the ones that are ready start anyway, so a slow file never holds the others back.
+ */
+const startGroups = new Map<string, { members: Set<HTMLVideoElement>; started: boolean; timer: number | null }>();
+function startGroup(id: string) {
+  let g = startGroups.get(id);
+  if (!g) {
+    g = { members: new Set(), started: false, timer: null };
+    startGroups.set(id, g);
+  }
+  return g;
+}
+function tryStart(id: string, force = false) {
+  const g = startGroups.get(id);
+  if (!g || g.started) return;
+  const shown = [...g.members].filter((v) => v.getClientRects().length > 0);
+  if (shown.length === 0) return;
+  const ready = shown.filter((v) => v.readyState >= 3);
+  if (!force && ready.length < shown.length) return;
+  g.started = true;
+  if (g.timer) window.clearTimeout(g.timer);
+  for (const v of force ? ready : shown) {
+    v.currentTime = 0;
+    void v.play().catch(() => {});
+  }
+  // A late one joins at its own first frame when it is ready.
+  if (force) for (const v of shown.filter((x) => !ready.includes(x))) v.addEventListener("canplay", () => void v.play().catch(() => {}), { once: true });
+}
+
 /** Restarts a whole group from the first frame (used when the sound is switched on). */
 export function restartSyncGroup(id: string) {
   const g = groups.get(id);
@@ -85,7 +117,7 @@ export function restartSyncGroup(id: string) {
   void g.leader.play().catch(() => {});
 }
 
-export function LazyVideo({ src, poster, label, className, sound = false, syncGroup, syncRole = "leader", syncRate }: { src: string; poster?: string; label: string; className?: string; sound?: boolean; syncGroup?: string; syncRole?: SyncRole; /** Follower only: seconds of this video per second of the leader (measured); default = ratio of the lengths. */ syncRate?: number }) {
+export function LazyVideo({ src, poster, label, className, sound = false, syncGroup, syncRole = "leader", syncRate, startTogether }: { src: string; poster?: string; label: string; className?: string; sound?: boolean; syncGroup?: string; syncRole?: SyncRole; /** Follower only: seconds of this video per second of the leader (measured); default = ratio of the lengths. */ syncRate?: number; /** Start with every other video of this id at the same moment (see `tryStart`). */ startTogether?: string }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [load, setLoad] = useState(false);
 
@@ -126,11 +158,21 @@ export function LazyVideo({ src, poster, label, className, sound = false, syncGr
   useEffect(() => {
     const el = ref.current;
     if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const g = startTogether ? startGroup(startTogether) : null;
+    const onReady = () => startTogether && tryStart(startTogether);
+    if (g) {
+      g.members.add(el);
+      el.addEventListener("canplay", onReady);
+    }
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setLoad(true);
-          el.play().catch(() => {});
+          if (!g || g.started) el.play().catch(() => {});
+          else {
+            onReady();
+            if (!g.timer) g.timer = window.setTimeout(() => startTogether && tryStart(startTogether, true), 4000);
+          }
         } else {
           el.pause();
         }
@@ -138,8 +180,14 @@ export function LazyVideo({ src, poster, label, className, sound = false, syncGr
       { rootMargin: "200px 0px" },
     );
     io.observe(el);
-    return () => io.disconnect();
-  }, []);
+    return () => {
+      io.disconnect();
+      if (g) {
+        g.members.delete(el);
+        el.removeEventListener("canplay", onReady);
+      }
+    };
+  }, [startTogether]);
 
   // A follower never loops on its own: it waits for the leader's restart, so a shorter or longer original stays in step.
   const follower = Boolean(syncGroup) && syncRole === "follower";
@@ -151,8 +199,8 @@ export function LazyVideo({ src, poster, label, className, sound = false, syncGr
       muted
       loop={!follower}
       playsInline
-      autoPlay={load || sound}
-      preload="none"
+      autoPlay={startTogether ? false : load || sound}
+      preload={startTogether && load ? "auto" : "none"}
       aria-label={label}
       className={cn("size-full object-cover", className)}
     />

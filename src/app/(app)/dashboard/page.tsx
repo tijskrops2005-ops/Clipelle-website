@@ -8,9 +8,12 @@ import { DEMO_BALANCE } from "@/lib/mock/account";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { HowItWorks } from "@/components/dashboard/HowItWorks";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
-import { RecentProjects } from "@/components/dashboard/RecentProjects";
+import { RecentList } from "@/components/dashboard/RecentList";
+import { WhatsNew } from "@/components/dashboard/WhatsNew";
 import { NowCreating } from "@/components/dashboard/NowCreating";
-import { Overview } from "@/components/dashboard/Overview";
+import { DashboardStats } from "@/components/dashboard/DashboardStats";
+import { Button } from "@/components/ui/Button";
+import { Plus } from "lucide-react";
 import { FormatPicks } from "@/components/dashboard/FormatPicks";
 import { WhenNoProjects } from "@/components/dashboard/WhenNoProjects";
 
@@ -22,10 +25,10 @@ function dayNumber() {
 }
 
 /**
- * The dashboard with one job (31 Oct 2026): what is being made now, your recent videos, and the way
- * to start the next one. One line for credits and plan, the explainer only
- * before the first project. The activity feed and the tip of the day are off the dashboard (code kept,
- * docs/removed-blocks.md). One staggered load, then still.
+ * The dashboard (24 Nov 2026): four numbers from your own projects and the ledger, the getting-started
+ * list until it is done, recent videos as a list, what is running and the newest update beside it, and
+ * the explainer only before the first project. Older pieces stay in src/components/dashboard/
+ * (Overview, RecentProjects, PlanCard, QuickActions; docs/removed-blocks.md).
  */
 export default async function DashboardPage() {
   await connection(); // personal and dated: request-time
@@ -35,22 +38,35 @@ export default async function DashboardPage() {
   const plan = planByKey(scope?.planKey) ?? planByKey("free") ?? null;
   const day = dayNumber();
 
+  const name = first ? first.charAt(0).toUpperCase() + first.slice(1) : null;
+
   return (
-    <div className="space-y-8 lg:space-y-10">
-      {/* Title only (23 Nov 2026, docs/design-clarity.md): the sidebar and the phone bar carry "Create new video". */}
-      <PageHeader title={first ? `Welcome back, ${first}` : "Welcome back"} />
+    <div className="space-y-6 lg:space-y-8">
+      {/* 24 Nov 2026 (Tijs, after splister.com/app): four numbers, then recent videos as a list with what is
+          running and what is new beside it. The sidebar keeps the accent "Create new video"; the header
+          button is the quiet black one. */}
+      <PageHeader
+        title={name ? `Welcome back, ${name}` : "Welcome back"}
+        actions={
+          <Button href="/new" variant="primary">
+            <Plus className="size-4" aria-hidden />
+            New video
+          </Button>
+        }
+      />
 
-      <Overview credits={credits} plan={plan} demo={config.demoMode} />
-
-      <NowCreating />
+      <DashboardStats credits={credits} plan={plan} demo={config.demoMode} />
 
       <OnboardingChecklist planKey={scope?.planKey} />
 
-      {/* The dark plan card is off the dashboard (23 Nov 2026, docs/removed-blocks.md): the sidebar chip and the link next to the balance are the two ways to a plan. */}
-      {/* The quick-action pills repeated the sidebar and are off the page (23 Nov 2026, docs/removed-blocks.md). */}
-      <div className="min-w-0 space-y-6">
-        {config.features.ads && <FormatPicks day={day} />}
-        <RecentProjects />
+      {config.features.ads && <FormatPicks day={day} />}
+
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <RecentList />
+        <div className="space-y-6">
+          <NowCreating showEmpty />
+          <WhatsNew />
+        </div>
       </div>
 
       <WhenNoProjects>
