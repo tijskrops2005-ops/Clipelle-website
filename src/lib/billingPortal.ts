@@ -14,7 +14,7 @@ export function portalConfigurationParams(kind: PortalKind, products: PortalProd
   return {
     name: kind === "team" ? `${brand.name} team plans` : `${brand.name} plans`,
     metadata: { clipelle_portal: kind },
-    default_return_url: `${site}/settings/billing`,
+    default_return_url: `${site}/app/settings/billing`,
     business_profile: {
       headline: `Manage your ${brand.name} plan`,
       privacy_policy_url: `${site}/legal/privacy`,

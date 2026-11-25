@@ -18,7 +18,7 @@ export function MfaChallenge({ next: nextProp, compact = false }: { next?: strin
   const router = useRouter();
   const params = useSearchParams();
   const wanted = nextProp ?? params.get("next");
-  const next = wanted && wanted.startsWith("/") && !wanted.startsWith("//") ? wanted : "/dashboard";
+  const next = wanted && wanted.startsWith("/") && !wanted.startsWith("//") ? wanted : "/app";
   const [factorId, setFactorId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [recovery, setRecovery] = useState("");
@@ -71,7 +71,7 @@ export function MfaChallenge({ next: nextProp, compact = false }: { next?: strin
       const body = (await r.json().catch(() => ({}))) as { error?: string };
       if (!r.ok) throw new Error(body.error ?? "That recovery code is not right.");
       await supabaseAuthBrowser().auth.refreshSession();
-      router.push("/settings");
+      router.push("/app/settings");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

@@ -96,14 +96,14 @@ export function nextToolsFor(media: "video" | "image", from: string, exclude?: s
   const all =
     media === "video"
       ? [
-          { key: "enhance-video", label: "Enhance", href: `/enhance?type=video&from=${f}` },
-          { key: "resize", label: "Resize to 9:16", href: `/tools/resize?from=${f}` },
-          { key: "captions", label: "Add captions", href: `/tools/captions?from=${f}` },
-          { key: "remove-text", label: "Remove on-screen text", href: `/tools/remove-text?from=${f}` },
+          { key: "enhance-video", label: "Enhance", href: `/app/enhance?type=video&from=${f}` },
+          { key: "resize", label: "Resize to 9:16", href: `/app/tools/resize?from=${f}` },
+          { key: "captions", label: "Add captions", href: `/app/tools/captions?from=${f}` },
+          { key: "remove-text", label: "Remove on-screen text", href: `/app/tools/remove-text?from=${f}` },
         ]
       : [
-          { key: "enhance-image", label: "Enhance", href: `/enhance?type=image&from=${f}` },
-          { key: "remove-background", label: "Remove background", href: `/tools/remove-background?from=${f}` },
+          { key: "enhance-image", label: "Enhance", href: `/app/enhance?type=image&from=${f}` },
+          { key: "remove-background", label: "Remove background", href: `/app/tools/remove-background?from=${f}` },
         ];
   return all.filter((t) => t.key !== exclude);
 }

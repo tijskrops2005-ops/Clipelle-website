@@ -40,7 +40,7 @@ type Workflow = {
 const translateWorkflows: Workflow[] = [
   {
     kind: "translate",
-    href: "/new/translate",
+    href: "/app/new/translate",
     title: "Translate a video",
     text: "Own voice, lip sync and captions. Several languages at once.",
     price: `from ${FROM_TRANSLATE} credits per language`,
@@ -48,7 +48,7 @@ const translateWorkflows: Workflow[] = [
   },
   {
     kind: "translate",
-    href: "/new/translate?speaker=presenter",
+    href: "/app/new/translate?speaker=presenter",
     title: "Translate with a presenter",
     text: "An AI presenter you pick speaks the translation.",
     price: `from ${FROM_PRESENTER} credits`,
@@ -59,7 +59,7 @@ const translateWorkflows: Workflow[] = [
 const adWorkflows: Workflow[] = [
   {
     kind: "ad",
-    href: "/new/ad",
+    href: "/app/new/ad",
     title: "Ad from a product photo",
     text: "A photo and a few sentences become a 9:16 ad.",
     price: `from ${FROM_AD} credits`,
@@ -67,7 +67,7 @@ const adWorkflows: Workflow[] = [
   },
   {
     kind: "ad",
-    href: "/new/url",
+    href: "/app/new/url",
     title: "Ad from a product link",
     text: "A product page fills the ad form for you.",
     price: `from ${FROM_AD} credits`,

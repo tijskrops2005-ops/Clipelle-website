@@ -33,17 +33,17 @@ export function DashboardStats() {
   // about your videos share one card with dividers instead of three tall cards.
   return (
     <section aria-label="Your numbers" className="grid grid-cols-1 divide-y divide-divider rounded-card bg-surface shadow-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-      <Stat icon={Film} label="Finished videos" value={ready ? finished.length : "—"} sub={finishedThisMonth === null || !ready ? " " : `${finishedThisMonth} this month`} />
-      <Stat icon={Languages} label="Language versions" value={ready ? versions.length : "—"} sub={!ready ? " " : languages === 0 ? "None yet" : `In ${languages} ${languages === 1 ? "language" : "languages"}`} />
-      <Stat icon={Clock3} label="Average time to ready" value={!ready || avg === null ? "—" : `${avg} min`} sub={!ready ? " " : durations.length === 0 ? "After your first video" : `Over ${durations.length} ${durations.length === 1 ? "video" : "videos"}`} />
+      <Stat icon={Film} tone="bg-tone-create-soft text-tone-create" label="Finished videos" value={ready ? finished.length : "—"} sub={finishedThisMonth === null || !ready ? " " : `${finishedThisMonth} this month`} />
+      <Stat icon={Languages} tone="bg-tone-translate-soft text-tone-translate" label="Language versions" value={ready ? versions.length : "—"} sub={!ready ? " " : languages === 0 ? "None yet" : `In ${languages} ${languages === 1 ? "language" : "languages"}`} />
+      <Stat icon={Clock3} tone="bg-tone-enhance-soft text-tone-enhance" label="Average time to ready" value={!ready || avg === null ? "—" : `${avg} min`} sub={!ready ? " " : durations.length === 0 ? "After your first video" : `Over ${durations.length} ${durations.length === 1 ? "video" : "videos"}`} />
     </section>
   );
 }
 
-function Stat({ icon: Icon, label, value, sub }: { icon: LucideIcon; label: string; value: React.ReactNode; sub: React.ReactNode }) {
+function Stat({ icon: Icon, label, value, sub, tone = "bg-surface-muted text-ink" }: { icon: LucideIcon; label: string; value: React.ReactNode; sub: React.ReactNode; /** The icon square in a category colour (25 Nov 2026: more colour in the app). */ tone?: string }) {
   return (
     <div className="flex items-center gap-4 px-5 py-4 sm:px-6 sm:py-5">
-      <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-surface-muted text-ink" aria-hidden><Icon className="size-[18px]" /></span>
+      <span className={`grid size-10 shrink-0 place-items-center rounded-[12px] ${tone}`} aria-hidden><Icon className="size-[18px]" /></span>
       <div className="min-w-0">
         <p className="text-[13px] text-muted">{label}</p>
         <p className="mt-0.5 flex items-baseline gap-2">

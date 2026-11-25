@@ -48,7 +48,7 @@ export const en = {
       "/platform/ads": { title: "Ads from a photo", text: "One product photo becomes a finished 9:16 ad with a presenter and captions." },
       "/platform/url-to-video": { title: "Ads from a link", text: "Paste a product link; name, description and photos are filled in for you." },
       "/platform/translate": { title: "Translate and lip sync", text: "A video you own, in other languages, with the speaker's own voice and matching lips." },
-      "/new": { title: "Dashboard", text: "Where your videos are made and kept." },
+      "/app/new": { title: "Dashboard", text: "Where your videos are made and kept." },
       "/integrations/api": { title: "Developer API", text: "Translate videos from your own code with an API key." },
       "/integrations/mcp": { title: "MCP server", text: "Let your AI assistant translate videos for you." },
       "/integrations/slack": { title: "Slack bot", text: "Start a video from a Slack message. Not built yet." },

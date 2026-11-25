@@ -19,11 +19,11 @@ export async function HeaderAccount({ locale = "en" }: { locale?: Locale }) {
   const label = user.name?.split(" ")[0] || user.email.split("@")[0];
   return (
     <>
-      <Link href="/settings" aria-label={t.common.accountSettings} className="focus-ring hidden items-center gap-2 rounded-full px-2 py-1.5 text-sm font-medium text-ink transition-colors duration-150 hover:bg-ink/5 sm:inline-flex">
+      <Link href="/app/settings" aria-label={t.common.accountSettings} className="focus-ring hidden items-center gap-2 rounded-full px-2 py-1.5 text-sm font-medium text-ink transition-colors duration-150 hover:bg-ink/5 sm:inline-flex">
         <span className="grid size-7 place-items-center rounded-full bg-ink text-xs font-semibold text-surface" aria-hidden>{label.charAt(0).toUpperCase()}</span>
         <span className="max-w-32 truncate">{label}</span>
       </Link>
-      <Button href="/dashboard" variant="accent" size="md">
+      <Button href="/app" variant="accent" size="md">
         Dashboard
       </Button>
     </>

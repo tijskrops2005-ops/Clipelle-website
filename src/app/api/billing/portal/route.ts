@@ -48,9 +48,9 @@ export async function POST(request: Request) {
       const item = subscription.items.data[0];
       if (!item) return Response.json({ error: "Your subscription could not be read. Open the portal from Billing." }, { status: 409 });
       if (item.price.id === price.id) return Response.json({ error: "You are already on this plan." }, { status: 409 });
-      flow_data = planChangeFlow({ subscriptionId: subscription.id, itemId: item.id, priceId: price.id, returnUrl: `${origin}/settings/billing?checkout=changed` });
+      flow_data = planChangeFlow({ subscriptionId: subscription.id, itemId: item.id, priceId: price.id, returnUrl: `${origin}/app/settings/billing?checkout=changed` });
     }
-    const session = await stripe().billingPortal.sessions.create({ customer: profile.stripeCustomerId, return_url: `${origin}/settings/billing`, ...(configuration ? { configuration } : {}), ...(flow_data ? { flow_data } : {}) });
+    const session = await stripe().billingPortal.sessions.create({ customer: profile.stripeCustomerId, return_url: `${origin}/app/settings/billing`, ...(configuration ? { configuration } : {}), ...(flow_data ? { flow_data } : {}) });
     return Response.json({ url: session.url });
   } catch (error) {
     return dataErrorResponse(error);

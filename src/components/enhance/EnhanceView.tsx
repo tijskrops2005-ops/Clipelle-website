@@ -63,7 +63,7 @@ export function EnhanceView() {
     try {
       await startEnhance({ kind, target: kind === "video" ? videoTarget : imageTarget, file: picked?.file, source: fromSource ?? undefined, seconds: current.seconds, width: current.width, height: current.height }, setProgress);
       setPicked(null);
-      if (fromSource) router.replace(`/enhance?type=${kind}`, { scroll: false });
+      if (fromSource) router.replace(`/app/enhance?type=${kind}`, { scroll: false });
       setRights(false);
       setConfirming(false);
     } catch (e) {
@@ -84,7 +84,7 @@ export function EnhanceView() {
               type="button"
               role="tab"
               aria-selected={kind === k}
-              onClick={() => router.replace(`/enhance?type=${k}`, { scroll: false })}
+              onClick={() => router.replace(`/app/enhance?type=${k}`, { scroll: false })}
               className={cn("focus-ring flex h-9 flex-1 items-center justify-center gap-2 rounded-full text-[14px] font-medium transition-colors duration-150", kind === k ? "bg-surface text-ink shadow-soft" : "text-muted hover:text-ink")}
             >
               {k === "video" ? <Wand2 className="size-4" aria-hidden /> : <Sparkles className="size-4" aria-hidden />}
@@ -94,7 +94,7 @@ export function EnhanceView() {
         </div>
 
         {fromSource ? (
-          <SourceCard source={fromSource} onClear={() => router.replace(`/enhance?type=${kind}`, { scroll: false })} disabled={busy} />
+          <SourceCard source={fromSource} onClear={() => router.replace(`/app/enhance?type=${kind}`, { scroll: false })} disabled={busy} />
         ) : (
           <FilePicker kind={kind} picked={picked} onPick={(p) => { setPicked(p ? { ...p, kind } : null); setConfirming(false); setError(null); }} onReject={setError} disabled={busy} />
         )}

@@ -59,10 +59,10 @@ export function SupportMenu({ variant = "pill", onNavigate }: { variant?: "pill"
         className={
           variant === "pill"
             ? "focus-ring inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 text-[13px] font-medium text-ink shadow-soft transition-colors duration-150 hover:bg-surface-muted"
-            : "focus-ring group flex h-10 w-full items-center gap-3 rounded-control px-3 text-sm font-medium text-muted transition-[background-color,color] duration-150 hover:bg-ink/5 hover:text-ink"
+            : "focus-ring group flex h-10 w-full items-center gap-3 rounded-[12px] px-3 text-[14px] text-white/65 transition-[background-color,color] duration-150 hover:bg-white/[0.06] hover:text-white"
         }
       >
-        <LifeBuoy className={variant === "pill" ? "size-4" : "size-[18px] text-muted group-hover:text-ink"} aria-hidden />
+        <LifeBuoy className={variant === "pill" ? "size-4" : "size-[18px] text-white/55 group-hover:text-white"} aria-hidden />
         Support
       </button>
       {open && (

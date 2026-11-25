@@ -34,7 +34,7 @@ export function siteUrl(request: Request) {
 }
 
 export function safeNext(value: unknown) {
-  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : "/app";
 }
 
 /** Plain-language auth errors; never the raw provider message for credential errors. */

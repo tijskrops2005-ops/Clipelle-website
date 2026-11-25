@@ -18,17 +18,17 @@ export function WelcomeBand({ name, credits, plan, demo }: { name: string | null
           <p className="mt-2 text-[15px] leading-relaxed text-white/70">Create, translate, edit and enhance your videos and images.</p>
           <div className="mt-5 flex flex-wrap gap-2.5">
             {/* White on ink: the sidebar keeps the one red "Create new video" (one accent per page). */}
-            <Link href="/new" className="focus-ring inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-[14px] font-semibold text-ink transition-colors duration-150 hover:bg-champagne">
+            <Link href="/app/new" className="focus-ring inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-[14px] font-semibold text-ink transition-colors duration-150 hover:bg-champagne">
               <Plus className="size-4" aria-hidden />
               Create new video
             </Link>
-            <Link href="/tools" className="focus-ring inline-flex h-11 items-center gap-2 rounded-full border border-white/20 px-5 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-white/10">
+            <Link href="/app/tools" className="focus-ring inline-flex h-11 items-center gap-2 rounded-full border border-white/20 px-5 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-white/10">
               <LayoutGrid className="size-4" aria-hidden />
               All tools
             </Link>
           </div>
         </div>
-        <Link href="/settings/billing" className="focus-ring group flex items-center justify-between gap-4 rounded-panel border border-white/10 bg-white/[0.06] px-4 py-3 transition-colors duration-150 hover:bg-white/10 md:block md:min-w-[220px] md:px-5 md:py-4">
+        <Link href="/app/settings/billing" className="focus-ring group flex items-center justify-between gap-4 rounded-panel border border-white/10 bg-white/[0.06] px-4 py-3 transition-colors duration-150 hover:bg-white/10 md:block md:min-w-[220px] md:px-5 md:py-4">
           <span>
             <span className="block text-[12.5px] text-champagne/75">{plan ? planLabel(plan) : "Free"} plan{demo ? " · demo" : ""}</span>
             <span className="mt-1 flex items-baseline gap-2 md:block">

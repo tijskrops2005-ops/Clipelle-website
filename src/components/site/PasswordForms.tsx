@@ -60,7 +60,7 @@ export function ResetPasswordForm() {
     setError(null);
     try {
       await post("/api/auth/password", { password });
-      router.push("/dashboard");
+      router.push("/app");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

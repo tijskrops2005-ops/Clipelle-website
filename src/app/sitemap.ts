@@ -10,7 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
   const fixed = ["/", "/docs/api", "/docs/mcp", "/integrations/mcp", "/pricing", "/examples", "/about", "/demo", "/contact", "/blog", "/resources", "/resources/guides", "/resources/faq", "/resources/changelog", "/partners", "/trust", "/press", "/docs/api", "/docs/mcp", "/legal/terms", "/legal/privacy", "/legal/cookies", "/legal/affiliate-terms", "/legal/data", "/services/done-for-you"];
   // Announced ("soon") pages stay out of the sitemap until they are real.
-  const menuPages = menus.flatMap((m) => m.columns.flatMap((c) => c.items.filter((i) => !i.soon).map((i) => i.href))).filter((h) => h.startsWith("/") && !h.startsWith("/new"));
+  const menuPages = menus.flatMap((m) => m.columns.flatMap((c) => c.items.filter((i) => !i.soon).map((i) => i.href))).filter((h) => h.startsWith("/") && !h.startsWith("/app/new"));
   const pages = Array.from(new Set([...fixed, ...menuPages]));
   // English only since 25 Nov 2026: one entry per page, no hreflang alternates.
   const localized = pages.map((p) => ({

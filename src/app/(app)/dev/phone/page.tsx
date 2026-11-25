@@ -21,6 +21,6 @@ export default function PhonePreviewPage({ searchParams }: { searchParams: Promi
 
 async function Frame({ searchParams }: { searchParams: Promise<{ path?: string }> }) {
   const { path } = await searchParams;
-  const safePath = path && path.startsWith("/") && !path.startsWith("//") ? path : "/dashboard";
+  const safePath = path && path.startsWith("/") && !path.startsWith("//") ? path : "/app";
   return <iframe src={safePath} title={`Phone preview of ${safePath}`} width={390} height={844} className="rounded-[32px] border-8 border-ink bg-surface shadow-card-hover" />;
 }

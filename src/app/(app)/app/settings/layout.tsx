@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SettingsNav } from "@/components/settings/SettingsNav";
 
-export default function SettingsLayout({ children }: LayoutProps<"/settings">) {
+export default function SettingsLayout({ children }: LayoutProps<"/app/settings">) {
   return (
     <div className="space-y-8">
       <PageHeader title="Settings" />

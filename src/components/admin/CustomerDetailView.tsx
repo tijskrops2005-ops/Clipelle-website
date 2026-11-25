@@ -105,7 +105,7 @@ export function CustomerDetailView({ detail, ledger: firstLedger, caps, demo }: 
               {detail.projects.map((p) => (
                 <Tr key={p.id}>
                   <Td muted className="whitespace-nowrap">{day(p.createdAt)}</Td>
-                  <Td><Link href={`/projects/${p.id}`} className="focus-ring rounded-control underline decoration-border underline-offset-4 hover:decoration-ink">{p.name}</Link></Td>
+                  <Td><Link href={`/app/projects/${p.id}`} className="focus-ring rounded-control underline decoration-border underline-offset-4 hover:decoration-ink">{p.name}</Link></Td>
                   <Td>{p.batchId ? "batch" : p.workflow === "ad" ? "ad" : "translation"}</Td>
                   <Td><StatusBadge status={p.status as "draft" | "processing" | "review" | "completed" | "failed"} /></Td>
                   <Td right>{p.credits.toLocaleString("en-US")}</Td>
@@ -131,7 +131,7 @@ function ViewAsPanel({ customerId, name, demo }: { customerId: string; name: str
     setError(null);
     try {
       await call(`/api/admin/customers/${customerId}/view`, { method: "POST" });
-      router.push("/dashboard");
+      router.push("/app");
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not start.");

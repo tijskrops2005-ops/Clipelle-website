@@ -49,7 +49,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
   const draftScope = user && scope ? { userId: user.id, workspaceId: scope.workspaceId } : null;
   return (
     <DraftScopeProvider scope={draftScope}>
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-surface">
       <DemoRunner />
       <StatusWatcher />
       <PauseOffscreen />
@@ -57,7 +57,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
       <AssistantPanel />
       {/* The sidebar stays in view while the page scrolls; its middle scrolls on its own when the list is long. */}
       <div className="sticky top-0 hidden h-screen lg:block">
-        <Suspense fallback={<div className="w-66" aria-hidden />}>
+        <Suspense fallback={<div className="h-full w-64 bg-ink" aria-hidden />}>
           <Sidebar user={who} />
         </Suspense>
       </div>
@@ -73,10 +73,10 @@ export async function AppShell({ children }: { children: ReactNode }) {
         {/* desktop: section, credits, tool search, support and updates */}
         <div className="hidden lg:block">
           <Suspense fallback={<div className="h-14" aria-hidden />}>
-            <TopBar credits={credits !== null ? { balance: credits, approx: creditsWorth(credits, config.features.ads) } : null} />
+            <TopBar credits={credits !== null ? { balance: credits, approx: creditsWorth(credits, config.features.ads) } : null} user={who ? { email: who.email, name: who.name, credits: who.credits } : null} />
           </Suspense>
         </div>
-        <div className="mx-auto w-full max-w-[1180px] px-4 pb-16 pt-5 sm:px-6 md:px-8 lg:px-10 lg:pb-20 lg:pt-10">
+        <div className="mx-auto w-full max-w-[1200px] px-4 pb-16 pt-5 sm:px-6 md:px-8 lg:px-10 lg:pb-20 lg:pt-9">
           {children}
         </div>
         <AppFooter />

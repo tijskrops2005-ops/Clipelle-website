@@ -11,7 +11,7 @@ import { DemoModeBadge } from "@/components/DemoModeBadge";
  * Signed-in user in the app shell (2 Nov 2026): the profile itself (initial, name, credits) is a link
  * to the dashboard; the small arrow next to it opens the menu with Credits, Settings and Sign out.
  */
-export function UserMenu({ email, name, credits, compact }: { email: string; name?: string; credits?: number | null; compact?: boolean }) {
+export function UserMenu({ email, name, credits, compact, variant }: { email: string; name?: string; credits?: number | null; compact?: boolean; /** "pill": the account button in the top bar (25 Nov 2026, after splister.com/app). */ variant?: "pill" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const id = useId();
@@ -31,9 +31,19 @@ export function UserMenu({ email, name, credits, compact }: { email: string; nam
     };
   }, [open]);
   const initial = (name || email).charAt(0).toUpperCase();
+  const initials = ((name || email).split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((w) => w.charAt(0)).join("") || initial).toUpperCase();
+  const pill = variant === "pill";
   return (
-    <div ref={ref} className={cn("relative flex items-center gap-1", compact && "w-auto")}>
-      <Link href="/dashboard" className={cn("focus-ring flex min-w-0 flex-1 items-center gap-3 rounded-control px-2 py-2 text-left transition-colors duration-150 hover:bg-ink/5", compact && "flex-none px-1")} title="Dashboard">
+    <div ref={ref} className={cn("relative flex items-center gap-1", (compact || pill) && "w-auto")}>
+      {pill ? (
+        <button type="button" aria-expanded={open} aria-controls={id} aria-label="Account menu" onClick={() => setOpen((o) => !o)} className="focus-ring flex h-10 items-center gap-2 rounded-full border border-border bg-surface pl-1 pr-3 text-[13.5px] font-medium text-ink transition-colors duration-150 hover:bg-surface-muted">
+          <span className="grid size-8 place-items-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent" aria-hidden>{initials}</span>
+          <span className="max-w-[140px] truncate">{name || email}</span>
+          <ChevronDown className={cn("size-4 text-muted transition-transform duration-200", open && "rotate-180")} aria-hidden />
+        </button>
+      ) : (
+      <>
+      <Link href="/app" className={cn("focus-ring flex min-w-0 flex-1 items-center gap-3 rounded-control px-2 py-2 text-left transition-colors duration-150 hover:bg-ink/5", compact && "flex-none px-1")} title="Dashboard">
         <span className="grid size-9 shrink-0 place-items-center rounded-full bg-ink text-sm font-semibold text-surface" aria-hidden>{initial}</span>
         {!compact && (
           <span className="min-w-0 flex-1">
@@ -46,14 +56,16 @@ export function UserMenu({ email, name, credits, compact }: { email: string; nam
       <button type="button" aria-expanded={open} aria-controls={id} aria-label="Account menu" onClick={() => setOpen((o) => !o)} className="focus-ring grid size-8 shrink-0 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-ink/5 hover:text-ink">
         <ChevronDown className={cn("size-4 transition-transform duration-200", open && "rotate-180")} aria-hidden />
       </button>
-      <div id={id} hidden={!open} className={cn("fold-in absolute z-50 w-60 rounded-card bg-surface p-2 shadow-card-hover", compact ? "right-0 top-[calc(100%+6px)]" : "bottom-[calc(100%+6px)] left-0")}>
+      </>
+      )}
+      <div id={id} hidden={!open} className={cn("fold-in absolute z-50 w-60 rounded-card bg-surface p-2 shadow-card-hover", compact || pill ? "right-0 top-[calc(100%+6px)]" : "bottom-[calc(100%+6px)] left-0")}>
         <p className="truncate px-3 pb-2 pt-1 text-[13px] text-muted">{email}</p>
         {credits !== null && credits !== undefined && (
-          <Link href="/settings/usage" onClick={() => setOpen(false)} className="focus-ring flex items-center justify-between rounded-control px-3 py-2 text-sm text-ink hover:bg-ink/5">
+          <Link href="/app/settings/usage" onClick={() => setOpen(false)} className="focus-ring flex items-center justify-between rounded-control px-3 py-2 text-sm text-ink hover:bg-ink/5">
             Credits <span className="font-medium">{credits.toLocaleString("en-US")}</span>
           </Link>
         )}
-        <Link href="/settings" onClick={() => setOpen(false)} className="focus-ring flex items-center gap-2 rounded-control px-3 py-2 text-sm text-ink hover:bg-ink/5"><Settings className="size-4" aria-hidden /> Settings</Link>
+        <Link href="/app/settings" onClick={() => setOpen(false)} className="focus-ring flex items-center gap-2 rounded-control px-3 py-2 text-sm text-ink hover:bg-ink/5"><Settings className="size-4" aria-hidden /> Settings</Link>
         {config.demoMode ? (
           <p className="flex items-center gap-2 px-3 py-2 text-[13px] text-muted"><UserRound className="size-4" aria-hidden /> Demo user</p>
         ) : (

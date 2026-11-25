@@ -30,7 +30,7 @@ type Tab = "individual" | "business" | "api";
 export function PricingTable({ onChoose, busyKey, compact, locale = "en", currency = currencyFor(locale), trial = true, initialPlan, currentPlan, listPrices, adTable }: { onChoose?: (plan: Plan, interval: Interval) => void; busyKey?: string | null; compact?: boolean; locale?: Locale; currency?: Currency; /** Show the free-trial button and terms (the site always; Billing only while the workspace can still start one). */ trial?: boolean; /** Preselect this plan's level (a `?plan=` link). */ initialPlan?: string | null; /** Billing: the workspace's plan, marked "Current plan". */ currentPlan?: string | null; /** Static pages pass the date-based numbers from the hourly cache (src/lib/pricingCached.ts), so the table renders without reading the clock (31 Oct 2026: reading it inside a static prerender left the Suspense boundary unfinished, React error #419). Without them the live functions are used (Billing is dynamic). */ listPrices?: Record<string, number | null>; adTable?: ReturnType<typeof adCreditTable> }) {
   const t = dict(locale).pricing;
   const m: Money = { currency, locale, listPrices, adTable };
-  const billingHref = (key: string, interval: Interval) => `/signup?next=${encodeURIComponent(`/settings/billing?plan=${key}&interval=${interval}${currency === "eur" ? "&currency=eur" : ""}`)}`;
+  const billingHref = (key: string, interval: Interval) => `/signup?next=${encodeURIComponent(`/app/settings/billing?plan=${key}&interval=${interval}${currency === "eur" ? "&currency=eur" : ""}`)}`;
   const L = (p: string) => localizePath(p, locale);
   const [annual, setAnnual] = useBillingAnnual();
   const interval: Interval = annual ? "annual" : "monthly";
@@ -121,7 +121,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en", curren
             </div>
             <div className="rounded-panel bg-surface-muted p-5">
               <CreditsSlider value={packCredits} onChange={setPackCredits} currency={currency} locale={locale} labels={{ amount: t.packs.amount, credits: t.packs.credits }} />
-              <Button href={`/signup?next=${encodeURIComponent(`/settings/billing?credits=${packCredits}${currency === "eur" ? "&currency=eur" : ""}`)}`} variant="primary" className="mt-5 w-full">{t.packs.cta.replace("{n}", packCredits.toLocaleString(locale === "nl" ? "nl-NL" : "en-US"))}</Button>
+              <Button href={`/signup?next=${encodeURIComponent(`/app/settings/billing?credits=${packCredits}${currency === "eur" ? "&currency=eur" : ""}`)}`} variant="primary" className="mt-5 w-full">{t.packs.cta.replace("{n}", packCredits.toLocaleString(locale === "nl" ? "nl-NL" : "en-US"))}</Button>
             </div>
           </div>
         )}
@@ -141,7 +141,7 @@ export function PricingTable({ onChoose, busyKey, compact, locale = "en", curren
               {onChoose ? (
                 <Button type="button" variant="primary" className="w-full" onClick={() => onChoose(business, interval)} disabled={Boolean(busyKey)}>{ctaFor(business, t.business.choose)}</Button>
               ) : (
-                <Button href={`/signup?next=${encodeURIComponent(`/settings/team`)}`} variant="primary" className="w-full">{t.business.start}</Button>
+                <Button href={`/signup?next=${encodeURIComponent(`/app/settings/team`)}`} variant="primary" className="w-full">{t.business.start}</Button>
               )}
             </div>
           </div>

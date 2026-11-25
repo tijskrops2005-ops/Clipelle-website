@@ -18,17 +18,17 @@ export function WorkspaceSwitcher({ current, workspaces }: { current: Ws; worksp
     try {
       await fetch("/api/workspaces/switch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workspaceId: id }) });
       router.refresh();
-      router.push("/dashboard");
+      router.push("/app");
     } finally {
       setBusy(false);
     }
   }
   const Icon = current.kind === "team" ? Building2 : UserRound;
   return (
-    <label className="flex items-center gap-2 rounded-control bg-surface px-2 py-1.5 shadow-card">
-      <Icon className="size-4 shrink-0 text-muted" aria-hidden />
+    <label className="flex items-center gap-2 rounded-control border border-white/10 bg-white/[0.06] px-2 py-1.5">
+      <Icon className="size-4 shrink-0 text-white/55" aria-hidden />
       <span className="sr-only">Workspace</span>
-      <select value={current.id} onChange={(e) => pick(e.target.value)} disabled={busy} className="focus-ring w-full bg-transparent text-sm font-medium text-ink" aria-label="Workspace">
+      <select value={current.id} onChange={(e) => pick(e.target.value)} disabled={busy} className="focus-ring w-full bg-transparent text-sm font-medium text-white [&>option]:text-ink" aria-label="Workspace">
         {workspaces.map((w) => (
           <option key={w.id} value={w.id}>{w.name}{w.kind === "team" ? " (team)" : ""}</option>
         ))}

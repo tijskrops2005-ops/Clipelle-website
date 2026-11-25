@@ -31,7 +31,7 @@ export default function AppError({
             <RotateCcw className="size-4" aria-hidden />
             Try again
           </Button>
-          <Button href="/dashboard" variant="secondary">
+          <Button href="/app" variant="secondary">
             <ArrowLeft className="size-4" aria-hidden />
             Back to dashboard
           </Button>

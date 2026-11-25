@@ -35,7 +35,7 @@ export function Overview({ credits, plan, demo }: Props) {
       </p>
       <p className="flex items-center justify-between gap-5 text-[13px] text-muted tabular-nums sm:justify-end">
         <span>{ready && thisMonth !== null ? `${thisMonth} ${thisMonth === 1 ? "project" : "projects"} this month` : " "}</span>
-        <Link href="/settings/billing" className="focus-ring shrink-0 rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">
+        <Link href="/app/settings/billing" className="focus-ring shrink-0 rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">
           {paid ? "Buy credits" : "See plans"}
         </Link>
       </p>

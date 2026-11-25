@@ -32,7 +32,7 @@ export function EditPicker() {
         icon={<Scissors className="size-6" aria-hidden />}
         title="Nothing to edit yet"
         description="Finished videos appear here."
-        action={<Button href="/new" variant="primary"><Plus className="size-4" aria-hidden />Create new video</Button>}
+        action={<Button href="/app/new" variant="primary"><Plus className="size-4" aria-hidden />Create new video</Button>}
       />
     );
   }
@@ -41,7 +41,7 @@ export function EditPicker() {
       <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
         {editable.map((project) => (
           <li key={project.id}>
-            <ProjectTile project={project} now={now} href={`/projects/${project.id}/edit`} action="edit" />
+            <ProjectTile project={project} now={now} href={`/app/projects/${project.id}/edit`} action="edit" />
           </li>
         ))}
       </ul>

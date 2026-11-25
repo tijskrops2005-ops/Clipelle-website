@@ -10,7 +10,7 @@ describe("customer portal configuration", () => {
     expect(p.features.payment_method_update.enabled).toBe(true);
     expect(p.features.customer_update.allowed_updates).toEqual(expect.arrayContaining(["address", "tax_id"]));
     expect(p.business_profile.terms_of_service_url).toBe("https://www.clipelle.com/legal/terms");
-    expect(p.default_return_url).toBe("https://www.clipelle.com/settings/billing");
+    expect(p.default_return_url).toBe("https://www.clipelle.com/app/settings/billing");
     expect(p.metadata).toEqual({ clipelle_portal: "individual" });
   });
   it("switches plans without a proration invoice and moves downgrades to the period end", () => {
@@ -24,10 +24,10 @@ describe("customer portal configuration", () => {
 
 describe("plan change through the portal", () => {
   it("opens the confirm screen for the new price and returns to Billing", () => {
-    expect(planChangeFlow({ subscriptionId: "sub_1", itemId: "si_1", priceId: "price_2", returnUrl: "https://x.test/settings/billing?changed=1" })).toEqual({
+    expect(planChangeFlow({ subscriptionId: "sub_1", itemId: "si_1", priceId: "price_2", returnUrl: "https://x.test/app/settings/billing?changed=1" })).toEqual({
       type: "subscription_update_confirm",
       subscription_update_confirm: { subscription: "sub_1", items: [{ id: "si_1", price: "price_2", quantity: 1 }] },
-      after_completion: { type: "redirect", redirect: { return_url: "https://x.test/settings/billing?changed=1" } },
+      after_completion: { type: "redirect", redirect: { return_url: "https://x.test/app/settings/billing?changed=1" } },
     });
   });
 });

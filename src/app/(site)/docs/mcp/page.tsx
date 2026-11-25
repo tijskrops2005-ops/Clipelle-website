@@ -71,7 +71,7 @@ export default function McpDocsPage() {
 
       <section id="configure" className="space-y-4">
         <h2>Configure</h2>
-        <p>Make a key on <Link href={viaLogin("/settings/api")} className="underline">Settings → API keys</Link> (every key starts with <code className="font-mono">rl_</code>), then add the server to your assistant&apos;s MCP configuration. The shape below is what most desktop assistants use; the key stays in the environment, never in a prompt.</p>
+        <p>Make a key on <Link href={viaLogin("/app/settings/api")} className="underline">Settings → API keys</Link> (every key starts with <code className="font-mono">rl_</code>), then add the server to your assistant&apos;s MCP configuration. The shape below is what most desktop assistants use; the key stays in the environment, never in a prompt.</p>
         <CodeBlock code={mcpConfig} lang="json" title="MCP configuration" />
         <p>Set <code className="font-mono">CLIPELLE_API_URL</code> to the address above; without it the server looks for a local development build.</p>
       </section>

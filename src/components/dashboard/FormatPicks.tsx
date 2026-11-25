@@ -15,14 +15,14 @@ export function FormatPicks({ day }: { day: number }) {
     <section className="rise space-y-4" style={{ "--rise-delay": "400ms" } as CSSProperties} aria-labelledby="format-picks">
       <div className="flex items-center justify-between gap-3">
         <h2 id="format-picks" className="text-[16px] font-semibold text-ink">Start an ad from a format</h2>
-        <Link href="/new/ad" className="focus-ring inline-flex items-center gap-1 rounded-control text-[13px] text-muted transition-colors duration-150 hover:text-ink">
+        <Link href="/app/new/ad" className="focus-ring inline-flex items-center gap-1 rounded-control text-[13px] text-muted transition-colors duration-150 hover:text-ink">
           All eight formats <ArrowRight className="size-3.5" aria-hidden />
         </Link>
       </div>
       <ul className="grid gap-4 md:grid-cols-3">
         {picks.map((f) => (
           <li key={f.key}>
-            <Link href={`/new/ad?format=${f.key}`} className="focus-ring group flex h-full flex-col rounded-card bg-surface p-5 shadow-card transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
+            <Link href={`/app/new/ad?format=${f.key}`} className="focus-ring group flex h-full flex-col rounded-card bg-surface p-5 shadow-card transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
               <span className="grid size-11 place-items-center rounded-[12px] bg-surface-muted text-ink/70 transition-colors duration-200 group-hover:text-accent">
                 <FormatIllustration format={f.key} className="h-6 w-8" />
               </span>

@@ -14,15 +14,17 @@ export type NavItem = { href: string; label: string; icon: LucideIcon };
  * "Create new video" is the accent button.
  */
 export const navItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/projects", label: "Projects", icon: FolderOpen },
+  { href: "/app", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/app/projects", label: "Projects", icon: FolderOpen },
   // The edit screen is the "Video editor" tool since 25 Nov 2026 (src/components/tools.ts).
 ];
 
-export const settingsNavItem: NavItem = { href: "/settings", label: "Settings", icon: Settings };
+export const settingsNavItem: NavItem = { href: "/app/settings", label: "Settings", icon: Settings };
 
 export function isActivePath(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
+  // The dashboard is /app itself (25 Nov 2026); every other app page sits under it.
+  if (href === "/app") return pathname === "/app";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

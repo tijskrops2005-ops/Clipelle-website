@@ -21,7 +21,7 @@ export function RecentProjects() {
 
   return (
     <section className="space-y-6">
-      <SectionHeader title="Recent projects" aside={all.length > 0 && <Button href="/projects" variant="ghost" size="sm">View all</Button>} />
+      <SectionHeader title="Recent projects" aside={all.length > 0 && <Button href="/app/projects" variant="ghost" size="sm">View all</Button>} />
 
       {!ready ? (
         <TileGridSkeleton />
@@ -30,7 +30,7 @@ export function RecentProjects() {
           icon={<Video className="size-6" aria-hidden />}
           title="No videos yet"
           action={
-            <Button href="/new" variant="accent" size="lg">
+            <Button href="/app/new" variant="accent" size="lg">
               <Plus className="size-[18px]" aria-hidden />
               Create new video
             </Button>

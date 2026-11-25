@@ -13,14 +13,21 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/mcp", destination: "/docs/mcp", permanent: true },
-      { source: "/settings/connections", destination: "/settings", permanent: false },
+      { source: "/settings/connections", destination: "/app/settings", permanent: false },
       // Brand left the settings on 25 Nov 2026 (Tijs).
-      { source: "/settings/brand", destination: "/settings", permanent: false },
+      { source: "/settings/brand", destination: "/app/settings", permanent: false },
+      { source: "/app/settings/brand", destination: "/app/settings", permanent: false },
+      // The app lives under /app since 25 Nov 2026 (Tijs, after splister.com/app): every old address keeps working.
+      { source: "/dashboard", destination: "/app", permanent: true },
+      ...["projects", "new", "settings", "edit", "tools", "enhance", "batches"].flatMap((p) => [
+        { source: `/${p}`, destination: `/app/${p}`, permanent: true },
+        { source: `/${p}/:path*`, destination: `/app/${p}/:path*`, permanent: true },
+      ]),
       { source: "/solutions", destination: "/solutions/ecommerce-brands", permanent: false },
       { source: "/integrations", destination: "/integrations/api", permanent: false },
       { source: "/company", destination: "/about", permanent: false },
       { source: "/docs", destination: "/docs/api", permanent: false },
-      { source: "/creations", destination: "/new", permanent: false },
+      { source: "/creations", destination: "/app/new", permanent: false },
       // English only since 25 Nov 2026 (Tijs): every Dutch address lands on the same English page.
       { source: "/nl", destination: "/", permanent: true },
       { source: "/nl/:path*", destination: "/:path*", permanent: true },

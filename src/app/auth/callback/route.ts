@@ -18,6 +18,6 @@ export async function GET(request: NextRequest) {
 }
 
 function safeNext(value: string | null) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/dashboard";
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/app";
   return value;
 }

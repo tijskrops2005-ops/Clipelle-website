@@ -19,15 +19,15 @@ export function QuickStart() {
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button href="/new/translate" variant="primary">
+        <Button href="/app/new/translate" variant="primary">
           <Languages className="size-4" aria-hidden />
           Translate a video
         </Button>
-        <Button href="/new/translate?speaker=presenter" variant="secondary">
+        <Button href="/app/new/translate?speaker=presenter" variant="secondary">
           <UserRoundPen className="size-4" aria-hidden />
           With a presenter
         </Button>
-        <Button href="/edit" variant="secondary">
+        <Button href="/app/edit" variant="secondary">
           <Scissors className="size-4" aria-hidden />
           Edit a video
         </Button>

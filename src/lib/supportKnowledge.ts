@@ -46,7 +46,7 @@ Billing, plan changes, invoices and buying extra credits: Settings → Billing.
 Uploads: translation videos up to ${config.limits.translateVideoMaxMb} MB (MP4, MOV or WebM). The customer must confirm they own the video and have the speaker's permission.
 Languages: ${TRANSLATE_LANGUAGES.length} target languages and regional variants.
 Typical time: about ${measured.translationMinutes ?? 7} minutes for a 30-second video into one language; languages run side by side. The project page shows the progress and each language as soon as it is ready; an e-mail follows when notifications are on (Settings → Profile).
-Where things are: Dashboard, Projects (every video, search, archive, download), All tools (/tools), Settings (Profile, Brand, Usage, Billing, API keys, Team).
+Where things are: Dashboard, Projects (every video, search, archive, download), All tools (/app/tools), Settings (Profile, Brand, Usage, Billing, API keys, Team).
 
 # Questions and answers
 ${qa}

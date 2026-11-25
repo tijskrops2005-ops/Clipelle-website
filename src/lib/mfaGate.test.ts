@@ -10,8 +10,8 @@ describe("two-step verification rules", () => {
   });
 
   it("redirects app pages but not the verify page or the API", () => {
-    const prot = ["/dashboard", "/admin", "/settings"];
-    expect(mfaRedirectsPage("/dashboard", prot)).toBe(true);
+    const prot = ["/app", "/admin", "/app/settings"];
+    expect(mfaRedirectsPage("/app", prot)).toBe(true);
     expect(mfaRedirectsPage("/admin/customers", prot)).toBe(true);
     expect(mfaRedirectsPage("/verify-2fa", prot)).toBe(false);
     expect(mfaRedirectsPage("/pricing", prot)).toBe(false);
@@ -25,7 +25,7 @@ describe("two-step verification rules", () => {
     expect(mfaBlocksApi("/api/auth/signout")).toBe(false);
     expect(mfaBlocksApi("/api/health")).toBe(false);
     expect(mfaBlocksApi("/api/webhooks/heygen")).toBe(false);
-    expect(mfaBlocksApi("/dashboard")).toBe(false);
+    expect(mfaBlocksApi("/app")).toBe(false);
   });
 
   it("gates the admin area: 404, demo, setup, verify, ok", () => {

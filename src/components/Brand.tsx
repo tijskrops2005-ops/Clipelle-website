@@ -2,10 +2,10 @@ import Link from "next/link";
 import { LogoLockup } from "@/components/Logo";
 
 /** App sidebar brand: the compact lockup (icon + name) from the brand style guide, linking to the homepage. */
-export function Brand({ onClick }: { onClick?: () => void }) {
+export function Brand({ onClick, tone = "dark" }: { onClick?: () => void; tone?: "dark" | "light" }) {
   return (
     <Link href="/" onClick={onClick} className="focus-ring inline-flex rounded-control">
-      <LogoLockup />
+      <LogoLockup tone={tone} />
     </Link>
   );
 }

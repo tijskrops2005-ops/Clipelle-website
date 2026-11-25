@@ -331,7 +331,7 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
       const { id } = await createTranslateProject(sourceAd ? buildTranslateDraft({ ...formState, sourceAd }) : buildTranslateDraft({ ...formState, video: videoState! }), (f) => setUploadPct(Math.round(f * 100)));
       if (!withPresenter) writeLastChoices({ targets, quality, format, captionPosition, captionStyle, removeMusic, cleanVoice });
       clearScopedDraft(DRAFT_FORM, draftScope);
-      router.push(`/projects/${id}`);
+      router.push(`/app/projects/${id}`);
       onStarted();
     } catch (error) {
       submitLock.current = false;
@@ -658,7 +658,7 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
         )}
         {shortOfCredits && !overBudget && (
           <p role="status" className="rounded-chip bg-danger/10 p-3 text-[13px] font-medium leading-relaxed text-danger">
-            This needs {totalCredits} credits and you have {balance}. <a href="/settings/billing" className="underline underline-offset-2">Add credits</a>, pick fewer languages or use a shorter video.
+            This needs {totalCredits} credits and you have {balance}. <a href="/app/settings/billing" className="underline underline-offset-2">Add credits</a>, pick fewer languages or use a shorter video.
           </p>
         )}
         {fromAd ? (
@@ -724,7 +724,7 @@ function TranslateFormFields({ fromAd, fromTranslation, initialSpeaker = "origin
               {staging ? <Loader2 className="size-5 animate-spin" aria-hidden /> : null}
               {staging ? `Uploading ${stagingPct}%` : `Start translation · ${totalCredits} credits`}
             </Button>
-            <Button href="/new" variant="ghost" className={cn("w-full", submitting && "pointer-events-none opacity-50")} aria-disabled={submitting || undefined}>
+            <Button href="/app/new" variant="ghost" className={cn("w-full", submitting && "pointer-events-none opacity-50")} aria-disabled={submitting || undefined}>
               Back
             </Button>
           </>

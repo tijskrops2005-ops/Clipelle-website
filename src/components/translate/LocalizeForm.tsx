@@ -24,16 +24,16 @@ export function LocalizeForm({ fromId }: { fromId: string }) {
         </div>
       );
     }
-    return <EmptyState icon={<FolderOpen className="size-6" aria-hidden />} title="Video not found" description="The video to translate could not be found. Upload a video instead." action={<Button href="/new/translate" variant="secondary"><ArrowLeft className="size-4" aria-hidden />Translate a video</Button>} />;
+    return <EmptyState icon={<FolderOpen className="size-6" aria-hidden />} title="Video not found" description="The video to translate could not be found. Upload a video instead." action={<Button href="/app/new/translate" variant="secondary"><ArrowLeft className="size-4" aria-hidden />Translate a video</Button>} />;
   }
   if (project.workflow === "translate") {
     if (!project.sourceVideoUrl) {
-      return <EmptyState icon={<FolderOpen className="size-6" aria-hidden />} title="This video is not stored yet" description="Add a language once the upload has finished. You can follow its progress on the project page." action={<Button href={`/projects/${project.id}`} variant="secondary"><ArrowLeft className="size-4" aria-hidden />Open the project</Button>} />;
+      return <EmptyState icon={<FolderOpen className="size-6" aria-hidden />} title="This video is not stored yet" description="Add a language once the upload has finished. You can follow its progress on the project page." action={<Button href={`/app/projects/${project.id}`} variant="secondary"><ArrowLeft className="size-4" aria-hidden />Open the project</Button>} />;
     }
     return <TranslateForm fromTranslation={project} />;
   }
   if (project.status !== "completed" || !project.finalVideoUrl) {
-    return <EmptyState icon={<FolderOpen className="size-6" aria-hidden />} title="This ad is not finished yet" description="Translate it once the video is ready. You can follow its progress on the project page." action={<Button href={`/projects/${project.id}`} variant="secondary"><ArrowLeft className="size-4" aria-hidden />Open the ad</Button>} />;
+    return <EmptyState icon={<FolderOpen className="size-6" aria-hidden />} title="This ad is not finished yet" description="Translate it once the video is ready. You can follow its progress on the project page." action={<Button href={`/app/projects/${project.id}`} variant="secondary"><ArrowLeft className="size-4" aria-hidden />Open the ad</Button>} />;
   }
   return <TranslateForm fromAd={project} />;
 }

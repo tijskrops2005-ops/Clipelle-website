@@ -349,13 +349,13 @@ function ProjectFormFields({ initial, onFresh }: { initial?: ProjectFormInitial;
         const { id } = await createAdBatch(draft, variants);
         images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
         clearScopedDraft(DRAFT_FORM, draftScope);
-        router.push(`/batches/${id}`);
+        router.push(`/app/batches/${id}`);
         return;
       }
       const { id } = await createAdProject(draft);
       images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
       clearScopedDraft(DRAFT_FORM, draftScope);
-      router.push(`/projects/${id}`);
+      router.push(`/app/projects/${id}`);
     } catch (error) {
       submitLock.current = false;
       setSubmitting(false);
@@ -742,7 +742,7 @@ function ProjectFormFields({ initial, onFresh }: { initial?: ProjectFormInitial;
         )}
         {shortOfCredits && !overBudget && (
           <p role="status" className="rounded-chip bg-danger/10 p-3 text-[13px] font-medium leading-relaxed text-danger">
-            This needs {totalCredits} credits and you have {balance}. <a href="/settings/billing" className="underline underline-offset-2">Add credits</a> or choose a shorter video.
+            This needs {totalCredits} credits and you have {balance}. <a href="/app/settings/billing" className="underline underline-offset-2">Add credits</a> or choose a shorter video.
           </p>
         )}
         {confirming ? (
@@ -771,7 +771,7 @@ function ProjectFormFields({ initial, onFresh }: { initial?: ProjectFormInitial;
               {batchOn ? `Generate ${Math.max(variants.length, MIN_BATCH_VARIANTS)} variations · ${totalCredits} credits` : `Generate video · ${credits} credits`}
             </Button>
             <Button
-              href="/dashboard"
+              href="/app"
               variant="ghost"
               className={cn("w-full", submitting && "pointer-events-none opacity-50")}
               aria-disabled={submitting || undefined}

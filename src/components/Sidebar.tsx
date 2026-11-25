@@ -3,14 +3,12 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, Clock, LayoutGrid, Plus, Sparkles } from "lucide-react";
-import { SupportMenu } from "@/components/SupportMenu";
-import { ToolIcon } from "@/components/tools/ToolCard";
+import { ChevronDown, Clock, LayoutGrid, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { planByKey } from "@/lib/plans";
 import { Button } from "@/components/ui/Button";
 import { Brand } from "@/components/Brand";
-import { UserMenu } from "@/components/UserMenu";
+import { SupportMenu } from "@/components/SupportMenu";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { isActivePath, navItems, adminNavItem, settingsNavItem, type NavItem } from "@/components/nav";
 import { SIDEBAR_TOOLS, SOON_TOOLS, STUDIO_TOOLS, activeToolKey, type Tool } from "@/components/tools";
@@ -19,43 +17,44 @@ import { UnseenBadge } from "@/components/StatusWatcher";
 export type ShellUser = { email: string; name?: string; credits: number | null; planKey?: string; workspace: { id: string; name: string; kind: string; role: string }; workspaces: { id: string; name: string; kind: string; role: string }[]; isAdmin?: boolean } | null;
 
 /**
- * Desktop navigation (layout after getvidforge.com's dashboard, our own look): the main sections,
- * "All tools" (opens the tool search), the studio tools, what is coming soon, Settings, and a small
- * plan card above the account. It sits on the page background; only the active item is a white card.
+ * Desktop navigation (25 Nov 2026, Tijs, after splister.com/app): an ink sidebar with the logo and the
+ * plan, the one red "Create new video", then the links in quiet groups split by thin lines (your work,
+ * the tools, the account). The account itself and the credits sit in the top bar.
  */
 export function Sidebar({ user }: { user: ShellUser }) {
+  const plan = planByKey(user?.planKey);
   return (
-    <aside className="flex h-full w-66 shrink-0 flex-col py-6">
-      <div className="px-7">
-        <Brand />
+    <aside className="flex h-full w-64 shrink-0 flex-col bg-ink py-6 text-white">
+      <div className="flex items-center justify-between gap-2 px-6">
+        <Brand tone="light" />
+      </div>
+      <div className="mt-3 px-6">
+        <Link href="/app/settings/billing" className="focus-ring inline-flex rounded-full border border-gold/40 bg-gold/10 px-2.5 py-0.5 text-[11.5px] font-medium text-gold-light transition-colors hover:bg-gold/20">
+          {plan ? plan.name : "Free"}
+        </Link>
       </div>
 
-      {/* Primary action: always the most prominent thing in the sidebar */}
-      <div className="px-6">
-        <Button href="/new" variant="accent" size="lg" className="mt-6 w-full">
+      <div className="px-4">
+        <Button href="/app/new" variant="accent" size="lg" className="mt-6 w-full">
           <Plus className="size-[18px]" aria-hidden />
           Create new video
         </Button>
       </div>
 
-      <div className="mt-5 min-h-0 flex-1 overflow-y-auto px-6 pb-4 [scrollbar-width:thin]">
+      <div className="mt-6 min-h-0 flex-1 overflow-y-auto px-3 pb-4 [scrollbar-width:thin]">
         <SidebarLinks isAdmin={user?.isAdmin} />
       </div>
 
-      <div className="space-y-2 border-t border-divider/70 px-6 pt-4">
-        {user && <PlanChip planKey={user.planKey} credits={user.credits} />}
-        {user && <WorkspaceSwitcher current={user.workspace} workspaces={user.workspaces} />}
-        {user && <UserMenu email={user.email} name={user.name} credits={user.credits} />}
-      </div>
+      {user && user.workspaces.length > 1 && (
+        <div className="border-t border-white/10 px-4 pt-4">
+          <WorkspaceSwitcher current={user.workspace} workspaces={user.workspaces} />
+        </div>
+      )}
     </aside>
   );
 }
 
-/**
- * The link groups, shared by the sidebar and the mobile drawer (25 Nov 2026, Tijs): Workspace (your
- * dashboard and projects), Create (All tools and every working tool, coloured by category) and Account
- * (settings and support).
- */
+/** The link groups, shared by the sidebar and the mobile drawer (both ink). */
 export function SidebarLinks({ isAdmin, onNavigate }: { isAdmin?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
   const search = useSearchParams();
@@ -63,19 +62,18 @@ export function SidebarLinks({ isAdmin, onNavigate }: { isAdmin?: boolean; onNav
   const activeTool = activeToolKey(pathname, search.toString(), STUDIO_TOOLS);
   return (
     <nav aria-label="Main" className="flex flex-col gap-0.5">
-      <GroupLabel first>Workspace</GroupLabel>
       {navItems.map((item) => (
         <NavRow key={item.href} item={item} active={isActivePath(pathname, item.href)} onNavigate={onNavigate} />
       ))}
 
-      <GroupLabel>Create</GroupLabel>
-      <NavRow item={{ href: "/tools", label: "All tools", icon: LayoutGrid }} active={isActivePath(pathname, "/tools")} onNavigate={onNavigate} />
+      <Divider />
+      <NavRow item={{ href: "/app/tools", label: "All tools", icon: LayoutGrid }} active={isActivePath(pathname, "/app/tools") && !activeTool} onNavigate={onNavigate} />
       {SIDEBAR_TOOLS.map((t) => (
         <ToolRow key={t.key} tool={t} active={t.key === activeTool} onNavigate={onNavigate} />
       ))}
       <SoonGroup onNavigate={onNavigate} />
 
-      <GroupLabel>Account</GroupLabel>
+      <Divider />
       <NavRow item={settingsNavItem} active={isActivePath(pathname, settingsNavItem.href)} onNavigate={onNavigate} />
       <SupportMenu variant="row" onNavigate={onNavigate} />
       {isAdmin && <NavRow item={adminNavItem} active={isActivePath(pathname, adminNavItem.href)} onNavigate={onNavigate} />}
@@ -83,32 +81,28 @@ export function SidebarLinks({ isAdmin, onNavigate }: { isAdmin?: boolean; onNav
   );
 }
 
-function GroupLabel({ children, first }: { children: React.ReactNode; first?: boolean }) {
-  return <p className={cn("mb-1 px-3 text-[12px] font-medium text-muted", first ? "mt-0" : "mt-5")}>{children}</p>;
+function Divider() {
+  return <div className="mx-3 my-3 border-t border-white/10" aria-hidden />;
 }
 
-/**
- * What is coming, as one quiet row that opens (23 Nov 2026): six "Soon" rows used to be taller than
- * the real tools. Closed by default; the rows link to where a wish can be left.
- */
+const rowBase = "focus-ring group flex h-10 items-center gap-3 rounded-[12px] px-3 text-[14px] transition-[background-color,color,box-shadow] duration-150";
+const rowIdle = "text-white/65 hover:bg-white/[0.06] hover:text-white";
+const rowActive = "bg-accent/15 font-medium text-white ring-1 ring-inset ring-accent/45";
+
+/** What is coming, as one quiet row that opens; the rows link to where a wish can be left. */
 function SoonGroup({ onNavigate }: { onNavigate?: () => void }) {
   const [open, setOpen] = useState(false);
   if (SOON_TOOLS.length === 0) return null;
   return (
-    <div className="mt-4">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className="focus-ring group flex min-h-9 w-full items-center gap-3 rounded-control px-3 py-1.5 text-left text-[13.5px] text-muted transition-[background-color,color] duration-150 hover:bg-ink/5 hover:text-ink"
-      >
-        <span className="grid size-6 shrink-0 place-items-center rounded-[7px] bg-ink-soft text-muted"><Clock className="size-3.5" aria-hidden /></span>
-        <span className="min-w-0 flex-1 leading-tight">Coming soon</span>
-        <span className="shrink-0 text-[12px] text-muted">{SOON_TOOLS.length}</span>
-        <ChevronDown className={cn("size-3.5 shrink-0 transition-transform duration-150", open && "rotate-180")} aria-hidden />
+    <div>
+      <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} className={cn(rowBase, rowIdle, "w-full text-left")}>
+        <Clock className="size-[18px] text-white/45" aria-hidden />
+        <span className="min-w-0 flex-1">Coming soon</span>
+        <span className="text-[12px] text-white/45">{SOON_TOOLS.length}</span>
+        <ChevronDown className={cn("size-3.5 text-white/45 transition-transform duration-150", open && "rotate-180")} aria-hidden />
       </button>
       {open && (
-        <div className="fold-in mt-0.5 flex flex-col gap-0.5">
+        <div className="fold-in flex flex-col gap-0.5">
           {SOON_TOOLS.map((t) => (
             <ToolRow key={t.key} tool={t} active={false} onNavigate={onNavigate} />
           ))}
@@ -121,16 +115,8 @@ function SoonGroup({ onNavigate }: { onNavigate?: () => void }) {
 function NavRow({ item, active, onNavigate }: { item: NavItem; active: boolean; onNavigate?: () => void }) {
   const Icon = item.icon;
   return (
-    <Link
-      href={item.href}
-      onClick={onNavigate}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "focus-ring group flex h-10 items-center gap-3 rounded-control px-3 text-sm font-medium transition-[background-color,color,box-shadow] duration-150",
-        active ? "bg-surface text-ink shadow-card" : "text-muted hover:bg-ink/5 hover:text-ink",
-      )}
-    >
-      <Icon className={cn("size-[18px] transition-colors duration-150", active ? "text-accent" : "text-muted group-hover:text-ink")} aria-hidden />
+    <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className={cn(rowBase, active ? rowActive : rowIdle)}>
+      <Icon className={cn("size-[18px] transition-colors duration-150", active ? "text-accent-light" : "text-white/55 group-hover:text-white")} aria-hidden />
       {item.label}
       <UnseenBadge href={item.href} />
     </Link>
@@ -138,35 +124,12 @@ function NavRow({ item, active, onNavigate }: { item: NavItem; active: boolean; 
 }
 
 function ToolRow({ tool, active, onNavigate }: { tool: Tool; active: boolean; onNavigate?: () => void }) {
+  const Icon = tool.icon;
   return (
-    <Link
-      href={tool.href}
-      onClick={onNavigate}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "focus-ring group flex min-h-9 items-center gap-3 rounded-control px-3 py-1.5 text-[13.5px] transition-[background-color,color,box-shadow] duration-150",
-        active ? "bg-surface font-medium text-ink shadow-card" : tool.soon ? "text-muted/80 hover:bg-ink/5 hover:text-ink" : "text-ink/80 hover:bg-ink/5 hover:text-ink",
-      )}
-    >
-      <ToolIcon tool={tool} size="sm" />
-      <span className="min-w-0 flex-1 leading-tight">{tool.label}</span>
-      {tool.soon ? <span className="shrink-0 text-[11px] text-muted">Soon</span> : tool.isNew ? <span className="shrink-0 text-[11px] font-medium text-tone-enhance">New</span> : null}
-    </Link>
-  );
-}
-
-/** Plan and credits in one line, the way to more credits one click away. Gold on ink: the brand's premium moment. */
-function PlanChip({ planKey, credits }: { planKey?: string; credits: number | null }) {
-  const plan = planByKey(planKey);
-  const paid = Boolean(plan && plan.monthlyUsd > 0);
-  return (
-    <Link href="/settings/billing" className="focus-ring group flex items-center gap-3 rounded-panel bg-ink px-3 py-2.5 text-champagne transition-transform duration-150 hover:-translate-y-px">
-      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-gold/15 text-gold-light"><Sparkles className="size-3.5" aria-hidden /></span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-medium text-champagne">{plan ? `${plan.name} plan` : "Your plan"}</span>
-        <span className="block truncate text-[12.5px] text-champagne/70">{credits === null ? "Plans and credits" : `${credits.toLocaleString("en-US")} credits`}</span>
-      </span>
-      <span className="text-[12px] font-medium text-gold-light group-hover:underline">{paid ? "Manage" : "Upgrade"}</span>
+    <Link href={tool.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className={cn(rowBase, active ? rowActive : tool.soon ? "text-white/45 hover:bg-white/[0.06] hover:text-white" : rowIdle)}>
+      <Icon className={cn("size-[18px] shrink-0 transition-colors duration-150", active ? "text-accent-light" : "text-white/55 group-hover:text-white")} aria-hidden />
+      <span className="min-w-0 flex-1 truncate">{tool.label}</span>
+      {tool.soon ? <span className="shrink-0 text-[11px] text-white/45">Soon</span> : tool.isNew ? <span className="shrink-0 text-[11px] font-medium text-gold-light">New</span> : null}
     </Link>
   );
 }

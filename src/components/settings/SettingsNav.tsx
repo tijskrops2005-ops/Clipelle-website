@@ -7,11 +7,11 @@ import { cn } from "@/lib/utils";
 
 /** Brand left the settings on 25 Nov 2026 (Tijs); /settings/brand redirects to /settings. Saved caption colours and logos keep working. */
 const items: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/settings", label: "Profile", icon: UserRound },
-  { href: "/settings/team", label: "Team", icon: Users },
-  { href: "/settings/usage", label: "Usage", icon: Gauge },
-  { href: "/settings/billing", label: "Billing", icon: CreditCard },
-  { href: "/settings/api", label: "API keys", icon: KeyRound },
+  { href: "/app/settings", label: "Profile", icon: UserRound },
+  { href: "/app/settings/team", label: "Team", icon: Users },
+  { href: "/app/settings/usage", label: "Usage", icon: Gauge },
+  { href: "/app/settings/billing", label: "Billing", icon: CreditCard },
+  { href: "/app/settings/api", label: "API keys", icon: KeyRound },
 ];
 
 /** Side menu of the settings pages; a pill row on phones. */

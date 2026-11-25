@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
 import { AppShell } from "@/components/AppShell";
+
+/** The app is personal: kept out of search engines (25 Nov 2026); titles read "Projects · Clipelle". */
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 /**
  * Every app page is personal (session cookie, database) and rendered on request. `instant = false`

@@ -9,7 +9,7 @@ export function PlanHint({ feature, text }: { feature: PlanFeature; text: string
       <Lock className="size-3.5 shrink-0" aria-hidden />
       <span>
         {text}{" "}
-        <Link href="/settings/billing" className="font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">
+        <Link href="/app/settings/billing" className="font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">
           See {FEATURE_PLAN[feature]}
         </Link>
       </span>

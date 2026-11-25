@@ -31,7 +31,7 @@ export function ExampleMarquee({ locale = "en" }: { locale?: Locale }) {
     : [];
   // Next to our samples: the eight formats as cards (real presets that open the ad form), never "coming soon" tiles.
   const formats = FORMATS.map((f) => (
-    <Link key={`f-${f.key}`} href={`/login?next=${encodeURIComponent(`/new/ad?format=${f.key}`)}`} className="focus-ring group relative flex aspect-[9/16] w-[150px] flex-col items-center justify-center gap-3 rounded-tile bg-[linear-gradient(170deg,var(--surface),var(--surface-muted))] shadow-card transition-transform duration-200 hover:-translate-y-1">
+    <Link key={`f-${f.key}`} href={`/login?next=${encodeURIComponent(`/app/new/ad?format=${f.key}`)}`} className="focus-ring group relative flex aspect-[9/16] w-[150px] flex-col items-center justify-center gap-3 rounded-tile bg-[linear-gradient(170deg,var(--surface),var(--surface-muted))] shadow-card transition-transform duration-200 hover:-translate-y-1">
       <FormatIllustration format={f.key} className="h-10 w-14 text-ink/50 transition-colors duration-200 group-hover:text-accent" />
       <span className="px-3 text-center text-[13px] font-semibold text-ink">{locale === "nl" ? f.nl.name : f.name}</span>
       <span className="label-mono absolute left-2 top-2 rounded-full bg-surface px-2 py-0.5 text-[10px] text-muted shadow-soft">{locale === "nl" ? "Format" : "Format"}</span>

@@ -51,7 +51,7 @@ export function BatchView({ id }: { id: string }) {
         </div>
       );
     }
-    return <EmptyState icon={<FolderOpen className="size-6" aria-hidden />} title="Batch not found" description="It may have been removed, or the link is incomplete." action={<Button href="/projects" variant="secondary"><ArrowLeft className="size-4" aria-hidden />Projects</Button>} />;
+    return <EmptyState icon={<FolderOpen className="size-6" aria-hidden />} title="Batch not found" description="It may have been removed, or the link is incomplete." action={<Button href="/app/projects" variant="secondary"><ArrowLeft className="size-4" aria-hidden />Projects</Button>} />;
   }
 
   const done = projects.filter((p) => p.status === "completed" && p.finalVideoUrl);
@@ -77,7 +77,7 @@ export function BatchView({ id }: { id: string }) {
     <div className="space-y-10">
       <PageHeader
         eyebrow={
-          <Link href="/projects" className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
+          <Link href="/app/projects" className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
             <ArrowLeft className="size-4" aria-hidden />
             Projects
           </Link>
@@ -153,7 +153,7 @@ export function BatchView({ id }: { id: string }) {
                       )}
                     </dl>
                     <div className={cn("mt-auto flex flex-wrap gap-2")}>
-                      <Button href={`/projects/${p.id}`} variant="secondary" size="sm">
+                      <Button href={`/app/projects/${p.id}`} variant="secondary" size="sm">
                         {p.status === "failed" ? "Open and retry" : "Open"}
                       </Button>
                       {p.status === "completed" && p.finalVideoUrl && (

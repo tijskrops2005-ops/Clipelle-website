@@ -1,25 +1,31 @@
 # Clipelle MCP server
 
-A small [Model Context Protocol](https://modelcontextprotocol.io) server (stdio) that lets an AI assistant create ads, translate videos and read projects through the Clipelle API. Not published to npm: build it from this folder.
+A small [Model Context Protocol](https://modelcontextprotocol.io) server (stdio) that lets an AI assistant translate videos and read your projects through the [Clipelle](https://www.clipelle.com) API.
 
-```bash
-cd mcp
-npm install
-npm run build        # dist/index.js
-```
+## Set up
 
-Add it to your assistant's MCP configuration with your API key (Settings → API keys in Clipelle):
+1. Create an API key in Clipelle: **Settings → API keys** (Pro plan and up).
+2. Add the server to your assistant's MCP configuration (Claude Desktop, Cursor, and others):
 
 ```json
 {
   "mcpServers": {
     "clipelle": {
-      "command": "node",
-      "args": ["/absolute/path/to/clipelle/mcp/dist/index.js"],
-      "env": { "CLIPELLE_API_KEY": "rl_…", "CLIPELLE_API_URL": "https://YOUR-DOMAIN" }
+      "command": "npx",
+      "args": ["-y", "clipelle-mcp"],
+      "env": { "CLIPELLE_API_KEY": "your key" }
     }
   }
 }
 ```
 
-Tools: `create_ad`, `translate_video`, `get_project`, `list_projects`. Every call spends credits exactly like the form; keep the assistant's "ask before running a tool" setting on. Full docs: `/docs/mcp` on the site.
+`CLIPELLE_API_URL` is optional (default `https://www.clipelle.com`).
+
+## Tools
+
+- `translate_video`: translate a video from a public link into one or more languages.
+- `get_project`: status and download links of one project.
+- `list_projects`: your recent projects.
+- `create_ad`: coming soon; returns `coming_soon` until ads open.
+
+Every call spends credits exactly like the app; keep your assistant's "ask before running a tool" setting on. Full docs: https://www.clipelle.com/docs/mcp

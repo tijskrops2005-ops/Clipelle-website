@@ -36,7 +36,7 @@ export function PlanCalculator({ locale = "en", currency, annual }: { locale?: L
   const price = plan ? planPrice(plan, currency) : null;
   const tooBig = r.fit.withPacks;
   const fitsFree = r.credits <= 30 && !premium;
-  const href = plan && !fitsFree ? `/signup?next=${encodeURIComponent(`/settings/billing?plan=${plan.key}&interval=${annual ? "annual" : "monthly"}${currency === "eur" ? "&currency=eur" : ""}`)}` : "/signup";
+  const href = plan && !fitsFree ? `/signup?next=${encodeURIComponent(`/app/settings/billing?plan=${plan.key}&interval=${annual ? "annual" : "monthly"}${currency === "eur" ? "&currency=eur" : ""}`)}` : "/signup";
   const used = plan ? Math.min(100, Math.round((r.credits / plan.creditsPerMonth) * 100)) : 0;
 
   return (

@@ -49,8 +49,8 @@ describe("ads feature flag (off)", () => {
 describe("the active tool in the menu", () => {
   it("tells the presenter tool from the plain translation by the query", async () => {
     const { activeToolKey, STUDIO_TOOLS } = await import("@/components/tools");
-    expect(activeToolKey("/new/translate", "", STUDIO_TOOLS)).toBe("translate");
-    expect(activeToolKey("/new/translate", "speaker=presenter", STUDIO_TOOLS)).toBe("presenter");
-    expect(activeToolKey("/dashboard", "", STUDIO_TOOLS)).toBeNull();
+    expect(activeToolKey("/app/new/translate", "", STUDIO_TOOLS)).toBe("translate");
+    expect(activeToolKey("/app/new/translate", "speaker=presenter", STUDIO_TOOLS)).toBe("presenter");
+    expect(activeToolKey("/app", "", STUDIO_TOOLS)).toBeNull();
   });
 });

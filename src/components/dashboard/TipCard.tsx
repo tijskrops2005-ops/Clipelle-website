@@ -8,20 +8,20 @@ import { config } from "@/lib/config";
  * the guides and CLAUDE.md). No promised numbers: a tip says what to do, never what you will gain.
  */
 const TRANSLATE_TIPS: { text: string; href: string; link: string }[] = [
-  { text: "One speaker and clear audio give the best voice and lip match.", href: "/new/translate", link: "Translate a video" },
-  { text: "Put brand names and product names under “Words to keep” so they stay exactly as they are.", href: "/new/translate", link: "Translate a video" },
-  { text: "Pick several languages at once: every version renders in parallel and you pay per language.", href: "/new/translate", link: "Translate a video" },
-  { text: "Precision re-renders the mouth for the new language; pick it for faces that move or side angles.", href: "/new/translate", link: "Translate a video" },
-  { text: "A video with captions burned in? Turn on “Remove on-screen text” and the new captions take their place.", href: "/new/translate", link: "Translate a video" },
-  { text: "You can leave the page while a video is made; we e-mail you when it is ready.", href: "/settings", link: "Notification settings" },
+  { text: "One speaker and clear audio give the best voice and lip match.", href: "/app/new/translate", link: "Translate a video" },
+  { text: "Put brand names and product names under “Words to keep” so they stay exactly as they are.", href: "/app/new/translate", link: "Translate a video" },
+  { text: "Pick several languages at once: every version renders in parallel and you pay per language.", href: "/app/new/translate", link: "Translate a video" },
+  { text: "Precision re-renders the mouth for the new language; pick it for faces that move or side angles.", href: "/app/new/translate", link: "Translate a video" },
+  { text: "A video with captions burned in? Turn on “Remove on-screen text” and the new captions take their place.", href: "/app/new/translate", link: "Translate a video" },
+  { text: "You can leave the page while a video is made; we e-mail you when it is ready.", href: "/app/settings", link: "Notification settings" },
 ];
 const AD_TIPS: { text: string; href: string; link: string }[] = [
-  { text: "A clear product photo on a plain background is the biggest single factor in a good product clip.", href: "/new/ad", link: "Make an ad" },
-  { text: "Two or three factual sentences about the product give the script step enough to work with.", href: "/new/ad", link: "Make an ad" },
-  { text: "Fill in Offer only when you have one: it is the only way a deal ends up in the call to action.", href: "/new/ad", link: "Make an ad" },
-  { text: "Turn on “Review script first” to read and change the script before the presenter speaks it.", href: "/new/ad", link: "Make an ad" },
-  { text: "Made an ad you like? “Localize this ad” turns it into other languages without a new upload.", href: "/projects", link: "Your projects" },
-  { text: "Paste a product link and the name, description and photos are filled in for you to check.", href: "/new/url", link: "Ad from a link" },
+  { text: "A clear product photo on a plain background is the biggest single factor in a good product clip.", href: "/app/new/ad", link: "Make an ad" },
+  { text: "Two or three factual sentences about the product give the script step enough to work with.", href: "/app/new/ad", link: "Make an ad" },
+  { text: "Fill in Offer only when you have one: it is the only way a deal ends up in the call to action.", href: "/app/new/ad", link: "Make an ad" },
+  { text: "Turn on “Review script first” to read and change the script before the presenter speaks it.", href: "/app/new/ad", link: "Make an ad" },
+  { text: "Made an ad you like? “Localize this ad” turns it into other languages without a new upload.", href: "/app/projects", link: "Your projects" },
+  { text: "Paste a product link and the name, description and photos are filled in for you to check.", href: "/app/new/url", link: "Ad from a link" },
 ];
 const TIPS = config.features.ads ? [...TRANSLATE_TIPS, ...AD_TIPS] : TRANSLATE_TIPS;
 

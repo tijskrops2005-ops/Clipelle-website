@@ -34,7 +34,7 @@ async function MfaInner() {
       <Card>
         <CardContent className="pt-6">
           {gate === "setup" ? (
-            <Button href="/settings" variant="primary">
+            <Button href="/app/settings" variant="primary">
               <ShieldCheck className="size-4" aria-hidden />
               Turn it on in Settings → Profile
             </Button>

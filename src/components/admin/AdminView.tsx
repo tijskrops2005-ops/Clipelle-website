@@ -118,7 +118,7 @@ export function AdminView({ stats }: { stats: Stats }) {
               <tbody>
                 {stats.expensive.map((e) => (
                   <Tr key={e.projectId ?? e.name}>
-                    <Td><span className="block max-w-[260px] truncate">{e.projectId ? <Link href={`/projects/${e.projectId}`} className="focus-ring rounded-control underline decoration-border underline-offset-4 hover:decoration-ink">{e.name}</Link> : e.name}</span><span className="text-[12px] text-muted">{e.workflow === "ad" ? "ad" : "translation"}</span></Td>
+                    <Td><span className="block max-w-[260px] truncate">{e.projectId ? <Link href={`/app/projects/${e.projectId}`} className="focus-ring rounded-control underline decoration-border underline-offset-4 hover:decoration-ink">{e.name}</Link> : e.name}</span><span className="text-[12px] text-muted">{e.workflow === "ad" ? "ad" : "translation"}</span></Td>
                     <Td><StatusBadge status={e.status} /></Td>
                     <Td right>{formatUsd(e.usd)}</Td>
                   </Tr>

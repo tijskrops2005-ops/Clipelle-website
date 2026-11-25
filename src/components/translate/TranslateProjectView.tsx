@@ -39,24 +39,24 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
         eyebrow={
           <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link
-              href="/projects"
+              href="/app/projects"
               className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink"
             >
               <ArrowLeft className="size-4" aria-hidden />
               Projects
             </Link>
             {sourceAd && (
-              <Link href={`/projects/${sourceAd.id}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
+              <Link href={`/app/projects/${sourceAd.id}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
                 Made from the ad <span className="text-ink">{sourceAd.name}</span>
               </Link>
             )}
             {sourceTranslation && (
-              <Link href={`/projects/${sourceTranslation.id}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
+              <Link href={`/app/projects/${sourceTranslation.id}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
                 Same video as <span className="text-ink">{sourceTranslation.name}</span>
               </Link>
             )}
             {editedFrom && (
-              <Link href={`/projects/${editedFrom.id}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
+              <Link href={`/app/projects/${editedFrom.id}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
                 <Scissors className="size-4" aria-hidden />
                 Edited from <span className="text-ink">{editedFrom.name}</span>
               </Link>
@@ -70,13 +70,13 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
           project.status === "completed" ? (
             <div className="flex flex-wrap gap-2">
               {/* The edit screen (2 Nov 2026): trim, cut, captions, text and logo on the finished video. */}
-              <Button href={`/projects/${project.id}/edit`} variant="secondary">
+              <Button href={`/app/projects/${project.id}/edit`} variant="secondary">
                 <Scissors className="size-4" aria-hidden />
                 Edit
               </Button>
               {/* "Add a language" (31 Oct 2026): the stored upload is the source, nothing to upload again. */}
               {!project.edit && (
-              <Button href={`/new/translate?from=${project.id}&more=1`} variant="secondary">
+              <Button href={`/app/new/translate?from=${project.id}&more=1`} variant="secondary">
                 <Plus className="size-4" aria-hidden />
                 Add a language
               </Button>
@@ -107,7 +107,7 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
                   <ul className="space-y-1.5">
                     {versions.map((v) => (
                       <li key={v.id}>
-                        <Link href={`/projects/${v.id}`} className="focus-ring flex items-center justify-between gap-3 rounded-control px-2 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-surface-muted">
+                        <Link href={`/app/projects/${v.id}`} className="focus-ring flex items-center justify-between gap-3 rounded-control px-2 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-surface-muted">
                           <span className="truncate">{v.name}</span>
                           <StatusBadge status={v.status} />
                         </Link>

@@ -137,7 +137,7 @@ function ReportCard({ report: r, onRun, busy }: { report: QualityRow; onRun: (pr
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate text-[17px] font-semibold text-ink">
-                {r.own ? <Link href={`/projects/${r.projectId}`} className="focus-ring rounded-control hover:underline">{r.projectName}</Link> : r.projectName}
+                {r.own ? <Link href={`/app/projects/${r.projectId}`} className="focus-ring rounded-control hover:underline">{r.projectName}</Link> : r.projectName}
               </p>
               <p className="text-[13px] text-muted">{label(r.language)} · {formatDate(r.createdAt)}{r.costUsd !== null ? ` · check cost $${r.costUsd.toFixed(3)}` : ""}</p>
             </div>

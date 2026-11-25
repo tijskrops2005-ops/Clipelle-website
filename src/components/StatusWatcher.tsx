@@ -39,9 +39,9 @@ export function StatusWatcher() {
         const p = projects.find((x) => x.id === id);
         if (!p) continue;
         if (language) {
-          if (status === "completed") pushNotice({ projectId: id, name: `${p.name} · ${languageOf(language).label}`, status, href: `/projects/${id}`, language });
+          if (status === "completed") pushNotice({ projectId: id, name: `${p.name} · ${languageOf(language).label}`, status, href: `/app/projects/${id}`, language });
         } else if (p.workflow !== "translate" || status === "failed") {
-          pushNotice({ projectId: id, name: p.name, status, href: `/projects/${id}` });
+          pushNotice({ projectId: id, name: p.name, status, href: `/app/projects/${id}` });
         }
       }
     }
@@ -49,13 +49,13 @@ export function StatusWatcher() {
   }, [projects, ready]);
 
   useEffect(() => {
-    if (pathname === "/projects") markAllSeen();
+    if (pathname === "/app/projects") markAllSeen();
   }, [pathname, projects]);
 
   // The tab title carries the count of unseen finished videos on every other page.
   useEffect(() => {
     const strip = (t: string) => t.replace(/^\(\d+\) /, "");
-    if (unseen > 0 && pathname !== "/projects") document.title = `(${unseen}) ${strip(document.title)}`;
+    if (unseen > 0 && pathname !== "/app/projects") document.title = `(${unseen}) ${strip(document.title)}`;
     else document.title = strip(document.title);
   }, [unseen, pathname]);
 
@@ -66,7 +66,7 @@ function Toaster() {
   const toasts = useToasts();
   if (toasts.length === 0) return null;
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[min(360px,calc(100vw-32px))] flex-col gap-2" role="status" aria-live="polite">
+    <div className="pointer-events-none fixed bottom-24 right-4 z-50 flex w-[min(360px,calc(100vw-32px))] max-xl:bottom-40 flex-col gap-2" role="status" aria-live="polite">
       {toasts.map((t) => (
         <div key={t.id} className="pointer-events-auto flex items-start gap-3 rounded-card bg-surface p-4 shadow-card-hover">
           {t.status === "completed" ? <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" aria-hidden /> : <XCircle className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden />}
@@ -86,6 +86,6 @@ function Toaster() {
 /** Small count next to "Projects" in the navigation. */
 export function UnseenBadge({ href }: { href: string }) {
   const unseen = useUnseenCount();
-  if (href !== "/projects" || unseen === 0) return null;
+  if (href !== "/app/projects" || unseen === 0) return null;
   return <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-white" aria-label={`${unseen} finished since your last visit`}>{unseen}</span>;
 }

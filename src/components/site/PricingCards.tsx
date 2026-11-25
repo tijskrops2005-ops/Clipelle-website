@@ -49,7 +49,7 @@ export function PricingCards({ cards, labels, currency = "usd" }: { cards: Previ
       <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => {
           const lv = c.levels.find((l) => l.key === picked[c.key]) ?? c.levels[0];
-          const href = c.paid ? `/signup?next=${encodeURIComponent(`/settings/billing?plan=${lv.key}&interval=${interval}${currency === "eur" ? "&currency=eur" : ""}`)}` : "/signup";
+          const href = c.paid ? `/signup?next=${encodeURIComponent(`/app/settings/billing?plan=${lv.key}&interval=${interval}${currency === "eur" ? "&currency=eur" : ""}`)}` : "/signup";
           return (
             <div
               key={c.key}

@@ -38,8 +38,8 @@ export function HowItWorks() {
   return (
     <section className="space-y-8">
       <SectionHeader title="How it works" />
-      <WorkflowRow kicker="Translate a video" href="/new/translate" steps={translateSteps} columns={4} />
-      {config.features.ads && <WorkflowRow kicker="Make an ad from a product photo" href="/new/ad" steps={adSteps} columns={4} />}
+      <WorkflowRow kicker="Translate a video" href="/app/new/translate" steps={translateSteps} columns={4} />
+      {config.features.ads && <WorkflowRow kicker="Make an ad from a product photo" href="/app/new/ad" steps={adSteps} columns={4} />}
     </section>
   );
 }

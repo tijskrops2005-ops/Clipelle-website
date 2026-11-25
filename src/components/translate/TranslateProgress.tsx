@@ -87,7 +87,7 @@ export function TranslateProgress({ project }: { project: TranslateProject }) {
           {!failed && (
             <div className="mt-6 flex flex-col gap-3 border-t border-divider pt-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-[13px] leading-relaxed text-muted">{notify ? "You can close this page; we e-mail you when it is ready." : "You can close this page."}</p>
-              <Button href="/new/translate" variant="secondary" size="md" className="shrink-0">Translate another</Button>
+              <Button href="/app/new/translate" variant="secondary" size="md" className="shrink-0">Translate another</Button>
             </div>
           )}
         </div>

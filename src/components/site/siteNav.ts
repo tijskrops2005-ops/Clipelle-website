@@ -175,7 +175,7 @@ export function footerColumnsFor(locale: Locale) {
  * page with the destination as `next`: visitors log in or start for free first, someone already
  * signed in is sent straight on by the proxy. Site pages keep their own (localized) path.
  */
-const APP_PREFIXES = ["/dashboard", "/new", "/projects", "/settings", "/batches"];
+const APP_PREFIXES = ["/app", "/app/new", "/app/projects", "/app/settings", "/app/batches"];
 export function viaLogin(appPath: string) {
   return `/login?next=${encodeURIComponent(appPath)}`;
 }

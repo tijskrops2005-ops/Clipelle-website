@@ -50,7 +50,7 @@ export function ProjectView({ id }: { id: string }) {
         title="Project not found"
         description="It may have been removed, or the link is incomplete."
         action={
-          <Button href="/dashboard" variant="secondary">
+          <Button href="/app" variant="secondary">
             <ArrowLeft className="size-4" aria-hidden />
             Back to dashboard
           </Button>
@@ -68,20 +68,20 @@ export function ProjectView({ id }: { id: string }) {
         eyebrow={
           <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link
-              href="/projects"
+              href="/app/projects"
               className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink"
             >
               <ArrowLeft className="size-4" aria-hidden />
               Projects
             </Link>
             {project.batchId && (
-              <Link href={`/batches/${project.batchId}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
+              <Link href={`/app/batches/${project.batchId}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
                 <LayoutGrid className="size-4" aria-hidden />
                 Part of a batch of variations
               </Link>
             )}
             {project.edit && (
-              <Link href={`/projects/${project.edit.sourceProjectId}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
+              <Link href={`/app/projects/${project.edit.sourceProjectId}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
                 <Scissors className="size-4" aria-hidden />
                 Edited version {project.version ?? 2}
               </Link>
@@ -175,21 +175,21 @@ function ResultHero({ project }: { project: AdProject }) {
                 Download video
               </Button>
               <div className="flex flex-wrap gap-2">
-                <Button href={`/projects/${project.id}/edit`} variant="secondary">
+                <Button href={`/app/projects/${project.id}/edit`} variant="secondary">
                   <Scissors className="size-4" aria-hidden />
                   Edit
                 </Button>
-                <Button href={`/new/translate?from=${project.id}`} variant="secondary">
+                <Button href={`/app/new/translate?from=${project.id}`} variant="secondary">
                   <Languages className="size-4" aria-hidden />
                   Translate this ad
                 </Button>
                 {config.features.ads && (
                   <>
-                    <Button href={`/new/ad?from=${project.id}`} variant="secondary">
+                    <Button href={`/app/new/ad?from=${project.id}`} variant="secondary">
                       <Copy className="size-4" aria-hidden />
                       Make another version
                     </Button>
-                    <Button href={`/new/ad?from=${project.id}&variations=1`} variant="secondary">
+                    <Button href={`/app/new/ad?from=${project.id}&variations=1`} variant="secondary">
                       <LayoutGrid className="size-4" aria-hidden />
                       Make variations
                     </Button>
@@ -252,7 +252,7 @@ function RelatedProjects({ project, compact }: { project: AdProject; compact?: b
           <ul className="space-y-1.5">
             {versions.map((v) => (
               <li key={v.id}>
-                <Link href={`/projects/${v.id}`} className="focus-ring flex items-center justify-between gap-3 rounded-control px-2 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-surface-muted">
+                <Link href={`/app/projects/${v.id}`} className="focus-ring flex items-center justify-between gap-3 rounded-control px-2 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-surface-muted">
                   <span className="truncate">{v.name}</span>
                   <StatusBadge status={v.status} />
                 </Link>
@@ -267,7 +267,7 @@ function RelatedProjects({ project, compact }: { project: AdProject; compact?: b
           <ul className="space-y-1.5">
             {translations.map((t) => (
               <li key={t.id}>
-                <Link href={`/projects/${t.id}`} className="focus-ring flex items-center justify-between gap-3 rounded-control px-2 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-surface-muted">
+                <Link href={`/app/projects/${t.id}`} className="focus-ring flex items-center justify-between gap-3 rounded-control px-2 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-surface-muted">
                   <span className="truncate">{t.targetLanguages.map((l) => languageOf(l).tag).join(", ")} · {t.name}</span>
                   <StatusBadge status={t.status} />
                 </Link>
@@ -329,11 +329,11 @@ function ResultCard({ project }: { project: AdProject }) {
               <Download className="size-[18px]" aria-hidden />
               Download video
             </Button>
-            <Button href={config.features.ads ? "/new/ad" : "/new/translate"} variant="primary">
+            <Button href={config.features.ads ? "/app/new/ad" : "/app/new/translate"} variant="primary">
               <Plus className="size-4" aria-hidden />
               {config.features.ads ? "Make another" : "Translate a video"}
             </Button>
-            <Button href="/projects" variant="ghost">
+            <Button href="/app/projects" variant="ghost">
               <ArrowLeft className="size-4" aria-hidden />
               Back to projects
             </Button>
@@ -392,7 +392,7 @@ function NotStarted() {
           <p className="text-[17px] font-semibold text-ink">This project was never started</p>
           <p className="mt-1.5 text-[15px] leading-relaxed text-muted">Nothing was made and no credits were used.</p>
         </div>
-        <Button href="/new" variant="primary" size="lg" className="shrink-0">
+        <Button href="/app/new" variant="primary" size="lg" className="shrink-0">
           <Plus className="size-5" aria-hidden />
           Create new video
         </Button>

@@ -50,7 +50,7 @@ export function ProjectActions({ project }: { project: Project }) {
           Tags{project.tags?.length ? ` (${project.tags.length})` : ""}
         </Button>
         {project.workflow === "ad" && config.features.ads && (
-          <Button href={`/new/ad?from=${project.id}`} variant="ghost" size="sm">
+          <Button href={`/app/new/ad?from=${project.id}`} variant="ghost" size="sm">
             <Copy className="size-4" aria-hidden />
             Duplicate
           </Button>
@@ -69,7 +69,7 @@ export function ProjectActions({ project }: { project: Project }) {
           onClick={() =>
             run(async () => {
               await updateProjectMeta(project.id, { archived: !project.archivedAt });
-              if (!project.archivedAt) router.push("/projects");
+              if (!project.archivedAt) router.push("/app/projects");
             }, project.archivedAt ? "Back in your lists." : undefined)
           }
         >

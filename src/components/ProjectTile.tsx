@@ -24,7 +24,7 @@ export function ProjectTile({ project, now, selectable, selected, onToggle, href
 
   return (
     <Link
-      href={href ?? `/projects/${project.id}`}
+      href={href ?? `/app/projects/${project.id}`}
       className="focus-ring group relative block rounded-tile"
       onClick={selectable ? (e) => { e.preventDefault(); onToggle?.(); } : undefined}
       aria-pressed={selectable ? Boolean(selected) : undefined}

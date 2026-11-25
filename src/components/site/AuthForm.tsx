@@ -26,7 +26,7 @@ type Method = "password" | "code";
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") ?? "/dashboard";
+  const next = params.get("next") ?? "/app";
   const urlError = params.get("error");
   const [method, setMethod] = useState<Method>("password");
   const [email, setEmail] = useState("");
@@ -39,7 +39,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const [code, setCode] = useState("");
   const google = process.env.NEXT_PUBLIC_AUTH_GOOGLE === "true";
   const showGoogleSetup = !google && process.env.NODE_ENV === "development";
-  const withNext = (path: string) => `${path}${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`;
+  const withNext = (path: string) => `${path}${next !== "/app" ? `?next=${encodeURIComponent(next)}` : ""}`;
 
   async function post(path: string, body: Record<string, unknown>) {
     const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -87,7 +87,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
     return (
       <AuthCard title="No accounts in demo mode" text="The app runs as a demo user. Open the dashboard to try it.">
         <DemoBadge>Demo mode</DemoBadge>
-        <Button href="/dashboard" variant="accent" size="lg" className="mt-5 w-full">Open the demo</Button>
+        <Button href="/app" variant="accent" size="lg" className="mt-5 w-full">Open the demo</Button>
       </AuthCard>
     );
   }

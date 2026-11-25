@@ -129,8 +129,8 @@ export function subscriptionSessionParams(plan: Plan, input: CheckoutInput) {
     customer: input.customerId,
     currency: input.currency ?? "usd",
     line_items: [{ price: input.priceId, quantity: 1 }],
-    success_url: `${input.origin}/settings/billing?checkout=success`,
-    cancel_url: `${input.origin}/settings/billing?checkout=cancelled`,
+    success_url: `${input.origin}/app/settings/billing?checkout=success`,
+    cancel_url: `${input.origin}/app/settings/billing?checkout=cancelled`,
     subscription_data: {
       metadata: { userId: input.userId, workspaceId: input.workspaceId, planKey: plan.key, terms: TERMS_VERSION },
       // The free trial (26 Oct 2026): nothing is charged for TRIAL.days; a card is required, and
@@ -165,8 +165,8 @@ function oneOffSessionParams(meta: { topupKey: string; credits?: string }, quant
     customer: input.customerId,
     currency: input.currency ?? "usd",
     line_items: [{ price: input.priceId, quantity }],
-    success_url: `${input.origin}/settings/billing?checkout=success`,
-    cancel_url: `${input.origin}/settings/billing?checkout=cancelled`,
+    success_url: `${input.origin}/app/settings/billing?checkout=success`,
+    cancel_url: `${input.origin}/app/settings/billing?checkout=cancelled`,
     metadata: { userId: input.userId, workspaceId: input.workspaceId, ...meta, kind: "topup", terms: TERMS_VERSION },
     integration_identifier: CHECKOUT_INTEGRATION_ID,
     // A real invoice (PDF, our company details) for credits, not only a receipt. Managed Payments

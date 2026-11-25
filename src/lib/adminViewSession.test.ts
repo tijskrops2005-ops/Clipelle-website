@@ -18,7 +18,7 @@ describe("view-as-customer cookie", () => {
 
   it("lets reads, leaving the view and signing out through; refuses writes and file downloads", () => {
     expect(viewAllowsRequest("GET", "/api/projects")).toBe(true);
-    expect(viewAllowsRequest("GET", "/dashboard")).toBe(true);
+    expect(viewAllowsRequest("GET", "/app")).toBe(true);
     expect(viewAllowsRequest("POST", "/api/projects")).toBe(false);
     expect(viewAllowsRequest("PATCH", "/api/settings/profile")).toBe(false);
     expect(viewAllowsRequest("DELETE", "/api/settings/api-keys/1")).toBe(false);

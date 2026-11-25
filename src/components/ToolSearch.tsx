@@ -60,7 +60,7 @@ export function ToolSearch() {
   const studio = tools.filter((t) => !t.soon);
   const soon = tools.filter((t) => t.soon);
   // Same order as on screen (studio tools, matching projects, soon), so arrows and Enter follow what is seen.
-  const results: string[] = [...studio.map((t) => t.href), ...found.map((p) => `/projects/${p.id}`), ...soon.map((t) => t.href)];
+  const results: string[] = [...studio.map((t) => t.href), ...found.map((p) => `/app/projects/${p.id}`), ...soon.map((t) => t.href)];
 
   function close() {
     setOpen(false);
@@ -136,7 +136,7 @@ export function ToolSearch() {
           <>
             <div className="mb-2 mt-5 flex items-center justify-between">
               <p className="text-[12px] font-medium text-muted">Tools</p>
-              <Link href="/tools" onClick={() => setOpen(false)} className="focus-ring rounded-control text-[12.5px] font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">See all tools</Link>
+              <Link href="/app/tools" onClick={() => setOpen(false)} className="focus-ring rounded-control text-[12.5px] font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">See all tools</Link>
             </div>
             <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{studio.map((t, n) => tile(t, n))}</ul>
           </>
@@ -149,7 +149,7 @@ export function ToolSearch() {
                 const i = projectOffset + n;
                 return (
                   <li key={p.id}>
-                    <Link href={`/projects/${p.id}`} onClick={() => setOpen(false)} onMouseEnter={() => setActive(i)} className={cn("focus-ring flex items-center gap-3 rounded-control px-3 py-2.5 text-[14px] text-ink", i === active ? "bg-surface-muted" : "hover:bg-surface-muted")}>
+                    <Link href={`/app/projects/${p.id}`} onClick={() => setOpen(false)} onMouseEnter={() => setActive(i)} className={cn("focus-ring flex items-center gap-3 rounded-control px-3 py-2.5 text-[14px] text-ink", i === active ? "bg-surface-muted" : "hover:bg-surface-muted")}>
                       <Film className="size-4 text-muted" aria-hidden />
                       <span className="min-w-0 flex-1 truncate">{p.name}</span>
                       <ArrowRight className="size-4 text-muted" aria-hidden />

@@ -42,7 +42,7 @@ export function CustomersView({ stats, counts, rows, filter, query, sort, page, 
         description={`${stats.users.toLocaleString("en-US")} accounts. Amounts include VAT.`}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button href="/dashboard" variant="secondary" size="sm">Back to app</Button>
+            <Button href="/app" variant="secondary" size="sm">Back to app</Button>
             <Button href="/admin/payouts" variant="primary" size="sm">Payouts</Button>
           </div>
         }

@@ -29,7 +29,7 @@ export function InviteAccept({ token }: { token: string }) {
       const r = await fetch(`/api/invites/${encodeURIComponent(token)}`, { method: "POST" });
       const b = await r.json();
       if (!r.ok) throw new Error(b.error ?? "Could not accept.");
-      router.push("/dashboard");
+      router.push("/app");
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not accept.");

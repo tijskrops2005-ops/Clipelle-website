@@ -230,7 +230,7 @@ export default function ApiDocsPage() {
     <DocsLayout current="/docs/api" sections={sections}>
       <header>
         <h1 className="text-display">{config.productName} API</h1>
-        <p className="mt-4 max-w-2xl">Translate videos you own from your own code. A key is your workspace: the same credits, limits and projects. Keys are made on <Link href={viaLogin("/settings/api")} className="underline">Settings → API keys</Link>, on plans that include the API.</p>
+        <p className="mt-4 max-w-2xl">Translate videos you own from your own code. A key is your workspace: the same credits, limits and projects. Keys are made on <Link href={viaLogin("/app/settings/api")} className="underline">Settings → API keys</Link>, on plans that include the API.</p>
       </header>
 
       <section id="auth" className="space-y-4">
@@ -272,7 +272,7 @@ export default function ApiDocsPage() {
 
       <section id="webhooks" className="space-y-4">
         <h2>Webhooks</h2>
-        <p>Instead of reading the project again and again, let us call you. In <Link href={viaLogin("/settings/api")} className="underline underline-offset-4">Settings → API keys → Webhooks</Link> add a public <code className={code}>https://</code> URL and pick the events <code className={code}>project.completed</code> and <code className={code}>project.failed</code>. The signing secret is shown once.</p>
+        <p>Instead of reading the project again and again, let us call you. In <Link href={viaLogin("/app/settings/api")} className="underline underline-offset-4">Settings → API keys → Webhooks</Link> add a public <code className={code}>https://</code> URL and pick the events <code className={code}>project.completed</code> and <code className={code}>project.failed</code>. The signing secret is shown once.</p>
         <CodeBlock code={webhookPayload} lang="json" title="Payload" />
         <p>Every call carries <code className={code}>X-Clipelle-Signature: t=&lt;unix seconds&gt;,v1=&lt;hex&gt;</code>, where v1 is the HMAC-SHA256 of <code className={code}>&quot;t.&quot; + raw body</code> with your secret, plus <code className={code}>X-Clipelle-Event</code> and <code className={code}>X-Clipelle-Delivery</code>. Check it like this:</p>
         <CodeBlock code={webhookVerify} lang="javascript" title="Verifying the signature (Node)" />

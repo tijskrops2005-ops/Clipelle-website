@@ -49,7 +49,7 @@ export function NowCreating({ showEmpty = false }: { /** The dashboard's side co
       <section aria-labelledby="now-creating" className="rounded-card bg-surface p-5 shadow-card sm:p-6">
         <h2 id="now-creating" className="text-[15px] font-semibold text-ink">In progress</h2>
         <p className="mt-2 text-[14px] text-muted">Nothing is being made right now.</p>
-        <Link href="/new/translate" className="focus-ring mt-4 inline-block rounded-control text-[13px] font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Translate a video</Link>
+        <Link href="/app/new/translate" className="focus-ring mt-4 inline-block rounded-control text-[13px] font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Translate a video</Link>
       </section>
     );
   }
@@ -64,7 +64,7 @@ export function NowCreating({ showEmpty = false }: { /** The dashboard's side co
           In progress
           <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[12px] font-medium text-muted">{projects.length}</span>
         </h2>
-        <Link href="/projects?status=processing" className="focus-ring rounded-control text-[13px] font-medium text-muted hover:text-ink">
+        <Link href="/app/projects?status=processing" className="focus-ring rounded-control text-[13px] font-medium text-muted hover:text-ink">
           View all
         </Link>
       </div>
@@ -73,7 +73,7 @@ export function NowCreating({ showEmpty = false }: { /** The dashboard's side co
           const g = progressOf(p, now);
           return (
             <li key={p.id}>
-              <Link href={`/projects/${p.id}`} className="focus-ring group -mx-2 flex items-center gap-4 rounded-[14px] px-2 py-3 hover:bg-surface-muted/60">
+              <Link href={`/app/projects/${p.id}`} className="focus-ring group -mx-2 flex items-center gap-4 rounded-[14px] px-2 py-3 hover:bg-surface-muted/60">
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-col gap-0.5">
                     <span className="truncate text-[15px] font-semibold text-ink">{p.name}</span>

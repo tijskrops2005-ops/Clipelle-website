@@ -8,11 +8,10 @@ import { z } from "zod";
  * environment: create_ad, translate_video, get_project, list_projects. Nothing is stored here;
  * every video is a normal project on the account's dashboard with the same credits and limits.
  *
- * Environment: CLIPELLE_API_KEY (required) and CLIPELLE_API_URL (the base URL of your Clipelle
- * account's app, e.g. the address shown in Settings → API keys; the older REELAY_* names still
- * work for one release).
+ * Environment: CLIPELLE_API_KEY (required) and CLIPELLE_API_URL (optional, default
+ * https://www.clipelle.com; the older REELAY_* names still work).
  */
-const API_URL = (process.env.CLIPELLE_API_URL ?? process.env.REELAY_API_URL ?? "http://localhost:3001").replace(/\/$/, "");
+const API_URL = (process.env.CLIPELLE_API_URL ?? process.env.REELAY_API_URL ?? "https://www.clipelle.com").replace(/\/$/, "");
 const API_KEY = (process.env.CLIPELLE_API_KEY ?? process.env.REELAY_API_KEY);
 
 async function call(method: "GET" | "POST", path: string, body?: unknown, idempotencyKey?: string) {
@@ -28,13 +27,13 @@ async function call(method: "GET" | "POST", path: string, body?: unknown, idempo
 
 const asText = (r: { ok: boolean; status: number; body: unknown }) => ({ content: [{ type: "text" as const, text: JSON.stringify(r.body, null, 2) }], isError: !r.ok });
 
-const server = new McpServer({ name: "clipelle", version: "0.1.0" });
+const server = new McpServer({ name: "clipelle", version: "0.2.0" });
 
 server.registerTool(
   "create_ad",
   {
     title: "Create a product ad",
-    description: "Creates a 9:16 video ad from a product name, description and public image links. Spends credits on the Clipelle account. Returns the project id and status; use get_project to follow it.",
+    description: "Coming soon: ads are not open yet and this returns coming_soon until they are. Creates a 9:16 video ad from a product name, description and public image links. Spends credits on the Clipelle account. Returns the project id and status; use get_project to follow it.",
     inputSchema: {
       name: z.string().min(2).max(120).describe("Project name shown in Studio"),
       productName: z.string().min(1).max(120),

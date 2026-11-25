@@ -16,7 +16,7 @@ export default function NotFound() {
           title="Page not found"
           description="That link does not lead anywhere. Check the address or head back to the dashboard."
           action={
-            <Button href="/dashboard">
+            <Button href="/app">
               <ArrowLeft className="size-4" aria-hidden />
               Back to dashboard
             </Button>

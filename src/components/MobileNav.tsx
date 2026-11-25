@@ -36,7 +36,7 @@ export function MobileNav({ user }: { user: ShellUser }) {
           </div>
           <div className="flex items-center gap-2 pr-1">
             {user && <UserMenu email={user.email} name={user.name} credits={user.credits} compact />}
-            <Link href="/new" aria-label="Create new video" className="focus-ring grid size-10 place-items-center rounded-full bg-accent text-white shadow-accent transition-colors duration-150 hover:bg-accent-hover">
+            <Link href="/app/new" aria-label="Create new video" className="focus-ring grid size-10 place-items-center rounded-full bg-accent text-white shadow-accent transition-colors duration-150 hover:bg-accent-hover">
               <Plus className="size-5" aria-hidden />
             </Link>
           </div>
@@ -44,21 +44,21 @@ export function MobileNav({ user }: { user: ShellUser }) {
       </div>
 
       {/* The drawer stays mounted and slides (27 Oct 2026); closed it is inert. */}
-      <Drawer open={open} onClose={close} label="Menu" className="px-6 py-5">
+      <Drawer open={open} onClose={close} label="Menu" className="bg-ink px-4 py-5 text-white">
           <div id={panelId} className="flex min-h-0 flex-1 flex-col">
             <div className="flex items-center justify-between">
-              <Brand onClick={close} />
+              <Brand onClick={close} tone="light" />
               <button
                 type="button"
                 aria-label="Close menu"
                 onClick={close}
-                className="focus-ring grid size-10 place-items-center rounded-full text-ink transition-colors duration-150 hover:bg-ink/5"
+                className="focus-ring grid size-10 place-items-center rounded-full text-white transition-colors duration-150 hover:bg-white/10"
               >
                 <X className="size-5" aria-hidden />
               </button>
             </div>
 
-            <Button href="/new" variant="accent" size="lg" className="mt-8 w-full" onClick={close}>
+            <Button href="/app/new" variant="accent" size="lg" className="mt-8 w-full" onClick={close}>
               <Plus className="size-[18px]" aria-hidden />
               Create new video
             </Button>
@@ -67,7 +67,7 @@ export function MobileNav({ user }: { user: ShellUser }) {
               <SidebarLinks isAdmin={user?.isAdmin} onNavigate={close} />
             </div>
 
-            <p className="pt-3 text-[13px] leading-relaxed text-muted">{config.tagline}</p>
+            <p className="px-2 pt-3 text-[13px] leading-relaxed text-white/50">{config.tagline}</p>
           </div>
       </Drawer>
     </>

@@ -9,7 +9,7 @@ const SHORT: Record<string, { label: string; text: string; href?: string }> = {
   translate: { label: "Translate a video", text: "Same voice, matching lips" },
   presenter: { label: "With a presenter", text: "An AI presenter speaks it" },
   editor: { label: "Video editor", text: "Trim, captions, text, logo" },
-  "enhance-video": { label: "Enhance", text: "Sharper videos and photos", href: "/enhance" },
+  "enhance-video": { label: "Enhance", text: "Sharper videos and photos", href: "/app/enhance" },
 };
 
 export function ToolTiles() {

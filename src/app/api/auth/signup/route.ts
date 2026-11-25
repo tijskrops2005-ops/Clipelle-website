@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${siteUrl(request)}/auth/callback?next=/dashboard`, data: { ...(name ? { name } : {}), ...accepted } },
+    options: { emailRedirectTo: `${siteUrl(request)}/auth/callback?next=/app`, data: { ...(name ? { name } : {}), ...accepted } },
   });
   if (error) return Response.json({ error: friendly(error.message) }, { status: 400 });
   // With "confirm e-mail" on, there is no session yet; the page shows "check your inbox".

@@ -155,7 +155,7 @@ export function ProjectsGrid() {
           description={query.trim() ? "Try another word." : undefined}
           action={
             nothingAtAll || (filter === "processing" && kind === "all") ? (
-              <Button href="/new" variant="accent" size="lg">
+              <Button href="/app/new" variant="accent" size="lg">
                 <Plus className="size-[18px]" aria-hidden />
                 Create new video
               </Button>

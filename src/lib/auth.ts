@@ -81,4 +81,4 @@ export function authErrorResponse(error: unknown): Response | null {
 }
 
 /** Paths that need a session. /new is public: it explains and offers sign-in when signed out. */
-export const PROTECTED_PREFIXES = ["/dashboard", "/projects", "/settings", "/new/ad", "/new/url", "/new/translate"];
+export const PROTECTED_PREFIXES = ["/app", "/app/projects", "/app/settings", "/app/new/ad", "/app/new/url", "/app/new/translate"];

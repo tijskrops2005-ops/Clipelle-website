@@ -94,7 +94,7 @@ export function VersionForm({ fromId, variations }: { fromId: string; variations
         title="Ad not found"
         description="The ad to make a version of could not be found. Start a new ad instead."
         action={
-          <Button href="/new/ad" variant="secondary">
+          <Button href="/app/new/ad" variant="secondary">
             <ArrowLeft className="size-4" aria-hidden />
             New ad
           </Button>

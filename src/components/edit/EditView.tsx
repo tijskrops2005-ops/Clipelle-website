@@ -36,10 +36,10 @@ export function EditView({ id }: { id: string }) {
   const ready = useProjectsReady();
   if (!project) {
     if (!ready) return <ProjectSkeleton />;
-    return <EmptyState icon={<FolderOpen className="size-6" aria-hidden />} title="Project not found" description="It may have been removed, or the link is incomplete." action={<Button href="/projects" variant="secondary"><ArrowLeft className="size-4" aria-hidden /> Projects</Button>} />;
+    return <EmptyState icon={<FolderOpen className="size-6" aria-hidden />} title="Project not found" description="It may have been removed, or the link is incomplete." action={<Button href="/app/projects" variant="secondary"><ArrowLeft className="size-4" aria-hidden /> Projects</Button>} />;
   }
   if (project.status !== "completed") {
-    return <EmptyState icon={<Scissors className="size-6" aria-hidden />} title="Editing starts when the video is ready" description="Trim, cut, captions, text and a logo work on the finished video." action={<Button href={`/projects/${project.id}`} variant="secondary"><ArrowLeft className="size-4" aria-hidden /> Back to the project</Button>} />;
+    return <EmptyState icon={<Scissors className="size-6" aria-hidden />} title="Editing starts when the video is ready" description="Trim, cut, captions, text and a logo work on the finished video." action={<Button href={`/app/projects/${project.id}`} variant="secondary"><ArrowLeft className="size-4" aria-hidden /> Back to the project</Button>} />;
   }
   return <Editor project={project} />;
 }
@@ -133,7 +133,7 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
     try {
       const { id } = await exportEdit(project.id, recipe, language);
       if (draftScope) clearDraft(draftKey, draftScope);
-      router.push(`/projects/${id}`);
+      router.push(`/app/projects/${id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "The export could not be started. Try again.");
       setExporting(false);
@@ -141,7 +141,7 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
   }
 
   if (!src) {
-    return <EmptyState icon={<Scissors className="size-6" aria-hidden />} title="No finished video to edit" description="Once a language version is ready it can be edited here." action={<Button href={`/projects/${project.id}`} variant="secondary"><ArrowLeft className="size-4" aria-hidden /> Back to the project</Button>} />;
+    return <EmptyState icon={<Scissors className="size-6" aria-hidden />} title="No finished video to edit" description="Once a language version is ready it can be edited here." action={<Button href={`/app/projects/${project.id}`} variant="secondary"><ArrowLeft className="size-4" aria-hidden /> Back to the project</Button>} />;
   }
 
   const tabs: { key: Tab; label: string; icon: typeof Scissors; hidden?: boolean }[] = [
@@ -154,7 +154,7 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
     <div className="space-y-8">
       <PageHeader
         eyebrow={
-          <Link href={`/projects/${project.id}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
+          <Link href={`/app/projects/${project.id}`} className="focus-ring inline-flex items-center gap-1.5 rounded-control text-sm font-medium text-muted transition-colors duration-150 hover:text-ink">
             <ArrowLeft className="size-4" aria-hidden />
             {project.name}
           </Link>

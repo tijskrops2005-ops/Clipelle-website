@@ -55,7 +55,7 @@ export function ActivityFeed() {
         <ol className="mt-3 space-y-1">
           {events.map((e) => (
             <li key={e.id}>
-              <Link href={`/projects/${e.id}`} className="focus-ring flex gap-3 rounded-control px-2 py-2 transition-colors duration-150 hover:bg-surface-muted">
+              <Link href={`/app/projects/${e.id}`} className="focus-ring flex gap-3 rounded-control px-2 py-2 transition-colors duration-150 hover:bg-surface-muted">
                 <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", DOT[e.tone] ?? "bg-muted")} aria-hidden />
                 <span className="min-w-0">
                   <span className="block truncate text-[13px] text-ink">{e.text}</span>

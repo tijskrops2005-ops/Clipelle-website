@@ -87,7 +87,7 @@ export function ApiKeysSettings() {
         ) : !allowed ? (
           <div className="rounded-[14px] bg-surface-muted p-4 text-[15px] text-ink">
             <p>API keys come with the Pro plan and up.</p>
-            <Button href="/settings/billing" variant="primary" className="mt-3">Choose a plan</Button>
+            <Button href="/app/settings/billing" variant="primary" className="mt-3">Choose a plan</Button>
           </div>
         ) : (
           <form onSubmit={onCreate} className="flex flex-col gap-3 sm:flex-row sm:items-end">

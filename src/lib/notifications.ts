@@ -15,7 +15,7 @@ import { batchStatusOf } from "@/lib/batchStatus";
  * Never throws: a mail problem must not fail a finished video.
  */
 function mailLinks() {
-  return { logoUrl: absoluteUrl("/brand/clipelle-logo-dark-600.png"), settingsUrl: absoluteUrl("/settings") };
+  return { logoUrl: absoluteUrl("/brand/clipelle-logo-dark-600.png"), settingsUrl: absoluteUrl("/app/settings") };
 }
 
 export async function notifyProjectEnd(projectId: string) {
@@ -28,7 +28,7 @@ export async function notifyProjectEnd(projectId: string) {
     const [owner] = await db().select().from(profiles).where(eq(profiles.userId, row.ownerId)).limit(1);
     if (!owner || !owner.notifyEmail) return;
     const [failedStep] = row.status === "failed" ? await db().select({ error: steps.error }).from(steps).where(and(eq(steps.projectId, projectId), eq(steps.status, "failed"))).limit(1) : [];
-    const url = absoluteUrl(`/projects/${row.id}`);
+    const url = absoluteUrl(`/app/projects/${row.id}`);
     let downloads: MailDownload[] = [];
     const inline: InlineImage[] = [];
     let poster: { cid: string; width: number; height: number } | null = null;
@@ -68,7 +68,7 @@ export async function notifyBatchEnd(batchId: string) {
     if (!owner || !owner.notifyEmail) return;
     const finished = members.filter((m) => m.status === "completed").length;
     const failed = members.filter((m) => m.status === "failed").length;
-    const mail = composeBatchMail({ name: batch.name, status, finished, failed, total: members.length, url: absoluteUrl(`/batches/${batchId}`), recipientName: owner.name, links: mailLinks() });
+    const mail = composeBatchMail({ name: batch.name, status, finished, failed, total: members.length, url: absoluteUrl(`/app/batches/${batchId}`), recipientName: owner.name, links: mailLinks() });
     await sendEmail({ to: owner.email, ...mail });
   } catch (error) {
     console.error("[notify] batch mail failed", error);

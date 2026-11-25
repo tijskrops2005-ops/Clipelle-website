@@ -50,7 +50,7 @@ export function Drawer({ open, onClose, label, width = "w-[min(20rem,85vw)]", cl
       {/* backdrop */}
       <button type="button" aria-label="Close menu" onClick={onClose} tabIndex={-1} className={cn("absolute inset-0 bg-ink/40 transition-opacity duration-300 ease-out motion-reduce:transition-none", open ? "opacity-100" : "opacity-0")} />
       {/* panel */}
-      <div ref={panel} role="dialog" aria-modal="true" aria-label={label} className={cn("absolute inset-y-0 left-0 flex flex-col rounded-r-card bg-surface shadow-card-hover transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none", width, open ? "translate-x-0" : "-translate-x-full", className)}>
+      <div ref={panel} role="dialog" aria-modal="true" aria-label={label} className={cn("absolute inset-y-0 left-0 flex flex-col rounded-r-card shadow-card-hover", !className?.includes("bg-") && "bg-surface", " transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none", width, open ? "translate-x-0" : "-translate-x-full", className)}>
         {children}
       </div>
     </div>

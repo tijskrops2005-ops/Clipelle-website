@@ -40,7 +40,7 @@ export function stripLocale(path: string): { locale: Locale; path: string } {
 }
 
 /** Marketing paths have a translated twin; the app, auth, docs, blog and guides do not. */
-const APP_PREFIXES = ["/dashboard", "/projects", "/settings", "/new", "/login", "/signup", "/forgot-password", "/reset-password", "/verify", "/auth", "/api", "/dev", "/invite", "/docs", "/blog", "/resources/guides"];
+const APP_PREFIXES = ["/app", "/app/projects", "/app/settings", "/app/new", "/login", "/signup", "/forgot-password", "/reset-password", "/verify", "/auth", "/api", "/dev", "/invite", "/docs", "/blog", "/resources/guides"];
 export function isSitePath(path: string) {
   return !APP_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
 }

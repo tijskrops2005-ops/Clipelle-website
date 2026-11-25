@@ -54,7 +54,7 @@ export function MediaToolView({ tool }: { tool: MediaToolKey }) {
     try {
       await startToolJob({ tool, file: picked?.file, source: fromSource ?? undefined, seconds: current.seconds, width: current.width, height: current.height, options }, setProgress);
       setPicked(null);
-      if (fromSource) router.replace(`/tools/${tool}`, { scroll: false });
+      if (fromSource) router.replace(`/app/tools/${tool}`, { scroll: false });
       setRights(false);
       setConfirming(false);
     } catch (e) {
@@ -69,7 +69,7 @@ export function MediaToolView({ tool }: { tool: MediaToolKey }) {
     <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <section aria-label={meta.title} className="rounded-card bg-surface p-5 shadow-card sm:p-6">
         {fromSource ? (
-          <SourceCard source={fromSource} onClear={() => router.replace(`/tools/${tool}`, { scroll: false })} disabled={busy} />
+          <SourceCard source={fromSource} onClear={() => router.replace(`/app/tools/${tool}`, { scroll: false })} disabled={busy} />
         ) : (
           <FilePicker kind={meta.media} picked={picked} onPick={(p) => { setPicked(p); setConfirming(false); setError(null); }} onReject={setError} disabled={busy} />
         )}

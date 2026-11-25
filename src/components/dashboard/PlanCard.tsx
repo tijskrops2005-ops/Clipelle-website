@@ -19,7 +19,7 @@ export function PlanCard({ plan }: { plan: Pick<Plan, "key" | "name" | "monthlyU
         <>
           <h2 id="plan-card" className="relative mt-4 text-[17px] font-semibold text-champagne">You are on {plan!.name}</h2>
           <p className="relative mt-1.5 text-[13.5px] leading-relaxed text-champagne/70">{plan!.creditsNote}. Credits never expire.</p>
-          <Link href="/settings/billing" className="focus-ring relative mt-5 inline-flex h-9 items-center gap-1.5 rounded-control bg-champagne px-4 text-[13px] font-semibold text-ink transition-transform duration-150 hover:-translate-y-px">
+          <Link href="/app/settings/billing" className="focus-ring relative mt-5 inline-flex h-9 items-center gap-1.5 rounded-control bg-champagne px-4 text-[13px] font-semibold text-ink transition-transform duration-150 hover:-translate-y-px">
             Manage billing <ArrowRight className="size-3.5" aria-hidden />
           </Link>
         </>
@@ -29,7 +29,7 @@ export function PlanCard({ plan }: { plan: Pick<Plan, "key" | "name" | "monthlyU
           <p className="relative mt-1.5 text-[13.5px] leading-relaxed text-champagne/70">
             {recommended ? `${recommended.name}: ${recommended.bullets[0].charAt(0).toLowerCase()}${recommended.bullets[0].slice(1)}. ` : ""}Credits never expire.
           </p>
-          <Link href="/settings/billing" className="focus-ring relative mt-5 inline-flex h-9 items-center gap-1.5 rounded-control bg-gold-light px-4 text-[13px] font-semibold text-ink transition-transform duration-150 hover:-translate-y-px">
+          <Link href="/app/settings/billing" className="focus-ring relative mt-5 inline-flex h-9 items-center gap-1.5 rounded-control bg-gold-light px-4 text-[13px] font-semibold text-ink transition-transform duration-150 hover:-translate-y-px">
             See plans <ArrowRight className="size-3.5" aria-hidden />
           </Link>
         </>
