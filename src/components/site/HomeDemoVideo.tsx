@@ -12,7 +12,7 @@ export function HomeDemoVideo({ src, poster }: { src: string; poster: string }) 
   const [started, setStarted] = useState(false);
   return (
     <section aria-labelledby="demo-video" className="mx-auto max-w-5xl text-center">
-      <h2 id="demo-video" className="text-[clamp(1.6rem,3vw,2.2rem)] font-semibold tracking-[-0.02em]">See it in 30 seconds</h2>
+      <h2 id="demo-video" className="text-[clamp(1.6rem,3vw,2.2rem)] font-semibold tracking-[-0.02em]">See it in 40 seconds</h2>
       <p className="mx-auto mt-3 max-w-xl text-[16px] text-muted">From uploading a video to downloading every language, in the real app.</p>
       <div className="relative mt-8 overflow-hidden rounded-[24px] bg-ink shadow-card-hover">
         <video ref={ref} src={started ? src : undefined} poster={poster} controls={started} playsInline preload="none" className="block aspect-video w-full" aria-label="Clipelle walk-through" />

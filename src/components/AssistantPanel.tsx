@@ -57,14 +57,15 @@ export function AssistantPanel() {
   }, [turns, busy]);
 
   if (!assistantEnabled()) return null;
-  // Closed: one round button at the bottom right on every app page (25 Nov 2026, Tijs).
+  // Closed: one round button at the bottom right on every app page (25 Nov 2026, Tijs); on phones it covered
+  // the content, so there the assistant opens from Support in the menu instead.
   if (!open) {
     return (
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Ask the support assistant"
-        className="focus-ring fixed bottom-5 right-5 z-[60] grid size-14 place-items-center rounded-full bg-ink text-white shadow-card-hover transition-transform duration-150 hover:-translate-y-0.5 max-xl:bottom-24"
+        className="focus-ring fixed bottom-5 right-5 z-[60] hidden size-14 place-items-center rounded-full bg-ink text-white shadow-card-hover transition-transform duration-150 hover:-translate-y-0.5 lg:grid"
       >
         <MessageCircleQuestion className="size-6" aria-hidden />
       </button>

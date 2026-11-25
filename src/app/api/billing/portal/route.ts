@@ -2,6 +2,7 @@ import { requireOwner } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
 import { getWorkspace } from "@/lib/workspaces";
 import { z } from "zod";
+import Stripe from "stripe";
 import { existingCustomer, priceByLookupKey, stripe, stripeEnabled } from "@/lib/stripe";
 import { setPlan } from "@/lib/billing";
 import { planByKey } from "@/lib/plans";
@@ -56,6 +57,12 @@ export async function POST(request: Request) {
     const session = await stripe().billingPortal.sessions.create({ customer: customer.id, return_url: `${origin}/app/settings/billing`, ...(configuration ? { configuration } : {}), ...(flow_data ? { flow_data } : {}) });
     return Response.json({ url: session.url });
   } catch (error) {
+    // Stripe's own words never reach the customer (25 Nov 2026): a plain line instead, the cause in the log.
+    if (error instanceof Stripe.errors.StripeError) {
+      console.error("[billing] stripe error", error.type, error.code, error.message);
+      if (/live charges/i.test(error.message)) return Response.json({ error: "Payments are being switched on for this account. Try again a little later.", code: "payments_pending" }, { status: 503 });
+      return Response.json({ error: "The payment page could not be opened. Try again, or contact support.", code: "stripe_error" }, { status: 502 });
+    }
     return dataErrorResponse(error);
   }
 }

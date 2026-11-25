@@ -34,7 +34,7 @@ export function DemoVideo() {
             <Sparkles className="size-3.5" aria-hidden />
             Demo
           </span>
-          <h2 id="demo-card" className="mt-3 text-[17px] font-semibold leading-snug">See the whole flow in 30 seconds</h2>
+          <h2 id="demo-card" className="mt-3 text-[17px] font-semibold leading-snug">See the whole flow in 40 seconds</h2>
           <p className="mt-1.5 text-[14px] leading-relaxed text-white/70">Upload, pick languages, follow the progress, download and edit.</p>
           <button type="button" onClick={() => setOpen(true)} className="focus-ring mt-4 inline-flex h-10 items-center gap-2 rounded-full bg-accent px-4 text-[14px] font-semibold text-white shadow-accent transition-colors hover:bg-accent-hover">
             <Play className="size-4" aria-hidden />
@@ -58,7 +58,7 @@ export function DemoVideo() {
                 <Sparkles className="size-3.5" aria-hidden />
                 Demo
               </span>
-              <h2 id="demo-title" className="mt-3 text-[22px] font-semibold tracking-[-0.02em] sm:text-[26px]">Translate your first video in 2 minutes</h2>
+              <h2 id="demo-title" className="mt-3 text-[22px] font-semibold tracking-[-0.02em] sm:text-[26px]">Translate your first video in minutes</h2>
               <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[14.5px] text-white/70">
                 From uploading a video to downloading every language, the whole flow in one video.
                 <span className="inline-flex items-center gap-1 text-white/85"><Clock3 className="size-4" aria-hidden />{DEMO_VIDEO.minutes}</span>

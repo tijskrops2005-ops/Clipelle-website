@@ -1,4 +1,5 @@
 import { z } from "zod";
+import Stripe from "stripe";
 import { INVOICE_FOOTER, automaticTaxEnabled, checkoutCurrency, creditsSessionParams, managedPaymentsEnabled, termsConsentEnabled, subscriptionSessionParams, topupSessionParams } from "@/lib/billingCheckout";
 import { requireOwner } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
     // A customer from test mode (or a deleted one) is forgotten and made again (25 Nov 2026, going live).
     const existing = await existingCustomer(workspace.stripeCustomerId, () => setPlan(workspace.id, { stripeCustomerId: null, stripeSubscriptionId: null }));
     let customerId = existing?.id ?? null;
-    let customerCurrency: string | null = existing?.currency ?? null;
+    const customerCurrency: string | null = existing?.currency ?? null;
     if (!customerId) {
       // One Stripe customer per workspace; the e-mail is the owner's (the partner platform matches on it).
       // Idempotency key per workspace: two quick clicks (or a retry) give one customer, not two.
@@ -79,6 +80,12 @@ export async function POST(request: Request) {
     const session = await s.checkout.sessions.create(topupSessionParams(pack, { customerId, userId: user.id, workspaceId: workspace.id, priceId: price.id, origin, managed, automaticTax, requireTerms, currency }));
     return Response.json({ url: session.url });
   } catch (error) {
+    // Stripe's own words never reach the customer (25 Nov 2026): a plain line instead, the cause in the log.
+    if (error instanceof Stripe.errors.StripeError) {
+      console.error("[billing] stripe error", error.type, error.code, error.message);
+      if (/live charges/i.test(error.message)) return Response.json({ error: "Payments are being switched on for this account. Try again a little later.", code: "payments_pending" }, { status: 503 });
+      return Response.json({ error: "The payment page could not be opened. Try again, or contact support.", code: "stripe_error" }, { status: 502 });
+    }
     return dataErrorResponse(error);
   }
 }
