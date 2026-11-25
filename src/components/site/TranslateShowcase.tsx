@@ -14,7 +14,7 @@ import { viaLogin } from "@/components/site/siteNav";
  * result, with the checked captions, the languages scrolling past and two buttons. The strongest
  * part of the product, shown with our own output only; a missing file shows nothing broken.
  */
-export function TranslateShowcase({ locale }: { locale: Locale }) {
+export function TranslateShowcase({ locale, inHero }: { locale: Locale; /** Straight under the hero buttons (25 Nov 2026, Tijs): no heading of its own, the hero says it. */ inHero?: boolean }) {
   const t = dict(locale);
   const s = t.home.translate;
   const original = resolveExampleFile(translationShowcase.original.file);
@@ -26,7 +26,7 @@ export function TranslateShowcase({ locale }: { locale: Locale }) {
 
   return (
     <Reveal as="section">
-      <SectionIntro eyebrow={s.eyebrow} title={s.title} text={s.text} />
+      {!inHero && <SectionIntro eyebrow={s.eyebrow} title={s.title} text={s.text} />}
 
       <div className="stage-panel relative mt-12 overflow-hidden rounded-card px-4 py-10 shadow-card sm:px-10 sm:py-14">
         <div className="stage-glow pointer-events-none absolute inset-x-[15%] inset-y-[5%]" aria-hidden />

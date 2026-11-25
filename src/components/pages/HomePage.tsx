@@ -13,7 +13,7 @@ import { PricingPreview } from "@/components/site/PricingPreview";
 import { SavingsCalculator } from "@/components/site/SavingsCalculator";
 import { JsonLd } from "@/components/site/JsonLd";
 import { PipelineStrip } from "@/components/site/Sketches";
-import { FeatureRows, HeroShowcase, StatsBand } from "@/components/site/Showcase";
+import { FeatureRows, StatsBand } from "@/components/site/Showcase";
 import { UrlDemo } from "@/components/site/FeatureDemos";
 import { TranslateShowcase } from "@/components/site/TranslateShowcase";
 import { TranslateDemo } from "@/components/site/TranslateDemo";
@@ -43,7 +43,8 @@ export function HomePage({ locale }: { locale: Locale }) {
       <JsonLd data={{ "@context": "https://schema.org", "@type": "Organization", name: config.productName, url: absoluteUrl("/"), logo: absoluteUrl("/brand/clipelle-logo-dark.png") }} />
       <JsonLd data={{ "@context": "https://schema.org", "@type": "WebSite", name: config.productName, url: absoluteUrl("/") }} />
 
-      {/* Hero (23 Nov 2026, docs/design-clarity.md): title, one line, two buttons, the fan of real videos, the four steps. No eyebrow, no proof chips. */}
+      {/* Hero (25 Nov 2026, Tijs): title, one line, two buttons, then straight away the real example (original next to the
+          translation) and the four steps. The fan of six videos is gone (docs/removed-blocks.md). */}
       <section className="pt-14 text-center sm:pt-20">
         <h1 className="mx-auto max-w-4xl text-[clamp(2.6rem,6.4vw,4.5rem)] font-semibold leading-[1.02] tracking-[-0.035em]">{h.title}</h1>
         <p className="mx-auto mt-6 max-w-2xl text-subtitle text-muted">{h.intro}</p>
@@ -52,13 +53,12 @@ export function HomePage({ locale }: { locale: Locale }) {
           <Button href={L("/examples")} variant="secondary" size="lg" className="w-full max-w-[300px] sm:w-auto sm:max-w-none">{t.common.seeExamples}</Button>
         </div>
         <p className="mt-4 text-[13px] text-muted">{t.common.noCardLong}</p>
-        <HeroShowcase sampleLabel={t.common.sampleShort} originalLabel={h.translate.original} className="mt-12 sm:mt-14" />
+        <div className="text-left">
+          <TranslateShowcase locale={locale} inHero />
+        </div>
         <PipelineStrip labels={h.translate.pipeline} className="mt-6" />
       </section>
-
-      {/* Translation first (25 Oct 2026): the real before-and-after straight under the hero. */}
-      <TranslateShowcase locale={locale} />
-      <StatsBand items={h.translate.stats} className="-mt-10 sm:-mt-16" />
+      <StatsBand items={h.translate.stats} />
 
       <TranslateDemo locale={locale} />
 
