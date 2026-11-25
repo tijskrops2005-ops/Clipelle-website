@@ -1,5 +1,5 @@
 /**
- * Creates the products and prices in Stripe TEST mode from src/lib/plans.ts, with lookup keys the
+ * Creates the products and prices in Stripe (test mode, or live with ALLOW_LIVE_STRIPE_SETUP=1) from src/lib/plans.ts, with lookup keys the
  * app uses (reelay_<plan>_monthly, reelay_<plan>_annual, reelay_topup_<usd>). Idempotent: a lookup key
  * with the right amount is left alone; one whose amount changed in plans.ts gets a new price.
  * Every price is in dollars with a euro amount on the same price (`currency_options.eur`, 26 Oct
@@ -17,7 +17,16 @@ import { creditUnitDescription, packDescription, planDescription } from "../src/
 
 async function main() {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
-  if (!key || !/^(sk|rk)_test_/.test(key)) throw new Error("Set STRIPE_SECRET_KEY to a test key (rk_test_… or sk_test_…) first.");
+  // Test keys always work; a live key only with ALLOW_LIVE_STRIPE_SETUP=1 (25 Nov 2026, going live), so a
+  // live key in an env file never creates live products by accident.
+  if (!key) throw new Error("Set STRIPE_SECRET_KEY first (rk_test_… / sk_test_…, or a live key with ALLOW_LIVE_STRIPE_SETUP=1).");
+  const isTest = /^(sk|rk)_test_/.test(key);
+  const isLive = /^(sk|rk)_live_/.test(key);
+  if (!isTest && !isLive) throw new Error("STRIPE_SECRET_KEY does not look like a Stripe secret or restricted key (sk_… / rk_…).");
+  if (isLive && process.env.ALLOW_LIVE_STRIPE_SETUP !== "1") {
+    throw new Error("STRIPE_SECRET_KEY is a LIVE key. Run again with ALLOW_LIVE_STRIPE_SETUP=1 to create the live products and prices on purpose.");
+  }
+  console.log(isLive ? "⚠ LIVE mode: creating or updating real products and prices in your live Stripe account." : "Test mode.");
   const stripe = new Stripe(key, { apiVersion: Stripe.API_VERSION });
 
   /** Prices exclude VAT: Stripe Tax adds it on top. */
