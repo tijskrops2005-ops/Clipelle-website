@@ -2,7 +2,8 @@ import { requireOwner } from "@/lib/auth";
 import { dataErrorResponse } from "@/lib/data/server";
 import { getWorkspace } from "@/lib/workspaces";
 import { z } from "zod";
-import { priceByLookupKey, stripe, stripeEnabled } from "@/lib/stripe";
+import { existingCustomer, priceByLookupKey, stripe, stripeEnabled } from "@/lib/stripe";
+import { setPlan } from "@/lib/billing";
 import { planByKey } from "@/lib/plans";
 import { databaseModeOnly, readJson } from "@/app/api/projects/_guard";
 import { planChangeFlow, type PortalKind } from "@/lib/billingPortal";
@@ -31,7 +32,9 @@ export async function POST(request: Request) {
     const scope = await requireOwner();
     if (!stripeEnabled()) return Response.json({ error: "Payments are not configured yet." }, { status: 503 });
     const profile = (await getWorkspace(scope.workspaceId))!;
-    if (!profile.stripeCustomerId) return Response.json({ error: "No billing account yet. Pick a plan first." }, { status: 400 });
+    // A customer from test mode does not exist in live mode: forget it and ask for a plan (25 Nov 2026).
+    const customer = await existingCustomer(profile.stripeCustomerId, () => setPlan(profile.id, { stripeCustomerId: null, stripeSubscriptionId: null }));
+    if (!customer) return Response.json({ error: "No billing account yet. Pick a plan first." }, { status: 400 });
     const origin = process.env.NEXT_PUBLIC_SITE_URL?.trim() || new URL(request.url).origin;
     const configuration = await portalConfiguration(profile.kind === "team" ? "team" : "individual");
     const body = Body.safeParse((await readJson(request)) ?? {});
@@ -50,7 +53,7 @@ export async function POST(request: Request) {
       if (item.price.id === price.id) return Response.json({ error: "You are already on this plan." }, { status: 409 });
       flow_data = planChangeFlow({ subscriptionId: subscription.id, itemId: item.id, priceId: price.id, returnUrl: `${origin}/app/settings/billing?checkout=changed` });
     }
-    const session = await stripe().billingPortal.sessions.create({ customer: profile.stripeCustomerId, return_url: `${origin}/app/settings/billing`, ...(configuration ? { configuration } : {}), ...(flow_data ? { flow_data } : {}) });
+    const session = await stripe().billingPortal.sessions.create({ customer: customer.id, return_url: `${origin}/app/settings/billing`, ...(configuration ? { configuration } : {}), ...(flow_data ? { flow_data } : {}) });
     return Response.json({ url: session.url });
   } catch (error) {
     return dataErrorResponse(error);

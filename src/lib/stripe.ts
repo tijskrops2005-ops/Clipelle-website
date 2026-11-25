@@ -51,3 +51,26 @@ export async function priceByLookupKey(lookupKey: string) {
   const list = await stripe().prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
   return list.data[0] ?? null;
 }
+
+/**
+ * The workspace's Stripe customer as this account knows it (25 Nov 2026, going live): a customer id saved
+ * in test mode does not exist in live mode, so a missing customer is forgotten (with its subscription id)
+ * and null comes back; the caller creates a fresh one. Any other error is thrown as before.
+ */
+export async function existingCustomer(customerId: string | null, forget: () => Promise<void>): Promise<Stripe.Customer | null> {
+  if (!customerId) return null;
+  try {
+    const c = await stripe().customers.retrieve(customerId);
+    if (c.deleted) {
+      await forget();
+      return null;
+    }
+    return c as Stripe.Customer;
+  } catch (error) {
+    if (error instanceof Stripe.errors.StripeInvalidRequestError && error.code === "resource_missing") {
+      await forget();
+      return null;
+    }
+    throw error;
+  }
+}

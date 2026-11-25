@@ -5,7 +5,7 @@ import { dataErrorResponse } from "@/lib/data/server";
 import { getOrCreateProfile } from "@/lib/data/profile";
 import { getWorkspace } from "@/lib/workspaces";
 import { CUSTOM_CREDITS, planByKey, TOPUPS, validCustomCredits } from "@/lib/plans";
-import { priceByLookupKey, stripe, stripeEnabled } from "@/lib/stripe";
+import { existingCustomer, priceByLookupKey, stripe, stripeEnabled, stripeLive } from "@/lib/stripe";
 import { setPlan, trialAvailable } from "@/lib/billing";
 import { databaseModeOnly, readJson } from "@/app/api/projects/_guard";
 
@@ -25,16 +25,15 @@ export async function POST(request: Request) {
     await getOrCreateProfile(user);
     const workspace = (await getWorkspace(scope.workspaceId))!;
     const s = stripe();
-    let customerId = workspace.stripeCustomerId;
-    let customerCurrency: string | null = null;
-    if (customerId) {
-      const existing = await s.customers.retrieve(customerId);
-      customerCurrency = existing.deleted ? null : (existing.currency ?? null);
-    } else {
+    // A customer from test mode (or a deleted one) is forgotten and made again (25 Nov 2026, going live).
+    const existing = await existingCustomer(workspace.stripeCustomerId, () => setPlan(workspace.id, { stripeCustomerId: null, stripeSubscriptionId: null }));
+    let customerId = existing?.id ?? null;
+    let customerCurrency: string | null = existing?.currency ?? null;
+    if (!customerId) {
       // One Stripe customer per workspace; the e-mail is the owner's (the partner platform matches on it).
       // Idempotency key per workspace: two quick clicks (or a retry) give one customer, not two.
       // The invoice footer carries our company details on every invoice of this customer (subscriptions too).
-      const c = await s.customers.create({ email: user.email, name: workspace.kind === "team" ? workspace.name : undefined, metadata: { userId: user.id, workspaceId: workspace.id }, invoice_settings: { footer: INVOICE_FOOTER } }, { idempotencyKey: `clipelle-customer-${workspace.id}` });
+      const c = await s.customers.create({ email: user.email, name: workspace.kind === "team" ? workspace.name : undefined, metadata: { userId: user.id, workspaceId: workspace.id }, invoice_settings: { footer: INVOICE_FOOTER } }, { idempotencyKey: `clipelle-customer-${stripeLive() ? "live" : "test"}-${workspace.id}` });
       customerId = c.id;
       await setPlan(workspace.id, { stripeCustomerId: customerId });
     }
