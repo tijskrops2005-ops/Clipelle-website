@@ -28,7 +28,11 @@ const names = Object.keys(env).filter((n) => env[n] !== "" && !NEVER.has(n));
 const problems = [];
 if (env.NEXT_PUBLIC_DEMO_MODE !== "false") problems.push("NEXT_PUBLIC_DEMO_MODE must be false (otherwise the live site runs in demo mode).");
 for (const n of ["APP_BASE_URL", "NEXT_PUBLIC_SITE_URL"]) if (!/^https:\/\//.test(env[n] ?? "")) problems.push(`${n} must be the public https address (https://www.clipelle.com).`);
-if (env.STRIPE_SECRET_KEY && !/^(sk|rk)_test_/.test(env.STRIPE_SECRET_KEY)) problems.push("STRIPE_SECRET_KEY is not a test key; the app refuses live keys until the live mode is built.");
+// Live payments (25 Nov 2026): a live key goes out only together with STRIPE_LIVE=on and its live webhook secret.
+if (env.STRIPE_SECRET_KEY && /^(sk|rk)_live_/.test(env.STRIPE_SECRET_KEY)) {
+  if (env.STRIPE_LIVE !== "on") problems.push("STRIPE_SECRET_KEY is a live key: add STRIPE_LIVE=on to send it on purpose.");
+  if (!/^whsec_/.test(env.STRIPE_WEBHOOK_SECRET ?? "")) problems.push("A live key needs the live webhook's signing secret in STRIPE_WEBHOOK_SECRET (whsec_…).");
+} else if (env.STRIPE_SECRET_KEY && !/^(sk|rk)_test_/.test(env.STRIPE_SECRET_KEY)) problems.push("STRIPE_SECRET_KEY is not a Stripe secret or restricted key.");
 if (env.SHOTSTACK_ENV && env.SHOTSTACK_ENV !== "v1") problems.push("SHOTSTACK_ENV should be v1 (production) on the live site; stage adds a watermark.");
 if (problems.length) {
   console.error(`Not sent. Fix these in ${file} first:\n- ${problems.join("\n- ")}`);

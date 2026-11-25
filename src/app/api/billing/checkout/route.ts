@@ -12,7 +12,7 @@ import { databaseModeOnly, readJson } from "@/app/api/projects/_guard";
 const Currency = z.enum(["usd", "eur"]).optional();
 const Body = z.union([z.object({ kind: z.literal("plan"), planKey: z.string(), interval: z.enum(["monthly", "annual"]), currency: Currency }), z.object({ kind: z.literal("topup"), topupKey: z.string(), currency: Currency }), z.object({ kind: z.literal("credits"), credits: z.number(), currency: Currency })]);
 
-/** Creates a Stripe Checkout session (test mode) for a plan, a credit pack or any amount of credits; with Managed Payments when switched on. */
+/** Creates a Stripe Checkout session for a plan, a credit pack or any amount of credits; with Managed Payments when switched on. */
 export async function POST(request: Request) {
   const blocked = databaseModeOnly();
   if (blocked) return blocked;
