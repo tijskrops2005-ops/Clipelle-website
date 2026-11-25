@@ -488,6 +488,20 @@ export function buildPresenterTranslateEdit(input: PresenterTranslateEditInput) 
  * so the translation refused it). This puts the original sound under the cleaned picture: the cleaned
  * video on top (muted), the original below it (sound only, fully covered), at the source's size.
  */
+/**
+ * A video as a vertical 1080×1920 video (25 Nov 2026, the "Resize to 9:16" tool): "fill" crops the
+ * sides to fill the frame; "fit" shows the whole picture over a blurred, dimmed copy of itself (Shotstack Clip filter "blur", checked 25 Nov 2026).
+ */
+export function buildReframeEdit(input: { videoUrl: string; seconds: number; mode: "fill" | "fit" }) {
+  const total = Math.max(1, Math.round(input.seconds * 10) / 10);
+  const main = { asset: { type: "video", src: input.videoUrl, volume: 1 }, start: 0, length: total, fit: input.mode === "fit" ? "contain" : "crop" };
+  const tracks =
+    input.mode === "fit"
+      ? [{ clips: [main] }, { clips: [{ asset: { type: "video", src: input.videoUrl, volume: 0 }, start: 0, length: total, fit: "crop", filter: "blur", opacity: 0.6 }] }]
+      : [{ clips: [main] }];
+  return { timeline: { background: "#000000", tracks }, output: { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 }, meta: { totalSeconds: total } };
+}
+
 export function buildRemuxEdit(input: { pictureUrl: string; soundUrl: string; seconds: number; size?: { width: number; height: number } }) {
   const total = Math.max(1, Math.round(input.seconds * 10) / 10);
   return {

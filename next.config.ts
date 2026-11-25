@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
     return [
       { source: "/mcp", destination: "/docs/mcp", permanent: true },
       { source: "/settings/connections", destination: "/settings", permanent: false },
+      // Brand left the settings on 25 Nov 2026 (Tijs).
+      { source: "/settings/brand", destination: "/settings", permanent: false },
       { source: "/solutions", destination: "/solutions/ecommerce-brands", permanent: false },
       { source: "/integrations", destination: "/integrations/api", permanent: false },
       { source: "/company", destination: "/about", permanent: false },

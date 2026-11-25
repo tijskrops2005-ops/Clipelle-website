@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CreditCard, Gauge, KeyRound, Link2, Palette, UserRound, Users, type LucideIcon } from "lucide-react";
+import { CreditCard, Gauge, KeyRound, UserRound, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** Brand always shows (23 Nov 2026): it holds the caption colours new translations start with and the logo for the edit screen; the ad-only fields inside it follow the ads switch. */
+/** Brand left the settings on 25 Nov 2026 (Tijs); /settings/brand redirects to /settings. Saved caption colours and logos keep working. */
 const items: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/settings", label: "Profile", icon: UserRound },
-  { href: "/settings/brand", label: "Brand", icon: Palette },
   { href: "/settings/team", label: "Team", icon: Users },
   { href: "/settings/usage", label: "Usage", icon: Gauge },
   { href: "/settings/billing", label: "Billing", icon: CreditCard },

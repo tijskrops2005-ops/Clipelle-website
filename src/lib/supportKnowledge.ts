@@ -7,6 +7,7 @@ import { CREDIT_RULES, FREE_CREDITS, PLANS } from "@/lib/plans";
 import { TRANSLATE_LANGUAGES } from "@/lib/translateLanguages";
 import { ENHANCE_CREDITS, IMAGE_MAX_BYTES, VIDEO_MAX_SECONDS } from "@/lib/enhanceRules";
 import { ALL_TOOLS } from "@/components/tools";
+import { MEDIA_CREDITS, MEDIA_MAX_SECONDS } from "@/lib/mediaTools";
 
 /**
  * What the support assistant knows (25 Nov 2026): Clipelle's own help texts (FAQ, pricing FAQ,
@@ -30,6 +31,11 @@ Credits: customers pay in credits; a credit is one second of finished video.
 - Enhance a video: ${ENHANCE_CREDITS.videoPerSecond["1080p"]} credit per second at 1080p, ${ENHANCE_CREDITS.videoPerSecond["4k"]} per second at 4K, at least ${ENHANCE_CREDITS.videoMinimum} seconds' worth; twice that for videos above 30 frames per second. Longest video: ${VIDEO_MAX_SECONDS} seconds, less at 4K (the page shows the limit).
 - Enhance an image: ${ENHANCE_CREDITS.image} credits per image, 2× or 4×, results up to 24 megapixels; images up to ${IMAGE_MAX_BYTES / 1024 / 1024} MB (JPG, PNG, WebP).
 - Video editor exports: one credit per six seconds of the exported video, at least two.
+- Remove on-screen text (any video): ${MEDIA_CREDITS["remove-text"].perSecond} credit per second, at least ${MEDIA_CREDITS["remove-text"].minimum}; the sound stays as it was.
+- Add captions (any video, in the language spoken): 1 credit per 2 seconds, at least ${MEDIA_CREDITS.captions.minimum}; caption style, position, 9:16 or the original size.
+- Resize to 9:16: 1 credit per 2 seconds, at least ${MEDIA_CREDITS.resize.minimum}; fill the frame or keep the whole picture over a blurred copy.
+- Remove background (product photos): ${MEDIA_CREDITS["remove-background"].perImage} credits per image, a transparent PNG.
+- These tools take videos up to ${MEDIA_MAX_SECONDS / 60} minutes and 32 MB, images up to 10 MB.
 - New accounts get ${FREE_CREDITS} free credits after e-mail verification. Paid credits never expire; the free ones expire after 30 days.
 - A failed video or enhancement gives its credits back automatically.
 

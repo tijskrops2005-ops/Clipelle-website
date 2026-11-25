@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Input } from "@/components/ui/Input";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { OVERLAY_MAX_CHARS, type EditRecipe } from "@/lib/editRecipe";
@@ -31,14 +30,13 @@ export function OverlaysPanel({ recipe, onRecipe, time, logoUrl, disabled }: { r
         <Input value={cta.text} maxLength={OVERLAY_MAX_CHARS} onChange={(e) => setCta({ text: e.target.value })} placeholder="Shop now at glowco.com" disabled={disabled} aria-label="Call to action" />
         <TimeRange from={cta.from} to={cta.to} total={total} time={time} onChange={(from, to) => setCta({ from, to })} disabled={disabled} />
       </Block>
-      <Block title="Brand logo" hint={logoUrl ? "Top right, the whole video." : undefined} on={logo.enabled} onToggle={(v) => onRecipe({ ...recipe, logo: { enabled: v } })} disabled={disabled || !logoUrl}>
-        {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
+      {/* The logo block only when a logo was saved before (25 Nov 2026: the Brand settings are gone, nothing to link to). */}
+      {logoUrl && (
+        <Block title="Brand logo" hint="Top right, the whole video." on={logo.enabled} onToggle={(v) => onRecipe({ ...recipe, logo: { enabled: v } })} disabled={disabled}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={logoUrl} alt="Your logo" className="max-h-10 max-w-[140px] object-contain" />
-        ) : (
-          <p className="text-[13px] text-muted">No logo yet. Upload one under <Link href="/settings/brand" className="font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Settings → Brand</Link>.</p>
-        )}
-      </Block>
+        </Block>
+      )}
     </div>
   );
 }

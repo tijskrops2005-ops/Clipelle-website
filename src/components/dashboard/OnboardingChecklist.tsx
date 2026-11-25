@@ -23,7 +23,6 @@ type Item = { key: ItemKey; label: string; text: string; href: string; ads?: boo
 const ALL_ITEMS: Item[] = [
   { key: "translation", label: "Translate your first video", text: "A video you own, into another language, with the speaker's own voice.", href: "/new/translate" },
   { key: "secondLanguage", label: "Add a second language", text: "Pick two languages on one video; each gets its own captions.", href: "/new/translate" },
-  { key: "brand", label: "Set your caption colours", text: "The colours every new translation starts with.", href: "/settings/brand" },
   { key: "firstAd", label: "Make your first ad", text: "One product photo and a few sentences; the rest runs on its own.", href: "/new/ad", ads: true },
   { key: "team", label: "Invite a team member", text: "Share one credit pool with your team.", href: "/settings/team", needs: "team" },
   { key: "apiKey", label: "Create an API key", text: "Start videos from your own code or an AI assistant.", href: "/settings/api", needs: "api" },

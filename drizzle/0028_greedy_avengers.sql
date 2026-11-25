@@ -1,0 +1,1 @@
+ALTER TABLE "enhance_jobs" ADD COLUMN "options" jsonb;

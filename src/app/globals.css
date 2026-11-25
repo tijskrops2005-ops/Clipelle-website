@@ -484,6 +484,13 @@
     radial-gradient(50% 60% at 75% 55%, color-mix(in srgb, var(--warning) 16%, white) 0%, transparent 70%);
   filter: blur(40px);
 }
+/* Behind a cut-out photo (remove background): a soft checkerboard shows what is transparent. */
+.checkerboard {
+  background-color: var(--surface);
+  background-image: linear-gradient(45deg, var(--surface-muted) 25%, transparent 25%), linear-gradient(-45deg, var(--surface-muted) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--surface-muted) 75%), linear-gradient(-45deg, transparent 75%, var(--surface-muted) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
 /* The dashboard's welcome band (25 Nov 2026): one soft gold light in the corner of the ink band, no blur filter (cheap on phones). */
 .welcome-glow {
   background: radial-gradient(closest-side, color-mix(in srgb, var(--gold) 38%, transparent) 0%, color-mix(in srgb, var(--accent) 14%, transparent) 55%, transparent 100%);

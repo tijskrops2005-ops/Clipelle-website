@@ -91,3 +91,28 @@ export async function getToolEnhanceStatus(kind: "video" | "image", requestId: s
     return { status: "FAILED", error: error instanceof Error ? error.message : "Unknown enhancer error" };
   }
 }
+
+/**
+ * Background removal for product photos (25 Nov 2026): Bria RMBG 2.0 on fal.ai,
+ * `fal-ai/bria/background/remove` (verified 25 Nov 2026): input `image_url`; output `image.url`, a PNG
+ * with transparency. $0.018 per image without a prompt; trained on licensed data (commercial use).
+ */
+export const BACKGROUND_ENDPOINT = "fal-ai/bria/background/remove";
+
+export async function submitBackgroundRemoval(input: { imageUrl: string; webhookUrl?: string }) {
+  const { request_id } = await fal().queue.submit(BACKGROUND_ENDPOINT, { input: { image_url: input.imageUrl }, ...(input.webhookUrl ? { webhookUrl: input.webhookUrl } : {}) });
+  return { requestId: request_id };
+}
+
+export async function getBackgroundRemovalStatus(requestId: string): Promise<ToolEnhanceStatus> {
+  const client = fal();
+  try {
+    const status = await client.queue.status(BACKGROUND_ENDPOINT, { requestId, logs: false });
+    if (status.status !== "COMPLETED") return { status: status.status };
+    const result = await client.queue.result(BACKGROUND_ENDPOINT, { requestId });
+    const image = (result.data as { image?: { url?: string; content_type?: string } }).image;
+    return image?.url ? { status: "COMPLETED", url: image.url, contentType: image.content_type ?? "image/png" } : { status: "FAILED", error: "The background removal finished without an image." };
+  } catch (error) {
+    return { status: "FAILED", error: error instanceof Error ? error.message : "Unknown background removal error" };
+  }
+}

@@ -1,4 +1,4 @@
-import { ImageUp, Languages, Link2, Palette, Scissors, Sparkles, UserRoundPen, Wand2, type LucideIcon } from "lucide-react";
+import { Captions, Eraser, ImageUp, Languages, Link2, RectangleVertical, Scissors, Sparkles, UserRoundPen, Wand2, Wallpaper, type LucideIcon } from "lucide-react";
 import { config } from "@/lib/config";
 
 /**
@@ -26,7 +26,7 @@ export type Tool = {
 export const TOOL_CATEGORIES: { key: ToolCategory; label: string; text: string }[] = [
   { key: "translate", label: "Video translation", text: "Your video in other languages, with matching lips and captions." },
   { key: "edit", label: "Video editing", text: "Trim, cut, captions, text and your logo on a finished video." },
-  { key: "enhance", label: "Enhance", text: "Sharper, cleaner, higher-resolution videos and product photos." },
+  { key: "enhance", label: "Enhance and clean up", text: "Sharper, bigger videos and photos, and photos without their background." },
   { key: "create", label: "AI content creation", text: "Ads made from a product photo or a product page." },
 ];
 
@@ -45,11 +45,15 @@ const TRANSLATE_TOOLS: Tool[] = [
 
 const EDIT_TOOLS: Tool[] = [
   { key: "editor", href: "/edit", label: "Video editor", text: "Trim and cut a finished video, edit its captions, add text, a call to action and your logo.", icon: Scissors, category: "edit", chips: ["Trim and cut", "Edit captions", "Caption styles", "Text and logo"] },
+  { key: "captions", href: "/tools/captions", label: "Add captions", text: "Captions of what is said, in the language of the video, in the style you pick.", icon: Captions, category: "edit", chips: ["Any video", "Caption styles", "9:16 or original"], isNew: true },
+  { key: "remove-text", href: "/tools/remove-text", label: "Remove on-screen text", text: "Take old captions, titles and stickers out of a video; the sound stays as it was.", icon: Eraser, category: "edit", chips: ["Old captions", "Titles", "Sound kept"], isNew: true },
+  { key: "resize", href: "/tools/resize", label: "Resize to 9:16", text: "A landscape or square video as a vertical video for Reels, TikTok and Shorts.", icon: RectangleVertical, category: "edit", chips: ["1080 × 1920", "Fill or whole picture"], isNew: true },
 ];
 
 const ENHANCE_TOOLS: Tool[] = [
   { key: "enhance-video", href: "/enhance?type=video", label: "Enhance a video", text: "Upscale a video to 1080p or 4K, with less noise and sharper detail.", icon: Wand2, category: "enhance", chips: ["Up to 4K", "Less noise", "Sharper"], isNew: true },
   { key: "enhance-image", href: "/enhance?type=image", label: "Enhance an image", text: "Upscale a product photo two or four times, sharper and cleaner.", icon: Sparkles, category: "enhance", chips: ["2× or 4×", "Sharper", "Faces kept natural"], isNew: true },
+  { key: "remove-background", href: "/tools/remove-background", label: "Remove background", text: "A product photo on a transparent background, ready for your shop or an ad.", icon: Wallpaper, category: "enhance", chips: ["Transparent PNG", "Product photos"], isNew: true },
 ];
 
 const AD_TOOLS: Tool[] = [
@@ -57,10 +61,12 @@ const AD_TOOLS: Tool[] = [
   { key: "url", href: "/new/url", label: "Ad from a link", text: "Paste a product page; name, description and photos fill the ad form for you to check.", icon: Link2, category: "create" },
 ];
 
-const BRAND_TOOL: Tool = { key: "brand", href: "/settings/brand", label: "Brand style", text: "Accent colour, caption look, font and logo, prefilled on every new ad.", icon: Palette, category: "create" };
-
 /** Every working tool, in category order. */
-export const STUDIO_TOOLS: Tool[] = [...TRANSLATE_TOOLS, ...EDIT_TOOLS, ...ENHANCE_TOOLS, ...(config.features.ads ? [...AD_TOOLS, BRAND_TOOL] : [])];
+export const STUDIO_TOOLS: Tool[] = [...TRANSLATE_TOOLS, ...EDIT_TOOLS, ...ENHANCE_TOOLS, ...(config.features.ads ? AD_TOOLS : [])];
+
+/** The tools that also get a row in the sidebar (25 Nov 2026: nine rows were too many); the rest live on All tools and in the search. */
+export const SIDEBAR_TOOL_KEYS = ["translate", "presenter", "editor", "enhance-video", "enhance-image"];
+export const SIDEBAR_TOOLS: Tool[] = STUDIO_TOOLS.filter((t) => SIDEBAR_TOOL_KEYS.includes(t.key));
 
 /** Announced tools: the two ad tools while `config.features.ads` is off. */
 export const SOON_TOOLS: Tool[] = config.features.ads ? [] : AD_TOOLS.map((t) => ({ ...t, soon: true }));

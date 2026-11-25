@@ -13,7 +13,7 @@ import { Brand } from "@/components/Brand";
 import { UserMenu } from "@/components/UserMenu";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { isActivePath, navItems, adminNavItem, settingsNavItem, type NavItem } from "@/components/nav";
-import { SOON_TOOLS, STUDIO_TOOLS, activeToolKey, type Tool } from "@/components/tools";
+import { SIDEBAR_TOOLS, SOON_TOOLS, STUDIO_TOOLS, activeToolKey, type Tool } from "@/components/tools";
 import { UnseenBadge } from "@/components/StatusWatcher";
 
 export type ShellUser = { email: string; name?: string; credits: number | null; planKey?: string; workspace: { id: string; name: string; kind: string; role: string }; workspaces: { id: string; name: string; kind: string; role: string }[]; isAdmin?: boolean } | null;
@@ -70,7 +70,7 @@ export function SidebarLinks({ isAdmin, onNavigate }: { isAdmin?: boolean; onNav
 
       <GroupLabel>Create</GroupLabel>
       <NavRow item={{ href: "/tools", label: "All tools", icon: LayoutGrid }} active={isActivePath(pathname, "/tools")} onNavigate={onNavigate} />
-      {STUDIO_TOOLS.map((t) => (
+      {SIDEBAR_TOOLS.map((t) => (
         <ToolRow key={t.key} tool={t} active={t.key === activeTool} onNavigate={onNavigate} />
       ))}
       <SoonGroup onNavigate={onNavigate} />

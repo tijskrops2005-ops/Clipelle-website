@@ -762,7 +762,8 @@ export const adminViews = pgTable(
 ).enableRLS();
 
 /**
- * The enhancer (25 Nov 2026): one row per video or image the customer has upscaled and cleaned, apart
+ * The enhancer and the single-step media tools (25 Nov 2026; `kind` = video | image for the enhancer,
+ * else the tool key from src/lib/mediaTools.ts): one row per file the customer has processed, apart
  * from projects (an enhancement has no steps, languages or edit versions). Credits go through the ledger
  * with references `enhance:<id>:reserve` / `enhance:<id>:refund`; the paid call through the cost guard.
  */
@@ -776,8 +777,10 @@ export const enhanceJobs = pgTable(
     kind: text("kind").notNull(),
     /** queued | processing | completed | failed */
     status: text("status").default("queued").notNull(),
-    /** Video: "1080p" | "4k"; image: "2x" | "4x". */
+    /** Video: "1080p" | "4k"; image: "2x" | "4x"; the media tools (25 Nov 2026): "-". */
     target: text("target").notNull(),
+    /** The media tools' choices (caption preset, position, format; resize mode). */
+    options: jsonb("options").$type<import("@/lib/mediaTools").MediaToolOptions>(),
     fileName: text("file_name").notNull(),
     sourcePath: text("source_path").notNull(),
     sourceMime: text("source_mime"),

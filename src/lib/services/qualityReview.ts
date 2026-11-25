@@ -114,6 +114,22 @@ export async function reviewFrames(input: { first: string; middle: string; last:
 
 type Transcription = { id: string; status: "pending" | "completed" | "failed"; language?: string | null; duration_seconds?: number | null; text?: string | null; segments?: { start: number; end: number; text: string }[] | null; failure_message?: string | null };
 
+/**
+ * Transcribes a video with timings per segment (25 Nov 2026, the "Add captions" tool): the same call,
+ * returning the segments so they can become caption lines. Synchronous; the same key returns the stored result.
+ */
+export async function transcribeSegments(url: string, idempotencyKey: string): Promise<{ segments: { start: number; end: number; text: string }[]; language: string | null; seconds: number | null }> {
+  const t = await heygenFetch<Transcription>("/v3/audio/transcriptions", {
+    method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
+    body: JSON.stringify({ model: "scribe-v2", audio: { type: "url", url }, word_timestamps: false, diarize: false }),
+    signal: AbortSignal.timeout(180_000),
+  });
+  if (t.status !== "completed") throw new QualityReviewError(t.failure_message ?? `The transcription is ${t.status}.`, "transcription_not_ready");
+  const segments = (t.segments ?? []).filter((s) => s.text?.trim() && s.end > s.start).map((s) => ({ start: s.start, end: s.end, text: s.text.trim() }));
+  return { segments, language: t.language ?? null, seconds: t.duration_seconds ?? null };
+}
+
 /** Transcribes a finished video from a public link; synchronous. The same key returns the stored result. */
 export async function transcribeVideo(url: string, idempotencyKey: string, language?: string): Promise<{ text: string; language: string | null; seconds: number | null; spokenEnd: number | null }> {
   const t = await heygenFetch<Transcription>("/v3/audio/transcriptions", {

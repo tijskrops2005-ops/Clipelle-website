@@ -1,13 +1,14 @@
 import "server-only";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { creditLedger, db, enhanceJobs } from "@/lib/db";
 import { getCreditBalance, CreditError } from "@/lib/credits";
 import { copyObject, deleteObject, isStagedPathOf, safeFileName, signedDownloadUrl } from "@/lib/storage";
 import { costLimits } from "@/lib/services/costGuard";
-import { inngest, enhanceRequested } from "@/lib/inngest/client";
+import { inngest, enhanceRequested, mediaToolRequested } from "@/lib/inngest/client";
 import { DataError } from "@/lib/data/errors";
 import type { DataScope } from "@/lib/data/server";
 import { IMAGE_TARGETS, IMAGE_TYPES, VIDEO_TARGETS, VIDEO_TYPES, imageCredits, maxVideoSeconds, videoCredits, type EnhanceKind, type EnhanceTarget } from "@/lib/enhanceRules";
+import { MEDIA_MAX_SECONDS, MEDIA_TOOLS, mediaCredits, normaliseOptions, type MediaToolKey, type MediaToolOptions } from "@/lib/mediaTools";
 
 /**
  * The enhancer's data (25 Nov 2026): create a job from a staged upload, list and read jobs, and the
@@ -17,9 +18,10 @@ export type EnhanceJobRow = typeof enhanceJobs.$inferSelect;
 
 export type ClientEnhanceJob = {
   id: string;
-  kind: EnhanceKind;
+  kind: EnhanceKind | MediaToolKey;
   status: "queued" | "processing" | "completed" | "failed";
-  target: EnhanceTarget;
+  target: EnhanceTarget | "-";
+  options?: MediaToolOptions;
   fileName: string;
   sourceUrl?: string;
   resultUrl?: string;
@@ -52,9 +54,10 @@ export async function toClientJob(row: EnhanceJobRow): Promise<ClientEnhanceJob>
   ]);
   return {
     id: row.id,
-    kind: row.kind as EnhanceKind,
+    kind: row.kind as ClientEnhanceJob["kind"],
     status: row.status as ClientEnhanceJob["status"],
-    target: row.target as EnhanceTarget,
+    target: row.target as ClientEnhanceJob["target"],
+    options: row.options ?? undefined,
     fileName: row.fileName,
     sourceUrl,
     resultUrl,
@@ -71,8 +74,50 @@ export async function toClientJob(row: EnhanceJobRow): Promise<ClientEnhanceJob>
 }
 
 export async function listEnhanceJobs(scope: DataScope, limit = 30) {
-  const rows = await db().select().from(enhanceJobs).where(eq(enhanceJobs.workspaceId, scope.workspaceId)).orderBy(desc(enhanceJobs.createdAt)).limit(limit);
+  const rows = await db().select().from(enhanceJobs).where(and(eq(enhanceJobs.workspaceId, scope.workspaceId), inArray(enhanceJobs.kind, ["video", "image"]))).orderBy(desc(enhanceJobs.createdAt)).limit(limit);
   return Promise.all(rows.map(toClientJob));
+}
+
+/** The jobs of one media tool, newest first. */
+export async function listToolJobs(scope: DataScope, tool: MediaToolKey, limit = 30) {
+  const rows = await db().select().from(enhanceJobs).where(and(eq(enhanceJobs.workspaceId, scope.workspaceId), eq(enhanceJobs.kind, tool))).orderBy(desc(enhanceJobs.createdAt)).limit(limit);
+  return Promise.all(rows.map(toClientJob));
+}
+
+export type NewToolJob = { tool: MediaToolKey; stagedPath: string; fileName: string; mime?: string; rightsConfirmed: boolean; seconds?: number; options?: MediaToolOptions };
+
+/** Starts a media tool job from a staged upload (same checks as the enhancer; credits are reserved by the job once the file is measured). */
+export async function createToolJob(scope: DataScope, input: NewToolJob) {
+  if (scope.readOnly) throw new DataError("Nothing can be changed while viewing as a customer.", 403, "read_only_view");
+  if (!input.rightsConfirmed) throw new DataError("Confirm that you own this file or may use it.", 400, "rights_required");
+  if (!isStagedPathOf(input.stagedPath, scope.userId)) throw new DataError("Upload the file again.", 400, "bad_path");
+  const tool = MEDIA_TOOLS[input.tool];
+  const types: readonly string[] = tool.media === "video" ? VIDEO_TYPES : IMAGE_TYPES;
+  if (input.mime && !types.includes(input.mime)) throw new DataError(tool.media === "video" ? "Use an MP4, MOV or WebM video." : "Use a JPG, PNG or WebP image.", 415, "bad_type");
+  if (tool.media === "video" && input.seconds && input.seconds > MEDIA_MAX_SECONDS + 0.5) throw new DataError(`A video can be up to ${MEDIA_MAX_SECONDS / 60} minutes here. Trim it first.`, 400, "too_long");
+  const early = mediaCredits(input.tool, input.seconds ?? 10);
+  const balance = await getCreditBalance(scope.workspaceId);
+  if (balance < early) throw new CreditError(`This needs about ${early} credits and the workspace has ${balance}. Add credits in Billing to start it.`);
+  const [row] = await db()
+    .insert(enhanceJobs)
+    .values({ userId: scope.userId, workspaceId: scope.workspaceId, kind: input.tool, target: "-", options: normaliseOptions(input.tool, input.options), fileName: input.fileName.slice(0, 200), sourcePath: input.stagedPath, sourceMime: input.mime ?? null, seconds: input.seconds ?? null, rightsConfirmedAt: new Date() })
+    .returning();
+  const to = `users/${scope.userId}/tools/${row.id}/source-${safeFileName(input.fileName)}`;
+  await copyObject(input.stagedPath, to);
+  await deleteObject(input.stagedPath).catch(() => null);
+  await db().update(enhanceJobs).set({ sourcePath: to, updatedAt: new Date() }).where(eq(enhanceJobs.id, row.id));
+  try {
+    await inngest.send(mediaToolRequested.create({ jobId: row.id }));
+  } catch {
+    await db().update(enhanceJobs).set({ status: "failed", error: "The job system could not be reached. Nothing was charged; try again in a minute.", updatedAt: new Date() }).where(eq(enhanceJobs.id, row.id));
+    throw new DataError("The job system could not be reached. Nothing was charged; try again in a minute.", 503, "jobs_unavailable");
+  }
+  return row.id;
+}
+
+/** The ledger note for a job: the tool's name, or "Enhance video/image". */
+function jobLabel(job: EnhanceJobRow) {
+  return job.kind === "video" || job.kind === "image" ? `Enhance ${job.kind}` : MEDIA_TOOLS[job.kind as MediaToolKey]?.label ?? job.kind;
 }
 
 export async function getEnhanceJobRow(scope: DataScope, id: string) {
@@ -130,12 +175,12 @@ export async function reserveEnhanceCredits(job: EnhanceJobRow, credits: number)
   if (twin) return;
   const balance = await getCreditBalance(job.workspaceId);
   if (balance < credits) throw new CreditError(`This needs ${credits} credits and the workspace has ${balance}. Add credits in Billing and try again.`);
-  await db().insert(creditLedger).values({ userId: job.userId, workspaceId: job.workspaceId, credits: -credits, kind: "reserve", note: `Enhance ${job.kind}: ${job.fileName}`, reference }).onConflictDoNothing();
+  await db().insert(creditLedger).values({ userId: job.userId, workspaceId: job.workspaceId, credits: -credits, kind: "reserve", note: `${jobLabel(job)}: ${job.fileName}`, reference }).onConflictDoNothing();
 }
 
 /** Gives the reserved credits back after a failure (once). */
 export async function refundEnhanceCredits(job: EnhanceJobRow) {
   const [reserve] = await db().select().from(creditLedger).where(and(eq(creditLedger.userId, job.userId), eq(creditLedger.reference, `enhance:${job.id}:reserve`))).limit(1);
   if (!reserve) return;
-  await db().insert(creditLedger).values({ userId: job.userId, workspaceId: job.workspaceId, credits: -reserve.credits, kind: "refund", note: `Enhance ${job.kind} failed: ${job.fileName}`, reference: `enhance:${job.id}:refund` }).onConflictDoNothing();
+  await db().insert(creditLedger).values({ userId: job.userId, workspaceId: job.workspaceId, credits: -reserve.credits, kind: "refund", note: `${jobLabel(job)} failed: ${job.fileName}`, reference: `enhance:${job.id}:refund` }).onConflictDoNothing();
 }

@@ -20,7 +20,6 @@ const AD_TIPS: { text: string; href: string; link: string }[] = [
   { text: "Two or three factual sentences about the product give the script step enough to work with.", href: "/new/ad", link: "Make an ad" },
   { text: "Fill in Offer only when you have one: it is the only way a deal ends up in the call to action.", href: "/new/ad", link: "Make an ad" },
   { text: "Turn on “Review script first” to read and change the script before the presenter speaks it.", href: "/new/ad", link: "Make an ad" },
-  { text: "Save your accent colour, caption look, font and logo once; every new ad starts with them.", href: "/settings/brand", link: "Brand style" },
   { text: "Made an ad you like? “Localize this ad” turns it into other languages without a new upload.", href: "/projects", link: "Your projects" },
   { text: "Paste a product link and the name, description and photos are filled in for you to check.", href: "/new/url", link: "Ad from a link" },
 ];

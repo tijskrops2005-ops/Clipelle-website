@@ -43,6 +43,11 @@ export const enhanceRequested = eventType("enhance/job.requested", {
   schema: z.object({ jobId: z.string().uuid() }),
 });
 
+/** A single-step media tool (25 Nov 2026): remove on-screen text, add captions, resize to 9:16, remove a background. */
+export const mediaToolRequested = eventType("tools/job.requested", {
+  schema: z.object({ jobId: z.string().uuid() }),
+});
+
 /** Workflow A with "Review script first": the user approved (and maybe edited) the script. */
 export const adScriptApproved = eventType("project/ad-script.approved", {
   schema: z.object({ projectId: z.string().uuid() }),

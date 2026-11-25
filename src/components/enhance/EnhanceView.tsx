@@ -11,10 +11,11 @@ import { StatusBadge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatBytes, formatDuration } from "@/components/ui/VideoDropzone";
 import { enhanceDownloadHref, startEnhance, useEnhanceJobs, type EnhanceJobView } from "@/lib/data/enhanceClient";
+import { MEDIA_TOOLS, isMediaToolKey, optionsLabel } from "@/lib/mediaTools";
 import { ENHANCE_CREDITS, IMAGE_MAX_BYTES, IMAGE_TARGETS, IMAGE_TYPES, VIDEO_TARGETS, VIDEO_TYPES, imageCredits, imageOutput, videoCredits, videoOutput, type EnhanceKind, type ImageTarget, type VideoTarget } from "@/lib/enhanceRules";
 
 const VIDEO_MAX_MB = config.limits.translateVideoMaxMb;
-type Picked = { file: File; url: string; seconds?: number; width?: number; height?: number };
+export type Picked = { file: File; url: string; seconds?: number; width?: number; height?: number };
 
 /**
  * The enhancer (25 Nov 2026, Tijs): a video or a product photo in, a sharper, bigger file out. One
@@ -154,7 +155,20 @@ export function EnhanceView() {
   );
 }
 
-function FilePicker({ kind, picked, onPick, onReject, disabled }: { kind: EnhanceKind; picked: Picked | null; onPick: (p: Picked | null) => void; onReject: (m: string) => void; disabled?: boolean }) {
+/** Whether a job's file is a video or an image (enhancer kinds and media tools alike). */
+export function mediaOf(job: EnhanceJobView): EnhanceKind {
+  return isMediaToolKey(job.kind) ? MEDIA_TOOLS[job.kind].media : (job.kind as EnhanceKind);
+}
+
+/** The second line of a job row: what was done, the sizes and the credits. */
+function describeJob(job: EnhanceJobView) {
+  const media = mediaOf(job);
+  const what = isMediaToolKey(job.kind) ? optionsLabel(job.kind, job.options) || null : job.target === "4k" ? "4K" : job.target === "1080p" ? "1080p" : job.target === "4x" ? "4×" : "2×";
+  const size = job.outWidth && job.outHeight && job.width && job.height && (job.outWidth !== job.width || job.outHeight !== job.height) ? `${job.width} × ${job.height} → ${job.outWidth} × ${job.outHeight}` : job.width && job.height ? `${job.width} × ${job.height}` : null;
+  return [media === "video" ? (job.seconds ? formatDuration(job.seconds) : "Video") : "Image", what, size, job.credits ? `${job.credits} credits` : null].filter(Boolean).join(" · ");
+}
+
+export function FilePicker({ kind, picked, onPick, onReject, disabled }: { kind: EnhanceKind; picked: Picked | null; onPick: (p: Picked | null) => void; onReject: (m: string) => void; disabled?: boolean }) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
@@ -214,21 +228,21 @@ function FilePicker({ kind, picked, onPick, onReject, disabled }: { kind: Enhanc
   );
 }
 
-function JobRow({ job }: { job: EnhanceJobView }) {
+export function JobRow({ job }: { job: EnhanceJobView }) {
+  const media = mediaOf(job);
   const [open, setOpen] = useState(false);
   const done = job.status === "completed" && job.resultUrl;
-  const size = job.outWidth && job.outHeight ? `${job.width} × ${job.height} → ${job.outWidth} × ${job.outHeight}` : job.width && job.height ? `${job.width} × ${job.height}` : null;
   return (
     <li className="rounded-[14px] border border-border">
       <div className="flex items-center gap-3 p-3">
         <span className="relative block size-14 shrink-0 overflow-hidden rounded-[10px] bg-surface-muted">
-          {job.sourceUrl && (job.kind === "video" ? <video src={`${job.resultUrl ?? job.sourceUrl}#t=0.5`} muted playsInline preload="metadata" className="size-full object-cover" aria-hidden /> : // eslint-disable-next-line @next/next/no-img-element
+          {job.sourceUrl && (media === "video" ? <video src={`${job.resultUrl ?? job.sourceUrl}#t=0.5`} muted playsInline preload="metadata" className="size-full object-cover" aria-hidden /> : // eslint-disable-next-line @next/next/no-img-element
             <img src={job.resultUrl ?? job.sourceUrl} alt="" className="size-full object-cover" />)}
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[14px] font-medium text-ink">{job.fileName}</span>
           <span className="block truncate text-[12.5px] tabular-nums text-muted">
-            {[job.kind === "video" ? "Video" : "Image", job.target === "4k" ? "4K" : job.target === "1080p" ? "1080p" : job.target === "4x" ? "4×" : "2×", size, job.credits ? `${job.credits} credits` : null].filter(Boolean).join(" · ")}
+            {describeJob(job)}
           </span>
           {job.status === "failed" && job.error && <span className="mt-0.5 block text-[12.5px] text-danger">{job.error}</span>}
         </span>
@@ -240,14 +254,14 @@ function JobRow({ job }: { job: EnhanceJobView }) {
           </>
         )}
       </div>
-      {done && open && job.sourceUrl && <Compare kind={job.kind} before={job.sourceUrl} after={job.resultUrl!} />}
+      {done && open && job.sourceUrl && <Compare kind={media} before={job.sourceUrl} after={job.resultUrl!} transparent={job.kind === "remove-background"} />}
       {job.demo && done && <p className="px-3 pb-3 text-[12px] text-muted">Demo: the result is your original file.</p>}
     </li>
   );
 }
 
 /** Before and after: a slider over the image, or the two videos side by side. */
-function Compare({ kind, before, after }: { kind: EnhanceKind; before: string; after: string }) {
+function Compare({ kind, before, after, transparent }: { kind: EnhanceKind; before: string; after: string; /** A cut-out: shown on a checkerboard so the transparent parts are visible. */ transparent?: boolean }) {
   const [at, setAt] = useState(50);
   if (kind === "video") {
     return (
@@ -263,11 +277,11 @@ function Compare({ kind, before, after }: { kind: EnhanceKind; before: string; a
   }
   return (
     <div className="border-t border-divider p-3">
-      <div className="relative overflow-hidden rounded-[10px] bg-surface-muted">
+      <div className={cn("relative overflow-hidden rounded-[10px]", transparent ? "checkerboard" : "bg-surface-muted")}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={after} alt="After" className="block w-full" />
+        <img src={after} alt="After" className="mx-auto block max-h-[460px] w-full object-contain" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={before} alt="Before" className="absolute inset-0 size-full object-cover" style={{ clipPath: `inset(0 ${100 - at}% 0 0)` }} />
+        <img src={before} alt="Before" className="absolute inset-0 size-full object-contain" style={{ clipPath: `inset(0 ${100 - at}% 0 0)` }} />
         <span className="pointer-events-none absolute inset-y-0 w-0.5 bg-white shadow" style={{ left: `${at}%` }} aria-hidden />
         <span className="absolute left-2 top-2 rounded-full bg-ink/70 px-2 py-0.5 text-[11px] text-white">Before</span>
         <span className="absolute right-2 top-2 rounded-full bg-ink/70 px-2 py-0.5 text-[11px] text-white">After</span>
