@@ -19,9 +19,9 @@ const nextConfig: NextConfig = {
       { source: "/company", destination: "/about", permanent: false },
       { source: "/docs", destination: "/docs/api", permanent: false },
       { source: "/creations", destination: "/new", permanent: false },
-      { source: "/nl/solutions", destination: "/nl/solutions/ecommerce-brands", permanent: false },
-      { source: "/nl/integrations", destination: "/nl/integrations/api", permanent: false },
-      { source: "/nl/company", destination: "/nl/about", permanent: false },
+      // English only since 25 Nov 2026 (Tijs): every Dutch address lands on the same English page.
+      { source: "/nl", destination: "/", permanent: true },
+      { source: "/nl/:path*", destination: "/:path*", permanent: true },
     ];
   },
   turbopack: {

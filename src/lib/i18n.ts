@@ -7,7 +7,9 @@ import { absoluteUrl } from "@/lib/site";
  * Browser-safe.
  */
 export type Locale = "en" | "nl";
-export const LOCALES: Locale[] = ["en", "nl"];
+// English only since 25 Nov 2026 (Tijs): the Dutch site is gone, /nl/* redirects to the English page.
+// The "nl" dictionary stays in the code for now (docs/removed-blocks.md); nothing renders it.
+export const LOCALES: Locale[] = ["en"];
 export const DEFAULT_LOCALE: Locale = "en";
 export const LOCALE_LABELS: Record<Locale, string> = { en: "English", nl: "Nederlands" };
 export const LANG_COOKIE = "clipelle_lang";
@@ -24,14 +26,13 @@ export const isLocale = (v: unknown): v is Locale => typeof v === "string" && (L
 /** The same page in another language: "/pricing" → "/nl/pricing"; app and auth paths stay as they are. */
 export function localizePath(path: string, locale: Locale) {
   const clean = stripLocale(path).path;
-  if (locale === DEFAULT_LOCALE) return clean;
+  if (locale === DEFAULT_LOCALE || !isLocale(locale)) return clean;
   if (!isSitePath(clean)) return clean;
   return clean === "/" ? `/${locale}` : `/${locale}${clean}`;
 }
 
 export function stripLocale(path: string): { locale: Locale; path: string } {
-  for (const l of LOCALES) {
-    if (l === DEFAULT_LOCALE) continue;
+  for (const l of ["nl"] as Locale[]) {
     if (path === `/${l}`) return { locale: l, path: "/" };
     if (path.startsWith(`/${l}/`)) return { locale: l, path: path.slice(l.length + 1) };
   }
@@ -44,12 +45,10 @@ export function isSitePath(path: string) {
   return !APP_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
 }
 
-/** Canonical plus hreflang for both languages (and x-default = English). */
+/** The canonical address (English only since 25 Nov 2026, so no hreflang alternates). */
 export function alternatesFor(path: string, locale: Locale) {
-  return {
-    canonical: absoluteUrl(localizePath(path, locale)),
-    languages: { en: absoluteUrl(localizePath(path, "en")), nl: absoluteUrl(localizePath(path, "nl")), "x-default": absoluteUrl(localizePath(path, "en")) },
-  };
+  void locale;
+  return { canonical: absoluteUrl(stripLocale(path).path) };
 }
 
 /** Metadata for a site page in one call: title, description, canonical and hreflang. */

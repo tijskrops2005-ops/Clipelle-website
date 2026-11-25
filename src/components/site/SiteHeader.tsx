@@ -11,7 +11,6 @@ import { Drawer } from "@/components/ui/Drawer";
 import { menus, menusFor, type MenuItem, type MenuKey } from "./siteNav";
 import { dict } from "@/content/i18n";
 import { localizePath, type Locale } from "@/lib/i18n";
-import { LanguageSwitch } from "./LanguageSwitch";
 import { LogoFull, LogoLockup, LogoMark } from "@/components/Logo";
 
 /**
@@ -208,7 +207,6 @@ export function SiteHeader({ account, locale = "en" }: { account: ReactNode; loc
           </nav>
 
           <div className="flex items-center gap-2 pr-1">
-            <LanguageSwitch locale={locale} className="hidden md:inline-flex" />
             {account}
           </div>
         </div>
@@ -262,7 +260,6 @@ export function SiteHeader({ account, locale = "en" }: { account: ReactNode; loc
               <Link href={L("/pricing")} onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">{t.header.pricing}</Link>
               <Link href={L("/demo")} onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">{t.common.bookDemo}</Link>
               <Link href="/login" onClick={closeAll} className="focus-ring rounded-control px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-ink/5">{t.common.logIn}</Link>
-              <div className="px-3 py-2"><LanguageSwitch locale={locale} /></div>
             </nav>
             <Button href="/signup" variant="accent" size="lg" className="mt-auto w-full" onClick={closeAll}>
               {t.common.startFree}

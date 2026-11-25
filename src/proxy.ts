@@ -22,7 +22,7 @@ function rememberReferral(request: NextRequest, response: NextResponse) {
  * API stay reachable; API routes check the session themselves and answer 401.
  * Demo mode (NEXT_PUBLIC_DEMO_MODE != "false") has no accounts and skips all of this.
  */
-const PROTECTED = ["/dashboard", "/projects", "/edit", "/batches", "/admin", "/settings", "/new/ad", "/new/url", "/new/translate"];
+const PROTECTED = ["/dashboard", "/projects", "/edit", "/tools", "/enhance", "/batches", "/admin", "/settings", "/new/ad", "/new/url", "/new/translate"];
 const AUTH_PAGES = ["/login", "/signup"];
 
 export async function proxy(request: NextRequest) {
@@ -32,16 +32,6 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (process.env.NODE_ENV !== "development" && (path === "/dev" || path.startsWith("/dev/") || path.startsWith("/api/dev/"))) {
     return new NextResponse("Not found", { status: 404 });
-  }
-  // Language preference (cookie set only after a cookie choice): the root goes to /nl when the visitor chose Dutch.
-  const lang = request.cookies.get("clipelle_lang")?.value ?? request.cookies.get("reelay_lang")?.value;
-  if (request.nextUrl.pathname === "/" && lang === "nl") {
-    const nl = request.nextUrl.clone();
-    nl.pathname = "/nl";
-    const redirect = NextResponse.redirect(nl);
-    // A preference stored under the pre-rename cookie name is carried over once.
-    if (!request.cookies.get("clipelle_lang") && lang) redirect.cookies.set("clipelle_lang", lang, { path: "/", maxAge: 365 * 24 * 3600, sameSite: "lax" });
-    return redirect;
   }
   const demo = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
