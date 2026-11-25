@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BUSINESS_TIERS, MIN_MARGIN, PLANS, PLAN_LEVELS } from "./plans";
-import { MEDIA_TOOL_KEYS, mediaCredits, mediaEstimateUsd, normaliseOptions, optionsLabel } from "./mediaTools";
+import { MEDIA_TOOL_KEYS, isMediaToolKey, mediaCredits, mediaEstimateUsd, normaliseOptions, optionsLabel, videoBackgroundUsd } from "./mediaTools";
 
 const cheapestCredit = Math.min(...[...PLANS, ...PLAN_LEVELS, ...BUSINESS_TIERS].filter((p) => p.monthlyUsd > 0).map((p) => p.annualMonthlyUsd / p.creditsPerMonth));
 
@@ -12,6 +12,22 @@ describe("media tools", () => {
         expect(cheapestCredit / perCredit, `${tool} ${seconds}s`).toBeGreaterThanOrEqual(MIN_MARGIN);
       }
     }
+  });
+
+  it("keeps the video background margin at more pixels and more frames per second", () => {
+    for (const [w, h, fps] of [[1080, 1920, 30], [1080, 1920, 60], [1920, 1920, 30], [1920, 1080, 50], [720, 1280, 24]]) {
+      for (const seconds of [5, 30, 120]) {
+        const perCredit = videoBackgroundUsd(w, h, fps, seconds) / mediaCredits("video-background", seconds, { width: w, height: h, fps });
+        expect(cheapestCredit / perCredit, `${w}x${h}@${fps} ${seconds}s`).toBeGreaterThanOrEqual(MIN_MARGIN);
+      }
+    }
+    expect(mediaCredits("video-background", 20, { width: 1080, height: 1920, fps: 60 })).toBe(120);
+  });
+
+  it("knows its own tools only", () => {
+    expect(isMediaToolKey("captions")).toBe(true);
+    expect(isMediaToolKey("constructor")).toBe(false);
+    expect(isMediaToolKey("toString")).toBe(false);
   });
 
   it("charges per second, per two seconds or per image, with minimums", () => {

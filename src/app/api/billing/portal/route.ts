@@ -4,7 +4,7 @@ import { getWorkspace } from "@/lib/workspaces";
 import { z } from "zod";
 import Stripe from "stripe";
 import { existingCustomer, priceByLookupKey, stripe, stripeEnabled } from "@/lib/stripe";
-import { setPlan } from "@/lib/billing";
+import { forgetBilling } from "@/lib/billing";
 import { planByKey } from "@/lib/plans";
 import { databaseModeOnly, readJson } from "@/app/api/projects/_guard";
 import { planChangeFlow, type PortalKind } from "@/lib/billingPortal";
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     if (!stripeEnabled()) return Response.json({ error: "Payments are not configured yet." }, { status: 503 });
     const profile = (await getWorkspace(scope.workspaceId))!;
     // A customer from test mode does not exist in live mode: forget it and ask for a plan (25 Nov 2026).
-    const customer = await existingCustomer(profile.stripeCustomerId, () => setPlan(profile.id, { stripeCustomerId: null, stripeSubscriptionId: null }));
+    const customer = await existingCustomer(profile.stripeCustomerId, () => forgetBilling(profile.id));
     if (!customer) return Response.json({ error: "No billing account yet. Pick a plan first." }, { status: 400 });
     const origin = process.env.NEXT_PUBLIC_SITE_URL?.trim() || new URL(request.url).origin;
     const configuration = await portalConfiguration(profile.kind === "team" ? "team" : "individual");

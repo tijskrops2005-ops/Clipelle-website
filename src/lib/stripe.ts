@@ -74,3 +74,18 @@ export async function existingCustomer(customerId: string | null, forget: () => 
     throw error;
   }
 }
+
+/**
+ * Does this subscription exist in the Stripe mode we run in? (26 Nov 2026, from a review) A plan
+ * bought in test mode is unknown to live mode; the caller then treats the workspace as free.
+ * Any other error is thrown, so a Stripe outage never downgrades anyone.
+ */
+export async function subscriptionExists(subscriptionId: string): Promise<boolean> {
+  try {
+    await stripe().subscriptions.retrieve(subscriptionId);
+    return true;
+  } catch (error) {
+    if (error instanceof Stripe.errors.StripeInvalidRequestError && error.code === "resource_missing") return false;
+    throw error;
+  }
+}

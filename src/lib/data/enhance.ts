@@ -1,9 +1,9 @@
 import "server-only";
-import { and, desc, eq, inArray } from "drizzle-orm";
-import { creditLedger, db, enhanceJobs } from "@/lib/db";
+import { and, desc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
+import { costEntries, creditLedger, db, enhanceJobs } from "@/lib/db";
 import { getCreditBalance, CreditError } from "@/lib/credits";
 import { copyObject, deleteObject, isStagedPathOf, safeFileName, signedDownloadUrl } from "@/lib/storage";
-import { costLimits } from "@/lib/services/costGuard";
+import { costLimits, settleSpend } from "@/lib/services/costGuard";
 import { inngest, enhanceRequested, mediaToolRequested } from "@/lib/inngest/client";
 import { DataError } from "@/lib/data/errors";
 import { resultStoragePath, type DataScope } from "@/lib/data/server";
@@ -105,7 +105,11 @@ export async function createToolJob(scope: DataScope, input: NewToolJob) {
     .insert(enhanceJobs)
     .values({ userId: scope.userId, workspaceId: scope.workspaceId, kind: input.tool, target: "-", options: normaliseOptions(input.tool, input.options), fileName: fileName.slice(0, 200), sourcePath: source?.path ?? input.stagedPath!, sourceMime: input.mime ?? null, seconds: input.seconds ?? null, rightsConfirmedAt: new Date() })
     .returning();
-  await placeSource(scope, row.id, "tools", { stagedPath: input.stagedPath, from: source ?? undefined, fileName });
+  await placeSource(scope, row.id, "tools", { stagedPath: input.stagedPath, from: source ?? undefined, fileName }).catch(async () => {
+    // The file could not be placed (a staged upload already used, storage down): no job is left waiting.
+    await db().update(enhanceJobs).set({ status: "failed", error: "The file could not be read. Upload it again.", updatedAt: new Date(), finishedAt: new Date() }).where(eq(enhanceJobs.id, row.id));
+    throw new DataError("The file could not be read. Upload it again.", 400, "bad_path");
+  });
   try {
     await inngest.send(mediaToolRequested.create({ jobId: row.id }));
   } catch {
@@ -208,7 +212,11 @@ export async function createEnhanceJob(scope: DataScope, input: NewEnhanceJob) {
     .insert(enhanceJobs)
     .values({ userId: scope.userId, workspaceId: scope.workspaceId, kind: input.kind, target: input.target, fileName: fileName.slice(0, 200), sourcePath: source?.path ?? input.stagedPath!, sourceMime: input.mime ?? null, seconds: input.seconds ?? null, rightsConfirmedAt: new Date() })
     .returning();
-  await placeSource(scope, row.id, "enhance", { stagedPath: input.stagedPath, from: source ?? undefined, fileName });
+  await placeSource(scope, row.id, "enhance", { stagedPath: input.stagedPath, from: source ?? undefined, fileName }).catch(async () => {
+    // The file could not be placed (a staged upload already used, storage down): no job is left waiting.
+    await db().update(enhanceJobs).set({ status: "failed", error: "The file could not be read. Upload it again.", updatedAt: new Date(), finishedAt: new Date() }).where(eq(enhanceJobs.id, row.id));
+    throw new DataError("The file could not be read. Upload it again.", 400, "bad_path");
+  });
   try {
     await inngest.send(enhanceRequested.create({ jobId: row.id }));
   } catch {
@@ -223,11 +231,19 @@ export async function createEnhanceJob(scope: DataScope, input: NewEnhanceJob) {
 /** Reserves the measured credits; throws CreditError when the balance is too low. Idempotent per job. */
 export async function reserveEnhanceCredits(job: EnhanceJobRow, credits: number) {
   const reference = `enhance:${job.id}:reserve`;
-  const [twin] = await db().select({ id: creditLedger.id }).from(creditLedger).where(and(eq(creditLedger.userId, job.userId), eq(creditLedger.reference, reference))).limit(1);
-  if (twin) return;
-  const balance = await getCreditBalance(job.workspaceId);
-  if (balance < credits) throw new CreditError(`This needs ${credits} credits and the workspace has ${balance}. Add credits in Billing and try again.`);
-  await db().insert(creditLedger).values({ userId: job.userId, workspaceId: job.workspaceId, credits: -credits, kind: "reserve", note: `${jobLabel(job)}: ${job.fileName}`, reference }).onConflictDoNothing();
+  // One reservation at a time per workspace (26 Nov 2026, from a review): two jobs started together cannot both pass the balance check.
+  await db().transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`credits:${job.workspaceId}`}))`);
+    const [twin] = await tx.select({ id: creditLedger.id }).from(creditLedger).where(and(eq(creditLedger.userId, job.userId), eq(creditLedger.reference, reference))).limit(1);
+    if (twin) return;
+    const [row] = await tx
+      .select({ total: sql<number>`coalesce(sum(${creditLedger.credits}), 0)` })
+      .from(creditLedger)
+      .where(and(eq(creditLedger.workspaceId, job.workspaceId), or(isNull(creditLedger.expiresAt), gt(creditLedger.expiresAt, new Date()))));
+    const balance = Number(row?.total ?? 0);
+    if (balance < credits) throw new CreditError(`This needs ${credits} credits and the workspace has ${balance}. Add credits in Billing and try again.`);
+    await tx.insert(creditLedger).values({ userId: job.userId, workspaceId: job.workspaceId, credits: -credits, kind: "reserve", note: `${jobLabel(job)}: ${job.fileName}`, reference }).onConflictDoNothing();
+  });
 }
 
 /** Gives the reserved credits back after a failure (once). */
@@ -236,3 +252,18 @@ export async function refundEnhanceCredits(job: EnhanceJobRow) {
   if (!reserve) return;
   await db().insert(creditLedger).values({ userId: job.userId, workspaceId: job.workspaceId, credits: -reserve.credits, kind: "refund", note: `${jobLabel(job)} failed: ${job.fileName}`, reference: `enhance:${job.id}:refund` }).onConflictDoNothing();
 }
+
+/**
+ * The safety net of the enhancer and the media tools (26 Nov 2026, from a review): when a run ends
+ * by an error outside its own checks (a deadline, a step that kept failing), the job is marked failed,
+ * the credits go back, and any paid call still open for it is booked at its estimate (it was sent).
+ */
+export async function abandonEnhanceJob(jobId: string, message: string) {
+  const [job] = await db().select().from(enhanceJobs).where(eq(enhanceJobs.id, jobId)).limit(1);
+  if (!job || job.status === "completed") return;
+  await refundEnhanceCredits(job);
+  if (job.status !== "failed") await db().update(enhanceJobs).set({ status: "failed", error: message, updatedAt: new Date(), finishedAt: new Date() }).where(eq(enhanceJobs.id, jobId));
+  const open = await db().select({ id: costEntries.id, estimatedUsd: costEntries.estimatedUsd }).from(costEntries).where(and(eq(costEntries.status, "started"), sql`${costEntries.meta}->>'jobId' = ${jobId}`));
+  for (const entry of open) await settleSpend(entry.id, { status: "completed", actualUsd: entry.estimatedUsd, basis: "list" });
+}
+

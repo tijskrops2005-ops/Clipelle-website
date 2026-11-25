@@ -7,7 +7,7 @@ import { getOrCreateProfile } from "@/lib/data/profile";
 import { getWorkspace } from "@/lib/workspaces";
 import { CUSTOM_CREDITS, planByKey, TOPUPS, validCustomCredits } from "@/lib/plans";
 import { existingCustomer, priceByLookupKey, stripe, stripeEnabled, stripeLive } from "@/lib/stripe";
-import { setPlan, trialAvailable } from "@/lib/billing";
+import { forgetBilling, setPlan, trialAvailable } from "@/lib/billing";
 import { databaseModeOnly, readJson } from "@/app/api/projects/_guard";
 
 const Currency = z.enum(["usd", "eur"]).optional();
@@ -24,10 +24,11 @@ export async function POST(request: Request) {
     const parsed = Body.safeParse(await readJson(request));
     if (!parsed.success) return Response.json({ error: "Unknown plan or pack." }, { status: 400 });
     await getOrCreateProfile(user);
-    const workspace = (await getWorkspace(scope.workspaceId))!;
+    let workspace = (await getWorkspace(scope.workspaceId))!;
     const s = stripe();
-    // A customer from test mode (or a deleted one) is forgotten and made again (25 Nov 2026, going live).
-    const existing = await existingCustomer(workspace.stripeCustomerId, () => setPlan(workspace.id, { stripeCustomerId: null, stripeSubscriptionId: null }));
+    // A customer from test mode (or a deleted one) is forgotten with its plan and made again (25–26 Nov 2026, going live).
+    const existing = await existingCustomer(workspace.stripeCustomerId, () => forgetBilling(workspace.id));
+    if (!existing && workspace.stripeCustomerId) workspace = (await getWorkspace(scope.workspaceId))!;
     let customerId = existing?.id ?? null;
     const customerCurrency: string | null = existing?.currency ?? null;
     if (!customerId) {

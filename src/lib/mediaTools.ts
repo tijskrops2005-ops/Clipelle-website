@@ -58,7 +58,7 @@ export const MEDIA_TOOLS: Record<MediaToolKey, MediaTool> = {
 };
 
 export const MEDIA_TOOL_KEYS = Object.keys(MEDIA_TOOLS) as MediaToolKey[];
-export const isMediaToolKey = (v: unknown): v is MediaToolKey => typeof v === "string" && v in MEDIA_TOOLS;
+export const isMediaToolKey = (v: unknown): v is MediaToolKey => typeof v === "string" && Object.hasOwn(MEDIA_TOOLS, v);
 
 export const MEDIA_CREDITS = {
   "remove-text": { perSecond: 1, minimum: 10 },
@@ -70,13 +70,22 @@ export const MEDIA_CREDITS = {
   "clean-voice": { perTwoSeconds: 1, minimum: 5 },
 } as const;
 
+/**
+ * Video background: the provider bills output megapixels × frames, so a source above 1080p30 (more
+ * pixels or more frames per second) costs more per second; the credits grow with it (26 Nov 2026).
+ */
+export function videoBackgroundFactor(video?: { width?: number | null; height?: number | null; fps?: number | null }) {
+  if (!video?.width || !video?.height) return 1;
+  return Math.max(1, (video.width * video.height) / (1920 * 1080)) * Math.max(1, (video.fps ?? 30) / 30);
+}
+
 /** Credits for a job: video by its length (rounded second), image per image. */
-export function mediaCredits(tool: MediaToolKey, seconds?: number) {
+export function mediaCredits(tool: MediaToolKey, seconds?: number, video?: { width?: number | null; height?: number | null; fps?: number | null }) {
   if (tool === "remove-background") return MEDIA_CREDITS["remove-background"].perImage;
   const s = Math.max(1, Math.round(seconds ?? 0));
   if (tool === "remove-text") return Math.max(MEDIA_CREDITS["remove-text"].minimum, s * MEDIA_CREDITS["remove-text"].perSecond);
   if (tool === "transcribe") return Math.max(MEDIA_CREDITS.transcribe.minimum, Math.ceil(s / 5));
-  if (tool === "video-background") return Math.max(MEDIA_CREDITS["video-background"].minimum, s * MEDIA_CREDITS["video-background"].perSecond);
+  if (tool === "video-background") return Math.max(MEDIA_CREDITS["video-background"].minimum, Math.ceil(s * MEDIA_CREDITS["video-background"].perSecond * videoBackgroundFactor(video)));
   return Math.max(MEDIA_CREDITS[tool].minimum, Math.ceil(s / 2));
 }
 

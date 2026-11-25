@@ -9,7 +9,7 @@ import { CreditError } from "@/lib/credits";
 import { callbackUrlFor } from "@/lib/webhooks/incoming";
 import { pollDelaySeconds, waitForJob, withDeadline, withRetries } from "@/lib/workflow/steps";
 import { workflowSettings as cfg } from "@/lib/workflow/settings";
-import { enhanceLimits, refundEnhanceCredits, reserveEnhanceCredits, type EnhanceJobRow } from "@/lib/data/enhance";
+import { abandonEnhanceJob, enhanceLimits, refundEnhanceCredits, reserveEnhanceCredits, type EnhanceJobRow } from "@/lib/data/enhance";
 import { ENHANCE_USD, VIDEO_MAX_SECONDS, imageCredits, imageOutput, imageSize, isHighFps, videoCredits, videoEstimateUsd, videoOutput, type ImageTarget, type VideoTarget } from "@/lib/enhanceRules";
 
 type StepTools = Parameters<Parameters<typeof inngest.createFunction>[1]>[0]["step"];
@@ -43,7 +43,18 @@ async function fail(job: EnhanceJobRow, message: string) {
  * copy the result to our storage and settle. A failure at any point refunds the credits.
  */
 export const enhanceJob = inngest.createFunction(
-  { id: "enhance-job", name: "Enhancer: upscale a video or image", retries: 0, concurrency: { limit: 1, key: "event.data.jobId" }, triggers: [enhanceRequested] },
+  {
+    id: "enhance-job",
+    name: "Enhancer: upscale a video or image",
+    // The paid start catches its own errors (no second paid call); a status check or a save that throws is tried again.
+    retries: 2,
+    concurrency: { limit: 1, key: "event.data.jobId" },
+    triggers: [enhanceRequested],
+    onFailure: async ({ event }) => {
+      const jobId = (event.data.event.data as { jobId?: string })?.jobId;
+      if (jobId) await abandonEnhanceJob(jobId, "The enhancement could not be finished. Nothing was charged; try again.");
+    },
+  },
   async ({ event, step }) => {
     const jobId = event.data.jobId;
 
@@ -86,7 +97,7 @@ export const enhanceJob = inngest.createFunction(
           }
           await db().update(enhanceJobs).set({ ...measured, factor, outWidth: outW, outHeight: outH, credits, updatedAt: new Date() }).where(eq(enhanceJobs.id, job.id));
           await reserveEnhanceCredits(job, credits);
-          const reserved = await reserveSpend({ service: "fal", action: job.kind === "video" ? "enhance_video" : "enhance_image", estimatedUsd: estimate, fingerprintInput: { jobId: job.id }, userId: job.userId, meta: { target: job.target, factor, outWidth: outW, outHeight: outH, seconds: measured.seconds ?? null } });
+          const reserved = await reserveSpend({ service: "fal", action: job.kind === "video" ? "enhance_video" : "enhance_image", estimatedUsd: estimate, fingerprintInput: { jobId: job.id }, userId: job.userId, meta: { jobId: job.id, target: job.target, factor, outWidth: outW, outHeight: outH, seconds: measured.seconds ?? null } });
           try {
             const webhookUrl = callbackUrlFor("fal");
             const r =

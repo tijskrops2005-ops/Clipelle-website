@@ -14,7 +14,7 @@ import { CreditError } from "@/lib/credits";
 import { callbackUrlFor } from "@/lib/webhooks/incoming";
 import { pollDelaySeconds, waitForJob, withDeadline, withRetries } from "@/lib/workflow/steps";
 import { workflowSettings as cfg } from "@/lib/workflow/settings";
-import { refundEnhanceCredits, reserveEnhanceCredits, type EnhanceJobRow } from "@/lib/data/enhance";
+import { abandonEnhanceJob, refundEnhanceCredits, reserveEnhanceCredits, type EnhanceJobRow } from "@/lib/data/enhance";
 import { imageSize } from "@/lib/enhanceRules";
 import { CLEAN_VOICE_STRENGTH, MEDIA_MAX_SECONDS, MEDIA_USD, VIDEO_BACKGROUND_MAX_SIDE, mediaCredits, normaliseOptions, videoBackgroundUsd, type MediaToolKey } from "@/lib/mediaTools";
 
@@ -51,7 +51,7 @@ async function complete(job: EnhanceJobRow, path: string, mime: string, size?: {
 
 /** One paid call through the cost guard; the provider call itself runs in `fn`. */
 async function paid<T>(job: EnhanceJobRow, service: CostService, action: string, estimatedUsd: number, fn: () => Promise<T>): Promise<{ value: T; entryId: string }> {
-  const reserved = await reserveSpend({ service, action, estimatedUsd, fingerprintInput: { jobId: job.id, action }, userId: job.userId, meta: { tool: job.kind, seconds: job.seconds } });
+  const reserved = await reserveSpend({ service, action, estimatedUsd, fingerprintInput: { jobId: job.id, action }, userId: job.userId, meta: { jobId: job.id, tool: job.kind, seconds: job.seconds } });
   try {
     return { value: await fn(), entryId: reserved.entryId };
   } catch (error) {
@@ -69,7 +69,18 @@ async function paid<T>(job: EnhanceJobRow, service: CostService, action: string,
  * Every paid call goes through the cost guard; results are copied to our storage; a failure refunds.
  */
 export const mediaToolJob = inngest.createFunction(
-  { id: "media-tool-job", name: "Media tools: remove text, captions, resize, background", retries: 0, concurrency: { limit: 1, key: "event.data.jobId" }, triggers: [mediaToolRequested] },
+  {
+    id: "media-tool-job",
+    name: "Media tools: remove text, captions, resize, background",
+    // Paid starts catch their own errors (no second paid call); a status check or a save that throws is tried again.
+    retries: 2,
+    concurrency: { limit: 1, key: "event.data.jobId" },
+    triggers: [mediaToolRequested],
+    onFailure: async ({ event }) => {
+      const jobId = (event.data.event.data as { jobId?: string })?.jobId;
+      if (jobId) await abandonEnhanceJob(jobId, GENERIC);
+    },
+  },
   async ({ event, step }) => {
     const jobId = event.data.jobId;
 
@@ -97,7 +108,7 @@ export const mediaToolJob = inngest.createFunction(
             seconds = probe.duration;
             fps = probe.fps ?? 25;
           }
-          const credits = mediaCredits(tool, seconds);
+          const credits = mediaCredits(tool, seconds, { width, height, fps });
           await db().update(enhanceJobs).set({ seconds: seconds || null, fps, width, height, credits, updatedAt: new Date() }).where(eq(enhanceJobs.id, job.id));
           await reserveEnhanceCredits(job, credits);
           return { ok: true, tool, seconds, width, height, fps };
@@ -159,8 +170,9 @@ export const mediaToolJob = inngest.createFunction(
       if ("error" in submitted) return step.run(`${tool}-render-failed-start`, () => fail(jobId, submitted.error));
       for (let i = 0; i < MAX_POLLS; i++) {
         const r = await step.run(`${tool}-render-status-${i}`, async () => {
-          const x = await getRender(submitted.renderId);
-          return { status: x.status, url: x.url ?? null };
+          // A status check that fails on the way counts as "still rendering": the next check asks again.
+          const x = await getRender(submitted.renderId).catch(() => null);
+          return { status: x?.status ?? "rendering", url: x?.url ?? null };
         });
         if (r.status === "done" && r.url) {
           return step.run(`${tool}-render-store`, () =>
@@ -323,7 +335,7 @@ export const mediaToolJob = inngest.createFunction(
       );
       if ("error" in job) return step.run("text-failed-start", () => fail(jobId, job.error));
       for (let i = 0; i < MAX_POLLS; i++) {
-        const st = await step.run(`text-status-${i}`, () => getTextRemoval(job.predictionId));
+        const st = await step.run(`text-status-${i}`, async () => (await getTextRemoval(job.predictionId).catch(() => null)) ?? ({ status: "running" } as const));
         if (st.status === "done") {
           const cleaned = await step.run("text-store", () =>
             withDeadline("Saving the cleaned picture", 10, async (): Promise<{ pictureUrl: string; soundUrl: string } | { error: string }> => {
@@ -336,6 +348,8 @@ export const mediaToolJob = inngest.createFunction(
                 await settleSpend(job.entryId, { status: "completed", actualUsd: actual, basis: st.gpuSeconds !== null ? "provider" : "list", meta: { gpuSeconds: st.gpuSeconds } });
                 return { pictureUrl: await signedDownloadUrl(path, 6 * 3600), soundUrl: await signedDownloadUrl(row.sourcePath, 6 * 3600) };
               } catch (error) {
+                // The removal ran (and was billed) even when saving its result failed.
+                await settleSpend(job.entryId, { status: "completed", actualUsd: st.gpuSeconds !== null ? Math.round(st.gpuSeconds * TEXT_REMOVAL_USD_PER_GPU_SECOND * 1000) / 1000 : job.estimate, basis: st.gpuSeconds !== null ? "provider" : "list" }).catch(() => null);
                 return { error: plain(error) };
               }
             }),

@@ -78,17 +78,30 @@ export type ToolEnhanceStatus = { status: "IN_QUEUE" | "IN_PROGRESS" } | { statu
 
 /** Status of an enhancer job of either kind; a finished job returns the file's temporary URL. */
 export async function getToolEnhanceStatus(kind: "video" | "image", requestId: string): Promise<ToolEnhanceStatus> {
+  return falFileStatus(kind === "video" ? ENHANCE_ENDPOINT : IMAGE_ENHANCE_ENDPOINT, requestId, kind === "video" ? "video" : "image");
+}
+
+/**
+ * The status of a fal job that returns one file under `field` (26 Nov 2026, from a review): a status
+ * call that fails on the way (network, a 5xx) counts as "still running", so the job asks again later
+ * and never refunds a job fal still finishes and bills; only a finished job without a file, or one
+ * whose result fal refuses, is FAILED.
+ */
+async function falFileStatus(endpoint: string, requestId: string, field: "video" | "audio" | "image"): Promise<ToolEnhanceStatus> {
   const client = fal();
-  const endpoint = kind === "video" ? ENHANCE_ENDPOINT : IMAGE_ENHANCE_ENDPOINT;
+  let state: string;
   try {
-    const status = await client.queue.status(endpoint, { requestId, logs: false });
-    if (status.status !== "COMPLETED") return { status: status.status };
+    state = (await client.queue.status(endpoint, { requestId, logs: false })).status;
+  } catch {
+    return { status: "IN_PROGRESS" };
+  }
+  if (state !== "COMPLETED") return { status: state === "IN_QUEUE" ? "IN_QUEUE" : "IN_PROGRESS" };
+  try {
     const result = await client.queue.result(endpoint, { requestId });
-    const data = result.data as { video?: { url?: string; content_type?: string }; image?: { url?: string; content_type?: string } };
-    const file = kind === "video" ? data.video : data.image;
-    return file?.url ? { status: "COMPLETED", url: file.url, contentType: file.content_type } : { status: "FAILED", error: "The enhancer finished without a file." };
+    const file = (result.data as Record<string, { url?: string; content_type?: string } | undefined>)[field];
+    return file?.url ? { status: "COMPLETED", url: file.url, contentType: file.content_type } : { status: "FAILED", error: "The job finished without a file." };
   } catch (error) {
-    return { status: "FAILED", error: error instanceof Error ? error.message : "Unknown enhancer error" };
+    return { status: "FAILED", error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 
@@ -105,16 +118,8 @@ export async function submitBackgroundRemoval(input: { imageUrl: string; webhook
 }
 
 export async function getBackgroundRemovalStatus(requestId: string): Promise<ToolEnhanceStatus> {
-  const client = fal();
-  try {
-    const status = await client.queue.status(BACKGROUND_ENDPOINT, { requestId, logs: false });
-    if (status.status !== "COMPLETED") return { status: status.status };
-    const result = await client.queue.result(BACKGROUND_ENDPOINT, { requestId });
-    const image = (result.data as { image?: { url?: string; content_type?: string } }).image;
-    return image?.url ? { status: "COMPLETED", url: image.url, contentType: image.content_type ?? "image/png" } : { status: "FAILED", error: "The background removal finished without an image." };
-  } catch (error) {
-    return { status: "FAILED", error: error instanceof Error ? error.message : "Unknown background removal error" };
-  }
+  const r = await falFileStatus(BACKGROUND_ENDPOINT, requestId, "image");
+  return r.status === "COMPLETED" ? { ...r, contentType: r.contentType ?? "image/png" } : r;
 }
 
 /* ---------- video background (BEN v2) and voice clean-up (VEED) on fal.ai, 26 Nov 2026 ---------- */
@@ -144,14 +149,5 @@ export async function submitCleanAudio(input: { videoUrl: string; strength: numb
 
 /** Status of any fal job whose result holds one file under `field` (video, audio, image). */
 export async function getFalFileStatus(endpoint: string, requestId: string, field: "video" | "audio" | "image"): Promise<ToolEnhanceStatus> {
-  const client = fal();
-  try {
-    const status = await client.queue.status(endpoint, { requestId, logs: false });
-    if (status.status !== "COMPLETED") return { status: status.status };
-    const result = await client.queue.result(endpoint, { requestId });
-    const file = (result.data as Record<string, { url?: string; content_type?: string } | undefined>)[field];
-    return file?.url ? { status: "COMPLETED", url: file.url, contentType: file.content_type } : { status: "FAILED", error: "The job finished without a file." };
-  } catch (error) {
-    return { status: "FAILED", error: error instanceof Error ? error.message : "Unknown error" };
-  }
+  return falFileStatus(endpoint, requestId, field);
 }

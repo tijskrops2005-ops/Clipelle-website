@@ -6,6 +6,7 @@ import { ALL_PLANS, CREDIT_EXPIRY, FREE_AD, FREE_AD_CREDITS, TOPUPS, planByKey }
 import { grantCredits } from "@/lib/credits";
 import { updateWorkspaceBilling, workspaceByCustomer } from "@/lib/workspaces";
 import type { AppUser } from "@/lib/auth";
+import { stripeEnabled, subscriptionExists } from "@/lib/stripe";
 
 /** When the free first ad expires: a fixed number of days after the grant (paid credits never expire). */
 export function freeAdExpiry(from: Date) {
@@ -102,6 +103,11 @@ export async function grantDueAnnualCredits(now = new Date()) {
     if (!period) continue;
     const [ws] = await db().select().from(workspaces).where(eq(workspaces.id, start.workspaceId)).limit(1);
     if (!ws || ws.planKey !== period.planKey || !RECEIVING.has(ws.subscriptionStatus ?? "")) continue;
+    // A plan from test mode is unknown after going live: forgotten, no live credits for it.
+    if (ws.stripeSubscriptionId && stripeEnabled() && !(await subscriptionExists(ws.stripeSubscriptionId))) {
+      await forgetBilling(ws.id);
+      continue;
+    }
     const due = annualMonthsDue(start.createdAt, now);
     for (let month = 2; month <= due; month++) {
       const reference = annualReference(period.invoiceId, period.planKey, month);
@@ -124,6 +130,16 @@ export async function grantTopupCredits(workspaceId: string, userId: string, top
 /** Credits bought by auto-reload, once per paid invoice. */
 export async function grantAutoReloadCredits(workspaceId: string, userId: string, credits: number, invoiceId: string) {
   await grantCredits({ workspaceId, userId, credits, kind: "grant_topup", note: `${credits} credits (auto-reload)`, expiresAt: null, reference: `autoreload:${invoiceId}` });
+}
+
+/**
+ * A Stripe customer or subscription that is unknown in the current mode (made in test mode before
+ * going live, or deleted) is forgotten with its plan: the workspace is free again, so a test plan
+ * never unlocks paid features or earns live credits (26 Nov 2026, from a review). Credits already in
+ * the ledger stay.
+ */
+export async function forgetBilling(workspaceId: string) {
+  await updateWorkspaceBilling(workspaceId, { planKey: "free", stripeCustomerId: null, stripeSubscriptionId: null, subscriptionStatus: null, currentPeriodEnd: null });
 }
 
 export async function setPlan(workspaceId: string, patch: { planKey?: string; stripeCustomerId?: string | null; stripeSubscriptionId?: string | null; subscriptionStatus?: string | null; currentPeriodEnd?: Date | null; trialStartedAt?: Date }) {
