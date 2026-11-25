@@ -8,13 +8,13 @@ import { ensureFreeAd } from "@/lib/billing";
 import { creditsWorth } from "@/lib/projectCredits";
 import { DEMO_BALANCE } from "@/lib/mock/account";
 import { deletionDate } from "@/lib/accountDeletion";
-import { supportEmail } from "@/lib/brand";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { DemoRunner } from "@/components/DemoRunner";
 import { StatusWatcher } from "@/components/StatusWatcher";
 import { PauseOffscreen } from "@/components/motion/PauseOffscreen";
 import { ToolSearch } from "@/components/ToolSearch";
+import { AssistantPanel } from "@/components/AssistantPanel";
 import { TopBar } from "@/components/TopBar";
 import { isAdmin } from "@/lib/adminAccess";
 import { ViewingBar } from "@/components/ViewingBar";
@@ -45,7 +45,6 @@ export async function AppShell({ children }: { children: ReactNode }) {
   // Demo mode shows the one demo balance everywhere (src/lib/mock/account.ts).
   const credits = user && scope ? (config.demoMode ? DEMO_BALANCE : await getCreditBalance(scope.workspaceId).catch(() => null)) : null;
   const who = user && scope ? { email: user.email, name: user.name, credits, planKey: scope.planKey, workspace: { id: scope.workspaceId, name: scope.workspaceName, kind: scope.workspaceKind, role: scope.role }, workspaces, isAdmin: !config.demoMode && isAdmin(user.email) } : null;
-  const support = supportEmail();
   // Form drafts belong to this user in this workspace (2 Nov 2026, src/lib/forms/formDraft.ts).
   const draftScope = user && scope ? { userId: user.id, workspaceId: scope.workspaceId } : null;
   return (
@@ -55,6 +54,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
       <StatusWatcher />
       <PauseOffscreen />
       <ToolSearch />
+      <AssistantPanel />
       {/* The sidebar stays in view while the page scrolls; its middle scrolls on its own when the list is long. */}
       <div className="sticky top-0 hidden h-screen lg:block">
         <Suspense fallback={<div className="w-66" aria-hidden />}>
@@ -73,7 +73,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
         {/* desktop: section, credits, tool search, support and updates */}
         <div className="hidden lg:block">
           <Suspense fallback={<div className="h-14" aria-hidden />}>
-            <TopBar credits={credits !== null ? { balance: credits, approx: creditsWorth(credits, config.features.ads) } : null} supportHref={support ? `mailto:${support}` : "/contact"} />
+            <TopBar credits={credits !== null ? { balance: credits, approx: creditsWorth(credits, config.features.ads) } : null} />
           </Suspense>
         </div>
         <div className="mx-auto w-full max-w-[1180px] px-4 pb-16 pt-5 sm:px-6 md:px-8 lg:px-10 lg:pb-20 lg:pt-10">

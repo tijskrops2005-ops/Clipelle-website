@@ -760,3 +760,45 @@ export const adminViews = pgTable(
   },
   (t) => [index("admin_views_admin_idx").on(t.adminUserId, t.startedAt)],
 ).enableRLS();
+
+/**
+ * The enhancer (25 Nov 2026): one row per video or image the customer has upscaled and cleaned, apart
+ * from projects (an enhancement has no steps, languages or edit versions). Credits go through the ledger
+ * with references `enhance:<id>:reserve` / `enhance:<id>:refund`; the paid call through the cost guard.
+ */
+export const enhanceJobs = pgTable(
+  "enhance_jobs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").notNull(),
+    workspaceId: uuid("workspace_id").notNull(),
+    /** video | image */
+    kind: text("kind").notNull(),
+    /** queued | processing | completed | failed */
+    status: text("status").default("queued").notNull(),
+    /** Video: "1080p" | "4k"; image: "2x" | "4x". */
+    target: text("target").notNull(),
+    fileName: text("file_name").notNull(),
+    sourcePath: text("source_path").notNull(),
+    sourceMime: text("source_mime"),
+    /** Measured on the server before anything is charged (video: free probe; image: read from the file). */
+    seconds: real("seconds"),
+    fps: real("fps"),
+    width: integer("width"),
+    height: integer("height"),
+    /** The factor sent to the enhancer and the size it should give. */
+    factor: real("factor"),
+    outWidth: integer("out_width"),
+    outHeight: integer("out_height"),
+    credits: integer("credits"),
+    resultPath: text("result_path"),
+    resultMime: text("result_mime"),
+    externalJobId: text("external_job_id"),
+    error: text("error"),
+    rightsConfirmedAt: timestamp("rights_confirmed_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (t) => [index("enhance_jobs_workspace_idx").on(t.workspaceId, t.createdAt), index("enhance_jobs_status_idx").on(t.status, t.updatedAt)],
+).enableRLS();

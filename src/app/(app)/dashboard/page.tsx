@@ -5,16 +5,14 @@ import { config } from "@/lib/config";
 import { getCreditBalance } from "@/lib/credits";
 import { planByKey } from "@/lib/plans";
 import { DEMO_BALANCE } from "@/lib/mock/account";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { HowItWorks } from "@/components/dashboard/HowItWorks";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { RecentList } from "@/components/dashboard/RecentList";
 import { WhatsNew } from "@/components/dashboard/WhatsNew";
-import { QuickStart } from "@/components/dashboard/QuickStart";
+import { ToolTiles } from "@/components/dashboard/ToolTiles";
+import { WelcomeBand } from "@/components/dashboard/WelcomeBand";
 import { NowCreating } from "@/components/dashboard/NowCreating";
 import { DashboardStats } from "@/components/dashboard/DashboardStats";
-import { Button } from "@/components/ui/Button";
-import { Plus } from "lucide-react";
 import { FormatPicks } from "@/components/dashboard/FormatPicks";
 import { WhenNoProjects } from "@/components/dashboard/WhenNoProjects";
 
@@ -42,32 +40,22 @@ export default async function DashboardPage() {
   const name = first ? first.charAt(0).toUpperCase() + first.slice(1) : null;
 
   return (
-    <div className="space-y-6 lg:space-y-8">
-      {/* 24 Nov 2026 (Tijs, after splister.com/app): four numbers, then recent videos as a list with what is
-          running and what is new beside it. The sidebar keeps the accent "Create new video"; the header
-          button is the quiet black one. */}
-      <PageHeader
-        title={name ? `Welcome back, ${name}` : "Welcome back"}
-        description="Your videos, in every language you sell in."
-        actions={
-          <Button href="/new" variant="primary">
-            <Plus className="size-4" aria-hidden />
-            New video
-          </Button>
-        }
-      />
+    // 25 Nov 2026 (Tijs: less white space, more personality): one ink welcome band with the credits, the
+    // four ways to start in their category colours, three numbers in one card, then recent videos with
+    // getting started, what is running and what is new beside them. Tighter gaps than before.
+    <div className="space-y-4 lg:space-y-5">
+      <WelcomeBand name={name} credits={credits} plan={plan} demo={config.demoMode} />
 
-      <DashboardStats credits={credits} plan={plan} demo={config.demoMode} />
+      <ToolTiles />
 
-      <QuickStart />
-
-      <OnboardingChecklist planKey={scope?.planKey} />
+      <DashboardStats />
 
       {config.features.ads && <FormatPicks day={day} />}
 
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-5">
         <RecentList />
-        <div className="space-y-6">
+        <div className="space-y-4 lg:space-y-5">
+          <OnboardingChecklist planKey={scope?.planKey} />
           <NowCreating showEmpty />
           <WhatsNew />
         </div>

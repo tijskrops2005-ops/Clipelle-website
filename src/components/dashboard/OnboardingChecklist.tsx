@@ -83,12 +83,15 @@ export function OnboardingChecklist({ planKey }: { planKey?: string | null }) {
     <Card>
       <CardContent className="pt-5">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-[15px] font-semibold text-ink">Getting started</p>
+          <p className="text-[15px] font-semibold text-ink">Getting started <span className="ml-1 font-normal text-muted tabular-nums">{done} of {ITEMS.length}</span></p>
           <button type="button" onClick={dismiss} aria-label="Hide the checklist" className="focus-ring rounded-full p-1 text-muted hover:text-ink">
             <X className="size-4" aria-hidden />
           </button>
         </div>
-        <ul className="mt-3 divide-y divide-divider">
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-muted" aria-hidden>
+          <div className="h-full origin-left rounded-full bg-success transition-transform duration-300" style={{ transform: `scaleX(${done / ITEMS.length})` }} />
+        </div>
+        <ul className="mt-2 divide-y divide-divider">
           {ITEMS.map((item) => {
             const ok = isDone(item.key);
             return (

@@ -7,6 +7,7 @@ import { ArrowRight, Film, Search, X } from "lucide-react";
 import { useProjects } from "@/lib/data/client";
 import { cn } from "@/lib/utils";
 import { OPEN_TOOLS_EVENT, SOON_TOOLS, STUDIO_TOOLS, type Tool } from "@/components/tools";
+import { ToolIcon } from "@/components/tools/ToolCard";
 
 /**
  * "All tools" and search in one dialog (⌘K / Ctrl+K, the sidebar item, the top bar): the studio
@@ -48,7 +49,7 @@ export function ToolSearch() {
   }, [open]);
 
   const needle = q.trim().toLowerCase();
-  const tools = useMemo(() => [...STUDIO_TOOLS, ...SOON_TOOLS].filter((t) => !needle || `${t.label} ${t.text}`.toLowerCase().includes(needle)), [needle]);
+  const tools = useMemo(() => [...STUDIO_TOOLS, ...SOON_TOOLS].filter((t) => !needle || `${t.label} ${t.text} ${(t.chips ?? []).join(" ")}`.toLowerCase().includes(needle)), [needle]);
   const found = useMemo(
     () =>
       needle
@@ -88,7 +89,6 @@ export function ToolSearch() {
   const projectOffset = studio.length;
   const soonOffset = studio.length + found.length;
   const tile = (t: Tool, i: number) => {
-    const Icon = t.icon;
     return (
       <li key={t.key}>
         <Link
@@ -98,8 +98,8 @@ export function ToolSearch() {
           className={cn("focus-ring flex h-full flex-col gap-3 rounded-panel border p-4 transition-[background-color,border-color] duration-150", i === active ? "border-ink/15 bg-surface-muted" : "border-border bg-surface hover:bg-surface-muted")}
         >
           <span className="flex items-start justify-between gap-2">
-            <span className={cn("grid size-9 place-items-center rounded-[10px]", t.soon ? "bg-ink-soft text-muted" : "bg-accent-soft text-accent")}><Icon className="size-[18px]" aria-hidden /></span>
-            {t.soon && <span className="text-[12px] text-muted">Soon</span>}
+            <ToolIcon tool={t} />
+            {t.soon ? <span className="text-[12px] text-muted">Soon</span> : t.isNew ? <span className="text-[12px] font-medium text-tone-enhance">New</span> : null}
           </span>
           <span>
             <span className="block text-[14px] font-semibold text-ink">{t.label}</span>
@@ -134,8 +134,11 @@ export function ToolSearch() {
 
         {studio.length > 0 && (
           <>
-            <p className="mb-2 mt-5 text-[12px] font-medium text-muted">Tools</p>
-            <ul className="grid gap-2 sm:grid-cols-2">{studio.map((t, n) => tile(t, n))}</ul>
+            <div className="mb-2 mt-5 flex items-center justify-between">
+              <p className="text-[12px] font-medium text-muted">Tools</p>
+              <Link href="/tools" onClick={() => setOpen(false)} className="focus-ring rounded-control text-[12.5px] font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">See all tools</Link>
+            </div>
+            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{studio.map((t, n) => tile(t, n))}</ul>
           </>
         )}
         {found.length > 0 && (

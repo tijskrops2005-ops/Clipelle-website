@@ -1,32 +1,72 @@
-import { ImageUp, Languages, Link2, Palette, UserRoundPen, type LucideIcon } from "lucide-react";
+import { ImageUp, Languages, Link2, Palette, Scissors, Sparkles, UserRoundPen, Wand2, type LucideIcon } from "lucide-react";
 import { config } from "@/lib/config";
 
 /**
- * The tools of the app, in one list for the sidebar, the tool search (⌘K) and the dashboard's quick
- * actions. "Soon" items never pretend to work: since 27 Oct 2026 the two ad tools sit in that group while
- * `config.features.ads` is off; their pages explain and offer "Notify me".
+ * The tools of the app, in one list for the sidebar, the All tools page (/tools), the tool search (⌘K)
+ * and the dashboard. Every tool here works today, except the ones marked `soon`: those never pretend
+ * to work; their pages explain and offer "Notify me". 25 Nov 2026 (Tijs): tools are grouped in four
+ * categories, each with its own colour (`tone`, tokens in globals.css), and the video editor and the
+ * enhancer are tools like the others.
  */
-export type Tool = { key: string; href: string; label: string; text: string; icon: LucideIcon; soon?: boolean };
+export type ToolCategory = "translate" | "edit" | "enhance" | "create";
+export type Tool = {
+  key: string;
+  href: string;
+  label: string;
+  /** One sentence: what you get. */
+  text: string;
+  icon: LucideIcon;
+  category: ToolCategory;
+  /** What the tool can do, as short words on its card (only what really works). */
+  chips?: string[];
+  soon?: boolean;
+  isNew?: boolean;
+};
+
+export const TOOL_CATEGORIES: { key: ToolCategory; label: string; text: string }[] = [
+  { key: "translate", label: "Video translation", text: "Your video in other languages, with matching lips and captions." },
+  { key: "edit", label: "Video editing", text: "Trim, cut, captions, text and your logo on a finished video." },
+  { key: "enhance", label: "Enhance", text: "Sharper, cleaner, higher-resolution videos and product photos." },
+  { key: "create", label: "AI content creation", text: "Ads made from a product photo or a product page." },
+];
+
+/** Tailwind classes per category: the icon square, the soft card tint and the label colour. */
+export const TONE: Record<ToolCategory, { icon: string; soft: string; text: string; ring: string; dot: string }> = {
+  translate: { icon: "bg-tone-translate-soft text-tone-translate", soft: "bg-tone-translate-soft", text: "text-tone-translate", ring: "hover:border-tone-translate/40", dot: "bg-tone-translate" },
+  edit: { icon: "bg-tone-edit-soft text-tone-edit", soft: "bg-tone-edit-soft", text: "text-tone-edit", ring: "hover:border-tone-edit/40", dot: "bg-tone-edit" },
+  enhance: { icon: "bg-tone-enhance-soft text-tone-enhance", soft: "bg-tone-enhance-soft", text: "text-tone-enhance", ring: "hover:border-tone-enhance/40", dot: "bg-tone-enhance" },
+  create: { icon: "bg-tone-create-soft text-tone-create", soft: "bg-tone-create-soft", text: "text-tone-create", ring: "hover:border-tone-create/40", dot: "bg-tone-create" },
+};
 
 const TRANSLATE_TOOLS: Tool[] = [
-  { key: "translate", href: "/new/translate", label: "Translate a video", text: "A video you own in other languages, with the speaker's own voice and matching lips.", icon: Languages },
-  { key: "presenter", href: "/new/translate?speaker=presenter", label: "Translate with a presenter", text: "The words of your video, translated and spoken by an AI presenter you pick, with the voice and accent you choose.", icon: UserRoundPen },
+  { key: "translate", href: "/new/translate", label: "Translate a video", text: "Your video in other languages, in the speaker's own voice with matching lips.", icon: Languages, category: "translate", chips: ["Lip sync", "190 languages", "Captions", "Remove on-screen text"] },
+  { key: "presenter", href: "/new/translate?speaker=presenter", label: "Translate with a presenter", text: "Your words, translated and spoken by an AI presenter with the voice you pick.", icon: UserRoundPen, category: "translate", chips: ["AI presenter", "Voice and accent", "Captions"] },
+];
+
+const EDIT_TOOLS: Tool[] = [
+  { key: "editor", href: "/edit", label: "Video editor", text: "Trim and cut a finished video, edit its captions, add text, a call to action and your logo.", icon: Scissors, category: "edit", chips: ["Trim and cut", "Edit captions", "Caption styles", "Text and logo"] },
+];
+
+const ENHANCE_TOOLS: Tool[] = [
+  { key: "enhance-video", href: "/enhance?type=video", label: "Enhance a video", text: "Upscale a video to 1080p or 4K, with less noise and sharper detail.", icon: Wand2, category: "enhance", chips: ["Up to 4K", "Less noise", "Sharper"], isNew: true },
+  { key: "enhance-image", href: "/enhance?type=image", label: "Enhance an image", text: "Upscale a product photo two or four times, sharper and cleaner.", icon: Sparkles, category: "enhance", chips: ["2× or 4×", "Sharper", "Faces kept natural"], isNew: true },
 ];
 
 const AD_TOOLS: Tool[] = [
-  { key: "ad", href: "/new/ad", label: "Ad from a photo", text: "A product photo and a few sentences become a 9:16 ad with a presenter and captions.", icon: ImageUp },
-  { key: "url", href: "/new/url", label: "Ad from a link", text: "Paste a product page; name, description and photos fill the ad form for you to check.", icon: Link2 },
+  { key: "ad", href: "/new/ad", label: "Ad from a photo", text: "A product photo and a few sentences become a 9:16 ad with a presenter and captions.", icon: ImageUp, category: "create" },
+  { key: "url", href: "/new/url", label: "Ad from a link", text: "Paste a product page; name, description and photos fill the ad form for you to check.", icon: Link2, category: "create" },
 ];
 
-const BRAND_TOOL: Tool = { key: "brand", href: "/settings/brand", label: "Brand style", text: "Accent colour, caption look, font and logo, prefilled on every new ad.", icon: Palette };
+const BRAND_TOOL: Tool = { key: "brand", href: "/settings/brand", label: "Brand style", text: "Accent colour, caption look, font and logo, prefilled on every new ad.", icon: Palette, category: "create" };
 
-// 24 Nov 2026 (Tijs): the "Publish to TikTok / Reels / Shorts" and "Import from Shopify" announcements
-// are gone from the app; only the two ad tools are announced while ads are off. The notify route still
-// accepts the old feature keys, so stored wishes stay valid.
+/** Every working tool, in category order. */
+export const STUDIO_TOOLS: Tool[] = [...TRANSLATE_TOOLS, ...EDIT_TOOLS, ...ENHANCE_TOOLS, ...(config.features.ads ? [...AD_TOOLS, BRAND_TOOL] : [])];
 
-export const STUDIO_TOOLS: Tool[] = config.features.ads ? [...TRANSLATE_TOOLS, ...AD_TOOLS, BRAND_TOOL] : TRANSLATE_TOOLS;
-
+/** Announced tools: the two ad tools while `config.features.ads` is off. */
 export const SOON_TOOLS: Tool[] = config.features.ads ? [] : AD_TOOLS.map((t) => ({ ...t, soon: true }));
+
+/** All tools, working and announced, for the All tools page and the search. */
+export const ALL_TOOLS: Tool[] = [...STUDIO_TOOLS, ...SOON_TOOLS];
 
 /**
  * Which tool is the current page (28 Oct 2026): a tool whose link has a query (`?speaker=presenter`)

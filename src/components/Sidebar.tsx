@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { ChevronDown, Clock, LayoutGrid, Plus, Sparkles } from "lucide-react";
+import { SupportMenu } from "@/components/SupportMenu";
+import { ToolIcon } from "@/components/tools/ToolCard";
 import { cn } from "@/lib/utils";
 import { planByKey } from "@/lib/plans";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +13,7 @@ import { Brand } from "@/components/Brand";
 import { UserMenu } from "@/components/UserMenu";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { isActivePath, navItems, adminNavItem, settingsNavItem, type NavItem } from "@/components/nav";
-import { SOON_TOOLS, STUDIO_TOOLS, activeToolKey, openToolSearch, type Tool } from "@/components/tools";
+import { SOON_TOOLS, STUDIO_TOOLS, activeToolKey, type Tool } from "@/components/tools";
 import { UnseenBadge } from "@/components/StatusWatcher";
 
 export type ShellUser = { email: string; name?: string; credits: number | null; planKey?: string; workspace: { id: string; name: string; kind: string; role: string }; workspaces: { id: string; name: string; kind: string; role: string }[]; isAdmin?: boolean } | null;
@@ -49,7 +51,11 @@ export function Sidebar({ user }: { user: ShellUser }) {
   );
 }
 
-/** The link groups, shared by the sidebar and the mobile drawer. */
+/**
+ * The link groups, shared by the sidebar and the mobile drawer (25 Nov 2026, Tijs): Workspace (your
+ * dashboard and projects), Create (All tools and every working tool, coloured by category) and Account
+ * (settings and support).
+ */
 export function SidebarLinks({ isAdmin, onNavigate }: { isAdmin?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
   const search = useSearchParams();
@@ -57,35 +63,28 @@ export function SidebarLinks({ isAdmin, onNavigate }: { isAdmin?: boolean; onNav
   const activeTool = activeToolKey(pathname, search.toString(), STUDIO_TOOLS);
   return (
     <nav aria-label="Main" className="flex flex-col gap-0.5">
+      <GroupLabel first>Workspace</GroupLabel>
       {navItems.map((item) => (
         <NavRow key={item.href} item={item} active={isActivePath(pathname, item.href)} onNavigate={onNavigate} />
       ))}
-      <button
-        type="button"
-        onClick={() => {
-          onNavigate?.();
-          openToolSearch();
-        }}
-        className="focus-ring group flex h-10 items-center gap-3 rounded-control px-3 text-sm font-medium text-muted transition-[background-color,color] duration-150 hover:bg-ink/5 hover:text-ink"
-      >
-        <LayoutGrid className="size-[18px] text-muted transition-colors duration-150 group-hover:text-ink" aria-hidden />
-        All tools
-        <kbd className="label-mono ml-auto rounded border border-border px-1.5 py-0.5 text-[10px] text-muted">⌘K</kbd>
-      </button>
 
-      <p className="mb-1 mt-6 px-3 text-[12px] font-medium text-muted">Tools</p>
+      <GroupLabel>Create</GroupLabel>
+      <NavRow item={{ href: "/tools", label: "All tools", icon: LayoutGrid }} active={isActivePath(pathname, "/tools")} onNavigate={onNavigate} />
       {STUDIO_TOOLS.map((t) => (
         <ToolRow key={t.key} tool={t} active={t.key === activeTool} onNavigate={onNavigate} />
       ))}
-
       <SoonGroup onNavigate={onNavigate} />
 
-      <div className="mt-6 flex flex-col gap-0.5">
-        <NavRow item={settingsNavItem} active={isActivePath(pathname, settingsNavItem.href)} onNavigate={onNavigate} />
-        {isAdmin && <NavRow item={adminNavItem} active={isActivePath(pathname, adminNavItem.href)} onNavigate={onNavigate} />}
-      </div>
+      <GroupLabel>Account</GroupLabel>
+      <NavRow item={settingsNavItem} active={isActivePath(pathname, settingsNavItem.href)} onNavigate={onNavigate} />
+      <SupportMenu variant="row" onNavigate={onNavigate} />
+      {isAdmin && <NavRow item={adminNavItem} active={isActivePath(pathname, adminNavItem.href)} onNavigate={onNavigate} />}
     </nav>
   );
+}
+
+function GroupLabel({ children, first }: { children: React.ReactNode; first?: boolean }) {
+  return <p className={cn("mb-1 px-3 text-[12px] font-medium text-muted", first ? "mt-0" : "mt-5")}>{children}</p>;
 }
 
 /**
@@ -139,7 +138,6 @@ function NavRow({ item, active, onNavigate }: { item: NavItem; active: boolean; 
 }
 
 function ToolRow({ tool, active, onNavigate }: { tool: Tool; active: boolean; onNavigate?: () => void }) {
-  const Icon = tool.icon;
   return (
     <Link
       href={tool.href}
@@ -150,11 +148,9 @@ function ToolRow({ tool, active, onNavigate }: { tool: Tool; active: boolean; on
         active ? "bg-surface font-medium text-ink shadow-card" : tool.soon ? "text-muted/80 hover:bg-ink/5 hover:text-ink" : "text-ink/80 hover:bg-ink/5 hover:text-ink",
       )}
     >
-      <span className={cn("grid size-6 shrink-0 place-items-center rounded-[7px] transition-colors duration-150", tool.soon ? "bg-ink-soft text-muted" : active ? "bg-accent text-white" : "bg-accent-soft text-accent")}>
-        <Icon className="size-3.5" aria-hidden />
-      </span>
+      <ToolIcon tool={tool} size="sm" />
       <span className="min-w-0 flex-1 leading-tight">{tool.label}</span>
-      {tool.soon && <span className="shrink-0 text-[11px] text-muted">Soon</span>}
+      {tool.soon ? <span className="shrink-0 text-[11px] text-muted">Soon</span> : tool.isNew ? <span className="shrink-0 text-[11px] font-medium text-tone-enhance">New</span> : null}
     </Link>
   );
 }

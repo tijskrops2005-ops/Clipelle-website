@@ -22,7 +22,7 @@ describe("ads feature flag (off)", () => {
 
   it("moves the ad tools to the coming-soon group", async () => {
     const { STUDIO_TOOLS, SOON_TOOLS } = await import("@/components/tools");
-    expect(STUDIO_TOOLS.map((t) => t.key)).toEqual(["translate", "presenter"]);
+    expect(STUDIO_TOOLS.map((t) => t.key)).toEqual(["translate", "presenter", "editor", "enhance-video", "enhance-image"]);
     expect(SOON_TOOLS.filter((t) => t.key === "ad" || t.key === "url").every((t) => t.soon)).toBe(true);
   });
 

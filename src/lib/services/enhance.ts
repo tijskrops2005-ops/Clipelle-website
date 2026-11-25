@@ -48,3 +48,46 @@ export async function getEnhanceStatus(requestId: string): Promise<EnhanceStatus
     return { status: "FAILED", error: error instanceof Error ? error.message : "Unknown fal.ai error" };
   }
 }
+
+/* ---------- The enhancer tool (25 Nov 2026): video with a chosen factor, and images ---------- */
+
+/**
+ * Topaz image upscale on fal.ai, `fal-ai/topaz/upscale/image` (verified 25 Nov 2026): input `image_url`,
+ * `model` (default "Standard V2"), `upscale_factor`, `output_format` jpeg|png, `face_enhancement`
+ * (default true); output `image.url`. Price: $0.08 per image up to 24 MP output.
+ */
+export const IMAGE_ENHANCE_ENDPOINT = "fal-ai/topaz/upscale/image";
+
+export async function submitVideoEnhance(input: { videoUrl: string; factor: number; webhookUrl?: string }) {
+  const { request_id } = await fal().queue.submit(ENHANCE_ENDPOINT, {
+    input: { video_url: input.videoUrl, model: "Proteus", upscale_factor: input.factor, H264_output: true },
+    ...(input.webhookUrl ? { webhookUrl: input.webhookUrl } : {}),
+  });
+  return { requestId: request_id };
+}
+
+export async function submitImageEnhance(input: { imageUrl: string; factor: number; png: boolean; webhookUrl?: string }) {
+  const { request_id } = await fal().queue.submit(IMAGE_ENHANCE_ENDPOINT, {
+    input: { image_url: input.imageUrl, model: "Standard V2", upscale_factor: input.factor, output_format: input.png ? "png" : "jpeg", face_enhancement: true },
+    ...(input.webhookUrl ? { webhookUrl: input.webhookUrl } : {}),
+  });
+  return { requestId: request_id };
+}
+
+export type ToolEnhanceStatus = { status: "IN_QUEUE" | "IN_PROGRESS" } | { status: "COMPLETED"; url: string; contentType?: string } | { status: "FAILED"; error: string };
+
+/** Status of an enhancer job of either kind; a finished job returns the file's temporary URL. */
+export async function getToolEnhanceStatus(kind: "video" | "image", requestId: string): Promise<ToolEnhanceStatus> {
+  const client = fal();
+  const endpoint = kind === "video" ? ENHANCE_ENDPOINT : IMAGE_ENHANCE_ENDPOINT;
+  try {
+    const status = await client.queue.status(endpoint, { requestId, logs: false });
+    if (status.status !== "COMPLETED") return { status: status.status };
+    const result = await client.queue.result(endpoint, { requestId });
+    const data = result.data as { video?: { url?: string; content_type?: string }; image?: { url?: string; content_type?: string } };
+    const file = kind === "video" ? data.video : data.image;
+    return file?.url ? { status: "COMPLETED", url: file.url, contentType: file.content_type } : { status: "FAILED", error: "The enhancer finished without a file." };
+  } catch (error) {
+    return { status: "FAILED", error: error instanceof Error ? error.message : "Unknown enhancer error" };
+  }
+}

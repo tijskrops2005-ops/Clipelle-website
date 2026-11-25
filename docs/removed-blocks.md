@@ -152,3 +152,10 @@ Off the screens, code kept unless said otherwise:
 - **Calculator**: the Speed/Precision switch, the "Per video" and "Per month, money and time" rows, the "Every plan for this video" cards and the tick marks under the length slider.
 - **Company menu**: Careers (`/careers` keeps the open application by URL). **Platform menu**: Dashboard (the header has it); MCP server added.
 - **Copy that promised what we cannot back**: "We reply within two working days" (contact, done-for-you), "Deleting a project removes its files" (there is no project delete; archiving hides), the duplicate partner questions.
+
+## 25 Nov 2026: English only, All tools, enhancer, support (Tijs's master prompt)
+
+- **Dutch site**: the route folder `src/app/nl/` (every `/nl` page) and the EN | NL switch (`src/components/site/LanguageSwitch.tsx`) are removed; `/nl` and `/nl/*` redirect permanently to the English page (`next.config.ts`), the proxy no longer reads the `clipelle_lang` cookie, the sitemap and metadata carry no hreflang alternates. The Dutch dictionary (`src/content/i18n/nl.ts`) and the `nl` fields in content files stay in the code; nothing renders them. To restore: bring back `src/app/nl/` and `LanguageSwitch.tsx` from git (before this commit) and `LOCALES = ["en", "nl"]` in `src/lib/i18n.ts`.
+- **Dashboard**: the page header with the black "New video" button, `QuickStart.tsx` and the four tall stat cards are replaced by `WelcomeBand.tsx` (ink band with the credits), `ToolTiles.tsx` and three numbers in one card (`DashboardStats.tsx`). `QuickStart.tsx` stays in the folder, unused.
+- **Sidebar**: "Edit a video" under Projects became the "Video editor" tool in the Create group; the plain "Tools" heading became Workspace / Create / Account; "All tools" opens the page `/tools` (⌘K still opens the quick search).
+- **Top bar**: the plain Support link (e-mail or /contact) became the Support menu (`SupportMenu.tsx`).

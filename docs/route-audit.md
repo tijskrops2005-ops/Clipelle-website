@@ -8,6 +8,7 @@ Classes: **keep** · **improved** (changed in this round) · **hidden** (reachab
 
 | Route | Purpose | State | Decision |
 |---|---|---|---|
+| `/nl`, `/nl/*` | The Dutch site | removed 25 Nov 2026 | **redirect** to the English page |
 | `/` | Homepage: hero with real videos, the four steps, the before/after, calculator, plans, FAQ | real | keep |
 | `/platform/translate` | What a translation does, steps, rights, quality, one real result | real | keep |
 | `/platform/ads`, `/platform/url-to-video` | Ads from a photo / a link: announced, waitlist | coming soon, says so | keep as "Soon" in the Platform menu while `NEXT_PUBLIC_ADS_ENABLED` is off |
@@ -45,7 +46,9 @@ Classes: **keep** · **improved** (changed in this round) · **hidden** (reachab
 | `/new/translate` (`?speaker=presenter`) | The one form, both flows | real | keep |
 | `/new/ad`, `/new/url` | Ads: coming-soon panel with "Notify me" | announced, server refuses starts | keep secondary (sidebar "Coming soon", folded) |
 | `/projects`, `/projects/[id]`, `/projects/[id]/edit` | List, progress/result, edit screen | real | keep |
-| `/edit` | Pick a finished video to edit | real | keep |
+| `/edit` | Pick a finished video to edit (the "Video editor" tool) | real | keep |
+| `/tools` | All tools by category, with search (25 Nov 2026) | real | new |
+| `/enhance` (`?type=video|image`) | Enhance a video or an image (25 Nov 2026) | real, needs `FAL_KEY` and migration 0027 | new |
 | `/batches/[id]` | Variations of an ad | ads only | keep (reachable from an ad batch only) |
 | `/settings`, `/settings/brand`, `/settings/usage`, `/settings/billing`, `/settings/api`, `/settings/team` | Account | real | keep |
 | `/settings/connections` | "Publish to TikTok / Reels / Shorts", "Import from Shopify" wishes | announcements only | **removed** from the menu; the route redirects to `/settings`; the notify API keeps accepting the old keys |

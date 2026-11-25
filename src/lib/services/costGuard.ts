@@ -236,6 +236,8 @@ export type ReserveInput = {
   language?: string | null;
   /** Workflow B: number of language versions, to split shared costs. */
   languageCount?: number;
+  /** For paid calls outside a project (the enhancer, 25 Nov 2026): whose per-user limits apply. */
+  userId?: string | null;
   meta?: Record<string, unknown>;
 };
 
@@ -278,6 +280,10 @@ export async function reserveSpend(input: ReserveInput): Promise<{ entryId: stri
       const perUser = await checkUserLimits(userId, estimated);
       if (!perUser.ok) throw new CostGuardError(perUser.message, "user_limit", { estimatedUsd: estimated });
     }
+  } else if (input.userId) {
+    userId = input.userId;
+    const perUser = await checkUserLimits(userId, estimated);
+    if (!perUser.ok) throw new CostGuardError(perUser.message, "user_limit", { estimatedUsd: estimated });
   }
 
   const fingerprint = fingerprintOf(input.service, input.action, input.fingerprintInput);

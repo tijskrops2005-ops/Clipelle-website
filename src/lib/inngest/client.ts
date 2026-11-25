@@ -38,6 +38,11 @@ export const editRequested = eventType("project/edit.requested", {
   schema: z.object({ projectId: z.string().uuid() }),
 });
 
+/** The enhancer (25 Nov 2026): a video or image to upscale and clean. */
+export const enhanceRequested = eventType("enhance/job.requested", {
+  schema: z.object({ jobId: z.string().uuid() }),
+});
+
 /** Workflow A with "Review script first": the user approved (and maybe edited) the script. */
 export const adScriptApproved = eventType("project/ad-script.approved", {
   schema: z.object({ projectId: z.string().uuid() }),

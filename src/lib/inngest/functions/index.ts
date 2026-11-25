@@ -7,6 +7,7 @@ import { annualCredits } from "./annualCredits";
 import { qualityReport } from "./qualityReport";
 import { accountDeletion } from "./accountDeletion";
 import { editExport } from "./editExport";
+import { enhanceJob } from "./enhanceJob";
 
 /** Every function the app registers with Inngest. Add new workflows here. */
-export const functions = [helloFunction, adWorkflow, translateWorkflow, deliverWebhook, autoReload, annualCredits, qualityReport, accountDeletion, editExport];
+export const functions = [helloFunction, adWorkflow, translateWorkflow, deliverWebhook, autoReload, annualCredits, qualityReport, accountDeletion, editExport, enhanceJob];

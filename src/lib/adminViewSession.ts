@@ -34,7 +34,7 @@ export function viewAllowsRequest(method: string, pathname: string): boolean {
   const m = method.toUpperCase();
   if (pathname === "/api/admin/view/exit" || pathname === "/api/auth/signout") return true;
   // Customer files are never downloaded while viewing; the player in the page still works.
-  if (/^\/api\/projects\/[^/]+\/download/.test(pathname) || pathname === "/api/projects/zip" || pathname.startsWith("/api/settings/export")) return false;
+  if (/^\/api\/(projects|enhance)\/[^/]+\/download/.test(pathname) || pathname === "/api/projects/zip" || pathname.startsWith("/api/settings/export")) return false;
   if (m === "GET" || m === "HEAD" || m === "OPTIONS") return true;
   // Next.js server actions and route handlers that change things all arrive as POST/PATCH/PUT/DELETE.
   return !pathname.startsWith("/api/");

@@ -36,7 +36,21 @@
   /* Lighter lift for inner panels, chips and option cards. */
   --shadow-soft: 0 1px 2px rgba(17, 17, 20, 0.04), 0 6px 16px -12px rgba(17, 17, 20, 0.12);
 
-  /* Soft tints of the accent and ink, for selected states and highlights (no new hues). */
+  /*
+   * Tool categories (25 Nov 2026, Tijs: "a richer palette, not random colours"): one muted hue per
+   * kind of tool, used only for that tool's icon square, its card tint and its category label. Red
+   * stays the one action colour; these never colour buttons or body text. Each pair meets AA (≥ 4.5:1).
+   */
+  --tone-translate: #0f6b63;
+  --tone-translate-soft: #e1f0ec;
+  --tone-edit: #5a43a6;
+  --tone-edit-soft: #ebe7f6;
+  --tone-enhance: #9a5410;
+  --tone-enhance-soft: #faecd7;
+  --tone-create: #b8361a;
+  --tone-create-soft: #fbe6df;
+
+  /* Soft tints of the accent and ink, for selected states and highlights. */
   --accent-soft: #fbe9e4;
   --ink-soft: #f0efea;
 
@@ -78,6 +92,14 @@
   --shadow-accent: var(--shadow-accent);
   --shadow-soft: var(--shadow-soft);
   --color-accent-soft: var(--accent-soft);
+  --color-tone-translate: var(--tone-translate);
+  --color-tone-translate-soft: var(--tone-translate-soft);
+  --color-tone-edit: var(--tone-edit);
+  --color-tone-edit-soft: var(--tone-edit-soft);
+  --color-tone-enhance: var(--tone-enhance);
+  --color-tone-enhance-soft: var(--tone-enhance-soft);
+  --color-tone-create: var(--tone-create);
+  --color-tone-create-soft: var(--tone-create-soft);
   --color-ink-soft: var(--ink-soft);
   --radius-panel: var(--radius-panel);
   --radius-chip: var(--radius-chip);
@@ -461,6 +483,10 @@
     radial-gradient(60% 70% at 30% 40%, var(--accent-soft) 0%, transparent 70%),
     radial-gradient(50% 60% at 75% 55%, color-mix(in srgb, var(--warning) 16%, white) 0%, transparent 70%);
   filter: blur(40px);
+}
+/* The dashboard's welcome band (25 Nov 2026): one soft gold light in the corner of the ink band, no blur filter (cheap on phones). */
+.welcome-glow {
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--gold) 38%, transparent) 0%, color-mix(in srgb, var(--accent) 14%, transparent) 55%, transparent 100%);
 }
 /* Panel for the alternating feature rows: a quiet gradient that stays inside the palette. */
 .stage-panel {

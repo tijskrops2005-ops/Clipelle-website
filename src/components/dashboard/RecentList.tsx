@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
-import { useProjects, useProjectsReady } from "@/lib/data/client";
+import { Download, Plus, Scissors } from "lucide-react";
+import { downloadHref, useProjects, useProjectsReady } from "@/lib/data/client";
 import type { Project } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { languageOf } from "@/lib/languages";
@@ -36,7 +36,7 @@ export function RecentList() {
           <Button href="/new/translate" variant="primary"><Plus className="size-4" aria-hidden />Translate a video</Button>
         </div>
       ) : (
-        <ul className="mt-3 divide-y divide-divider px-2 pb-2 sm:px-3">
+        <ul className="mt-2 space-y-0.5 px-2 pb-2 sm:px-3">
           {projects.map((p) => <Row key={p.id} project={p} />)}
         </ul>
       )}
@@ -44,13 +44,23 @@ export function RecentList() {
   );
 }
 
+/** The finished file a row can download directly: an ad's final video, else the first finished language. */
+function finishedFile(p: Project): { url: string; language?: string } | null {
+  if (p.status !== "completed") return null;
+  if (p.workflow === "ad") return p.finalVideoUrl ? { url: p.finalVideoUrl } : null;
+  const t = p.translations.find((x) => x.status === "completed" && x.videoUrl);
+  return t?.videoUrl ? { url: t.videoUrl, language: t.language } : null;
+}
+
 function Row({ project: p }: { project: Project }) {
   const poster = projectPosterUrl(p);
   const frame = !poster && p.workflow === "translate" ? p.translations.find((t) => t.videoUrl)?.videoUrl ?? p.sourceVideoUrl : undefined;
   const what = p.workflow === "translate" ? p.targetLanguages.map((l) => languageOf(l).label).join(", ") : p.productName;
+  const file = finishedFile(p);
+  const action = "focus-ring hidden size-9 shrink-0 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-surface hover:text-ink sm:grid";
   return (
-    <li>
-      <Link href={`/projects/${p.id}`} className="focus-ring group flex items-center gap-4 rounded-[14px] px-3 py-3 transition-colors duration-150 hover:bg-surface-muted/70">
+    <li className="group flex items-center gap-1 rounded-[14px] pr-0 sm:pr-2 transition-colors duration-150 hover:bg-surface-muted/70">
+      <Link href={`/projects/${p.id}`} className="focus-ring flex min-w-0 flex-1 items-center gap-4 rounded-[14px] px-3 py-3">
         <span className="relative block aspect-[9/16] w-10 shrink-0 overflow-hidden rounded-[8px] bg-surface-muted">
           <Poster seed={p.id} monogram={projectMonogram(p)} imageUrl={poster} className="!text-[11px]" />
           {frame && <video src={`${frame}#t=0.5`} muted playsInline preload="metadata" aria-hidden tabIndex={-1} className="pointer-events-none absolute inset-0 size-full object-cover" />}
@@ -60,10 +70,18 @@ function Row({ project: p }: { project: Project }) {
           <span className="mt-0.5 block truncate text-[13px] text-muted">{what} · {formatDate(p.createdAt)}</span>
         </span>
         <span className="hidden shrink-0 text-[13px] tabular-nums text-muted sm:block">{projectLengthLabel(p)}</span>
-        {p.status === "completed" && p.creditsUsed !== undefined && <span className="hidden shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-[12px] font-medium tabular-nums text-accent md:inline">{p.creditsUsed} credits</span>}
+        {p.status === "completed" && p.creditsUsed !== undefined && <span className="hidden shrink-0 rounded-full bg-surface-muted px-2.5 py-1 text-[12px] font-medium tabular-nums text-ink/75 md:inline">{p.creditsUsed} credits</span>}
         <StatusBadge status={p.status} className="shrink-0" />
-        <ChevronRight className="size-4 shrink-0 text-muted transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden />
       </Link>
+      {/* Quick actions on a finished video (25 Nov 2026): straight to the editor or the file. */}
+      {file ? (
+        <>
+          <Link href={`/projects/${p.id}/edit`} aria-label={`Edit ${p.name}`} title="Edit" className={action}><Scissors className="size-4" aria-hidden /></Link>
+          <a href={downloadHref(p.id, file.url, file.language)} download aria-label={`Download ${p.name}`} title="Download" className={action}><Download className="size-4" aria-hidden /></a>
+        </>
+      ) : (
+        <span className="hidden w-[76px] shrink-0 sm:block" aria-hidden />
+      )}
     </li>
   );
 }
