@@ -1,7 +1,7 @@
 import "server-only";
 import { fitCaptionToCover } from "@/lib/captionFit";
 import { chunkCharsFor } from "@/lib/captionChunks";
-import { barMeta, CAPTION_SIZE_PX, DEFAULT_CAPTION_STYLE as DEFAULT_TRANSLATE_LOOK, captionStyleOf, effectiveBar, isLightColor, outlineFor, type CaptionHighlight, type CaptionStyleChoice, readableOn } from "@/lib/captionOptions";
+import { barMeta, CAPTION_SIZE_PX, DEFAULT_CAPTION_STYLE as DEFAULT_TRANSLATE_LOOK, captionFontOf, captionStyleOf, effectiveBar, timelineFontsFor, isLightColor, outlineFor, type CaptionHighlight, type CaptionStyleChoice, readableOn } from "@/lib/captionOptions";
 import { adLayout } from "@/lib/adLayout";
 import { DEFAULT_CAPTION_STYLE, DEFAULT_FONT, FONT_KEYS, type CaptionStyle } from "@/lib/adOptions";
 
@@ -274,6 +274,14 @@ export type CaptionEditInput = {
    * go exactly there, on a soft dark bar that covers the smudge the removal leaves.
    */
   coverBox?: { top: number; bottom: number; left: number; right: number };
+  /**
+   * Old text that moved (26 Nov 2026): the spot per stretch of the output, and one caption layer per
+   * spot holding only the lines said there. Each stretch gets an opaque bar (a shape) on its own spot,
+   * so no smudge shows anywhere; each layer runs the whole video (start 0), so its SRT times are plain
+   * output times. Used only with a box background over removed text; otherwise ignored.
+   */
+  coverTrack?: { start: number; end: number; box: { top: number; bottom: number; left: number; right: number } }[];
+  captionLayers?: { box: { top: number; bottom: number; left: number; right: number }; srtUrl: string }[];
 };
 
 /** The words' own colour and outline: a black outline for every colour, white only for black words (28 Oct 2026). */
@@ -352,13 +360,58 @@ export function buildCaptionEdit(input: CaptionEditInput) {
   // Over removed text the captions are centred where that text was (and kept inside the safe zones by the fit).
   const offsetY = fit ? fit.offsetY : input.coverBox ? captionOffsetFor(input.coverBox) : input.captionPosition === "middle" ? 0 : -0.18;
 
+  // Moving old text: a bar per stretch on its own spot, and a caption layer per spot on top (26 Nov 2026).
+  const moving = Boolean(bar.color && input.coverBox && input.coverTrack?.length && input.captionLayers?.length);
+  const movingTracks: Record<string, unknown>[] = [];
+  if (moving && bar.color) {
+    const layers = input.captionLayers!.map((layer) => {
+      const f = fitCaptionToCover(layer.box, frame, look.size);
+      return {
+        clips: [
+          {
+            asset: {
+              type: "rich-caption",
+              src: layer.srtUrl,
+              font: { family: captionFontOf(look).family, size: f.fontPx, color: words.text, opacity: 1, weight: captionFontOf(look).weight },
+              style: { textTransform: look.uppercase ? "uppercase" : "none" },
+              stroke: words.stroke,
+              animation: { style: "highlight" },
+              ...(active ? { active } : {}),
+              border: { width: 0, color: ink, opacity: 1, radius: 16 },
+              padding: { top: 8, right: 14, bottom: 8, left: 14 },
+              align: { horizontal: "center", vertical: "middle" },
+            },
+            start: 0,
+            length: total,
+            width: f.widthPx,
+            height: Math.max(twoLineHeight(f.fontPx, "box"), f.heightPx),
+            offset: { x: 0, y: f.offsetY },
+          },
+        ],
+      };
+    });
+    const bars = {
+      clips: input.coverTrack!.map((segment) => {
+        const f = fitCaptionToCover(segment.box, frame, look.size);
+        const h = Math.max(twoLineHeight(f.fontPx, "box"), f.heightPx);
+        return {
+          asset: { type: "shape", shape: "rectangle", width: f.widthPx, height: h, fill: { color: bar.color, opacity: 1 }, rectangle: { width: f.widthPx, height: h, cornerRadius: 18 } },
+          start: Math.round(segment.start * 10) / 10,
+          length: Math.max(0.1, Math.round((segment.end - segment.start) * 10) / 10),
+          offset: { x: 0, y: f.offsetY },
+        };
+      }),
+    };
+    movingTracks.push(...layers, bars);
+  }
+
   const captions = {
     clips: [
       {
         asset: {
           type: "rich-caption",
           src: input.srtUrl ?? "alias://source",
-          font: { family: "Roboto", size: fontPx, color: words.text, opacity: 1, weight: 900 },
+          font: { family: captionFontOf(look).family, size: fontPx, color: words.text, opacity: 1, weight: captionFontOf(look).weight },
           style: { textTransform: look.uppercase ? "uppercase" : "none" },
           stroke: words.stroke,
           // In a box the words stay put (no pop), so the box keeps its shape while a line is spoken.
@@ -401,7 +454,7 @@ export function buildCaptionEdit(input: CaptionEditInput) {
     : { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 };
   return {
     // Captions off: only the video track (still cropped or resized, silence still trimmed).
-    timeline: { background: ink, tracks: look.show ? [captions, video] : [video] },
+    timeline: { background: ink, ...(look.show && timelineFontsFor(look).length ? { fonts: timelineFontsFor(look) } : {}), tracks: moving ? [...movingTracks, video] : look.show ? [captions, video] : [video] },
     output,
     meta: { totalSeconds: total, trimStart, trimEnd },
   };
@@ -437,7 +490,7 @@ export function buildPresenterTranslateEdit(input: PresenterTranslateEditInput) 
         asset: {
           type: "rich-caption",
           src: "alias://presenter",
-          font: { family: "Roboto", size: CAPTION_SIZE_PX[look.size], color: words.text, opacity: 1, weight: 900 },
+          font: { family: captionFontOf(look).family, size: CAPTION_SIZE_PX[look.size], color: words.text, opacity: 1, weight: captionFontOf(look).weight },
           style: { textTransform: look.uppercase ? "uppercase" : "none" },
           stroke: words.stroke,
           animation: { style: "pop" },
@@ -477,7 +530,7 @@ export function buildPresenterTranslateEdit(input: PresenterTranslateEditInput) 
     tracks.push({ clips });
   }
   return {
-    timeline: { background: ink, tracks },
+    timeline: { background: ink, ...(look.show && timelineFontsFor(look).length ? { fonts: timelineFontsFor(look) } : {}), tracks },
     output: { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 },
     meta: { totalSeconds: total },
   };

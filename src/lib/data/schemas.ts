@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { CAPTION_BARS, CAPTION_HIGHLIGHTS, CAPTION_SIZES } from "@/lib/captionOptions";
+import { CAPTION_BARS, CAPTION_FONT_KEYS, CAPTION_HIGHLIGHTS, CAPTION_SIZES } from "@/lib/captionOptions";
 import { PRESENTER_LANGUAGES, PRESENTER_LAYOUTS } from "@/lib/presenterTranslate";
 import { isTranslateLanguage } from "@/lib/translateLanguages";
 import { config } from "@/lib/config";
-import { OVERLAY_MAX_CHARS, RECIPE_VERSION } from "@/lib/editRecipe";
+import { CAPTION_PLACES, MUSIC_MAX_VOLUME, OVERLAY_MAX_CHARS, RECIPE_VERSION } from "@/lib/editRecipe";
 import { DEFAULT_AD_SECONDS, DEFAULT_PRESENTER_ENGINE, isAdLength, isPresenterEngine } from "@/lib/pricing";
 import { AD_TONES, DEFAULT_AD_LANGUAGE, DEFAULT_TONE, DIRECTION_MAX_CHARS, HEX_COLOR, OFFER_MAX_CHARS, CAPTION_STYLES, FONT_KEYS } from "@/lib/adOptions";
 import { AD_LANGUAGE_CODES, DEFAULT_SPEED, SPEEDS } from "@/lib/voiceOptions";
@@ -78,7 +78,7 @@ export const TranslateFields = z.object({
   trimSilence: z.boolean().default(false),
   captionPosition: z.enum(["low", "middle"]).default("low"),
   /** Caption choices (26 Oct 2026); omitted = the original look. */
-  captionStyle: z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: HexColor, size: z.enum(CAPTION_SIZES), uppercase: z.boolean(), textColor: HexColor, bar: z.union([z.enum(CAPTION_BARS), HexColor]) }).partial().optional(),
+  captionStyle: z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: HexColor, size: z.enum(CAPTION_SIZES), uppercase: z.boolean(), textColor: HexColor, bar: z.union([z.enum(CAPTION_BARS), HexColor]), font: z.enum(CAPTION_FONT_KEYS) }).partial().optional(),
   /** Sound (26 Oct 2026): strip the background music, clean up the speech. */
   /** Remove text burned into the picture before translating (Pro, 26 Oct 2026). */
   removeText: z.boolean().optional(),
@@ -105,8 +105,8 @@ export type TranslateBodyInput = z.infer<typeof TranslateBody>;
 /* ---------- the edit screen's recipe (2 Nov 2026, src/lib/editRecipe.ts) ---------- */
 const Seconds = z.number().min(0).max(60 * 60);
 const RangeBody = z.object({ start: Seconds, end: Seconds });
-const CueBody = z.object({ index: z.number().int().min(0), start: Seconds, end: Seconds, text: z.string().max(400) });
-const CaptionStyleBody = z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: HexColor, size: z.enum(CAPTION_SIZES), uppercase: z.boolean(), textColor: HexColor.optional(), bar: z.union([z.enum(CAPTION_BARS), HexColor]).optional() });
+const CueBody = z.object({ index: z.number().int().min(0), start: Seconds, end: Seconds, text: z.string().max(400), place: z.enum(CAPTION_PLACES).optional() });
+const CaptionStyleBody = z.object({ show: z.boolean(), highlight: z.enum(CAPTION_HIGHLIGHTS), color: HexColor, size: z.enum(CAPTION_SIZES), uppercase: z.boolean(), textColor: HexColor.optional(), bar: z.union([z.enum(CAPTION_BARS), HexColor]).optional(), font: z.enum(CAPTION_FONT_KEYS).optional() });
 export const EditRecipeBody = z.object({
   v: z.literal(RECIPE_VERSION),
   sourceSeconds: z.number().positive().max(60 * 60),
@@ -116,6 +116,7 @@ export const EditRecipeBody = z.object({
   lowerThird: z.object({ enabled: z.boolean(), text: z.string().max(OVERLAY_MAX_CHARS), from: Seconds, to: Seconds, position: z.enum(["top", "bottom"]) }).optional(),
   cta: z.object({ enabled: z.boolean(), text: z.string().max(OVERLAY_MAX_CHARS), from: Seconds, to: Seconds }).optional(),
   logo: z.object({ enabled: z.boolean() }).optional(),
+  music: z.object({ enabled: z.boolean(), source: z.enum(["library", "upload"]), track: z.string().max(60).optional(), path: z.string().max(400).optional(), name: z.string().max(200).optional(), volume: z.number().min(0).max(MUSIC_MAX_VOLUME) }).optional(),
 });
 export const ExportBody = z.object({ recipe: EditRecipeBody, language: z.string().max(40).optional() });
 export type ExportBodyInput = z.infer<typeof ExportBody>;

@@ -41,8 +41,8 @@ export function Sidebar({ user }: { user: ShellUser }) {
         </Button>
       </div>
 
-      <div className="mt-6 min-h-0 flex-1 overflow-y-auto px-3 pb-4 [scrollbar-width:thin]">
-        <SidebarLinks isAdmin={user?.isAdmin} />
+      <div className="mt-7 flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-2 [scrollbar-width:thin]">
+        <SidebarLinks isAdmin={user?.isAdmin} fill />
       </div>
 
       {user && user.workspaces.length > 1 && (
@@ -55,13 +55,15 @@ export function Sidebar({ user }: { user: ShellUser }) {
 }
 
 /** The link groups, shared by the sidebar and the mobile drawer (both ink). */
-export function SidebarLinks({ isAdmin, onNavigate }: { isAdmin?: boolean; onNavigate?: () => void }) {
+export function SidebarLinks({ isAdmin, onNavigate, fill }: { isAdmin?: boolean; onNavigate?: () => void; fill?: boolean }) {
   const pathname = usePathname();
   const search = useSearchParams();
   // "Translate with a presenter" lives on the same path as "Translate a video": the query decides (28 Oct 2026).
   const activeTool = activeToolKey(pathname, search.toString(), STUDIO_TOOLS);
   return (
-    <nav aria-label="Main" className="flex flex-col gap-0.5">
+    // 26 Nov 2026 (Tijs: the menu sat cramped at the top with empty space below): roomier rows, and in the
+    // sidebar the account group sits at the bottom so the column is used from top to bottom.
+    <nav aria-label="Main" className={cn("flex flex-col gap-1", fill && "min-h-full flex-1")}>
       {navItems.map((item) => (
         <NavRow key={item.href} item={item} active={isActivePath(pathname, item.href)} onNavigate={onNavigate} />
       ))}
@@ -73,19 +75,21 @@ export function SidebarLinks({ isAdmin, onNavigate }: { isAdmin?: boolean; onNav
       ))}
       <SoonGroup onNavigate={onNavigate} />
 
-      <Divider />
-      <NavRow item={settingsNavItem} active={isActivePath(pathname, settingsNavItem.href)} onNavigate={onNavigate} />
-      <SupportMenu variant="row" onNavigate={onNavigate} />
-      {isAdmin && <NavRow item={adminNavItem} active={isActivePath(pathname, adminNavItem.href)} onNavigate={onNavigate} />}
+      <div className={cn("flex flex-col gap-1", fill && "mt-auto pt-6")}>
+        <Divider />
+        <NavRow item={settingsNavItem} active={isActivePath(pathname, settingsNavItem.href)} onNavigate={onNavigate} />
+        <SupportMenu variant="row" onNavigate={onNavigate} />
+        {isAdmin && <NavRow item={adminNavItem} active={isActivePath(pathname, adminNavItem.href)} onNavigate={onNavigate} />}
+      </div>
     </nav>
   );
 }
 
 function Divider() {
-  return <div className="mx-3 my-3 border-t border-white/10" aria-hidden />;
+  return <div className="mx-3 my-4 border-t border-white/10" aria-hidden />;
 }
 
-const rowBase = "focus-ring group flex h-10 items-center gap-3 rounded-[12px] px-3 text-[14px] transition-[background-color,color,box-shadow] duration-150";
+const rowBase = "focus-ring group flex h-11 items-center gap-3 rounded-[12px] px-3 text-[14.5px] transition-[background-color,color,box-shadow] duration-150";
 const rowIdle = "text-white/65 hover:bg-white/[0.06] hover:text-white";
 const rowActive = "bg-accent/15 font-medium text-white ring-1 ring-inset ring-accent/45";
 

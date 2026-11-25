@@ -163,3 +163,7 @@ Off the screens, code kept unless said otherwise:
 - **Homepage hero fan** (25 Nov 2026, Tijs: "die 6 video's bovenaan mogen weg"): `HeroShowcase` (six phones, three pairs) is off the homepage; the real before-and-after (`TranslateShowcase inHero`, without its own heading) now sits straight under the hero buttons, then the four steps. `HeroShowcase` stays in `Showcase.tsx`, unused.
 - **Dashboard welcome band** (25 Nov 2026, after splister.com/app): the ink band with the credits is replaced by a quiet page header with "All tools"; the credits are in the top bar. `WelcomeBand.tsx` stays, unused. The app moved to `/app/...` (old addresses redirect), with an ink sidebar, the account and credits as pills in the top bar, hairline cards and a white work area.
 - **Homepage "One upload, three languages"** (`TranslateDemo`, the self-playing drawn form; 25 Nov 2026, Tijs): off the homepage now that the real walk-through video sits above it. The component stays in `src/components/site/TranslateDemo.tsx`.
+
+## 26 Nov 2026 — edit screen timeline
+
+- The two-click "Cut from here / Cut until here (from …)" button on the edit timeline is replaced by **Split** + **Delete part** with a row of parts under the frame strip (Tijs could not find how to take a piece out of the middle). Same recipe (`cuts`); the old button lived in `src/components/edit/EditTimeline.tsx` (git history before 26 Nov 2026).

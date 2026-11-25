@@ -5,7 +5,8 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { createFalClient } from "@fal-ai/client";
 import { z } from "zod";
 import sharp from "sharp";
-import { changedBand, joinBands } from "@/lib/changedBand";
+import { changedBand, joinBands, type Band } from "@/lib/changedBand";
+import { isMoving, momentsFor, trackFromBands, type CoverSegment } from "@/lib/captionTrack";
 import { workflowSettings } from "@/lib/workflow/settings";
 import { framesAt } from "@/lib/services/frameAt";
 import { claudeTokensToUsd, isScriptModel } from "@/lib/pricing";
@@ -79,18 +80,33 @@ export async function locateBurnedCaptions(frameUrls: string[]): Promise<{ box: 
  * fractions match the frame the captions are drawn on.
  */
 export const MEASURE_MOMENTS = 10;
-export async function measureRemovedText(sourceUrl: string, cleanedUrl: string, seconds: number, size?: { width: number; height: number }): Promise<TextBox | null> {
-  const length = Math.max(1, seconds);
-  const moments = Array.from({ length: MEASURE_MOMENTS }, (_, i) => Math.min(length - 0.15, 0.2 + ((length - 0.4) * i) / (MEASURE_MOMENTS - 1)));
+/**
+ * Returns the one box (all spots joined, as before) and the track: the box per stretch of time
+ * (26 Nov 2026). Old text that moves (top, then bottom, then middle) left smudges outside the one box;
+ * the track lets the render cover each stretch on its own spot. More moments for longer videos
+ * (`momentsFor`: one per 1.5 s, 10 to 24).
+ */
+export async function measureRemovedText(sourceUrl: string, cleanedUrl: string, seconds: number, size?: { width: number; height: number }): Promise<{ box: TextBox | null; track: CoverSegment[] }> {
+  const moments = momentsFor(seconds);
   const fit = size ? "contain" : "crop";
   const [source, cleaned] = await Promise.all([framesAt(sourceUrl, moments, fit, size), framesAt(cleanedUrl, moments, fit, size)]);
-  const bands = [];
+  const bands: (Band | null)[] = [];
   for (let i = 0; i < moments.length; i++) {
-    if (!source[i] || !cleaned[i]) continue;
+    if (!source[i] || !cleaned[i]) {
+      bands.push(null);
+      continue;
+    }
     const [a, b] = await Promise.all([greyPixels(source[i]!), greyPixels(cleaned[i]!)]);
     bands.push(a.width === b.width && a.height === b.height ? changedBand(a.data, b.data, a.width, a.height) : null);
   }
-  return joinBands(bands);
+  const track = trackFromBands(moments, bands, seconds);
+  // With moving text the one box is the union of every stretch (the edit preview and older code read it).
+  const box = isMoving(track) ? unionOf(track.map((t) => t.box)) : joinBands(bands);
+  return { box, track: isMoving(track) ? track : [] };
+}
+
+function unionOf(boxes: TextBox[]): TextBox {
+  return { top: Math.min(...boxes.map((b) => b.top)), bottom: Math.max(...boxes.map((b) => b.bottom)), left: Math.min(...boxes.map((b) => b.left)), right: Math.max(...boxes.map((b) => b.right)) };
 }
 
 /** A frame as small greyscale pixels (180 wide is plenty to find a line of text). */

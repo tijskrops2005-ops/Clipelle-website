@@ -115,3 +115,65 @@ describe("edit recipe", () => {
     });
   });
 });
+
+describe("timeline pieces (split and delete part)", () => {
+  it("splits the kept window and marks cuts and trimmed ends", async () => {
+    const { timelinePieces, defaultRecipe, keptRanges } = await import("./editRecipe");
+    const r = { ...defaultRecipe(20), trim: { start: 1, end: 19 }, cuts: [{ start: 8, end: 10 }] };
+    const pieces = timelinePieces(r, [5, 14]);
+    expect(pieces.map((p) => [p.start, p.end, p.state])).toEqual([
+      [0, 1, "out"], [1, 5, "kept"], [5, 8, "kept"], [8, 10, "cut"], [10, 14, "kept"], [14, 19, "kept"], [19, 20, "out"],
+    ]);
+    // Deleting the middle part 10–14 keeps the rest.
+    expect(keptRanges({ ...r, cuts: [...r.cuts, { start: 10, end: 14 }] })).toEqual([{ start: 1, end: 8 }, { start: 14, end: 19 }]);
+  });
+});
+
+describe("caption places, moving old text and music (26 Nov 2026)", () => {
+  const top = { top: 0.12, bottom: 0.2, left: 0.15, right: 0.85 };
+  const low = { top: 0.7, bottom: 0.78, left: 0.1, right: 0.9 };
+  const lines = [
+    { index: 1, start: 0, end: 3, text: "One" },
+    { index: 2, start: 3, end: 6, text: "Two" },
+    { index: 3, start: 6, end: 9, text: "Three" },
+  ];
+  it("groups lines per place: a moved line gets its own layer", async () => {
+    const { defaultRecipe, exportLayers, needsLayers } = await import("./editRecipe");
+    const r = defaultRecipe(10, { cues: lines });
+    expect(needsLayers(r, {})).toBe(false);
+    const moved = { ...r, captions: { ...r.captions!, cues: r.captions!.cues.map((c, i) => (i === 1 ? { ...c, place: "top" as const } : c)) } };
+    expect(needsLayers(moved, {})).toBe(true);
+    expect(exportLayers(moved, {}).map((l) => [l.key, l.cues.map((c) => c.text)])).toEqual([["low", ["One", "Three"]], ["top", ["Two"]]]);
+  });
+
+  it("follows old text that moved and covers each stretch, also after a cut", async () => {
+    const { defaultRecipe, exportLayers, coverBarsOnOutput, needsLayers, buildEditFromRecipe } = await import("./editRecipe");
+    const track = [{ start: 0, end: 5, box: top }, { start: 5, end: 10, box: low }];
+    const r = { ...defaultRecipe(10, { cues: lines }), cuts: [{ start: 3, end: 4 }] };
+    const cover = { box: { top: 0.12, bottom: 0.78, left: 0.1, right: 0.9 }, track };
+    expect(needsLayers(r, cover)).toBe(true);
+    expect(exportLayers(r, cover).map((l) => l.key)).toEqual(["spot-0", "spot-1"]);
+    expect(coverBarsOnOutput(r, cover).map((b) => [b.start, b.end, b.box === top ? "top" : "low"])).toEqual([[0, 3, "top"], [3, 4, "top"], [4, 9, "low"]]);
+    const job = buildEditFromRecipe(r, { videoUrl: "https://x/v.mp4", coverBox: cover.box, coverTrack: track, layers: [{ key: "spot-0", srtUrl: "https://x/a.srt" }, { key: "spot-1", srtUrl: "https://x/b.srt" }] });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tracks = (job.timeline as any).tracks;
+    const shapes = tracks.find((t: { clips: { asset: { type: string } }[] }) => t.clips[0].asset.type === "shape");
+    expect(shapes.clips).toHaveLength(3);
+    const layers = tracks.filter((t: { clips: { asset: { type: string } }[] }) => t.clips[0].asset.type === "rich-caption");
+    expect(layers.map((t: { clips: { start: number; length: number }[] }) => [t.clips[0].start, t.clips[0].length])).toEqual([[0, 9], [0, 9]]);
+    expect(layers[0].clips[0].offset.y).toBeGreaterThan(layers[1].clips[0].offset.y);
+  });
+
+  it("adds a chosen font and repeats short music to fill the video", async () => {
+    const { defaultRecipe, buildEditFromRecipe, musicClips } = await import("./editRecipe");
+    const r = defaultRecipe(50, { cues: lines, style: { font: "anton" } });
+    const job = buildEditFromRecipe({ ...r, music: { enabled: true, source: "library", track: "calm-morning", volume: 0.2 } }, { videoUrl: "https://x/v.mp4", srtUrl: "https://x/c.srt", music: { url: "https://x/m.mp3", seconds: 20, volume: 0.2 } });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tl = job.timeline as any;
+    expect(tl.fonts).toEqual([{ src: expect.stringContaining("anton") }]);
+    expect(tl.tracks.find((t: { clips: { asset: { type: string } }[] }) => t.clips[0].asset.type === "rich-caption").clips[0].asset.font.family).toBe("Anton");
+    const audio = tl.tracks.find((t: { clips: { asset: { type: string } }[] }) => t.clips[0].asset.type === "audio");
+    expect(audio.clips.map((c: { start: number; length: number }) => [c.start, c.length])).toEqual([[0, 20], [20, 20], [40, 10]]);
+    expect(musicClips("u", undefined, 12, 5)[0]).toMatchObject({ asset: { volume: 0.6, effect: "fadeInFadeOut" }, length: 12 });
+  });
+});

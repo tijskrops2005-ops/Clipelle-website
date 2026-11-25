@@ -432,6 +432,14 @@ export async function stageUpload(kind: UploadKind, file: File, onProgress?: (fr
   return { path: signed.path, fileName: file.name, bytes: file.size, mime: file.type };
 }
 
+/** Background music for the edit screen (26 Nov 2026): uploaded to the customer's staged folder; demo mode keeps it in the browser only. */
+export async function stageMusic(file: File, onProgress?: (fraction: number) => void): Promise<StagedUpload | null> {
+  if (config.demoMode) return null;
+  const signed = await api<{ path: string; token: string; bucket: string; url?: string }>("/api/uploads/stage", { method: "POST", body: JSON.stringify({ kind: "music", fileName: file.name, bytes: file.size, mime: file.type }) });
+  await uploadToSignedUrl(signed.bucket, signed.path, signed.token, file, onProgress, signed.url);
+  return { path: signed.path, fileName: file.name, bytes: file.size, mime: file.type };
+}
+
 /** Removes a staged file the customer took off the form again (best effort). */
 export async function discardStaged(path: string) {
   if (config.demoMode) return;

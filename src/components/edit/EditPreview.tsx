@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Pause, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isKept, keptRanges, type EditRecipe } from "@/lib/editRecipe";
-import { fitCaptionToCover, type CoverBox } from "@/lib/captionFit";
-import { fillGaps } from "@/lib/captionChunks";
+import { isKept, keptRanges, layerKeyOf, PLACE_OFFSET, spotBox, toOutputTime, type EditCover, type EditRecipe } from "@/lib/editRecipe";
+import { fitCaptionToCover } from "@/lib/captionFit";
+import { isMoving, segmentAt } from "@/lib/captionTrack";
+import { musicSrc } from "@/content/musicLibrary";
 import { barMeta, effectiveBar } from "@/lib/captionOptions";
 import { activeWordIndex, captionCss } from "./captionPreview";
 
@@ -15,7 +16,9 @@ import { activeWordIndex, captionCss } from "./captionPreview";
  * action and the logo drawn over it in HTML and CSS, so every change shows at once without a render.
  * `time` is the source clock; the parent owns it so the timeline and the panels can seek.
  */
-export function EditPreview({ src, recipe, time, onTime, videoRef, logoUrl, aspect, captionsAreBurnedIn, coverBox }: { src: string; recipe: EditRecipe; time: number; onTime: (t: number) => void; videoRef: RefObject<HTMLVideoElement | null>; logoUrl?: string | null; aspect: "9:16" | "original"; /** Ads: the captions are part of the picture; the preview draws none. */ captionsAreBurnedIn?: boolean; /** Where on-screen text was removed: the captions sit on one fixed, opaque box there, as in the render. */ coverBox?: CoverBox }) {
+export function EditPreview({ src, recipe, time, onTime, videoRef, logoUrl, aspect, captionsAreBurnedIn, cover, musicUrl }: { src: string; recipe: EditRecipe; time: number; onTime: (t: number) => void; videoRef: RefObject<HTMLVideoElement | null>; logoUrl?: string | null; aspect: "9:16" | "original"; /** Ads: the captions are part of the picture; the preview draws none. */ captionsAreBurnedIn?: boolean; /** Where on-screen text was removed (one spot, or a spot per stretch when it moved): an opaque bar hides it, as in the render. */ cover?: EditCover; /** An uploaded track of the customer (a library track resolves from the recipe). */ musicUrl?: string | null }) {
+  const coverBox = cover?.box;
+  const audioRef = useRef<HTMLAudioElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState(false);
   const [width, setWidth] = useState(300);
@@ -55,9 +58,16 @@ export function EditPreview({ src, recipe, time, onTime, videoRef, logoUrl, aspe
     }
     function onPlay() {
       setPlaying(true);
+      const a = audioRef.current;
+      if (a) {
+        const out = toOutputTime(v!.currentTime, recipe) ?? 0;
+        if (Number.isFinite(a.duration) && a.duration > 0) a.currentTime = out % a.duration;
+        void a.play().catch(() => {});
+      }
     }
     function onPause() {
       setPlaying(false);
+      audioRef.current?.pause();
     }
     v.addEventListener("timeupdate", onUpdate);
     v.addEventListener("play", onPlay);
@@ -83,17 +93,26 @@ export function EditPreview({ src, recipe, time, onTime, videoRef, logoUrl, aspe
     } else v.pause();
   }
 
-  // Over removed text the captions stay on and run on from line to line (as the export renders them, 24 Nov 2026).
-  const covered = Boolean(coverBox) && !captionsAreBurnedIn && Boolean(recipe.captions);
+  // Over removed text the captions stay on (24 Nov 2026); the bar hides the cleaned spot, per stretch when the old text moved (26 Nov 2026).
+  const covered = Boolean(coverBox || cover?.track?.length) && !captionsAreBurnedIn && Boolean(recipe.captions);
   const captions = covered ? recipe.captions! : recipe.captions?.enabled && !captionsAreBurnedIn ? recipe.captions : null;
   const lines = captions ? captions.cues.filter((c) => c.text.trim()) : [];
-  const shown = covered ? fillGaps(lines, recipe.sourceSeconds) : lines;
-  const cue = shown.find((c) => time >= c.start && time < c.end);
+  const cue = lines.find((c) => time >= c.start && time < c.end);
   const style = captions && covered ? { ...captions.style, bar: effectiveBar(captions.style, true) } : captions?.style;
   const css = captions ? captionCss(style, width) : null;
-  // The same box as the render: font and size from the old text, centred on its spot, fully opaque.
+  // The same bar as the render: font and size from the old text, centred on its spot, fully opaque.
   const frameSize = aspect === "9:16" ? { width: 1080, height: 1920 } : { width: 1920, height: 1080 };
-  const fit = covered && coverBox ? fitCaptionToCover(coverBox, frameSize, captions!.style.size) : null;
+  const barBox = covered ? (isMoving(cover?.track) ? segmentAt(cover!.track!, time)?.box ?? null : coverBox ?? null) : null;
+  const fit = barBox ? fitCaptionToCover(barBox, frameSize, captions!.style.size) : null;
+  // Where this line goes: on the old text's spot (inside the bar), or a fixed place the customer chose.
+  const key = cue && captions ? layerKeyOf(cue, recipe, cover ?? {}) : null;
+  const cueBox = key ? spotBox(key, cover ?? {}) : null;
+  const cueFit = cueBox ? fitCaptionToCover(cueBox, frameSize, captions!.style.size) : null;
+  const placeTop = key === "top" ? (0.5 - PLACE_OFFSET.top) * 100 : key === "middle" ? 50 : 68;
+  const music = recipe.music?.enabled ? (recipe.music.source === "upload" ? musicUrl ?? null : musicSrc(recipe.music.track)) : null;
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = Math.min(1, (recipe.music?.volume ?? 0.2) * 1.6);
+  }, [recipe.music?.volume, music]);
   const wordAt = cue ? activeWordIndex(cue, time) : -1;
   const lt = recipe.lowerThird?.enabled && recipe.lowerThird.text.trim() && time >= recipe.lowerThird.from && time < recipe.lowerThird.to ? recipe.lowerThird : null;
   const cta = recipe.cta?.enabled && recipe.cta.text.trim() && time >= recipe.cta.from && time < recipe.cta.to ? recipe.cta : null;
@@ -113,25 +132,30 @@ export function EditPreview({ src, recipe, time, onTime, videoRef, logoUrl, aspe
           <span className="rounded-[10px] bg-ink/80 px-3 py-1.5 text-center font-semibold text-white" style={{ fontSize: `${Math.max(9, 45 * scale)}px` }}>{lt.text}</span>
         </div>
       )}
-      {fit && css && lines.length > 0 && (
+      {fit && (
         <div
-          className="pointer-events-none absolute flex items-center justify-center overflow-hidden"
+          className="pointer-events-none absolute"
           style={{ left: `${50 - (fit.widthPx / frameSize.width) * 50}%`, width: `${(fit.widthPx / frameSize.width) * 100}%`, top: `${(0.5 - fit.offsetY) * 100}%`, height: `${(fit.heightPx / frameSize.height) * 100}%`, transform: "translateY(-50%)", background: barMeta(style?.bar).color ?? "#FFFFFF", borderRadius: `${18 * (width / frameSize.width)}px` }}
           data-testid="caption-cover"
+          aria-hidden
+        />
+      )}
+      {cue && css && cueFit && (
+        <div
+          className="pointer-events-none absolute flex items-center justify-center overflow-hidden"
+          style={{ left: `${50 - (cueFit.widthPx / frameSize.width) * 50}%`, width: `${(cueFit.widthPx / frameSize.width) * 100}%`, top: `${(0.5 - cueFit.offsetY) * 100}%`, height: `${(cueFit.heightPx / frameSize.height) * 100}%`, transform: "translateY(-50%)" }}
         >
-          {cue && (
-            <p style={{ ...css.box, background: "none", width: "auto", padding: `0 ${14 * (width / frameSize.width)}px`, fontSize: `${Math.max(8, fit.fontPx * (width / frameSize.width))}px` }}>
-              {cue.text.trim().split(/\s+/).map((w, i) => (
-                <span key={i} style={css.word(i === wordAt)}>
-                  {w}{" "}
-                </span>
-              ))}
-            </p>
-          )}
+          <p style={{ ...css.box, background: "none", width: "auto", padding: `0 ${14 * (width / frameSize.width)}px`, fontSize: `${Math.max(8, cueFit.fontPx * (width / frameSize.width))}px` }}>
+            {cue.text.trim().split(/\s+/).map((w, i) => (
+              <span key={i} style={css.word(i === wordAt)}>
+                {w}{" "}
+              </span>
+            ))}
+          </p>
         </div>
       )}
-      {!fit && cue && css && (
-        <div className="pointer-events-none absolute inset-x-0 flex justify-center" style={{ top: captions!.position === "middle" ? "50%" : "68%", transform: "translateY(-50%)" }}>
+      {cue && css && !cueFit && (
+        <div className="pointer-events-none absolute inset-x-0 flex justify-center" style={{ top: `${placeTop}%`, transform: "translateY(-50%)" }}>
           <p style={css.box}>
             {cue.text.trim().split(/\s+/).map((w, i) => (
               <span key={i} style={css.word(i === wordAt)}>
@@ -141,6 +165,7 @@ export function EditPreview({ src, recipe, time, onTime, videoRef, logoUrl, aspe
           </p>
         </div>
       )}
+      {music && <audio ref={audioRef} src={music} preload="auto" loop className="hidden" />}
       {cta && (
         <div className="pointer-events-none absolute inset-x-[10%] bottom-[12%] flex justify-center">
           <span className="rounded-full bg-accent px-4 py-2 text-center font-bold text-white shadow-accent" style={{ fontSize: `${Math.max(9, 50 * scale)}px` }}>{cta.text}</span>

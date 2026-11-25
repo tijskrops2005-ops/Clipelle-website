@@ -213,6 +213,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     enhance: input.enhance,
     removeText: input.removeText,
     coverBox: coverBoxOf(input),
+    coverTrack: input.removeText && input.removedTextTrack?.length ? input.removedTextTrack : undefined,
     format: input.format ?? "9:16",
     captionsOn: input.captionStyle?.show !== false,
     captionStyle: input.captionStyle,

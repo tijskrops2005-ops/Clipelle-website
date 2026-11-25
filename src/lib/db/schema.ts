@@ -146,6 +146,8 @@ export type TranslateInput = {
   oldTextBox?: { top: number; bottom: number; left: number; right: number } | null;
   /** The exact place of the removed text, measured after the removal by comparing frames (27 Oct 2026); preferred over oldTextBox. */
   removedTextBox?: { top: number; bottom: number; left: number; right: number } | null;
+  /** Old text that moved (26 Nov 2026): the measured spot per stretch of the source (seconds); empty or absent = one spot. */
+  removedTextTrack?: { start: number; end: number; box: { top: number; bottom: number; left: number; right: number } }[] | null;
   /** "original" (lip-synced, default) or "presenter": an AI presenter speaks the translation. */
   speaker?: "original" | "presenter";
   presenter?: PresenterTranslate;

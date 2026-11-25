@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, FolderOpen, Loader2, Scissors, Sparkles, Type } from "lucide-react";
+import { ArrowLeft, FolderOpen, Loader2, Music2, Scissors, Sparkles, Type } from "lucide-react";
 import { config } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import type { Project, TranslateProject } from "@/lib/types";
 import { exportEdit, useProject, useProjects, useProjectsReady } from "@/lib/data/client";
 import { getAccountStatus, getBrandDefaults } from "@/lib/data/settingsClient";
-import { defaultRecipe, exportCredits, keptRanges, outputSeconds, recipeSummary, type EditRecipe } from "@/lib/editRecipe";
+import { coverTrackFor, defaultRecipe, exportCredits, keptRanges, outputSeconds, recipeSummary, type EditCover, type EditRecipe } from "@/lib/editRecipe";
 import { languageOf } from "@/lib/languages";
 import { clearDraft, readDraft, writeDraft } from "@/lib/forms/formDraft";
 import { useDraftScope } from "@/lib/forms/DraftScope";
@@ -22,8 +22,9 @@ import { EditPreview } from "./EditPreview";
 import { EditTimeline } from "./EditTimeline";
 import { CaptionsPanel } from "./CaptionsPanel";
 import { OverlaysPanel } from "./OverlaysPanel";
+import { MusicPanel } from "./MusicPanel";
 
-type Tab = "cut" | "captions" | "text";
+type Tab = "cut" | "captions" | "text" | "music";
 
 /**
  * The edit screen (2 Nov 2026): a finished video, a live HTML preview, a timeline to trim and cut,
@@ -105,6 +106,10 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
   }, [recipe, setRecipe, src]);
 
   const [tab, setTab] = useState<Tab>("cut");
+  const [localMusic, setLocalMusic] = useState<string | null>(null);
+  // Where text was removed: one spot, or the spot per stretch when the old text moved (26 Nov 2026).
+  const tp = isTranslate ? (project as TranslateProject) : null;
+  const cover: EditCover | undefined = tp && (tp.coverBox || tp.coverTrack?.length) ? { box: tp.coverBox, track: coverTrackFor(tp.coverTrack, tp.sourceSeconds, recipe.sourceSeconds) } : undefined;
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
   useEffect(() => {
@@ -148,6 +153,7 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
     { key: "cut", label: "Trim & cut", icon: Scissors },
     { key: "captions", label: "Captions", icon: Type, hidden: captionsAreBurnedIn || !recipe.captions },
     { key: "text", label: "Text & logo", icon: Sparkles },
+    { key: "music", label: "Music", icon: Music2 },
   ];
 
   return (
@@ -176,7 +182,7 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
       <div className="grid gap-8 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
         {/* preview */}
         <div className="space-y-4 xl:sticky xl:top-6">
-          <EditPreview src={src} recipe={recipe} time={time} onTime={setTime} videoRef={videoRef} logoUrl={logoUrl} aspect={isTranslate && (project as TranslateProject).format === "original" ? "original" : "9:16"} captionsAreBurnedIn={captionsAreBurnedIn} coverBox={isTranslate ? (project as TranslateProject).coverBox : undefined} />
+          <EditPreview src={src} recipe={recipe} time={time} onTime={setTime} videoRef={videoRef} logoUrl={logoUrl} aspect={isTranslate && (project as TranslateProject).format === "original" ? "original" : "9:16"} captionsAreBurnedIn={captionsAreBurnedIn} cover={cover} musicUrl={localMusic} />
           {restored && <p className="text-center text-[13px] text-muted" role="status">Picked up where you left off. <button type="button" onClick={() => { setRecipe(fresh()); setRestored(false); }} className="focus-ring rounded-control font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Start over</button></p>}
           {captionsAreBurnedIn && isTranslate && <p className="text-center text-[13px] text-muted">The captions of this version are part of the picture.</p>}
         </div>
@@ -197,10 +203,11 @@ function EditorBody({ project, version, draftKey, languages, onLanguage }: { pro
             </div>
             <div className="p-5 sm:p-6">
               {tab === "cut" && (
-                <p className="text-[14px] text-muted">Drag the start and end, or cut a piece out with the buttons above. Keeps {formatDuration(seconds)} of {formatDuration(recipe.sourceSeconds)}{keptRanges(recipe).length > 1 ? ` in ${keptRanges(recipe).length} pieces` : ""}.</p>
+                <p className="text-[14px] text-muted">Split at the playhead, tap a part and delete it: the rest stays. Keeps {formatDuration(seconds)} of {formatDuration(recipe.sourceSeconds)}{keptRanges(recipe).length > 1 ? ` in ${keptRanges(recipe).length} pieces` : ""}.</p>
               )}
-              {tab === "captions" && <CaptionsPanel recipe={recipe} onRecipe={setRecipe} time={time} onSeek={seek} disabled={exporting} covered={isTranslate && Boolean((project as TranslateProject).coverBox)} />}
+              {tab === "captions" && <CaptionsPanel recipe={recipe} onRecipe={setRecipe} time={time} onSeek={seek} disabled={exporting} covered={Boolean(cover)} moving={Boolean(cover?.track)} />}
               {tab === "text" && <OverlaysPanel recipe={recipe} onRecipe={setRecipe} time={time} logoUrl={logoUrl} disabled={exporting} />}
+              {tab === "music" && <MusicPanel recipe={recipe} onRecipe={setRecipe} disabled={exporting} onLocalFile={setLocalMusic} />}
             </div>
           </section>
 

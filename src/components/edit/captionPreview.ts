@@ -1,4 +1,5 @@
 import { barMeta, CAPTION_SIZE_PX, captionStyleOf, readableOn, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { captionFontCss } from "./captionFonts";
 
 /**
  * The caption look as CSS for the edit screen's preview (2 Nov 2026): the same choices the render
@@ -15,7 +16,7 @@ export function captionCss(style: Partial<CaptionStyleChoice> | undefined, previ
   const outline = text.toUpperCase() === "#FFFFFF" ? "#111114" : "#FFFFFF";
   const stroke = `${Math.max(1, 3 * scale)}px`;
   return {
-    box: { fontSize: `${fontPx}px`, lineHeight: 1.25, fontWeight: 900, color: text, textTransform: look.uppercase ? ("uppercase" as const) : ("none" as const), WebkitTextStroke: bar.color ? "0" : `${stroke} ${outline}`, paintOrder: "stroke fill" as const, textAlign: "center" as const, width: "83%", ...(bar.color ? { background: hexAlpha(bar.color, bar.opacity), borderRadius: `${8 * scale}px`, padding: `${6 * scale}px ${10 * scale}px` } : {}) },
+    box: { fontSize: `${fontPx}px`, lineHeight: 1.25, ...captionFontCss(look.font), color: text, textTransform: look.uppercase ? ("uppercase" as const) : ("none" as const), WebkitTextStroke: bar.color ? "0" : `${stroke} ${outline}`, paintOrder: "stroke fill" as const, textAlign: "center" as const, width: "83%", ...(bar.color ? { background: hexAlpha(bar.color, bar.opacity), borderRadius: `${8 * scale}px`, padding: `${6 * scale}px ${10 * scale}px` } : {}) },
     word: (active: boolean) => {
       if (!active || look.highlight === "none") return {};
       if (look.highlight === "box") return { background: look.color, color: isLight(look.color) ? "#111114" : text, borderRadius: `${4 * scale}px`, padding: `0 ${6 * scale}px`, WebkitTextStroke: "0" };

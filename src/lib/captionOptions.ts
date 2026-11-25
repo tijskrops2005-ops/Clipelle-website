@@ -100,7 +100,44 @@ export type CaptionStyleChoice = {
   textColor?: CaptionTextColor;
   /** With text removal: the bar behind the captions where the old text was (27 Oct 2026). */
   bar?: CaptionBar;
+  /** The typeface (26 Nov 2026, Tijs); missing = Roboto, the look of every video before. */
+  font?: CaptionFontKey;
 };
+
+/**
+ * Typefaces for captions (26 Nov 2026, Tijs: "meerdere lettertypes"). Roboto, Montserrat and Work Sans
+ * are built into the render service; the others are open-licence (OFL) Google Fonts that the render
+ * loads from `src` (timeline.fonts, family = the font's own name). The preview loads the same families
+ * in the browser (src/components/edit/captionFonts.ts).
+ */
+export const CAPTION_FONTS = [
+  { key: "roboto", label: "Roboto", family: "Roboto", weight: 900 },
+  { key: "montserrat", label: "Montserrat", family: "Montserrat", weight: 900 },
+  { key: "anton", label: "Anton", family: "Anton", weight: 400, src: "https://fonts.gstatic.com/s/anton/v27/1Ptgg87LROyAm0K0.ttf" },
+  { key: "bebas", label: "Bebas Neue", family: "Bebas Neue", weight: 400, src: "https://fonts.gstatic.com/s/bebasneue/v16/JTUSjIg69CK48gW7PXooxW4.ttf" },
+  { key: "poppins", label: "Poppins", family: "Poppins", weight: 800, src: "https://fonts.gstatic.com/s/poppins/v24/pxiByp8kv8JHgFVrLDD4V1s.ttf" },
+  { key: "archivo", label: "Archivo Black", family: "Archivo Black", weight: 400, src: "https://fonts.gstatic.com/s/archivoblack/v23/HTxqL289NzCGg4MzN6KJ7eW6OYs.ttf" },
+  { key: "bangers", label: "Bangers", family: "Bangers", weight: 400, src: "https://fonts.gstatic.com/s/bangers/v25/FeVQS0BTqb0h60ACL5k.ttf" },
+  { key: "marker", label: "Marker", family: "Permanent Marker", weight: 400, src: "https://fonts.gstatic.com/s/permanentmarker/v16/Fh4uPib9Iyv2ucM6pGQMWimMp004Hao.ttf" },
+  { key: "worksans", label: "Work Sans", family: "Work Sans", weight: 900 },
+] as const;
+export type CaptionFontKey = (typeof CAPTION_FONTS)[number]["key"];
+export const CAPTION_FONT_KEYS = CAPTION_FONTS.map((f) => f.key) as [CaptionFontKey, ...CaptionFontKey[]];
+
+/** The typeface of a style (Roboto when none or unknown). */
+export function captionFontOf(style?: { font?: string } | null): (typeof CAPTION_FONTS)[number] {
+  return CAPTION_FONTS.find((f) => f.key === style?.font) ?? CAPTION_FONTS[0];
+}
+
+/** The render's `timeline.fonts` for these styles: only typefaces that are not built in. */
+export function timelineFontsFor(...styles: ({ font?: string } | null | undefined)[]): { src: string }[] {
+  const srcs = new Set<string>();
+  for (const st of styles) {
+    const f = captionFontOf(st);
+    if ("src" in f && f.src) srcs.add(f.src);
+  }
+  return [...srcs].map((src) => ({ src }));
+}
 
 /**
  * A background that wraps the caption text (27 Oct 2026, Shotstack `background.wrap`: the box shrinks
@@ -176,7 +213,7 @@ export function captionStyleOf(style?: Partial<CaptionStyleChoice> | null): Capt
 
 export function isDefaultCaptionStyle(style: CaptionStyleChoice) {
   const d = DEFAULT_CAPTION_STYLE;
-  return style.show === d.show && style.highlight === d.highlight && style.color === d.color && style.size === d.size && style.uppercase === d.uppercase && (style.textColor ?? "#FFFFFF") === d.textColor && style.bar === undefined;
+  return style.show === d.show && style.highlight === d.highlight && style.color === d.color && style.size === d.size && style.uppercase === d.uppercase && (style.textColor ?? "#FFFFFF") === d.textColor && style.bar === undefined && (style.font ?? "roboto") === "roboto";
 }
 
 /** "Box · red · medium · capitals", or "Off": for summaries and the project page. */

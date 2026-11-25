@@ -7,7 +7,8 @@ import { captionStyleOf, styleOverRemovedText } from "@/lib/captionOptions";
 import { assets, db, projects, steps, translations, type TranslateInput, type TranslationRow } from "@/lib/db";
 import { glossaryPronunciations, glossaryReplacements, mergeGlossaries, replacementsFor, type GlossaryEntries, type LocalizedReplacements } from "@/lib/localizedTerms";
 import { localizeReplacements, LOCALIZE_TERMS_USD, type Pronunciations } from "@/lib/services/localizeTerms";
-import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, measureRemovedText, MEASURE_MOMENTS, type TextBox } from "@/lib/services/textLocate";
+import { extractFrame, EXTRACT_FRAME_USD, LOCATE_TEXT_USD, locateBurnedCaptions, measureRemovedText, type TextBox } from "@/lib/services/textLocate";
+import { isMoving, measureMoments, retimeTrack, segmentForCue, type CoverSegment } from "@/lib/captionTrack";
 import { FRAME_AT_USD } from "@/lib/services/frameAt";
 import { downloadTextRemovalOutput, estimateTextRemovalUsd, getTextRemoval, startTextRemoval, TEXT_REMOVAL_MODEL, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
 import { languageCodeForName, languageOf } from "@/lib/languages";
@@ -481,13 +482,15 @@ async function measureRemovedTextStep(projectId: string, input: TranslateInput, 
   if (input.removedTextBox !== undefined) return input.removedTextBox;
   return step.run("measure-removed-text", () => withDeadline("Finding the cleaned spot", 6, async () => {
     let box: TextBox | null = null;
+    let track: CoverSegment[] = [];
     try {
       const [picture] = await db().select({ id: assets.id }).from(assets).where(and(eq(assets.projectId, projectId), eq(assets.kind, "cleaned"), sql`(${assets.storagePath} like '%cleaned-picture%' or ${assets.storagePath} like '%-cleaned.mp4')`)).limit(1);
       if (picture) {
         const row = await loadStep(projectId, "upload");
         const [source, cleaned] = await Promise.all([loadAsset(input.sourceAssetId), loadAsset(picture.id)]);
-        const estimate = FRAME_AT_USD * MEASURE_MOMENTS * 2;
-        const reserved = await reserveSpend({ service: "shotstack", action: "measure_frames", estimatedUsd: estimate, fingerprintInput: { projectId, source: source.id, cleaned: cleaned.id, moments: MEASURE_MOMENTS }, projectId, stepId: row.id, languageCount: Math.max(1, input.targetLanguages.length) });
+        const moments = measureMoments(input.sourceSeconds);
+        const estimate = FRAME_AT_USD * moments * 2;
+        const reserved = await reserveSpend({ service: "shotstack", action: "measure_frames", estimatedUsd: estimate, fingerprintInput: { projectId, source: source.id, cleaned: cleaned.id, moments }, projectId, stepId: row.id, languageCount: Math.max(1, input.targetLanguages.length) });
         try {
           const sourceUrl = await providerUrl(source);
           // "Original": the source's own size (free probe), so the box matches the frame the captions are drawn on.
@@ -499,7 +502,9 @@ async function measureRemovedTextStep(projectId: string, input: TranslateInput, 
               size = { width: Math.round((probed.width * scale) / 2) * 2, height: Math.round((probed.height * scale) / 2) * 2 };
             }
           }
-          box = await measureRemovedText(sourceUrl, await providerUrl(cleaned), input.sourceSeconds, size);
+          const measured = await measureRemovedText(sourceUrl, await providerUrl(cleaned), input.sourceSeconds, size);
+          box = measured.box;
+          track = measured.track;
           await settleSpend(reserved.entryId, { status: "completed", actualUsd: estimate, basis: "list" });
         } catch (error) {
           await settleSpend(reserved.entryId, { status: "failed", actualUsd: 0 });
@@ -510,7 +515,7 @@ async function measureRemovedTextStep(projectId: string, input: TranslateInput, 
       console.error("[measure removed text]", error instanceof Error ? error.message : error);
       box = null;
     }
-    await db().update(projects).set({ input: sql`${projects.input} || ${JSON.stringify({ removedTextBox: box })}::jsonb`, updatedAt: new Date() }).where(eq(projects.id, projectId));
+    await db().update(projects).set({ input: sql`${projects.input} || ${JSON.stringify({ removedTextBox: box, removedTextTrack: track.length ? track : null })}::jsonb`, updatedAt: new Date() }).where(eq(projects.id, projectId));
     return box;
   }));
 }
@@ -1171,6 +1176,8 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
       let srtUrl = srt ? await providerUrl(srt) : undefined;
       // With text removal the captions are always on, on a bar (29 Oct 2026): they hide the cleaned spot.
       const captionLook = input.removeText ? styleOverRemovedText(input.captionStyle) : input.captionStyle;
+      const captionSize = input.format === "original" && upload.width && upload.height ? { width: upload.width, height: upload.height } : undefined;
+      let moving: { coverTrack: CoverSegment[]; captionLayers: { box: TextBox; srtUrl: string }[] } | null = null;
       if (cues.length > 0) {
         // The captions are always the checked lines (25 Oct 2026; before, only when trimming), shifted
         // with the picture when silence is cut. The service's own SRT is the fallback without lines.
@@ -1184,6 +1191,28 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         const shifted = buildSrt(input.oldTextBox || input.removeText ? fillGaps(chunks, Math.max(1, seconds - trimStart - trimEnd) + 1) : chunks);
         const asset = await storeBytes({ projectId, stepId: stepRow.id, kind: "srt", data: new TextEncoder().encode(shifted), mime: "application/x-subrip", fileName: `captions-${code}${trimStart > 0 ? "-trimmed" : "-checked"}.srt`, language: code });
         srtUrl = await providerUrl(asset);
+        // Old text that moved (26 Nov 2026): a bar per stretch on its own spot and the lines of each stretch
+        // on that spot. The track is in source seconds; the translated video can run longer (natural pace).
+        if (input.removeText && input.oldTextBox) {
+          const [fresh] = await db().select({ input: projects.input }).from(projects).where(eq(projects.id, projectId)).limit(1);
+          const track = (fresh?.input as TranslateInput | undefined)?.removedTextTrack ?? null;
+          if (isMoving(track)) {
+            const total = Math.max(1, seconds - trimStart - trimEnd);
+            const out = retimeTrack(track, { factor: seconds / Math.max(1, input.sourceSeconds), shift: trimStart, total });
+            if (isMoving(out)) {
+              const smallest = Math.min(...out.map((t) => captionChunkPlan({ coverBox: t.box, size: captionSize, captionStyle: captionLook }).chunkChars));
+              const lines = chunkCues(cues.map((c) => ({ index: c.index, start: Math.max(0, c.start - trimStart), end: Math.max(0, c.end - trimStart), text: c.text })), smallest);
+              const layers: { box: TextBox; srtUrl: string }[] = [];
+              for (let i = 0; i < out.length; i++) {
+                const own = lines.filter((l) => segmentForCue(out, l) === i);
+                if (own.length === 0) continue;
+                const layerAsset = await storeBytes({ projectId, stepId: stepRow.id, kind: "srt", data: new TextEncoder().encode(buildSrt(own.map((l, k) => ({ ...l, index: k + 1 })))), mime: "application/x-subrip", fileName: `captions-${code}-spot-${i + 1}.srt`, language: code });
+                layers.push({ box: out[i].box, srtUrl: await providerUrl(layerAsset) });
+              }
+              if (layers.length) moving = { coverTrack: out, captionLayers: layers };
+            }
+          }
+        }
       }
       const edit = buildCaptionEdit({
         videoUrl: await providerUrl(video),
@@ -1197,6 +1226,7 @@ async function processLanguage(projectId: string, input: TranslateInput, upload:
         captionStyle: captionLook,
         // Over removed text, the captions sit where that text was (only when the frame keeps the source's height).
         coverBox: input.oldTextBox ?? undefined,
+        ...(moving ?? {}),
       });
       // Counted as $0.10 per 30 s even in the sandbox, so budgets match production.
       const estimate = Math.round(edit.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000;

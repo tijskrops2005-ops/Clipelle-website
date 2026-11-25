@@ -1,9 +1,11 @@
 import { editRequested, inngest } from "@/lib/inngest/client";
 import { and, eq } from "drizzle-orm";
 import { assets, db, profiles, projects, translations, type AdInput, type EditMeta, type TranslateInput } from "@/lib/db";
-import { buildEditFromRecipe, coverBoxOf, exportCues, outputSeconds } from "@/lib/editRecipe";
+import { buildEditFromRecipe, coverBoxOf, coverTrackFor, exportCues, exportLayers, needsLayers, outputSeconds } from "@/lib/editRecipe";
+import { musicTrack } from "@/content/musicLibrary";
+import { siteUrl } from "@/lib/brand";
 import { buildSrt } from "@/lib/services/translate";
-import { getRender, shotstackEnv, startRender } from "@/lib/services/finalEdit";
+import { getRender, ingestFromUrl, shotstackEnv, startRender } from "@/lib/services/finalEdit";
 import { reserveSpend, settleSpend } from "@/lib/services/costGuard";
 import { SHOTSTACK_USD_PER_SECOND } from "@/lib/translatePricing";
 import { workflowSettings as cfg } from "@/lib/workflow/settings";
@@ -48,11 +50,37 @@ export const editExport = inngest.createFunction(
         // Where on-screen text was removed: the captions stay on and cover that spot (24 Nov 2026).
         const coverBox = project.workflow === "translate" ? coverBoxOf(input as TranslateInput) : undefined;
         // Captions on the output's clock, stored as this version's SRT.
-        const cues = exportCues(edit.recipe, Boolean(coverBox));
+        // Old text that moved: the track on this video's clock (26 Nov 2026).
+        const ti = input as TranslateInput;
+        const coverTrack = project.workflow === "translate" && ti.removeText ? coverTrackFor(ti.removedTextTrack, ti.sourceSeconds, edit.recipe.sourceSeconds) : undefined;
+        const cover = { box: coverBox, track: coverTrack };
         let srtUrl: string | undefined;
-        if (cues.length > 0) {
-          const srt = await storeBytes({ projectId, stepId: stepRow.id, kind: "srt", data: new TextEncoder().encode(buildSrt(cues)), mime: "application/x-subrip", fileName: `captions-edited.srt`, language: edit.language });
-          srtUrl = await providerUrl(srt);
+        let layers: { key: string; srtUrl: string }[] | undefined;
+        if (needsLayers(edit.recipe, cover)) {
+          // A caption layer per place (lines moved by the customer, or old text that moved), each with its own SRT.
+          layers = [];
+          for (const layer of exportLayers(edit.recipe, cover)) {
+            const srt = await storeBytes({ projectId, stepId: stepRow.id, kind: "srt", data: new TextEncoder().encode(buildSrt(layer.cues)), mime: "application/x-subrip", fileName: `captions-edited-${layer.key}.srt`, language: edit.language });
+            layers.push({ key: layer.key, srtUrl: await providerUrl(srt) });
+          }
+        } else {
+          const cues = exportCues(edit.recipe, Boolean(coverBox));
+          if (cues.length > 0) {
+            const srt = await storeBytes({ projectId, stepId: stepRow.id, kind: "srt", data: new TextEncoder().encode(buildSrt(cues)), mime: "application/x-subrip", fileName: `captions-edited.srt`, language: edit.language });
+            srtUrl = await providerUrl(srt);
+          }
+        }
+        // Background music: a library track from the site's own address, or the customer's copied upload.
+        let music: { url: string; seconds?: number; volume: number } | undefined;
+        const m = edit.recipe.music;
+        if (m?.enabled) {
+          const track = m.source === "library" ? musicTrack(m.track) : null;
+          if (track) music = { url: `${siteUrl()}${track.file}`, seconds: track.seconds, volume: m.volume };
+          else if (m.source === "upload" && m.path) {
+            const url = await signedDownloadUrl(m.path, 6 * 3600);
+            const probe = await ingestFromUrl(url).catch(() => null);
+            music = { url, seconds: probe?.duration ?? undefined, volume: m.volume };
+          }
         }
         // The brand logo from Settings → Brand, when the recipe asks for it and there is one.
         let logoUrl: string | undefined;
@@ -61,7 +89,7 @@ export const editExport = inngest.createFunction(
           if (p?.brand?.logoPath) logoUrl = await signedDownloadUrl(p.brand.logoPath, 6 * 3600);
         }
         const size = project.workflow === "translate" && (input as TranslateInput).format === "original" && source.width && source.height ? { width: source.width, height: source.height } : undefined;
-        const job = buildEditFromRecipe(edit.recipe, { videoUrl, srtUrl, logoUrl, size, coverBox });
+        const job = buildEditFromRecipe(edit.recipe, { videoUrl, srtUrl, logoUrl, size, coverBox, coverTrack, layers, music });
         const estimate = Math.round(job.meta.totalSeconds * SHOTSTACK_USD_PER_SECOND * 1000) / 1000;
         const reserved = await reserveSpend({ service: "shotstack", action: "edit_export", estimatedUsd: estimate, fingerprintInput: { projectId, recipe: edit.recipe }, projectId, stepId: stepRow.id, language: edit.language, meta: { env: shotstackEnv(), seconds: job.meta.totalSeconds, pieces: job.meta.pieces } });
         try {

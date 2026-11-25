@@ -2,8 +2,9 @@
 
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { CAPTION_PRESETS, type EditRecipe } from "@/lib/editRecipe";
-import { barFromHex, barMeta, contrastRatio, effectiveBar, isDefaultCaptionStyle, type CaptionBar } from "@/lib/captionOptions";
+import { CAPTION_PLACES, CAPTION_PRESETS, PLACE_LABEL, type CaptionPlace, type EditRecipe } from "@/lib/editRecipe";
+import { barFromHex, barMeta, CAPTION_FONTS, contrastRatio, effectiveBar, isDefaultCaptionStyle, type CaptionBar } from "@/lib/captionOptions";
+import { captionFontCss } from "./captionFonts";
 import { ColorPicker } from "@/components/ui/ColorPicker";
 import { LOW_CONTRAST } from "@/components/translate/CaptionStylePicker";
 import { formatDuration } from "@/components/ui/VideoDropzone";
@@ -12,20 +13,38 @@ import { formatDuration } from "@/components/ui/VideoDropzone";
  * Captions on the edit screen (2 Nov 2026): on or off, a few style presets, the position, and every
  * line with its text and times. The preview follows at once; the export renders the lines as left here.
  */
-export function CaptionsPanel({ recipe, onRecipe, time, onSeek, disabled, covered }: { recipe: EditRecipe; onRecipe: (next: EditRecipe) => void; time: number; onSeek: (t: number) => void; disabled?: boolean; /** Text was removed from this video: the captions cover that spot, so they stay on with a background. */ covered?: boolean }) {
+export function CaptionsPanel({ recipe, onRecipe, time, onSeek, disabled, covered, moving }: { recipe: EditRecipe; onRecipe: (next: EditRecipe) => void; time: number; onSeek: (t: number) => void; disabled?: boolean; /** Text was removed from this video: the captions cover that spot, so they stay on with a background. */ covered?: boolean; /** The old text moved over the video: "Auto" follows it. */ moving?: boolean }) {
   const stored = recipe.captions;
   // Over removed text the captions are always on (24 Nov 2026): the render and the preview cover the spot with them.
   const captions = stored && covered ? { ...stored, enabled: true } : stored;
   if (!captions) return <p className="text-[13px] text-muted">This video has no caption lines to edit.</p>;
   const set = (patch: Partial<NonNullable<EditRecipe["captions"]>>) => onRecipe({ ...recipe, captions: { ...captions, ...patch } });
-  const presetKey = CAPTION_PRESETS.find((p) => JSON.stringify(p.style) === JSON.stringify(captions.style))?.key ?? (isDefaultCaptionStyle(captions.style) ? "bold" : "custom");
+  const presetKey = CAPTION_PRESETS.find((p) => JSON.stringify({ ...p.style, font: undefined }) === JSON.stringify({ ...captions.style, font: undefined }))?.key ?? (isDefaultCaptionStyle(captions.style) ? "bold" : "custom");
+  const font = captions.style.font ?? "roboto";
+  // Every line on one place, or "mixed" when the customer moved single lines (26 Nov 2026).
+  const places = new Set(captions.cues.map((c) => c.place ?? "auto"));
+  const allPlace: CaptionPlace | "mixed" = places.size === 1 ? ([...places][0] as CaptionPlace) : "mixed";
+  const autoHint = covered ? (moving ? "Auto follows the old text as it moves." : "Auto sits on the old text's spot.") : `Auto uses ${captions.position === "middle" ? "Middle" : "Low"}.`;
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
         {!covered && <SegmentedControl label="Captions" size="sm" options={[{ key: "on", label: "On" }, { key: "off", label: "Off" }]} value={captions.enabled ? "on" : "off"} onChange={(k) => set({ enabled: k === "on" })} disabled={disabled} />}
         {covered && <p className="text-[13px] text-muted">Captions stay on: they cover the spot where the old text was.</p>}
-        {captions.enabled && !covered && <SegmentedControl label="Caption position" size="sm" options={[{ key: "low", label: "Low" }, { key: "middle", label: "Middle" }]} value={captions.position} onChange={(k) => set({ position: k })} disabled={disabled} />}
       </div>
+      {captions.enabled && (
+        <div>
+          <p className="mb-2 text-sm font-medium text-ink">Position</p>
+          <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Position of every line">
+            {CAPTION_PLACES.map((p) => (
+              <button key={p} type="button" role="radio" aria-checked={allPlace === p} onClick={() => set(p === "auto" || covered ? { cues: captions.cues.map((c) => ({ ...c, place: p === "auto" ? undefined : p })) } : { position: p === "middle" ? "middle" : "low", cues: captions.cues.map((c) => ({ ...c, place: p === "top" ? "top" : undefined })) })} disabled={disabled} className={cn("focus-ring rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors", allPlace === p ? "border-ink bg-ink text-surface" : "border-border bg-surface text-ink hover:border-ink/40")}>
+                {PLACE_LABEL[p]}
+              </button>
+            ))}
+            {allPlace === "mixed" && <span className="text-[13px] text-muted">Mixed</span>}
+          </div>
+          <p className="mt-1.5 text-[12.5px] text-muted">{autoHint} Single lines can be moved below.</p>
+        </div>
+      )}
       {captions.enabled && (
         <>
           <div>
@@ -37,6 +56,16 @@ export function CaptionsPanel({ recipe, onRecipe, time, onSeek, disabled, covere
                 </button>
               ))}
               {presetKey === "custom" && <span className="self-center text-[13px] text-muted">Custom</span>}
+            </div>
+            <div className="mt-4">
+              <p className="mb-2 text-sm font-medium text-ink">Font</p>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Caption font">
+                {CAPTION_FONTS.map((f) => (
+                  <button key={f.key} type="button" role="radio" aria-checked={font === f.key} onClick={() => set({ style: { ...captions.style, font: f.key === "roboto" ? undefined : f.key } })} disabled={disabled} style={captionFontCss(f.key)} className={cn("focus-ring rounded-[10px] border px-3 py-1.5 text-[15px] leading-none transition-colors", font === f.key ? "border-ink bg-ink text-surface" : "border-border bg-surface text-ink hover:border-ink/40")}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
             </div>
             {/* The one colour picker (2 Nov 2026): the three caption colours, free hex, the preview follows. */}
             <div className="mt-4 flex flex-wrap gap-x-6 gap-y-4">
@@ -60,7 +89,19 @@ export function CaptionsPanel({ recipe, onRecipe, time, onSeek, disabled, covere
                         <input type="number" step={0.1} min={0} max={recipe.sourceSeconds} value={cue.end} onChange={(e) => set({ cues: captions.cues.map((c, j) => (j === i ? { ...c, end: Math.min(recipe.sourceSeconds, Math.max(Number(e.target.value), c.start + 0.2)) } : c)) })} disabled={disabled} aria-label={`End of line ${i + 1}`} className="w-14 rounded-[6px] border border-border bg-surface px-1 py-0.5 text-[11px] tabular-nums text-ink" />
                       </div>
                     </div>
-                    <textarea value={cue.text} rows={2} maxLength={400} onChange={(e) => set({ cues: captions.cues.map((c, j) => (j === i ? { ...c, text: e.target.value } : c)) })} disabled={disabled} aria-label={`Line ${i + 1}`} className="focus-ring w-full resize-none rounded-[8px] border border-border bg-surface px-2 py-1.5 text-[13px] leading-snug text-ink" />
+                    <div className="min-w-0 space-y-1.5">
+                      <textarea value={cue.text} rows={2} maxLength={400} onChange={(e) => set({ cues: captions.cues.map((c, j) => (j === i ? { ...c, text: e.target.value } : c)) })} disabled={disabled} aria-label={`Line ${i + 1}`} className="focus-ring w-full resize-none rounded-[8px] border border-border bg-surface px-2 py-1.5 text-[13px] leading-snug text-ink" />
+                      <div className="flex flex-wrap gap-1" role="radiogroup" aria-label={`Position of line ${i + 1}`}>
+                        {CAPTION_PLACES.map((p) => {
+                          const on = (cue.place ?? "auto") === p;
+                          return (
+                            <button key={p} type="button" role="radio" aria-checked={on} onClick={() => set({ cues: captions.cues.map((c, j) => (j === i ? { ...c, place: p === "auto" ? undefined : p } : c)) })} disabled={disabled} className={cn("focus-ring rounded-full px-2 py-0.5 text-[11.5px] font-medium transition-colors", on ? "bg-ink text-surface" : "text-muted hover:bg-ink/5 hover:text-ink")}>
+                              {PLACE_LABEL[p]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </li>
                 );
               })}

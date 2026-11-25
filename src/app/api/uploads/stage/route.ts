@@ -8,6 +8,9 @@ import { rateLimit } from "@/lib/rateLimit";
 
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+/** Background music for the edit screen (26 Nov 2026): common audio files up to 20 MB. */
+const AUDIO_TYPES = ["audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a", "audio/aac", "audio/wav", "audio/x-wav", "audio/wave"];
+const MUSIC_MAX_BYTES = 20 * 1024 * 1024;
 
 /**
  * Staged upload (2 Nov 2026): a signed upload for a file the customer just picked on a creation form,
@@ -19,17 +22,18 @@ export async function POST(request: Request) {
   const blocked = databaseModeOnly();
   if (blocked) return blocked;
   const body = await readJson<{ kind?: string; fileName?: string; bytes?: number; mime?: string }>(request);
-  if (!body?.fileName || !isUploadKind(body.kind)) return Response.json({ error: "kind (image|source|background|logo) and fileName are required." }, { status: 400 });
+  const music = body?.kind === "music";
+  if (!body?.fileName || (!music && !isUploadKind(body.kind))) return Response.json({ error: "kind (image|source|background|logo|music) and fileName are required." }, { status: 400 });
   try {
     const scope = await requireScope();
     const limit = await rateLimit(`stage:${scope.userId}`, 60, 60 * 60 * 1000);
     if (!limit.ok) throw new DataError("Too many uploads in a short time. Try again in a little while.", 429, "rate_limited");
     const bytes = Number(body.bytes ?? 0);
-    const maxBytes = body.kind === "source" ? config.limits.translateVideoMaxMb * 1024 * 1024 : 10 * 1024 * 1024;
+    const maxBytes = music ? MUSIC_MAX_BYTES : body.kind === "source" ? config.limits.translateVideoMaxMb * 1024 * 1024 : 10 * 1024 * 1024;
     if (bytes > Math.min(maxBytes, MAX_OBJECT_BYTES)) {
       throw new DataError(`This file is ${(bytes / 1e6).toFixed(1)} MB; the limit is ${Math.round(Math.min(maxBytes, MAX_OBJECT_BYTES) / 1e6)} MB.`, 413, "too_large");
     }
-    const allowed = body.kind === "source" ? VIDEO_TYPES : IMAGE_TYPES;
+    const allowed = music ? AUDIO_TYPES : body.kind === "source" ? VIDEO_TYPES : IMAGE_TYPES;
     if (body.mime && !allowed.includes(body.mime)) throw new DataError(`File type ${body.mime} is not supported here.`, 415, "bad_type");
     const path = stagedPath(scope.userId, body.fileName);
     const signed = await createSignedUpload(path);

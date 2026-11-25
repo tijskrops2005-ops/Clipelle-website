@@ -3,7 +3,8 @@
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { ColorPicker } from "@/components/ui/ColorPicker";
-import { barFromHex, barMeta, contrastRatio, effectiveBar, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, isLightColor, outlineFor, readableOn, type CaptionBar, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { captionFontCss } from "@/components/edit/captionFonts";
+import { barFromHex, barMeta, CAPTION_FONTS, contrastRatio, effectiveBar, CAPTION_HIGHLIGHTS, CAPTION_HIGHLIGHT_META, CAPTION_SIZES, CAPTION_SIZE_PX, isLightColor, outlineFor, readableOn, type CaptionBar, type CaptionStyleChoice } from "@/lib/captionOptions";
 
 /** Below this the text colour is hard to read on the background (WCAG AA for normal text); the picker says so. */
 export const LOW_CONTRAST = 4.5;
@@ -64,6 +65,20 @@ export function CaptionStylePicker({ value, onChange, position, onPosition, over
               )}
             </div>
 
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-ink">Font</legend>
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Caption font">
+                {CAPTION_FONTS.map((f) => {
+                  const on = (value.font ?? "roboto") === f.key;
+                  return (
+                    <button key={f.key} type="button" role="radio" aria-checked={on} onClick={() => set({ font: f.key === "roboto" ? undefined : f.key })} disabled={disabled} style={captionFontCss(f.key)} className={cn("focus-ring rounded-[10px] border px-2.5 py-1.5 text-[14px] leading-none transition-colors", on ? "border-ink bg-ink text-surface" : "border-border bg-surface text-ink hover:border-ink/40")}>
+                      {f.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+
             <label className="flex cursor-pointer items-center gap-3 text-sm text-ink">
               <input type="checkbox" checked={value.uppercase} onChange={(e) => set({ uppercase: e.target.checked })} disabled={disabled} className="size-4" />
               Capital letters
@@ -92,7 +107,7 @@ export function CaptionPreview({ style, position, bar, overOldText }: { style: C
         <div className={cn("absolute inset-x-2 flex justify-center", position === "middle" && !overOldText ? "top-1/2 -translate-y-1/2" : "bottom-[22%]")}>
           <p
             className={cn("inline-flex max-w-full flex-wrap justify-center gap-x-1 gap-y-0.5 text-center font-black leading-tight", box.color && "rounded-[7px] px-2 py-1.5", box.color && overOldText && "w-[86%]")}
-            style={{ fontSize: `${Math.round(13 * scale)}px`, color: text, background: box.color ? hexAlpha(box.color, overOldText ? 1 : box.opacity) : undefined, ...(box.color ? {} : outlined(text, scale)) }}
+            style={{ fontSize: `${Math.round(13 * scale)}px`, ...captionFontCss(style.font), color: text, background: box.color ? hexAlpha(box.color, overOldText ? 1 : box.opacity) : undefined, ...(box.color ? {} : outlined(text, scale)) }}
           >
             {words.map((w, i) => {
               const spoken = i === 1 && style.highlight !== "none";

@@ -162,3 +162,37 @@ describe("free colours (2 Nov 2026, the one colour picker)", () => {
     expect(d.background).toMatchObject({ color: "#1F3A5F", opacity: 1 });
   });
 });
+
+describe("old text that moves (26 Nov 2026)", () => {
+  const top = { top: 0.12, bottom: 0.2, left: 0.15, right: 0.85 };
+  const low = { top: 0.7, bottom: 0.78, left: 0.1, right: 0.9 };
+  it("covers every stretch on its own spot and puts each spot's lines there", () => {
+    const e = buildCaptionEdit({
+      videoUrl: "https://x/v.mp4",
+      seconds: 12,
+      srtUrl: "https://x/all.srt",
+      coverBox: { top: 0.12, bottom: 0.78, left: 0.1, right: 0.9 },
+      coverTrack: [{ start: 0, end: 5, box: top }, { start: 5, end: 12, box: low }],
+      captionLayers: [{ box: top, srtUrl: "https://x/top.srt" }, { box: low, srtUrl: "https://x/low.srt" }],
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tracks = (e.timeline as any).tracks;
+    expect(tracks).toHaveLength(4);
+    const [first, second, bars, video] = tracks;
+    expect(first.clips[0]).toMatchObject({ start: 0, length: 12 });
+    expect(first.clips[0].asset.src).toBe("https://x/top.srt");
+    expect(second.clips[0].asset.src).toBe("https://x/low.srt");
+    expect(first.clips[0].asset.background).toBeUndefined();
+    expect(first.clips[0].offset.y).toBeGreaterThan(0.2);
+    expect(second.clips[0].offset.y).toBeLessThan(-0.1);
+    expect(bars.clips.map((c: { start: number; length: number; asset: { type: string; fill: { opacity: number } } }) => [c.asset.type, c.start, c.length, c.asset.fill.opacity])).toEqual([["shape", 0, 5, 1], ["shape", 5, 7, 1]]);
+    expect(bars.clips[0].offset.y).toBe(first.clips[0].offset.y);
+    expect(video.clips[0].alias).toBe("source");
+  });
+
+  it("keeps the one fixed bar when the text stays on one spot", () => {
+    const e = buildCaptionEdit({ videoUrl: "https://x/v.mp4", seconds: 12, srtUrl: "https://x/all.srt", coverBox: low });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((e.timeline as any).tracks).toHaveLength(2);
+  });
+});

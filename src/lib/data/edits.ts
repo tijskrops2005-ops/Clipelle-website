@@ -3,10 +3,11 @@ import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { assets, db, projects, steps, translations, type AdInput, type EditMeta, type ProjectRow, type TranslateInput } from "@/lib/db";
 import { DataError } from "@/lib/data/errors";
 import { getProjectRow, AD_STEPS, TRANSLATE_STEPS, type DataScope } from "@/lib/data/server";
-import { copyObject, objectPath } from "@/lib/storage";
+import { copyObject, isStagedPathOf, objectPath } from "@/lib/storage";
 import { CreditError, reserveCredits } from "@/lib/credits";
 import { editRequested, inngest } from "@/lib/inngest/client";
-import { exportCredits, keptRanges, outputSeconds, recipeSummary, type EditRecipe } from "@/lib/editRecipe";
+import { coverTrackFor, exportCredits, keptRanges, outputSeconds, recipeSummary, type EditRecipe } from "@/lib/editRecipe";
+import { musicTrack } from "@/content/musicLibrary";
 import { VIEW_READ_ONLY_MESSAGE } from "@/lib/adminViewSession";
 
 /**
@@ -28,7 +29,14 @@ export async function createEditVersion(scope: DataScope, sourceId: string, body
   const source = await getProjectRow(sourceId, scope);
   if (!source) throw new DataError("Project not found.", 404, "not_found");
   if (source.status !== "completed") throw new DataError("Finish the video first; editing works on a finished video.", 409, "not_completed");
-  const recipe = body.recipe;
+  let recipe = body.recipe;
+  // Music (26 Nov 2026): a library track by key, or the customer's own upload from their staged folder.
+  if (recipe.music?.enabled) {
+    if (recipe.music.source === "library" && !musicTrack(recipe.music.track)) throw new DataError("That music track is not available.", 400, "bad_music");
+    if (recipe.music.source === "upload" && !(recipe.music.path && (isStagedPathOf(recipe.music.path, scope.userId) || recipe.music.path.startsWith(`projects/${sourceId}/music/`)))) throw new DataError("Upload the music file again.", 400, "bad_music");
+  } else if (recipe.music) {
+    recipe = { ...recipe, music: undefined };
+  }
   if (keptRanges(recipe).length === 0) throw new DataError("Nothing is left of the video after these cuts. Keep at least half a second.", 400, "empty_recipe");
 
   // The finished file that is edited: the ad's final video, or one language version of a translation.
@@ -94,12 +102,23 @@ export async function createEditVersion(scope: DataScope, sourceId: string, body
     const editStep = EDIT_STEP[source.workflow];
     const keys = source.workflow === "ad" ? AD_STEPS : TRANSLATE_STEPS;
     await d.insert(steps).values(keys.map((key) => (key === editStep ? { projectId: row.id, userId: scope.userId, key, status: "waiting" as const } : { projectId: row.id, userId: scope.userId, key, status: "completed" as const, startedAt: now, finishedAt: now, output: { copiedFrom: source.id } })));
+    // The customer's own music is copied into this version, so it outlives the staged upload.
+    if (recipe.music?.enabled && recipe.music.source === "upload" && recipe.music.path) {
+      const musicPath = objectPath({ projectId: row.id, kind: "music", fileName: recipe.music.name ?? "music.mp3" });
+      await copyObject(recipe.music.path, musicPath);
+      recipe = { ...recipe, music: { ...recipe.music, path: musicPath } };
+      await d.update(projects).set({ input: { ...input, edit: { ...edit, recipe } } }).where(eq(projects.id, row.id));
+    }
     if (source.workflow === "translate") {
       const [t] = await d.select({ segments: translations.segments, qa: translations.qa }).from(translations).where(and(eq(translations.projectId, source.id), eq(translations.language, language!))).limit(1);
       await d.insert(translations).values({ projectId: row.id, userId: scope.userId, language: language!, status: "waiting", segments: t?.segments ?? [], qa: t?.qa ?? null });
-      await d.update(projects).set({ input: { ...(input as TranslateInput), sourceAssetId: copy.id, sourceFileName: `${baseName}.mp4`, sourceSeconds: asset.seconds ?? (input as TranslateInput).sourceSeconds } }).where(eq(projects.id, row.id));
+      // Old text that moved: its track goes onto this version's own clock (the finished video can run longer than the first source).
+      const ti = input as TranslateInput;
+      const newSeconds = asset.seconds ?? ti.sourceSeconds;
+      const track = ti.edit && (sourceInput as TranslateInput).edit ? ti.removedTextTrack : coverTrackFor(ti.removedTextTrack, ti.sourceSeconds, newSeconds) ?? ti.removedTextTrack;
+      await d.update(projects).set({ input: { ...ti, edit: { ...edit, recipe }, sourceAssetId: copy.id, sourceFileName: `${baseName}.mp4`, sourceSeconds: newSeconds, ...(track ? { removedTextTrack: track } : {}) } }).where(eq(projects.id, row.id));
     } else {
-      await d.update(projects).set({ input: { ...(input as AdInput), imageAssetIds: [] } }).where(eq(projects.id, row.id));
+      await d.update(projects).set({ input: { ...(input as AdInput), edit: { ...edit, recipe }, imageAssetIds: [] } }).where(eq(projects.id, row.id));
     }
     // Credits first, then the job.
     try {

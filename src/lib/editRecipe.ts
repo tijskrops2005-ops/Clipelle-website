@@ -1,6 +1,7 @@
-import { barMeta, CAPTION_SIZE_PX, captionStyleOf, DEFAULT_CAPTION_STYLE, effectiveBar, readableOn, type CaptionStyleChoice } from "@/lib/captionOptions";
-import { fitCaptionToCover, type CoverBox } from "@/lib/captionFit";
+import { barMeta, CAPTION_SIZE_PX, captionFontOf, captionStyleOf, DEFAULT_CAPTION_STYLE, effectiveBar, readableOn, timelineFontsFor, type CaptionStyleChoice } from "@/lib/captionOptions";
+import { fitCaptionToCover, type CaptionFit, type CoverBox } from "@/lib/captionFit";
 import { fillGaps } from "@/lib/captionChunks";
+import { isMoving, segmentForCue, type CoverSegment } from "@/lib/captionTrack";
 
 /**
  * The edit screen's recipe (2 Nov 2026): what the customer changed on a finished video, as data. The
@@ -11,7 +12,18 @@ import { fillGaps } from "@/lib/captionChunks";
 export const RECIPE_VERSION = 1 as const;
 
 export type Range = { start: number; end: number };
-export type RecipeCue = { index: number; start: number; end: number; text: string };
+/**
+ * Where a caption line sits (26 Nov 2026, Tijs: captions that move with the old text, or that the
+ * customer moves over it): "auto" follows the old text's spot (over removed text) or the chosen
+ * position; "top", "middle" and "low" put the line there.
+ */
+export const CAPTION_PLACES = ["auto", "top", "middle", "low"] as const;
+export type CaptionPlace = (typeof CAPTION_PLACES)[number];
+export const PLACE_LABEL: Record<CaptionPlace, string> = { auto: "Auto", top: "Top", middle: "Middle", low: "Low" };
+/** Offset from the centre (a fraction of the frame height, positive = up) per fixed place. */
+export const PLACE_OFFSET: Record<Exclude<CaptionPlace, "auto">, number> = { top: 0.3, middle: 0, low: -0.18 };
+
+export type RecipeCue = { index: number; start: number; end: number; text: string; place?: CaptionPlace };
 
 export type OverlayPosition = "top" | "bottom";
 
@@ -31,7 +43,24 @@ export type EditRecipe = {
   cta?: { enabled: boolean; text: string; from: number; to: number };
   /** The brand logo from Settings → Brand, top right, for the whole video. */
   logo?: { enabled: boolean };
+  /** Background music under the voice (26 Nov 2026, Tijs): a track from our library or the customer's own file. */
+  music?: RecipeMusic;
 };
+
+export type RecipeMusic = {
+  enabled: boolean;
+  source: "library" | "upload";
+  /** Library: the track key (src/content/musicLibrary.ts). */
+  track?: string;
+  /** Upload: the stored file of the customer, and its name for the screen. */
+  path?: string;
+  name?: string;
+  /** 0–MUSIC_MAX_VOLUME; the voice stays at full volume. */
+  volume: number;
+};
+/** Music never louder than this under the voice (the render's volume runs 0–1). */
+export const MUSIC_MAX_VOLUME = 0.6;
+export const MUSIC_DEFAULT_VOLUME = 0.18;
 
 export const OVERLAY_MAX_CHARS = 60;
 /** The smallest piece that is kept or cut: anything shorter is noise from a handle. */
@@ -155,6 +184,25 @@ export function overlayWindow(from: number, to: number, recipe: Pick<EditRecipe,
   return start !== null && end !== null && end - start >= 0.2 ? { start: r1(start), end: r1(end) } : null;
 }
 
+export type Piece = { start: number; end: number; state: "kept" | "cut" | "out" };
+
+/** The parts of the source between every boundary: the trim, the cuts and the customer's splits (26 Nov 2026, the timeline's Split / Delete part). */
+export function timelinePieces(recipe: EditRecipe, splits: number[]): Piece[] {
+  const total = recipe.sourceSeconds;
+  const points = new Set<number>([0, total, recipe.trim.start, recipe.trim.end, ...recipe.cuts.flatMap((c) => [c.start, c.end]), ...splits]);
+  const sorted = [...points].map((p) => Math.round(Math.min(total, Math.max(0, p)) * 10) / 10).filter((p, i, a) => a.indexOf(p) === i).sort((a, b) => a - b);
+  const pieces: Piece[] = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const start = sorted[i];
+    const end = sorted[i + 1];
+    if (end - start < 0.05) continue;
+    const mid = (start + end) / 2;
+    const state = mid < recipe.trim.start || mid > recipe.trim.end ? "out" : recipe.cuts.some((c) => mid > c.start && mid < c.end) ? "cut" : "kept";
+    pieces.push({ start, end, state });
+  }
+  return pieces;
+}
+
 /** Credits for an export (2 Nov 2026): one per six seconds of finished video, at least two. */
 export const EXPORT_CREDITS_PER_SECOND = 1 / 6;
 export const EXPORT_MIN_CREDITS = 2;
@@ -176,6 +224,8 @@ export function recipeSummary(recipe: EditRecipe): string[] {
   if (recipe.lowerThird?.enabled && recipe.lowerThird.text.trim()) parts.push("text");
   if (recipe.cta?.enabled && recipe.cta.text.trim()) parts.push("call to action");
   if (recipe.logo?.enabled) parts.push("logo");
+  if (recipe.music?.enabled && (recipe.music.track || recipe.music.path)) parts.push("music");
+  if (recipe.captions?.cues.some((c) => c.place && c.place !== "auto")) parts.push("captions moved");
   if (parts.length === 0) parts.push(`${kept} s`);
   return parts;
 }
@@ -196,6 +246,12 @@ export type RecipeEditInput = {
    * opaque box over that spot for the whole video, as in the caption render, so leftover letters never show.
    */
   coverBox?: CoverBox;
+  /** Old text that moved, on the edited video's clock (`coverTrackFor`). */
+  coverTrack?: CoverSegment[];
+  /** One SRT per caption place (`exportLayers`), when `needsLayers`; replaces `srtUrl`. */
+  layers?: { key: string; srtUrl: string }[];
+  /** Background music, reachable by the render service, with its length when known (it repeats to fill). */
+  music?: { url: string; seconds?: number; volume: number };
 };
 
 /**
@@ -215,6 +271,81 @@ export function exportCues(recipe: EditRecipe, covered: boolean): RecipeCue[] {
 export function coverBoxOf(input: { removeText?: boolean; removedTextBox?: CoverBox | null; oldTextBox?: CoverBox | null }): CoverBox | undefined {
   if (!input.removeText) return undefined;
   return input.removedTextBox ?? input.oldTextBox ?? undefined;
+}
+
+/* ---------- caption places and moving old text (26 Nov 2026) ---------- */
+
+export type EditCover = { box?: CoverBox; track?: CoverSegment[] };
+
+/** The measured track (source seconds) on the edited video's clock, which runs longer with natural pace; only when the text really moves. */
+export function coverTrackFor(track: CoverSegment[] | null | undefined, sourceSeconds: number | undefined, editSeconds: number): CoverSegment[] | undefined {
+  if (!isMoving(track)) return undefined;
+  const f = sourceSeconds && sourceSeconds > 0 ? editSeconds / sourceSeconds : 1;
+  const out = track.map((t) => ({ start: r1(t.start * f), end: r1(Math.min(editSeconds, t.end * f)), box: t.box })).filter((t) => t.end - t.start >= 0.1);
+  if (out.length) out[out.length - 1] = { ...out[out.length - 1], end: editSeconds };
+  return isMoving(out) ? out : undefined;
+}
+
+const isCovered = (cover: EditCover) => Boolean(cover.box || cover.track?.length);
+
+/** Does this export need a caption layer per place? (Lines moved by the customer, or old text that moved.) */
+export function needsLayers(recipe: EditRecipe, cover: EditCover): boolean {
+  if (!recipe.captions) return false;
+  if (!recipe.captions.enabled && !isCovered(cover)) return false;
+  return isMoving(cover.track) || recipe.captions.cues.some((c) => c.place && c.place !== "auto");
+}
+
+/** Where a line goes: a fixed place, the old text's spot (one spot, or the spot of its stretch), or the chosen position. */
+export function layerKeyOf(cue: Pick<RecipeCue, "start" | "end" | "place">, recipe: EditRecipe, cover: EditCover): string {
+  const place = cue.place ?? "auto";
+  if (place !== "auto") return place;
+  if (isMoving(cover.track)) return `spot-${segmentForCue(cover.track, cue)}`;
+  if (cover.box) return "spot";
+  return recipe.captions?.position === "middle" ? "middle" : "low";
+}
+
+/** The box of a spot key ("spot" or "spot-<i>"); null for the fixed places. */
+export function spotBox(key: string, cover: EditCover): CoverBox | null {
+  if (key === "spot") return cover.box ?? null;
+  const m = /^spot-(\d+)$/.exec(key);
+  return m && cover.track?.[Number(m[1])] ? cover.track[Number(m[1])].box : null;
+}
+
+/** The lines per place on the output's clock (each place becomes one caption layer of the export). */
+export function exportLayers(recipe: EditRecipe, cover: EditCover): { key: string; cues: RecipeCue[] }[] {
+  if (!recipe.captions) return [];
+  if (!recipe.captions.enabled && !isCovered(cover)) return [];
+  const ranges = keptRanges(recipe);
+  const groups = new Map<string, RecipeCue[]>();
+  for (const cue of recipe.captions.cues) {
+    const text = cue.text.replace(/\s+/g, " ").trim();
+    if (!text) continue;
+    const key = layerKeyOf(cue, recipe, cover);
+    let offset = 0;
+    for (const r of ranges) {
+      const st = Math.max(cue.start, r.start);
+      const e = Math.min(cue.end, r.end);
+      if (e - st >= 0.2) groups.set(key, [...(groups.get(key) ?? []), { index: 0, start: r1(offset + (st - r.start)), end: r1(offset + (e - r.start)), text }]);
+      offset += r.end - r.start;
+    }
+  }
+  return [...groups.entries()].map(([key, list]) => ({ key, cues: list.sort((a, b) => a.start - b.start).map((c, i) => ({ ...c, index: i + 1 })) }));
+}
+
+/** The bars that hide the cleaned spot, on the output's clock: per stretch of moving text, else one spot for the whole video. */
+export function coverBarsOnOutput(recipe: EditRecipe, cover: EditCover): CoverSegment[] {
+  const segments = isMoving(cover.track) ? cover.track : cover.box ? [{ start: 0, end: recipe.sourceSeconds, box: cover.box }] : [];
+  const out: CoverSegment[] = [];
+  let offset = 0;
+  for (const r of keptRanges(recipe)) {
+    for (const seg of segments) {
+      const st = Math.max(seg.start, r.start);
+      const e = Math.min(seg.end, r.end);
+      if (e - st >= 0.1) out.push({ start: r1(offset + (st - r.start)), end: r1(offset + (e - r.start)), box: seg.box });
+    }
+    offset += r.end - r.start;
+  }
+  return out;
 }
 
 export type RecipeEdit = { timeline: Record<string, unknown>; output: Record<string, unknown>; meta: { totalSeconds: number; pieces: number } };
@@ -250,7 +381,15 @@ export function buildEditFromRecipe(recipe: EditRecipe, input: RecipeEditInput):
   }
   // Captions in the chosen style, on the output's clock.
   // Over removed text the captions are always on: the srtUrl then comes from exportCues(recipe, true).
-  if (recipe.captions && (recipe.captions.enabled || input.coverBox) && input.srtUrl) {
+  const cover: EditCover = { box: input.coverBox, track: input.coverTrack };
+  if (recipe.captions && input.layers?.length) {
+    // A layer per place (26 Nov 2026), each for the whole video so its SRT times are output times; over
+    // removed text the bars below hide the cleaned spot per stretch.
+    for (const layer of input.layers) tracks.push({ clips: [layerClip(recipe.captions.style, layer.key, layer.srtUrl, total, frame, ink, light, input.colors?.accent, cover)] });
+    const bars = isCovered(cover) ? coverBarsOnOutput(recipe, cover) : [];
+    const barColor = barMeta(effectiveBar(captionStyleOf(recipe.captions.style), true)).color ?? "#FFFFFF";
+    if (bars.length) tracks.push({ clips: bars.map((b) => barClip(b, frame, barColor, recipe.captions!.style.size)) });
+  } else if (recipe.captions && (recipe.captions.enabled || input.coverBox) && input.srtUrl) {
     tracks.push({ clips: [captionClip(recipe.captions.style, recipe.captions.position, input.srtUrl, total, frame, ink, light, input.colors?.accent, input.coverBox)] });
   }
   // Lower third: a line of text in a soft dark bar at the top or the bottom.
@@ -259,9 +398,12 @@ export function buildEditFromRecipe(recipe: EditRecipe, input: RecipeEditInput):
     tracks.push({ clips: [textClip(recipe.lowerThird.text.trim(), lt, { frame, y: recipe.lowerThird.position === "top" ? 0.36 : -0.26, font: Math.round(frame.width * 0.042), color: light, background: ink, opacity: 0.78, weight: 600 })] });
   }
   tracks.push({ clips: videoClips });
+  // Background music under the voice, repeated to fill when it is shorter, faded in and out.
+  if (recipe.music?.enabled && input.music) tracks.push({ clips: musicClips(input.music.url, input.music.seconds, total, input.music.volume) });
 
   const output = input.size ? { format: "mp4", size: frame, fps: 25 } : { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 };
-  return { timeline: { background: ink, tracks }, output, meta: { totalSeconds: total, pieces: ranges.length } };
+  const fonts = timelineFontsFor(recipe.captions?.style);
+  return { timeline: { background: ink, ...(fonts.length ? { fonts } : {}), tracks }, output, meta: { totalSeconds: total, pieces: ranges.length } };
 }
 
 function textClip(text: string, window: Range, o: { frame: { width: number; height: number }; y: number; font: number; color: string; background: string; opacity?: number; weight: number }) {
@@ -302,7 +444,7 @@ function captionClip(style: CaptionStyleChoice, position: "low" | "middle", srtU
     asset: {
       type: "rich-caption",
       src: srtUrl,
-      font: { family: "Roboto", size: fontPx, color: text, opacity: 1, weight: 900 },
+      font: { family: captionFontOf(look).family, size: fontPx, color: text, opacity: 1, weight: captionFontOf(look).weight },
       style: { textTransform: look.uppercase ? "uppercase" : "none" },
       stroke,
       animation: { style: bar.color ? "highlight" : "pop" },
@@ -317,6 +459,75 @@ function captionClip(style: CaptionStyleChoice, position: "low" | "middle", srtU
     height: fit ? Math.max(lines, fit.heightPx) : lines,
     offset: { x: 0, y: fit ? fit.offsetY : position === "middle" ? 0 : -0.18 },
   };
+}
+
+/** One caption layer: on a spot of old text (its bar lies under it), or at a fixed place with the chosen background. */
+function layerClip(style: CaptionStyleChoice, key: string, srtUrl: string, total: number, frame: { width: number; height: number }, ink: string, light: string, accent: string | undefined, cover: EditCover) {
+  const look = captionStyleOf(style);
+  const covered = isCovered(cover);
+  const bar = barMeta(effectiveBar(look, covered));
+  const box = spotBox(key, cover);
+  const fit: CaptionFit | null = box ? fitCaptionToCover(box, frame, look.size) : null;
+  const fontPx = fit ? fit.fontPx : CAPTION_SIZE_PX[look.size];
+  const text = bar.color ? readableOn(look.textColor ?? light, bar.color) : look.textColor ?? light;
+  const stroke = bar.color ? { width: 0, color: light, opacity: 0 } : { width: 8, color: ink, opacity: 1 };
+  const chosen = look.color ?? accent ?? "#D43F1B";
+  const color = bar.color && chosen.toLowerCase() === bar.color.toLowerCase() ? (bar.color.toUpperCase() === "#D43F1B" ? "#FFFFFF" : "#D43F1B") : chosen;
+  const active =
+    look.highlight === "box" ? { font: { color: text, background: color }, stroke } : look.highlight === "color" ? { font: { color }, stroke } : look.highlight === "underline" ? { font: { color, textDecoration: "underline" }, stroke } : undefined;
+  // On a spot the bar is a shape under the layer; at a fixed place the box wraps the words (opaque over removed text).
+  const background = fit || !bar.color ? null : { color: bar.color, opacity: covered ? 1 : bar.opacity, borderRadius: 18, wrap: true, padding: 18 };
+  const lines = Math.round(fontPx * 2 * 1.25 + 12);
+  const y = fit ? fit.offsetY : PLACE_OFFSET[(key === "top" || key === "middle" ? key : "low") as "top" | "middle" | "low"];
+  const font = captionFontOf(look);
+  return {
+    asset: {
+      type: "rich-caption",
+      src: srtUrl,
+      font: { family: font.family, size: fontPx, color: text, opacity: 1, weight: font.weight },
+      style: { textTransform: look.uppercase ? "uppercase" : "none" },
+      stroke,
+      animation: { style: bar.color ? "highlight" : "pop" },
+      ...(active ? { active } : {}),
+      ...(background ? { background } : { border: { width: 0, color: ink, opacity: 1, radius: 16 } }),
+      padding: fit ? { top: 8, right: 14, bottom: 8, left: 14 } : { top: 6, right: 10, bottom: 6, left: 10 },
+      align: { horizontal: "center", vertical: "middle" },
+    },
+    start: 0,
+    length: total,
+    width: fit ? fit.widthPx : Math.round(frame.width * 0.833),
+    height: fit ? Math.max(lines, fit.heightPx) : lines,
+    offset: { x: 0, y },
+  };
+}
+
+/** An opaque bar over a stretch of cleaned spot (a rectangle shape), sized like the caption box over it. */
+function barClip(segment: CoverSegment, frame: { width: number; height: number }, color: string, size: CaptionStyleChoice["size"]) {
+  const fit = fitCaptionToCover(segment.box, frame, size);
+  const h = Math.max(Math.round(fit.fontPx * 2 * 1.25 + 12), fit.heightPx);
+  return {
+    asset: { type: "shape", shape: "rectangle", width: fit.widthPx, height: h, fill: { color, opacity: 1 }, rectangle: { width: fit.widthPx, height: h, cornerRadius: 18 } },
+    start: segment.start,
+    length: r1(Math.max(0.1, segment.end - segment.start)),
+    offset: { x: 0, y: fit.offsetY },
+  };
+}
+
+/** Music clips that fill the video: repeated when the track is shorter, the first fading in and the last fading out. */
+export function musicClips(url: string, seconds: number | undefined, total: number, volume: number) {
+  const v = Math.round(clamp(volume, 0, MUSIC_MAX_VOLUME) * 100) / 100;
+  const len = seconds && seconds >= 3 ? seconds : total;
+  const clips: Record<string, unknown>[] = [];
+  for (let at = 0; at < total - 0.05 && clips.length < 40; at += len) {
+    const length = r1(Math.min(len, total - at));
+    clips.push({ asset: { type: "audio", src: url, volume: v }, start: r1(at), length });
+  }
+  if (clips.length === 1) (clips[0].asset as Record<string, unknown>).effect = "fadeInFadeOut";
+  else if (clips.length > 1) {
+    (clips[0].asset as Record<string, unknown>).effect = "fadeIn";
+    (clips[clips.length - 1].asset as Record<string, unknown>).effect = "fadeOut";
+  }
+  return clips;
 }
 
 /** The render service takes at most 1920 px per side and even numbers (same rule as finalEdit.ts). */
