@@ -21,6 +21,8 @@ describe("media tools", () => {
     expect(mediaCredits("captions", 31)).toBe(16);
     expect(mediaCredits("resize", 3)).toBe(5);
     expect(mediaCredits("remove-background")).toBe(2);
+    expect(mediaCredits("transcribe", 4)).toBe(2);
+    expect(mediaCredits("transcribe", 60)).toBe(12);
   });
 
   it("fills in defaults and drops unknown options", () => {

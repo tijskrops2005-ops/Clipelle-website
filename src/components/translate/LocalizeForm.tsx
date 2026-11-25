@@ -24,7 +24,7 @@ export function LocalizeForm({ fromId }: { fromId: string }) {
         </div>
       );
     }
-    return <EmptyState icon={<FolderOpen className="size-6" aria-hidden />} title="Video not found" description="The video to translate could not be found. Upload a video instead." action={<Button href="/app/new/translate" variant="secondary"><ArrowLeft className="size-4" aria-hidden />Translate a video</Button>} />;
+    return <EmptyState icon={<FolderOpen className="size-6" aria-hidden />} title="Video not found" description="The video to translate could not be found. Upload a video instead." action={<Button href="/app/translate" variant="secondary"><ArrowLeft className="size-4" aria-hidden />Translate a video</Button>} />;
   }
   if (project.workflow === "translate") {
     if (!project.sourceVideoUrl) {

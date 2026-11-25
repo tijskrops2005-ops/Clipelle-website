@@ -7,7 +7,7 @@ import { VIDEO_MAX_SECONDS } from "@/lib/enhanceRules";
  * which file it takes, its options and what it costs in credits and in provider money. Jobs share the
  * enhancer's table (`enhance_jobs`, `kind` = the tool key). Margins are tested in mediaTools.test.ts.
  */
-export type MediaToolKey = "remove-text" | "captions" | "resize" | "remove-background";
+export type MediaToolKey = "remove-text" | "captions" | "resize" | "remove-background" | "transcribe";
 export type ResizeMode = "fill" | "fit";
 export type CaptionFormat = "9:16" | "original";
 export type MediaToolOptions = {
@@ -42,6 +42,7 @@ export const MEDIA_TOOLS: Record<MediaToolKey, MediaTool> = {
   "remove-text": { key: "remove-text", media: "video", label: "Remove on-screen text", title: "Remove on-screen text", description: "Take old captions, titles and stickers out of a video; the sound stays as it was.", usdPerSecond: MEDIA_USD.textRemovalPerSecond + MEDIA_USD.renderPerSecond },
   captions: { key: "captions", media: "video", label: "Add captions", title: "Add captions", description: "Captions of what is said, in the language of the video, in the style you pick.", usdPerSecond: MEDIA_USD.transcribePerSecond + MEDIA_USD.renderPerSecond },
   resize: { key: "resize", media: "video", label: "Resize to 9:16", title: "Resize to 9:16", description: "A landscape or square video as a vertical 1080 × 1920 video for Reels, TikTok and Shorts.", usdPerSecond: MEDIA_USD.renderPerSecond },
+  transcribe: { key: "transcribe", media: "video", label: "Video to text", title: "Video to text", description: "Everything that is said in a video, as text and as a subtitle file (SRT).", usdPerSecond: MEDIA_USD.transcribePerSecond },
   "remove-background": { key: "remove-background", media: "image", label: "Remove background", title: "Remove background", description: "A product photo on a transparent background, ready for your shop or an ad.", usdPerImage: MEDIA_USD.backgroundPerImage },
 };
 
@@ -53,6 +54,7 @@ export const MEDIA_CREDITS = {
   captions: { perTwoSeconds: 1, minimum: 5 },
   resize: { perTwoSeconds: 1, minimum: 5 },
   "remove-background": { perImage: 2 },
+  transcribe: { perFiveSeconds: 1, minimum: 2 },
 } as const;
 
 /** Credits for a job: video by its length (rounded second), image per image. */
@@ -60,6 +62,7 @@ export function mediaCredits(tool: MediaToolKey, seconds?: number) {
   if (tool === "remove-background") return MEDIA_CREDITS["remove-background"].perImage;
   const s = Math.max(1, Math.round(seconds ?? 0));
   if (tool === "remove-text") return Math.max(MEDIA_CREDITS["remove-text"].minimum, s * MEDIA_CREDITS["remove-text"].perSecond);
+  if (tool === "transcribe") return Math.max(MEDIA_CREDITS.transcribe.minimum, Math.ceil(s / 5));
   return Math.max(MEDIA_CREDITS[tool].minimum, Math.ceil(s / 2));
 }
 

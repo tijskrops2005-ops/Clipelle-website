@@ -33,7 +33,7 @@ export function RecentList() {
       ) : projects.length === 0 ? (
         <div className="flex flex-col items-center gap-4 px-6 py-12 text-center">
           <p className="text-[15px] text-muted">Your videos appear here.</p>
-          <Button href="/app/new/translate" variant="primary"><Plus className="size-4" aria-hidden />Translate a video</Button>
+          <Button href="/app/translate" variant="primary"><Plus className="size-4" aria-hidden />Translate a video</Button>
         </div>
       ) : (
         <ul className="mt-2 space-y-0.5 px-2 pb-2 sm:px-3">

@@ -22,7 +22,7 @@ describe("ads feature flag (off)", () => {
 
   it("moves the ad tools to the coming-soon group", async () => {
     const { STUDIO_TOOLS, SOON_TOOLS } = await import("@/components/tools");
-    expect(STUDIO_TOOLS.map((t) => t.key)).toEqual(["translate", "presenter", "editor", "captions", "remove-text", "resize", "enhance-video", "enhance-image", "remove-background"]);
+    expect(STUDIO_TOOLS.map((t) => t.key)).toEqual(["translate", "presenter", "editor", "captions", "remove-text", "transcribe", "resize", "enhance-video", "enhance-image", "remove-background"]);
     expect(SOON_TOOLS.filter((t) => t.key === "ad" || t.key === "url").every((t) => t.soon)).toBe(true);
   });
 
@@ -49,8 +49,8 @@ describe("ads feature flag (off)", () => {
 describe("the active tool in the menu", () => {
   it("tells the presenter tool from the plain translation by the query", async () => {
     const { activeToolKey, STUDIO_TOOLS } = await import("@/components/tools");
-    expect(activeToolKey("/app/new/translate", "", STUDIO_TOOLS)).toBe("translate");
-    expect(activeToolKey("/app/new/translate", "speaker=presenter", STUDIO_TOOLS)).toBe("presenter");
+    expect(activeToolKey("/app/translate", "", STUDIO_TOOLS)).toBe("translate");
+    expect(activeToolKey("/app/translate", "speaker=presenter", STUDIO_TOOLS)).toBe("presenter");
     expect(activeToolKey("/app", "", STUDIO_TOOLS)).toBeNull();
   });
 });

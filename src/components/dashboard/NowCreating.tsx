@@ -49,7 +49,7 @@ export function NowCreating({ showEmpty = false }: { /** The dashboard's side co
       <section aria-labelledby="now-creating" className="rounded-card bg-surface p-5 shadow-card sm:p-6">
         <h2 id="now-creating" className="text-[15px] font-semibold text-ink">In progress</h2>
         <p className="mt-2 text-[14px] text-muted">Nothing is being made right now.</p>
-        <Link href="/app/new/translate" className="focus-ring mt-4 inline-block rounded-control text-[13px] font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Translate a video</Link>
+        <Link href="/app/translate" className="focus-ring mt-4 inline-block rounded-control text-[13px] font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Translate a video</Link>
       </section>
     );
   }

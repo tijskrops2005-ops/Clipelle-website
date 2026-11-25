@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ALL_TOOLS, TONE, TOOL_CATEGORIES, type ToolCategory } from "@/components/tools";
+import { ALL_TOOLS, TOOL_CATEGORIES, type ToolCategory } from "@/components/tools";
 import { ToolCard } from "./ToolCard";
 
 /**
@@ -22,35 +22,40 @@ export function AllTools() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Category">
-          {[{ key: "all" as const, label: "All" }, ...TOOL_CATEGORIES].map((c) => (
-            <button
-              key={c.key}
-              type="button"
-              role="radio"
-              aria-checked={only === c.key}
-              onClick={() => setOnly(c.key)}
-              className={cn(
-                "focus-ring inline-flex h-9 items-center gap-2 rounded-full border px-3.5 text-[13.5px] font-medium transition-colors duration-150",
-                only === c.key ? "border-ink bg-ink text-white" : "border-border bg-surface text-ink hover:bg-surface-muted",
-              )}
-            >
-              {c.key !== "all" && <span className={cn("size-2 rounded-full", only === c.key ? "bg-white" : TONE[c.key].dot)} aria-hidden />}
-              {c.label}
-            </button>
-          ))}
+      {/* Tabs with a line under the active one and a count (25 Nov 2026, Tijs: calmer than coloured pills). */}
+      <div className="flex flex-col gap-4 border-b border-divider md:flex-row md:items-end md:justify-between">
+        <div className="-mb-px flex gap-6 overflow-x-auto [scrollbar-width:none]" role="tablist" aria-label="Category">
+          {[{ key: "all" as const, label: "All" }, ...TOOL_CATEGORIES].map((c) => {
+            const count = c.key === "all" ? ALL_TOOLS.length : ALL_TOOLS.filter((t) => t.category === c.key).length;
+            const active = only === c.key;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setOnly(c.key)}
+                className={cn(
+                  "focus-ring inline-flex shrink-0 items-center gap-2 border-b-2 pb-3 text-[14px] transition-colors duration-150",
+                  active ? "border-ink font-semibold text-ink" : "border-transparent text-muted hover:text-ink",
+                )}
+              >
+                {c.label}
+                <span className={cn("text-[12px] tabular-nums", active ? "text-ink/60" : "text-muted/70")}>{count}</span>
+              </button>
+            );
+          })}
         </div>
-        <label className="flex h-10 w-full items-center gap-2 rounded-control border border-border bg-surface px-3 md:w-72">
+        <label className="mb-3 flex h-9 w-full items-center gap-2 rounded-full border border-border bg-surface px-3.5 md:w-64">
           <Search className="size-4 shrink-0 text-muted" aria-hidden />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tools" aria-label="Search tools" className="h-full w-full bg-transparent text-[14px] text-ink outline-none placeholder:text-muted" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tools" aria-label="Search tools" className="h-full w-full bg-transparent text-[13.5px] text-ink outline-none placeholder:text-muted" />
         </label>
       </div>
 
       {groups.map((g) => (
         <section key={g.key} aria-labelledby={`cat-${g.key}`}>
           <div className="mb-3 flex items-baseline gap-3">
-            <h2 id={`cat-${g.key}`} className={cn("text-[18px] font-semibold tracking-[-0.01em]", TONE[g.key].text)}>{g.label}</h2>
+            <h2 id={`cat-${g.key}`} className="text-[17px] font-semibold tracking-[-0.01em] text-ink">{g.label}</h2>
             <p className="hidden text-[13.5px] text-muted sm:block">{g.text}</p>
           </div>
           <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

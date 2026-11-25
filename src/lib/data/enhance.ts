@@ -156,6 +156,7 @@ export async function resolveSource(scope: DataScope, ref: SourceRef): Promise<R
     const row = await getEnhanceJobRow(scope, ref.id);
     if (!row || row.status !== "completed" || !row.resultPath) return null;
     const mime = row.resultMime ?? (row.resultPath.endsWith(".mp4") ? "video/mp4" : "image/png");
+    if (mime.startsWith("text/")) return null; // a transcript is not a source for another tool
     const ext = row.resultPath.split(".").pop() ?? "mp4";
     return { path: row.resultPath, fileName: `${row.fileName.replace(/\.[^.]+$/, "")}-result.${ext}`, mime, media: mime.startsWith("image/") ? "image" : "video", seconds: row.seconds ?? null, width: row.outWidth ?? row.width ?? null, height: row.outHeight ?? row.height ?? null };
   }

@@ -30,7 +30,7 @@ export function TranslateDemo({ locale }: { locale: Locale }) {
         {/* browser chrome */}
         <div className="flex items-center gap-2 border-b border-divider bg-bg px-4 py-3" aria-hidden>
           <span className="size-2.5 rounded-full bg-danger/60" /><span className="size-2.5 rounded-full bg-warning/60" /><span className="size-2.5 rounded-full bg-success/60" />
-          <span className="ml-3 rounded-full bg-surface px-3 py-1 text-[11px] text-muted shadow-soft">clipelle.com/new/translate</span>
+          <span className="ml-3 rounded-full bg-surface px-3 py-1 text-[11px] text-muted shadow-soft">clipelle.com/app/translate</span>
           <span className="label-mono ml-auto text-[10px] text-muted">{t.common.illustration}</span>
         </div>
 

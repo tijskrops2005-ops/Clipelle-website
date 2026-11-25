@@ -1,4 +1,4 @@
-import { Captions, Eraser, ImageUp, Languages, Link2, RectangleVertical, Scissors, Sparkles, UserRoundPen, Wand2, Wallpaper, type LucideIcon } from "lucide-react";
+import { Captions, Eraser, FileText, ImageUp, Languages, Link2, RectangleVertical, Scissors, Sparkles, UserRoundPen, Wand2, Wallpaper, type LucideIcon } from "lucide-react";
 import { config } from "@/lib/config";
 
 /**
@@ -39,14 +39,15 @@ export const TONE: Record<ToolCategory, { icon: string; soft: string; text: stri
 };
 
 const TRANSLATE_TOOLS: Tool[] = [
-  { key: "translate", href: "/app/new/translate", label: "Translate a video", text: "Your video in other languages, in the speaker's own voice with matching lips.", icon: Languages, category: "translate", chips: ["Lip sync", "190 languages", "Captions", "Remove on-screen text"] },
-  { key: "presenter", href: "/app/new/translate?speaker=presenter", label: "Translate with a presenter", text: "Your words, translated and spoken by an AI presenter with the voice you pick.", icon: UserRoundPen, category: "translate", chips: ["AI presenter", "Voice and accent", "Captions"] },
+  { key: "translate", href: "/app/translate", label: "Translate a video", text: "Your video in other languages, in the speaker's own voice with matching lips.", icon: Languages, category: "translate", chips: ["Lip sync", "190 languages", "Captions", "Remove on-screen text"] },
+  { key: "presenter", href: "/app/translate?speaker=presenter", label: "Translate with a presenter", text: "Your words, translated and spoken by an AI presenter with the voice you pick.", icon: UserRoundPen, category: "translate", chips: ["AI presenter", "Voice and accent", "Captions"] },
 ];
 
 const EDIT_TOOLS: Tool[] = [
   { key: "editor", href: "/app/edit", label: "Video editor", text: "Trim and cut a finished video, edit its captions, add text, a call to action and your logo.", icon: Scissors, category: "edit", chips: ["Trim and cut", "Edit captions", "Caption styles", "Text and logo"] },
   { key: "captions", href: "/app/tools/captions", label: "Add captions", text: "Captions of what is said, in the language of the video, in the style you pick.", icon: Captions, category: "edit", chips: ["Any video", "Caption styles", "9:16 or original"], isNew: true },
   { key: "remove-text", href: "/app/tools/remove-text", label: "Remove on-screen text", text: "Take old captions, titles and stickers out of a video; the sound stays as it was.", icon: Eraser, category: "edit", chips: ["Old captions", "Titles", "Sound kept"], isNew: true },
+  { key: "transcribe", href: "/app/tools/transcribe", label: "Video to text", text: "Everything that is said in a video, as text and as a subtitle file.", icon: FileText, category: "edit", chips: ["Text file", "SRT subtitles", "Any spoken language"], isNew: true },
   { key: "resize", href: "/app/tools/resize", label: "Resize to 9:16", text: "A landscape or square video as a vertical video for Reels, TikTok and Shorts.", icon: RectangleVertical, category: "edit", chips: ["1080 × 1920", "Fill or whole picture"], isNew: true },
 ];
 

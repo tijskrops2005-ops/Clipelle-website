@@ -16,6 +16,8 @@ import { PipelineStrip } from "@/components/site/Sketches";
 import { FeatureRows, StatsBand } from "@/components/site/Showcase";
 import { UrlDemo } from "@/components/site/FeatureDemos";
 import { TranslateShowcase } from "@/components/site/TranslateShowcase";
+import { HomeDemoVideo } from "@/components/site/HomeDemoVideo";
+import { DEMO_VIDEO } from "@/content/demoVideo";
 import { TranslateDemo } from "@/components/site/TranslateDemo";
 import { ProductDemo } from "@/components/site/ProductDemo";
 import { FinalCta } from "@/components/site/Persuasion";
@@ -49,7 +51,7 @@ export function HomePage({ locale }: { locale: Locale }) {
         <h1 className="mx-auto max-w-4xl text-[clamp(2.6rem,6.4vw,4.5rem)] font-semibold leading-[1.02] tracking-[-0.035em]">{h.title}</h1>
         <p className="mx-auto mt-6 max-w-2xl text-subtitle text-muted">{h.intro}</p>
         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button href={`/signup?next=${encodeURIComponent("/app/new/translate")}`} variant="accent" size="lg" className="w-full max-w-[300px] sm:w-auto sm:max-w-none">{t.common.translateFirst}</Button>
+          <Button href={`/signup?next=${encodeURIComponent("/app/translate")}`} variant="accent" size="lg" className="w-full max-w-[300px] sm:w-auto sm:max-w-none">{t.common.translateFirst}</Button>
           <Button href={L("/examples")} variant="secondary" size="lg" className="w-full max-w-[300px] sm:w-auto sm:max-w-none">{t.common.seeExamples}</Button>
         </div>
         <p className="mt-4 text-[13px] text-muted">{t.common.noCardLong}</p>
@@ -58,6 +60,8 @@ export function HomePage({ locale }: { locale: Locale }) {
         </div>
         <PipelineStrip labels={h.translate.pipeline} className="mt-6" />
       </section>
+      {/* The walk-through between the steps and the figures (25 Nov 2026, Tijs). */}
+      <HomeDemoVideo src={DEMO_VIDEO.src} poster={DEMO_VIDEO.poster} />
       <StatsBand items={h.translate.stats} />
 
       <TranslateDemo locale={locale} />

@@ -6,7 +6,7 @@ import { signedDownloadUrl } from "@/lib/storage";
 import { databaseModeOnly } from "../../../projects/_guard";
 
 /** "Download": checks the job is yours, then hands the browser the enhanced file as an attachment. */
-export async function GET(_request: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, ctx: { params: Promise<{ id: string }> }) {
   const blocked = databaseModeOnly();
   if (blocked) return blocked;
   await connection();
@@ -15,9 +15,13 @@ export async function GET(_request: Request, ctx: { params: Promise<{ id: string
     const scope = await requireScope();
     const row = await getEnhanceJobRow(scope, id);
     if (!row || row.status !== "completed" || !row.resultPath) return Response.json({ error: "This file is not ready to download." }, { status: 404 });
-    const ext = row.resultPath.split(".").pop() ?? "mp4";
+    // Video to text keeps a subtitle file next to the text: ?format=srt (25 Nov 2026).
+    const srt = new URL(request.url).searchParams.get("format") === "srt" && row.resultPath.endsWith("/transcript.txt");
+    const path = srt ? row.resultPath.replace(/transcript\.txt$/, "transcript.srt") : row.resultPath;
+    const ext = path.split(".").pop() ?? "mp4";
     const base = row.fileName.replace(/\.[^.]+$/, "").replace(/[^\w.-]+/g, "-").slice(0, 80) || "clipelle";
-    return Response.redirect(await signedDownloadUrl(row.resultPath, 600, `${base}-enhanced.${ext}`), 302);
+    const suffix = row.kind === "video" || row.kind === "image" ? "enhanced" : row.kind === "transcribe" ? "transcript" : "clipelle";
+    return Response.redirect(await signedDownloadUrl(path, 600, `${base}-${suffix}.${ext}`), 302);
   } catch (error) {
     return dataErrorResponse(error);
   }

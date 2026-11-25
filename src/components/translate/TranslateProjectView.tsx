@@ -76,7 +76,7 @@ export function TranslateProjectView({ project }: { project: TranslateProject })
               </Button>
               {/* "Add a language" (31 Oct 2026): the stored upload is the source, nothing to upload again. */}
               {!project.edit && (
-              <Button href={`/app/new/translate?from=${project.id}&more=1`} variant="secondary">
+              <Button href={`/app/translate?from=${project.id}&more=1`} variant="secondary">
                 <Plus className="size-4" aria-hidden />
                 Add a language
               </Button>

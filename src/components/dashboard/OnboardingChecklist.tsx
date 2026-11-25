@@ -21,8 +21,8 @@ type Item = { key: ItemKey; label: string; text: string; href: string; ads?: boo
  * only while ads are on (27 Oct 2026).
  */
 const ALL_ITEMS: Item[] = [
-  { key: "translation", label: "Translate your first video", text: "A video you own, into another language, with the speaker's own voice.", href: "/app/new/translate" },
-  { key: "secondLanguage", label: "Add a second language", text: "Pick two languages on one video; each gets its own captions.", href: "/app/new/translate" },
+  { key: "translation", label: "Translate your first video", text: "A video you own, into another language, with the speaker's own voice.", href: "/app/translate" },
+  { key: "secondLanguage", label: "Add a second language", text: "Pick two languages on one video; each gets its own captions.", href: "/app/translate" },
   { key: "firstAd", label: "Make your first ad", text: "One product photo and a few sentences; the rest runs on its own.", href: "/app/new/ad", ads: true },
   { key: "team", label: "Invite a team member", text: "Share one credit pool with your team.", href: "/app/settings/team", needs: "team" },
   { key: "apiKey", label: "Create an API key", text: "Start videos from your own code or an AI assistant.", href: "/app/settings/api", needs: "api" },

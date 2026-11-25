@@ -36,7 +36,7 @@ export function ComingSoonPanel({ feature, title, text, points }: { feature: str
         ))}
       </ul>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Button href="/app/new/translate" variant="accent" size="lg">Translate a video instead</Button>
+        <Button href="/app/translate" variant="accent" size="lg">Translate a video instead</Button>
         <Button type="button" variant={done ? "secondary" : "primary"} size="lg" onClick={notify} disabled={done}>
           {done ? <Check className="size-4" aria-hidden /> : null}
           {done ? "We will let you know" : "Notify me"}

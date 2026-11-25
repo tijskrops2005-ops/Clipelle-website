@@ -158,6 +158,29 @@ export const mediaToolJob = inngest.createFunction(
       });
     }
 
+    /* ---------- video to text ---------- */
+    if (tool === "transcribe") {
+      return step.run("transcribe-run", () =>
+        withDeadline("Writing out what is said", 5, async () => {
+          const job = await load(jobId);
+          try {
+            const videoUrl = await signedDownloadUrl(job.sourcePath, 6 * 3600);
+            const estimate = Math.round(Math.max(1, seconds) * MEDIA_USD.transcribePerSecond * 10000) / 10000;
+            const t = await paid(job, "heygen", "transcribe_tool", estimate, () => withRetries("Writing out what is said", () => transcribeSegments(videoUrl, `tool-transcribe-${job.id}`)));
+            await settleSpend(t.entryId, { status: "completed", actualUsd: Math.round((t.value.seconds ?? seconds) * MEDIA_USD.transcribePerSecond * 10000) / 10000, basis: "list" });
+            if (t.value.segments.length === 0) return fail(jobId, "No speech was found in this video. Nothing was charged.");
+            const text = t.value.segments.map((s) => s.text).join(" ").replace(/\s+/g, " ").trim();
+            const folder = `users/${job.userId}/tools/${job.id}`;
+            await putObject(`${folder}/transcript.srt`, new TextEncoder().encode(buildSrt(t.value.segments.map((s, i) => ({ index: i + 1, ...s })))), "application/x-subrip");
+            await putObject(`${folder}/transcript.txt`, new TextEncoder().encode(text + "\n"), "text/plain");
+            return complete(job, `${folder}/transcript.txt`, "text/plain");
+          } catch (error) {
+            return fail(jobId, plain(error));
+          }
+        }),
+      );
+    }
+
     /* ---------- resize ---------- */
     if (tool === "resize") {
       const job = await step.run("resize-edit", async () => {

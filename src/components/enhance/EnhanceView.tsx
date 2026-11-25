@@ -264,6 +264,17 @@ export function JobRow({ job }: { job: EnhanceJobView }) {
   const media = mediaOf(job);
   const [open, setOpen] = useState(false);
   const [next, setNext] = useState(false);
+  // Video to text (25 Nov 2026): the result is a transcript, read here or downloaded as text or SRT.
+  const isText = job.kind === "transcribe";
+  const [text, setText] = useState<string | null>(null);
+  async function toggleText() {
+    if (open) return setOpen(false);
+    setOpen(true);
+    if (text === null && job.resultUrl) {
+      const r = await fetch(job.resultUrl).catch(() => null);
+      setText(r && r.ok ? await r.text() : job.demo ? "Demo: the transcript of your video appears here." : "The text could not be loaded. Download it instead.");
+    }
+  }
   const done = job.status === "completed" && job.resultUrl;
   return (
     <li className="rounded-[14px] border border-border">
@@ -282,12 +293,22 @@ export function JobRow({ job }: { job: EnhanceJobView }) {
         <StatusBadge status={job.status === "queued" ? "waiting" : job.status} className="shrink-0" />
         {done && (
           <>
-            <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="focus-ring hidden h-9 items-center rounded-full border border-border px-3 text-[13px] font-medium text-ink hover:bg-surface-muted sm:inline-flex">{open ? "Close" : "Compare"}</button>
+            {isText ? (
+              <>
+                <button type="button" onClick={toggleText} aria-expanded={open} className="focus-ring inline-flex h-9 items-center rounded-full border border-border px-3 text-[13px] font-medium text-ink hover:bg-surface-muted">{open ? "Close" : "Read"}</button>
+                {!job.demo && <a href={`${enhanceDownloadHref(job)}?format=srt`} className="focus-ring hidden h-9 items-center rounded-full border border-border px-3 text-[13px] font-medium text-ink hover:bg-surface-muted sm:inline-flex">SRT</a>}
+              </>
+            ) : (
+              <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="focus-ring hidden h-9 items-center rounded-full border border-border px-3 text-[13px] font-medium text-ink hover:bg-surface-muted sm:inline-flex">{open ? "Close" : "Compare"}</button>
+            )}
             <a href={enhanceDownloadHref(job)} download className="focus-ring grid size-9 place-items-center rounded-full bg-ink text-white transition-colors duration-150 hover:bg-ink/85" aria-label={`Download ${job.fileName}`} title="Download"><Download className="size-4" aria-hidden /></a>
           </>
         )}
       </div>
-      {done && (
+      {done && isText && open && (
+        <div className="max-h-72 overflow-y-auto whitespace-pre-wrap border-t border-divider px-4 py-3 text-[14px] leading-relaxed text-ink">{text ?? "Loading…"}</div>
+      )}
+      {done && !isText && (
         <div className="border-t border-divider px-3 py-2">
           <button type="button" onClick={() => setNext((v) => !v)} aria-expanded={next} className="focus-ring rounded-control text-[12.5px] font-medium text-muted hover:text-ink">{next ? "Hide" : "Use in another tool"}</button>
           {next && (
@@ -299,7 +320,7 @@ export function JobRow({ job }: { job: EnhanceJobView }) {
           )}
         </div>
       )}
-      {done && open && job.sourceUrl && <Compare kind={media} before={job.sourceUrl} after={job.resultUrl!} transparent={job.kind === "remove-background"} />}
+      {done && !isText && open && job.sourceUrl && <Compare kind={media} before={job.sourceUrl} after={job.resultUrl!} transparent={job.kind === "remove-background"} />}
       {job.demo && done && <p className="px-3 pb-3 text-[12px] text-muted">Demo: the result is your original file.</p>}
     </li>
   );

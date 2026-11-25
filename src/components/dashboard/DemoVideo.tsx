@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Clock3, Play, Sparkles, X } from "lucide-react";
 
-/** The walk-through (25 Nov 2026, after splister.com/app): our own app in demo mode, recorded step by step. */
-export const DEMO_VIDEO = { src: "/demo/clipelle-walkthrough.mp4", poster: "/demo/clipelle-walkthrough.jpg", minutes: "±30 seconds" };
+import { DEMO_VIDEO } from "@/content/demoVideo";
 
 /**
  * The demo on the dashboard: an ink card with a warm glow and a play button; the video opens in a dark
@@ -73,7 +72,7 @@ export function DemoVideo() {
         <video ref={video} src={open ? DEMO_VIDEO.src : undefined} poster={DEMO_VIDEO.poster} controls playsInline preload="none" className="block aspect-video w-full bg-black" aria-label="Clipelle walk-through" />
         <div className="flex items-center justify-between gap-3 bg-surface px-6 py-4 sm:px-8">
           <button type="button" onClick={() => setOpen(false)} className="focus-ring rounded-control text-[14px] font-medium text-ink hover:text-muted">Close</button>
-          <Link href="/app/new/translate" onClick={() => setOpen(false)} className="focus-ring inline-flex h-10 items-center gap-2 rounded-full bg-accent px-5 text-[14px] font-semibold text-white shadow-accent transition-colors hover:bg-accent-hover">
+          <Link href="/app/translate" onClick={() => setOpen(false)} className="focus-ring inline-flex h-10 items-center gap-2 rounded-full bg-accent px-5 text-[14px] font-semibold text-white shadow-accent transition-colors hover:bg-accent-hover">
             Translate your first video
             <ArrowRight className="size-4" aria-hidden />
           </Link>

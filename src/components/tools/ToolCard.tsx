@@ -35,12 +35,9 @@ export function ToolCard({ tool, onNavigate }: { tool: Tool; onNavigate?: () => 
       </span>
       <span className="mt-4 block text-[15.5px] font-semibold tracking-[-0.01em] text-ink">{tool.label}</span>
       <span className="mt-1 block text-[13.5px] leading-snug text-muted">{tool.text}</span>
+      {/* What it can do as one quiet line (25 Nov 2026: a row of grey pills read as generated). */}
       {tool.chips && tool.chips.length > 0 && (
-        <span className="mt-4 flex flex-wrap gap-1.5">
-          {tool.chips.map((c) => (
-            <span key={c} className="rounded-full bg-surface-muted px-2.5 py-1 text-[12px] text-ink/75">{c}</span>
-          ))}
-        </span>
+        <span className="mt-auto pt-4 text-[12.5px] text-ink/55">{tool.chips.join(", ")}</span>
       )}
     </Link>
   );

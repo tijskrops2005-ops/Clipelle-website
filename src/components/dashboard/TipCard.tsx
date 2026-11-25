@@ -8,11 +8,11 @@ import { config } from "@/lib/config";
  * the guides and CLAUDE.md). No promised numbers: a tip says what to do, never what you will gain.
  */
 const TRANSLATE_TIPS: { text: string; href: string; link: string }[] = [
-  { text: "One speaker and clear audio give the best voice and lip match.", href: "/app/new/translate", link: "Translate a video" },
-  { text: "Put brand names and product names under “Words to keep” so they stay exactly as they are.", href: "/app/new/translate", link: "Translate a video" },
-  { text: "Pick several languages at once: every version renders in parallel and you pay per language.", href: "/app/new/translate", link: "Translate a video" },
-  { text: "Precision re-renders the mouth for the new language; pick it for faces that move or side angles.", href: "/app/new/translate", link: "Translate a video" },
-  { text: "A video with captions burned in? Turn on “Remove on-screen text” and the new captions take their place.", href: "/app/new/translate", link: "Translate a video" },
+  { text: "One speaker and clear audio give the best voice and lip match.", href: "/app/translate", link: "Translate a video" },
+  { text: "Put brand names and product names under “Words to keep” so they stay exactly as they are.", href: "/app/translate", link: "Translate a video" },
+  { text: "Pick several languages at once: every version renders in parallel and you pay per language.", href: "/app/translate", link: "Translate a video" },
+  { text: "Precision re-renders the mouth for the new language; pick it for faces that move or side angles.", href: "/app/translate", link: "Translate a video" },
+  { text: "A video with captions burned in? Turn on “Remove on-screen text” and the new captions take their place.", href: "/app/translate", link: "Translate a video" },
   { text: "You can leave the page while a video is made; we e-mail you when it is ready.", href: "/app/settings", link: "Notification settings" },
 ];
 const AD_TIPS: { text: string; href: string; link: string }[] = [

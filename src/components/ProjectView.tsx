@@ -179,7 +179,7 @@ function ResultHero({ project }: { project: AdProject }) {
                   <Scissors className="size-4" aria-hidden />
                   Edit
                 </Button>
-                <Button href={`/app/new/translate?from=${project.id}`} variant="secondary">
+                <Button href={`/app/translate?from=${project.id}`} variant="secondary">
                   <Languages className="size-4" aria-hidden />
                   Translate this ad
                 </Button>
@@ -329,7 +329,7 @@ function ResultCard({ project }: { project: AdProject }) {
               <Download className="size-[18px]" aria-hidden />
               Download video
             </Button>
-            <Button href={config.features.ads ? "/app/new/ad" : "/app/new/translate"} variant="primary">
+            <Button href={config.features.ads ? "/app/new/ad" : "/app/translate"} variant="primary">
               <Plus className="size-4" aria-hidden />
               {config.features.ads ? "Make another" : "Translate a video"}
             </Button>

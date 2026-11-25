@@ -22,7 +22,7 @@ function rememberReferral(request: NextRequest, response: NextResponse) {
  * API stay reachable; API routes check the session themselves and answer 401.
  * Demo mode (NEXT_PUBLIC_DEMO_MODE != "false") has no accounts and skips all of this.
  */
-const PROTECTED = ["/app", "/app/projects", "/app/edit", "/app/tools", "/app/enhance", "/app/batches", "/admin", "/app/settings", "/app/new/ad", "/app/new/url", "/app/new/translate"];
+const PROTECTED = ["/app", "/app/projects", "/app/edit", "/app/tools", "/app/enhance", "/app/batches", "/admin", "/app/settings", "/app/new/ad", "/app/new/url", "/app/translate"];
 const AUTH_PAGES = ["/login", "/signup"];
 
 export async function proxy(request: NextRequest) {

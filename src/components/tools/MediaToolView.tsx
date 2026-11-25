@@ -43,7 +43,7 @@ export function MediaToolView({ tool }: { tool: MediaToolKey }) {
   const tooLong = meta.media === "video" && current?.seconds !== undefined && current.seconds > MEDIA_MAX_SECONDS + 0.5;
   const credits = current ? (meta.media === "video" ? (current.seconds ? mediaCredits(tool, current.seconds) : null) : mediaCredits(tool)) : null;
   const canStart = Boolean(current && rights && (credits !== null || fromSource) && !tooLong && !busy);
-  const rate = tool === "remove-text" ? "1 credit per second" : tool === "remove-background" ? `${MEDIA_CREDITS["remove-background"].perImage} credits per image` : "1 credit per 2 seconds";
+  const rate = tool === "remove-text" ? "1 credit per second" : tool === "remove-background" ? `${MEDIA_CREDITS["remove-background"].perImage} credits per image` : tool === "transcribe" ? "1 credit per 5 seconds" : "1 credit per 2 seconds";
   const set = (patch: MediaToolOptions) => setOptions((o) => ({ ...o, ...patch }));
 
   async function start() {

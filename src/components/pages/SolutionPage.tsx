@@ -25,7 +25,7 @@ export function SolutionPage({ s, locale }: { s: Solution; locale: Locale }) {
         text={s.intro}
         note={t.common.noCard}
         actions={<>
-          <Button href={config.features.ads ? "/signup" : `/signup?next=${encodeURIComponent("/app/new/translate")}`} variant="accent" size="lg">{config.features.ads ? t.common.createFirstAd : t.common.translateFirst}</Button>
+          <Button href={config.features.ads ? "/signup" : `/signup?next=${encodeURIComponent("/app/translate")}`} variant="accent" size="lg">{config.features.ads ? t.common.createFirstAd : t.common.translateFirst}</Button>
           <Button href={L("/demo")} variant="secondary" size="lg">{t.common.bookDemo}</Button>
         </>}
       />
