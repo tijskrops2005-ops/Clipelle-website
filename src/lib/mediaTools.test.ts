@@ -23,6 +23,9 @@ describe("media tools", () => {
     expect(mediaCredits("remove-background")).toBe(2);
     expect(mediaCredits("transcribe", 4)).toBe(2);
     expect(mediaCredits("transcribe", 60)).toBe(12);
+    expect(mediaCredits("video-background", 3)).toBe(15);
+    expect(mediaCredits("video-background", 20)).toBe(60);
+    expect(mediaCredits("clean-voice", 30)).toBe(15);
   });
 
   it("fills in defaults and drops unknown options", () => {
@@ -30,5 +33,8 @@ describe("media tools", () => {
     expect(normaliseOptions("resize", { mode: "fit" })).toEqual({ mode: "fit" });
     expect(normaliseOptions("remove-text", { mode: "fit" })).toEqual({});
     expect(optionsLabel("captions", { preset: "yellow", format: "original" })).toBe("Yellow word, Original size");
+    expect(normaliseOptions("video-background", { background: "red" })).toEqual({ background: "#FFFFFF" });
+    expect(normaliseOptions("video-background", { background: "transparent" })).toEqual({ background: "transparent" });
+    expect(normaliseOptions("clean-voice", { strength: "loud" as never })).toEqual({ strength: "normal" });
   });
 });

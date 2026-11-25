@@ -5,7 +5,7 @@ import { copyFromUrl, downloadObject, putObject, signedDownloadUrl } from "@/lib
 import { buildCaptionEdit, buildReframeEdit, buildRemuxEdit, captionChunkPlan, getRender, ingestFromUrl, startRender } from "@/lib/services/finalEdit";
 import { downloadTextRemovalOutput, getTextRemoval, startTextRemoval, textRemovalConfigured, TEXT_REMOVAL_USD_PER_GPU_SECOND } from "@/lib/services/textRemoval";
 import { transcribeSegments } from "@/lib/services/qualityReview";
-import { getBackgroundRemovalStatus, submitBackgroundRemoval } from "@/lib/services/enhance";
+import { CLEAN_AUDIO_ENDPOINT, VIDEO_BACKGROUND_ENDPOINT, getBackgroundRemovalStatus, getFalFileStatus, submitBackgroundRemoval, submitCleanAudio, submitVideoBackground } from "@/lib/services/enhance";
 import { buildSrt } from "@/lib/services/translate";
 import { chunkCues } from "@/lib/captionChunks";
 import { CAPTION_PRESETS } from "@/lib/editRecipe";
@@ -16,7 +16,7 @@ import { pollDelaySeconds, waitForJob, withDeadline, withRetries } from "@/lib/w
 import { workflowSettings as cfg } from "@/lib/workflow/settings";
 import { refundEnhanceCredits, reserveEnhanceCredits, type EnhanceJobRow } from "@/lib/data/enhance";
 import { imageSize } from "@/lib/enhanceRules";
-import { MEDIA_MAX_SECONDS, MEDIA_USD, mediaCredits, normaliseOptions, type MediaToolKey } from "@/lib/mediaTools";
+import { CLEAN_VOICE_STRENGTH, MEDIA_MAX_SECONDS, MEDIA_USD, VIDEO_BACKGROUND_MAX_SIDE, mediaCredits, normaliseOptions, videoBackgroundUsd, type MediaToolKey } from "@/lib/mediaTools";
 
 type StepTools = Parameters<Parameters<typeof inngest.createFunction>[1]>[0]["step"];
 const MAX_POLLS = 160;
@@ -74,7 +74,7 @@ export const mediaToolJob = inngest.createFunction(
     const jobId = event.data.jobId;
 
     const prep = await step.run("tool-prepare", () =>
-      withDeadline("Reading the file", 6, async (): Promise<{ ok: true; tool: MediaToolKey; seconds: number; width: number; height: number } | { done: true } | { error: string }> => {
+      withDeadline("Reading the file", 6, async (): Promise<{ ok: true; tool: MediaToolKey; seconds: number; width: number; height: number; fps: number } | { done: true } | { error: string }> => {
         const job = await load(jobId);
         if (job.status === "completed") return { done: true };
         if (job.status === "failed") return { error: job.error ?? GENERIC };
@@ -82,7 +82,7 @@ export const mediaToolJob = inngest.createFunction(
           const tool = job.kind as MediaToolKey;
           await db().update(enhanceJobs).set({ status: "processing", updatedAt: new Date() }).where(eq(enhanceJobs.id, job.id));
           if (tool === "remove-text" && !textRemovalConfigured()) throw new CustomerMessage("Removing on-screen text is not available right now. Try again later.");
-          let seconds = 0, width = 0, height = 0;
+          let seconds = 0, width = 0, height = 0, fps = 25;
           if (tool === "remove-background") {
             const blob = await downloadObject(job.sourcePath);
             const size = blob ? imageSize(new Uint8Array(await blob.slice(0, 256 * 1024).arrayBuffer())) : null;
@@ -92,13 +92,15 @@ export const mediaToolJob = inngest.createFunction(
             const probe = await withRetries("Reading the video", async () => ingestFromUrl(await signedDownloadUrl(job.sourcePath, 6 * 3600)));
             if (!probe.width || !probe.height || !probe.duration) throw new CustomerMessage("This video could not be read. Use an MP4, MOV or WebM file.");
             if (probe.duration > MEDIA_MAX_SECONDS + 0.5) throw new CustomerMessage(`A video can be up to ${MEDIA_MAX_SECONDS / 60} minutes here. Trim it first.`);
+            if (tool === "video-background" && Math.max(probe.width, probe.height) > VIDEO_BACKGROUND_MAX_SIDE) throw new CustomerMessage("This tool takes videos up to 1080p. Resize it first, or use a smaller export.");
             ({ width, height } = probe);
             seconds = probe.duration;
+            fps = probe.fps ?? 25;
           }
           const credits = mediaCredits(tool, seconds);
-          await db().update(enhanceJobs).set({ seconds: seconds || null, width, height, credits, updatedAt: new Date() }).where(eq(enhanceJobs.id, job.id));
+          await db().update(enhanceJobs).set({ seconds: seconds || null, fps, width, height, credits, updatedAt: new Date() }).where(eq(enhanceJobs.id, job.id));
           await reserveEnhanceCredits(job, credits);
-          return { ok: true, tool, seconds, width, height };
+          return { ok: true, tool, seconds, width, height, fps };
         } catch (error) {
           return { error: plain(error) };
         }
@@ -106,7 +108,39 @@ export const mediaToolJob = inngest.createFunction(
     );
     if ("done" in prep) return { skipped: "already completed" };
     if ("error" in prep) return step.run("tool-failed-prepare", () => fail(jobId, prep.error));
-    const { tool, seconds, width, height } = prep;
+    const { tool, seconds, width, height, fps } = prep;
+
+    /** Waits for a fal job that returns one file, then runs `onDone` with its link (26 Nov 2026). */
+    async function waitFal(prefix: string, endpoint: string, field: "video" | "audio" | "image", requestId: string, entryId: string, estimate: number, onDone: (url: string, contentType?: string) => Promise<unknown>) {
+      for (let i = 0; i < MAX_POLLS; i++) {
+        const s = await step.run(`${prefix}-status-${i}`, () => getFalFileStatus(endpoint, requestId, field));
+        if (s.status === "COMPLETED") {
+          return step.run(`${prefix}-store`, () =>
+            withDeadline("Saving the result", 10, async () => {
+              try {
+                const r = await onDone(s.url, s.contentType);
+                await settleSpend(entryId, { status: "completed", actualUsd: estimate, basis: "list" });
+                return r;
+              } catch (error) {
+                await settleSpend(entryId, { status: "completed", actualUsd: estimate, basis: "list" }).catch(() => null);
+                return fail(jobId, plain(error));
+              }
+            }),
+          );
+        }
+        if (s.status === "FAILED") {
+          return step.run(`${prefix}-failed`, async () => {
+            await settleSpend(entryId, { status: "failed", actualUsd: 0 });
+            return fail(jobId, GENERIC);
+          });
+        }
+        await waitForJob(step as StepTools, `${prefix}-wait-${i}`, "fal", requestId, pollDelaySeconds(i, cfg.pollSeconds));
+      }
+      return step.run(`${prefix}-timeout`, async () => {
+        await settleSpend(entryId, { status: "failed", actualUsd: 0 });
+        return fail(jobId, "This took too long and was stopped. Nothing was charged; try again.");
+      });
+    }
 
     /** Renders an edit with the render service, waits, copies the result to storage and completes the job. */
     async function renderAndStore(edit: { timeline: unknown; output: unknown }, fileName: string, size?: { width: number; height: number }) {
@@ -156,6 +190,59 @@ export const mediaToolJob = inngest.createFunction(
         await settleSpend(submitted.entryId, { status: "failed", actualUsd: 0 });
         return fail(jobId, "This took too long and was stopped. Nothing was charged; try again.");
       });
+    }
+
+    /* ---------- video background (BEN v2) ---------- */
+    if (tool === "video-background") {
+      const sub = await step.run("vbg-submit", () =>
+        withDeadline("Starting the background removal", 5, async (): Promise<{ requestId: string; entryId: string; estimate: number; transparent: boolean } | { error: string }> => {
+          const row = await load(jobId);
+          try {
+            const o = normaliseOptions("video-background", row.options ?? {});
+            const estimate = videoBackgroundUsd(width, height, fps, seconds);
+            const r = await paid(row, "fal", "video_background", estimate, async () => withRetries("Starting the background removal", async () => submitVideoBackground({ videoUrl: await signedDownloadUrl(row.sourcePath, 6 * 3600), background: o.background ?? "#FFFFFF", webhookUrl: callbackUrlFor("fal") })));
+            await db().update(enhanceJobs).set({ externalJobId: r.value.requestId, updatedAt: new Date() }).where(eq(enhanceJobs.id, row.id));
+            return { requestId: r.value.requestId, entryId: r.entryId, estimate, transparent: o.background === "transparent" };
+          } catch (error) {
+            return { error: plain(error) };
+          }
+        }),
+      );
+      if ("error" in sub) return step.run("vbg-failed-start", () => fail(jobId, sub.error));
+      return waitFal("vbg", VIDEO_BACKGROUND_ENDPOINT, "video", sub.requestId, sub.entryId, sub.estimate, async (url) => {
+        const row = await load(jobId);
+        const ext = sub.transparent ? "webm" : "mp4";
+        const path = `users/${row.userId}/tools/${row.id}/no-background.${ext}`;
+        await copyFromUrl(url, path, `video/${ext}`);
+        return complete(row, path, `video/${ext}`, { width, height });
+      });
+    }
+
+    /* ---------- clean voice (VEED clean audio, then the picture with the clean sound) ---------- */
+    if (tool === "clean-voice") {
+      const sub = await step.run("voice-submit", () =>
+        withDeadline("Starting the clean-up", 5, async (): Promise<{ requestId: string; entryId: string; estimate: number } | { error: string }> => {
+          const row = await load(jobId);
+          try {
+            const o = normaliseOptions("clean-voice", row.options ?? {});
+            const estimate = Math.round(Math.ceil(Math.max(1, seconds) / 60) * MEDIA_USD.cleanVoicePerMinute * 10000) / 10000;
+            const r = await paid(row, "fal", "clean_voice", estimate, async () => withRetries("Starting the clean-up", async () => submitCleanAudio({ videoUrl: await signedDownloadUrl(row.sourcePath, 6 * 3600), strength: CLEAN_VOICE_STRENGTH[o.strength ?? "normal"], webhookUrl: callbackUrlFor("fal") })));
+            await db().update(enhanceJobs).set({ externalJobId: r.value.requestId, updatedAt: new Date() }).where(eq(enhanceJobs.id, row.id));
+            return { requestId: r.value.requestId, entryId: r.entryId, estimate };
+          } catch (error) {
+            return { error: plain(error) };
+          }
+        }),
+      );
+      if ("error" in sub) return step.run("voice-failed-start", () => fail(jobId, sub.error));
+      const cleaned = (await waitFal("voice", CLEAN_AUDIO_ENDPOINT, "audio", sub.requestId, sub.entryId, sub.estimate, async (url) => {
+        const row = await load(jobId);
+        const path = `users/${row.userId}/tools/${row.id}/clean-voice.wav`;
+        await copyFromUrl(url, path, "audio/wav");
+        return { soundUrl: await signedDownloadUrl(path, 6 * 3600), pictureUrl: await signedDownloadUrl(row.sourcePath, 6 * 3600) };
+      })) as { soundUrl?: string; pictureUrl?: string; failed?: string } | undefined;
+      if (!cleaned?.soundUrl || !cleaned.pictureUrl) return cleaned;
+      return renderAndStore(buildRemuxEdit({ pictureUrl: cleaned.pictureUrl, soundUrl: cleaned.soundUrl, seconds, size: { width, height }, soundIsAudio: true }), "clean-voice.mp4", { width, height });
     }
 
     /* ---------- video to text ---------- */

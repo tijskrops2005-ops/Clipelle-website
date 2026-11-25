@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { OptionCard } from "@/components/ui/OptionCard";
+import { ColorPicker } from "@/components/ui/ColorPicker";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDuration } from "@/components/ui/VideoDropzone";
 import { FilePicker, JobRow, SourceCard, type Picked } from "@/components/enhance/EnhanceView";
@@ -23,7 +24,7 @@ export function MediaToolView({ tool }: { tool: MediaToolKey }) {
   const meta = MEDIA_TOOLS[tool];
   const { jobs, ready, error: loadError } = useEnhanceJobs(tool);
   const [picked, setPicked] = useState<Picked | null>(null);
-  const [options, setOptions] = useState<MediaToolOptions>({ preset: "bold", position: "low", format: "9:16", mode: "fill" });
+  const [options, setOptions] = useState<MediaToolOptions>({ preset: "bold", position: "low", format: "9:16", mode: "fill", background: "#FFFFFF", strength: "normal" });
   const [rights, setRights] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -43,7 +44,7 @@ export function MediaToolView({ tool }: { tool: MediaToolKey }) {
   const tooLong = meta.media === "video" && current?.seconds !== undefined && current.seconds > MEDIA_MAX_SECONDS + 0.5;
   const credits = current ? (meta.media === "video" ? (current.seconds ? mediaCredits(tool, current.seconds) : null) : mediaCredits(tool)) : null;
   const canStart = Boolean(current && rights && (credits !== null || fromSource) && !tooLong && !busy);
-  const rate = tool === "remove-text" ? "1 credit per second" : tool === "remove-background" ? `${MEDIA_CREDITS["remove-background"].perImage} credits per image` : tool === "transcribe" ? "1 credit per 5 seconds" : "1 credit per 2 seconds";
+  const rate = tool === "remove-text" ? "1 credit per second" : tool === "remove-background" ? `${MEDIA_CREDITS["remove-background"].perImage} credits per image` : tool === "transcribe" ? "1 credit per 5 seconds" : tool === "video-background" ? `${MEDIA_CREDITS["video-background"].perSecond} credits per second, videos up to 1080p` : "1 credit per 2 seconds";
   const set = (patch: MediaToolOptions) => setOptions((o) => ({ ...o, ...patch }));
 
   async function start() {
@@ -96,6 +97,33 @@ export function MediaToolView({ tool }: { tool: MediaToolKey }) {
             </div>
             <p className="text-[12.5px] text-muted">The captions follow what is said, in the language of the video.</p>
           </div>
+        )}
+
+        {tool === "video-background" && (
+          <fieldset className="mt-5">
+            <legend className="mb-2 text-sm font-medium text-ink">Behind the subject</legend>
+            <div className="flex flex-wrap items-center gap-2">
+              {[{ key: "#FFFFFF", label: "White" }, { key: "#000000", label: "Black" }, { key: "#00B140", label: "Green screen" }, { key: "transparent", label: "Transparent" }].map((b) => (
+                <button key={b.key} type="button" role="radio" aria-checked={options.background === b.key} onClick={() => set({ background: b.key })} disabled={busy} className={cn("focus-ring inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors", options.background === b.key ? "border-ink bg-ink text-white" : "border-border bg-surface text-ink hover:bg-surface-muted")}>
+                  {b.key !== "transparent" && <span className="size-3 rounded-full border border-black/10" style={{ background: b.key }} aria-hidden />}
+                  {b.label}
+                </button>
+              ))}
+              <ColorPicker id="vbgColour" label="Own colour" value={options.background && options.background !== "transparent" ? options.background : "#FFFFFF"} onChange={(hex) => hex && set({ background: hex })} disabled={busy} />
+            </div>
+            <p className="mt-2 text-[12.5px] text-muted">Transparent gives a WebM file with a see-through background for editing software; a colour gives an MP4.</p>
+          </fieldset>
+        )}
+
+        {tool === "clean-voice" && (
+          <fieldset className="mt-5">
+            <legend className="mb-2 text-sm font-medium text-ink">How much to clean</legend>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <OptionCard selected={options.strength === "light"} onSelect={() => set({ strength: "light" })} title="Light" description="Takes the edge off hum and hiss." disabled={busy} />
+              <OptionCard selected={options.strength === "normal"} onSelect={() => set({ strength: "normal" })} title="Normal" description="Clear speech, room sound mostly gone." disabled={busy} />
+              <OptionCard selected={options.strength === "strong"} onSelect={() => set({ strength: "strong" })} title="Strong" description="Voice only; music and crowds go too." disabled={busy} />
+            </div>
+          </fieldset>
         )}
 
         {tool === "resize" && (

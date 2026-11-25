@@ -15,7 +15,7 @@ const Body = z.object({
   fileName: z.string().min(1).max(300).optional(),
   mime: z.string().max(100).optional(),
   seconds: z.number().positive().max(3600).optional(),
-  options: z.object({ preset: z.string().max(40).optional(), position: z.enum(["low", "middle"]).optional(), format: z.enum(["9:16", "original"]).optional(), mode: z.enum(["fill", "fit"]).optional() }).optional(),
+  options: z.object({ preset: z.string().max(40).optional(), position: z.enum(["low", "middle"]).optional(), format: z.enum(["9:16", "original"]).optional(), mode: z.enum(["fill", "fit"]).optional(), background: z.string().max(12).optional(), strength: z.enum(["light", "normal", "strong"]).optional() }).optional(),
   rightsConfirmed: z.literal(true),
 }).refine((b) => Boolean(b.stagedPath || b.from), "A file or a source is needed.");
 

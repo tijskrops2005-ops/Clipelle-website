@@ -502,14 +502,14 @@ export function buildReframeEdit(input: { videoUrl: string; seconds: number; mod
   return { timeline: { background: "#000000", tracks }, output: { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 }, meta: { totalSeconds: total } };
 }
 
-export function buildRemuxEdit(input: { pictureUrl: string; soundUrl: string; seconds: number; size?: { width: number; height: number } }) {
+export function buildRemuxEdit(input: { pictureUrl: string; soundUrl: string; seconds: number; size?: { width: number; height: number }; /** The sound is an audio file (WAV/MP3), not a video (26 Nov 2026, clean voice). */ soundIsAudio?: boolean }) {
   const total = Math.max(1, Math.round(input.seconds * 10) / 10);
   return {
     timeline: {
       background: "#000000",
       tracks: [
         { clips: [{ asset: { type: "video", src: input.pictureUrl, volume: 0 }, start: 0, length: total, fit: "crop" }] },
-        { clips: [{ asset: { type: "video", src: input.soundUrl, volume: 1 }, start: 0, length: total, fit: "crop" }] },
+        { clips: [input.soundIsAudio ? { asset: { type: "audio", src: input.soundUrl, volume: 1 }, start: 0, length: total } : { asset: { type: "video", src: input.soundUrl, volume: 1 }, start: 0, length: total, fit: "crop" }] },
       ],
     },
     output: input.size ? { format: "mp4", size: fitSize(input.size), fps: 25 } : { format: "mp4", resolution: "1080", aspectRatio: "9:16", fps: 25 },

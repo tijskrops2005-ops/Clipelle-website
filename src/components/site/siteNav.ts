@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Building2,
+  AudioLines,
   Captions,
   Clapperboard,
   Code2,
@@ -13,6 +14,7 @@ import {
   ListChecks,
   Mail,
   Newspaper,
+  PersonStanding,
   RectangleVertical,
   ShieldCheck,
   ShoppingBag,
@@ -41,7 +43,7 @@ export type MenuKey = "platform" | "solutions" | "resources" | "company";
 export type Menu = { key: MenuKey; label: string; columns: MenuColumn[] };
 
 /** The public site's menus; one source for the header, the mobile drawer, the footer and the homepage. */
-const TOOL_ICONS: Record<string, LucideIcon> = { "enhance-video": Wand2, "enhance-image": Sparkles, "add-captions": Captions, "remove-text": Eraser, "resize-video": RectangleVertical, "video-to-text": FileText, "remove-background": Wallpaper };
+const TOOL_ICONS: Record<string, LucideIcon> = { "enhance-video": Wand2, "enhance-image": Sparkles, "add-captions": Captions, "remove-text": Eraser, "resize-video": RectangleVertical, "video-to-text": FileText, "clean-voice": AudioLines, "video-background": PersonStanding, "remove-background": Wallpaper };
 
 export const menus: Menu[] = [
   {

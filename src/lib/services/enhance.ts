@@ -116,3 +116,42 @@ export async function getBackgroundRemovalStatus(requestId: string): Promise<Too
     return { status: "FAILED", error: error instanceof Error ? error.message : "Unknown background removal error" };
   }
 }
+
+/* ---------- video background (BEN v2) and voice clean-up (VEED) on fal.ai, 26 Nov 2026 ---------- */
+
+/** `fal-ai/ben/v2/video` (verified 26 Nov 2026): `video_url`, optional `background_color` [r,g,b] (none = transparent), `output_format` mp4|webm; output `video.url`. $0.001 per output megapixel. */
+export const VIDEO_BACKGROUND_ENDPOINT = "fal-ai/ben/v2/video";
+/** `veed/clean-audio` (verified 26 Nov 2026): `audio_url` (a video works too), `strength`, `output_format` flac|wav; output `audio.url`. $0.0125 per started minute. */
+export const CLEAN_AUDIO_ENDPOINT = "veed/clean-audio";
+
+export async function submitVideoBackground(input: { videoUrl: string; background: string; webhookUrl?: string }) {
+  const hex = /^#[0-9a-fA-F]{6}$/.test(input.background) ? input.background : null;
+  const rgb = hex ? [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)] : undefined;
+  const { request_id } = await fal().queue.submit(VIDEO_BACKGROUND_ENDPOINT, {
+    input: { video_url: input.videoUrl, ...(rgb ? { background_color: rgb, output_format: "mp4" } : { output_format: "webm" }) },
+    ...(input.webhookUrl ? { webhookUrl: input.webhookUrl } : {}),
+  });
+  return { requestId: request_id };
+}
+
+export async function submitCleanAudio(input: { videoUrl: string; strength: number; webhookUrl?: string }) {
+  const { request_id } = await fal().queue.submit(CLEAN_AUDIO_ENDPOINT, {
+    input: { audio_url: input.videoUrl, strength: input.strength, output_format: "wav" },
+    ...(input.webhookUrl ? { webhookUrl: input.webhookUrl } : {}),
+  });
+  return { requestId: request_id };
+}
+
+/** Status of any fal job whose result holds one file under `field` (video, audio, image). */
+export async function getFalFileStatus(endpoint: string, requestId: string, field: "video" | "audio" | "image"): Promise<ToolEnhanceStatus> {
+  const client = fal();
+  try {
+    const status = await client.queue.status(endpoint, { requestId, logs: false });
+    if (status.status !== "COMPLETED") return { status: status.status };
+    const result = await client.queue.result(endpoint, { requestId });
+    const file = (result.data as Record<string, { url?: string; content_type?: string } | undefined>)[field];
+    return file?.url ? { status: "COMPLETED", url: file.url, contentType: file.content_type } : { status: "FAILED", error: "The job finished without a file." };
+  } catch (error) {
+    return { status: "FAILED", error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}

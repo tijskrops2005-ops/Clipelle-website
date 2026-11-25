@@ -1,4 +1,4 @@
-import { Captions, Eraser, FileText, ImageUp, Languages, Link2, RectangleVertical, Scissors, Sparkles, UserRoundPen, Wand2, Wallpaper, type LucideIcon } from "lucide-react";
+import { AudioLines, Captions, Eraser, FileText, PersonStanding, ImageUp, Languages, Link2, RectangleVertical, Scissors, Sparkles, UserRoundPen, Wand2, Wallpaper, type LucideIcon } from "lucide-react";
 import { config } from "@/lib/config";
 
 /**
@@ -48,12 +48,14 @@ const EDIT_TOOLS: Tool[] = [
   { key: "captions", href: "/app/tools/captions", label: "Add captions", text: "Captions of what is said, in the language of the video, in the style you pick.", icon: Captions, category: "edit", chips: ["Any video", "Caption styles", "9:16 or original"], isNew: true },
   { key: "remove-text", href: "/app/tools/remove-text", label: "Remove on-screen text", text: "Take old captions, titles and stickers out of a video; the sound stays as it was.", icon: Eraser, category: "edit", chips: ["Old captions", "Titles", "Sound kept"], isNew: true },
   { key: "transcribe", href: "/app/tools/transcribe", label: "Video to text", text: "Everything that is said in a video, as text and as a subtitle file.", icon: FileText, category: "edit", chips: ["Text file", "SRT subtitles", "Any spoken language"], isNew: true },
+  { key: "clean-voice", href: "/app/tools/clean-voice", label: "Clean up the voice", text: "Background noise, hum and echo taken out of the speech; the picture stays as it was.", icon: AudioLines, category: "enhance", chips: ["Noise and hum", "Three strengths", "Picture unchanged"], isNew: true },
   { key: "resize", href: "/app/tools/resize", label: "Resize to 9:16", text: "A landscape or square video as a vertical video for Reels, TikTok and Shorts.", icon: RectangleVertical, category: "edit", chips: ["1080 × 1920", "Fill or whole picture"], isNew: true },
 ];
 
 const ENHANCE_TOOLS: Tool[] = [
   { key: "enhance-video", href: "/app/enhance?type=video", label: "Enhance a video", text: "Upscale a video to 1080p or 4K, with less noise and sharper detail.", icon: Wand2, category: "enhance", chips: ["Up to 4K", "Less noise", "Sharper"], isNew: true },
   { key: "enhance-image", href: "/app/enhance?type=image", label: "Enhance an image", text: "Upscale a product photo two or four times, sharper and cleaner.", icon: Sparkles, category: "enhance", chips: ["2× or 4×", "Sharper", "Faces kept natural"], isNew: true },
+  { key: "video-background", href: "/app/tools/video-background", label: "Remove video background", text: "The person or product cut out of a video, on a colour of your choice or transparent.", icon: PersonStanding, category: "enhance", chips: ["Any colour", "Transparent WebM", "Up to 1080p"], isNew: true },
   { key: "remove-background", href: "/app/tools/remove-background", label: "Remove background", text: "A product photo on a transparent background, ready for your shop or an ad.", icon: Wallpaper, category: "enhance", chips: ["Transparent PNG", "Product photos"], isNew: true },
 ];
 

@@ -35,6 +35,8 @@ Credits: customers pay in credits; a credit is one second of finished video.
 - Add captions (any video, in the language spoken): 1 credit per 2 seconds, at least ${MEDIA_CREDITS.captions.minimum}; caption style, position, 9:16 or the original size.
 - Resize to 9:16: 1 credit per 2 seconds, at least ${MEDIA_CREDITS.resize.minimum}; fill the frame or keep the whole picture over a blurred copy.
 - Video to text: 1 credit per 5 seconds, at least ${MEDIA_CREDITS.transcribe.minimum}; a text file and an SRT subtitle file in the spoken language.
+- Clean up the voice: ${MEDIA_CREDITS["clean-voice"].perTwoSeconds} credit per 2 seconds, at least ${MEDIA_CREDITS["clean-voice"].minimum}; noise, hum and echo pushed back (light, normal or strong), picture unchanged.
+- Remove video background: ${MEDIA_CREDITS["video-background"].perSecond} credits per second, at least ${MEDIA_CREDITS["video-background"].minimum}; videos up to 1080p; a colour behind the subject (MP4) or transparent (WebM).
 - Remove background (product photos): ${MEDIA_CREDITS["remove-background"].perImage} credits per image, a transparent PNG.
 - These tools take videos up to ${MEDIA_MAX_SECONDS / 60} minutes and 32 MB, images up to 10 MB.
 - New accounts get ${FREE_CREDITS} free credits after e-mail verification. Paid credits never expire; the free ones expire after 30 days.
