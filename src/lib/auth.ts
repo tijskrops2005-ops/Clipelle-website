@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { config } from "@/lib/config";
 import { supabaseServer } from "@/lib/supabase/ssr";
 
@@ -18,7 +19,8 @@ export class AuthError extends Error {
   }
 }
 
-export async function getUser(): Promise<AppUser | null> {
+/** Once per request (25 Nov 2026, speed): the shell, the page and the API route share one auth call. */
+export const getUser = cache(async function getUser(): Promise<AppUser | null> {
   if (config.demoMode) return DEMO_USER;
   try {
     const supabase = await supabaseServer();
@@ -31,7 +33,7 @@ export async function getUser(): Promise<AppUser | null> {
   } catch {
     return null;
   }
-}
+});
 
 /** The demo workspace id: demo mode has no database, every screen runs in this one. */
 export const DEMO_WORKSPACE_ID = "00000000-0000-0000-0000-00000000ffff";
@@ -42,7 +44,7 @@ export type Viewing = { id: string; adminUserId: string; adminEmail: string; cus
 /** Who acts, and in which workspace with which role. Every data call takes this. */
 export type Scope = { userId: string; user: AppUser; workspaceId: string; role: "owner" | "member"; workspaceName: string; planKey: string; workspaceKind: "personal" | "team"; /** Set while an administrator views as this customer: nothing may be changed. */ readOnly?: boolean; viewing?: Viewing };
 
-export async function getScope(): Promise<Scope | null> {
+export const getScope = cache(async function getScope(): Promise<Scope | null> {
   const user = await getUser();
   if (!user) return null;
   if (config.demoMode) return { userId: user.id, user, workspaceId: DEMO_WORKSPACE_ID, role: "owner", workspaceName: "Demo", planKey: "free", workspaceKind: "personal" };
@@ -53,7 +55,7 @@ export async function getScope(): Promise<Scope | null> {
   const { resolveScope } = await import("@/lib/workspaces");
   const { workspace, role } = await resolveScope(user);
   return { userId: user.id, user, workspaceId: workspace.id, role, workspaceName: workspace.name, planKey: workspace.planKey, workspaceKind: workspace.kind as "personal" | "team" };
-}
+});
 
 export async function requireScope(): Promise<Scope> {
   const scope = await getScope();

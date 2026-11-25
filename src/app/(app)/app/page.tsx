@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { getScope } from "@/lib/auth";
+import { listProjects } from "@/lib/data/server";
+import { ProjectsProvider } from "@/lib/data/ProjectsProvider";
 import { config } from "@/lib/config";
 import { HowItWorks } from "@/components/dashboard/HowItWorks";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
@@ -34,13 +36,16 @@ export default async function DashboardPage() {
   const scope = await getScope();
   const first = scope?.user.name?.split(" ")[0];
   const day = dayNumber();
+  // The list rendered on the server (25 Nov 2026, speed): no second round trip before the recent videos show.
+  const initial = scope && !config.demoMode ? await listProjects(scope).catch(() => undefined) : undefined;
 
   const name = first ? first.charAt(0).toUpperCase() + first.slice(1) : null;
 
   return (
-    // 25 Nov 2026 (Tijs: less white space, more personality): one ink welcome band with the credits, the
-    // four ways to start in their category colours, three numbers in one card, then recent videos with
-    // getting started, what is running and what is new beside them. Tighter gaps than before.
+    <ProjectsProvider initial={initial}>
+    {/* 25 Nov 2026 (Tijs: less white space, more personality): one ink welcome band with the credits, the
+        four ways to start in their category colours, three numbers in one card, then recent videos with
+        getting started, what is running and what is new beside them. Tighter gaps than before. */}
     <div className="space-y-5 lg:space-y-6">
       {/* 25 Nov 2026 (Tijs, after splister.com/app): a quiet page header instead of the ink band; the
           credits sit in the top bar, the red "Create new video" in the sidebar. */}
@@ -75,5 +80,6 @@ export default async function DashboardPage() {
         <HowItWorks />
       </WhenNoProjects>
     </div>
+    </ProjectsProvider>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useInitialProjects } from "@/lib/data/ProjectsProvider";
 import type { CaptionStyleChoice } from "@/lib/captionOptions";
 import type { PresenterTranslate } from "@/lib/presenterTranslate";
 import { config } from "@/lib/config";
@@ -125,7 +126,11 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
 export function useProjects(): Project[] {
   const mock = mockStore.useProjects();
   const live = useSyncExternalStore(subscribeApi, getApiSnapshot, getApiServerSnapshot);
-  return config.demoMode ? mock : live;
+  // The server's list for this page until the store has its own (ProjectsProvider, 25 Nov 2026): the
+  // same on the server and at hydration, so nothing flashes empty first.
+  const initial = useInitialProjects();
+  if (config.demoMode) return mock;
+  return hydrated ? live : (initial ?? live);
 }
 
 export function useProject(id: string): Project | undefined {
@@ -145,7 +150,9 @@ const getReady = () => (config.demoMode ? mockStore.isHydrated() : hydrated);
 const getReadyServer = () => false;
 
 export function useProjectsReady(): boolean {
-  const ready = useSyncExternalStore(subscribeReady, getReady, getReadyServer);
+  const storeReady = useSyncExternalStore(subscribeReady, getReady, getReadyServer);
+  const initial = useInitialProjects();
+  const ready = storeReady || initial !== undefined;
   // Make sure the first fetch is triggered even when no list hook is mounted yet.
   useEffect(() => {
     if (!config.demoMode && !hydrated) void refresh();

@@ -18,7 +18,6 @@ import { UrlDemo } from "@/components/site/FeatureDemos";
 import { TranslateShowcase } from "@/components/site/TranslateShowcase";
 import { HomeDemoVideo } from "@/components/site/HomeDemoVideo";
 import { DEMO_VIDEO } from "@/content/demoVideo";
-import { TranslateDemo } from "@/components/site/TranslateDemo";
 import { ProductDemo } from "@/components/site/ProductDemo";
 import { FinalCta } from "@/components/site/Persuasion";
 import { WhyClipelle } from "@/components/site/WhyClipelle";
@@ -64,7 +63,6 @@ export function HomePage({ locale }: { locale: Locale }) {
       <HomeDemoVideo src={DEMO_VIDEO.src} poster={DEMO_VIDEO.poster} />
       <StatsBand items={h.translate.stats} />
 
-      <TranslateDemo locale={locale} />
 
       <HomeLogos locale={locale} />
       <LiveStats locale={locale} />

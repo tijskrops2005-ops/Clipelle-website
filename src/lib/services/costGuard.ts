@@ -14,7 +14,7 @@
  * when a limit or duplicate blocks it. Then `await settleSpend(entryId, { status, actualUsd })`.
  */
 import { createHash } from "node:crypto";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql, inArray } from "drizzle-orm";
 import { costEntries, db, projects, workspaces, type CostEntryRow } from "@/lib/db";
 import { effectiveLimit, limitCaps, type CustomerLimits } from "@/lib/customerLimits";
 
@@ -191,6 +191,28 @@ export async function getProjectSpend(projectId: string): Promise<ProjectSpend> 
     else shared += c;
   }
   return { totalUsd: round4(total), sharedUsd: round4(shared), byLanguage: Object.fromEntries(Object.entries(byLanguage).map(([k, v]) => [k, round4(v)])) };
+}
+
+/** The spend of many projects in one query (25 Nov 2026, speed): the project list used to ask per project. */
+export async function getProjectSpendMany(projectIds: string[]): Promise<Map<string, ProjectSpend>> {
+  const out = new Map<string, ProjectSpend>();
+  if (projectIds.length === 0) return out;
+  const rows = await db().select().from(costEntries).where(inArray(costEntries.projectId, projectIds));
+  const acc = new Map<string, { total: number; shared: number; byLanguage: Record<string, number> }>();
+  for (const r of rows) {
+    if (!r.projectId) continue;
+    const a = acc.get(r.projectId) ?? { total: 0, shared: 0, byLanguage: {} };
+    const c = chargeOf(r);
+    a.total += c;
+    if (r.language) a.byLanguage[r.language] = (a.byLanguage[r.language] ?? 0) + c;
+    else a.shared += c;
+    acc.set(r.projectId, a);
+  }
+  for (const id of projectIds) {
+    const a = acc.get(id);
+    out.set(id, a ? { totalUsd: round4(a.total), sharedUsd: round4(a.shared), byLanguage: Object.fromEntries(Object.entries(a.byLanguage).map(([k, v]) => [k, round4(v)])) } : { totalUsd: 0, sharedUsd: 0, byLanguage: {} });
+  }
+  return out;
 }
 
 /** Spent so far for one creative: the project (A) or one language version plus its share of shared costs (B). */

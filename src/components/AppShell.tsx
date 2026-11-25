@@ -34,16 +34,23 @@ export async function AppShell({ children }: { children: ReactNode }) {
   const user = scope?.user ?? null;
   let workspaces: { id: string; name: string; kind: string; role: string }[] = [];
   let deletionAt: string | null = null;
+  let credits: number | null = null;
   if (user && scope && !config.demoMode) {
-    // First visit: the profile row, the personal workspace, and the free ad once the e-mail is verified (idempotent, cheap).
+    // First visit: the profile row, the personal workspace, and the free credits once the e-mail is verified (idempotent, cheap).
+    // Side by side (25 Nov 2026, speed): these do not depend on each other, so the page waits for the slowest one, not the sum.
     const { ensurePersonalWorkspace, listWorkspacesFor } = await import("@/lib/workspaces");
-    const profile = await getOrCreateProfile(user).catch(() => null);
-    if (profile) await ensurePersonalWorkspace(user).then((personal) => ensureFreeAd(user, personal.id)).catch(() => {});
+    const [profile, list, balance] = await Promise.all([
+      getOrCreateProfile(user).then((p) => ensurePersonalWorkspace(user).then((personal) => ensureFreeAd(user, personal.id)).catch(() => {}).then(() => p)).catch(() => null),
+      listWorkspacesFor(user.id).catch(() => []),
+      getCreditBalance(scope.workspaceId).catch(() => null),
+    ]);
     if (profile?.deletionRequestedAt && !scope.viewing) deletionAt = deletionDate(profile.deletionRequestedAt).toISOString();
-    workspaces = await listWorkspacesFor(user.id).catch(() => []);
+    workspaces = list;
+    credits = balance;
+  } else if (user && scope) {
+    // Demo mode shows the one demo balance everywhere (src/lib/mock/account.ts).
+    credits = DEMO_BALANCE;
   }
-  // Demo mode shows the one demo balance everywhere (src/lib/mock/account.ts).
-  const credits = user && scope ? (config.demoMode ? DEMO_BALANCE : await getCreditBalance(scope.workspaceId).catch(() => null)) : null;
   const who = user && scope ? { email: user.email, name: user.name, credits, planKey: scope.planKey, workspace: { id: scope.workspaceId, name: scope.workspaceName, kind: scope.workspaceKind, role: scope.role }, workspaces, isAdmin: !config.demoMode && isAdmin(user.email) } : null;
   // Form drafts belong to this user in this workspace (2 Nov 2026, src/lib/forms/formDraft.ts).
   const draftScope = user && scope ? { userId: user.id, workspaceId: scope.workspaceId } : null;

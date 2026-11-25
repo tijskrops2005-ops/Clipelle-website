@@ -11,7 +11,7 @@ import { captionsUsd } from "@/lib/pricing";
 import { applyScriptReview, countWords, normaliseHooks, type AdScript } from "@/lib/services/script";
 import { maxSpokenWords } from "@/lib/pricing";
 import { copyObject, deleteObject, isStagedPathOf, objectPath, objectInfo, signedDownloadUrl } from "@/lib/storage";
-import { checkUserLimits, costGuardResponse, costLimits, creativeSpent, getProjectSpend } from "@/lib/services/costGuard";
+import { checkUserLimits, costGuardResponse, costLimits, creativeSpent, getProjectSpend, getProjectSpendMany, type ProjectSpend } from "@/lib/services/costGuard";
 import { VIEW_READ_ONLY_MESSAGE } from "@/lib/adminViewSession";
 import { estimateAdCost, estimateTranslateCost, sourceTranscriptEnabled } from "@/lib/pricing";
 import { workflowSettings } from "@/lib/workflow/settings";
@@ -19,7 +19,7 @@ import { DEFAULT_TONE, isAdTone, type AdTone } from "@/lib/adOptions";
 import { DEFAULT_SPEED, isSpeedKey, speedValue, type AdLanguageCode, type SpeedKey } from "@/lib/voiceOptions";
 import type { UploadKind } from "@/lib/data/uploads";
 import { authErrorResponse } from "@/lib/auth";
-import { CreditError, projectCreditsUsed, reserveCredits, reserveForRetry } from "@/lib/credits";
+import { CreditError, projectCreditsUsed, projectCreditsUsedMany, reserveCredits, reserveForRetry } from "@/lib/credits";
 import { adCredits, FEATURE_PLAN, FREE_AD, hasFeature, translateCredits } from "@/lib/plans";
 import { DataError } from "@/lib/data/errors";
 import { textRemovalConfigured } from "@/lib/services/textRemoval";
@@ -130,18 +130,28 @@ export function estimateForProject(row: ProjectRow) {
   return estimateTranslateCost({ seconds: input.sourceSeconds, quality: input.quality, enhance: input.enhance, removeText: input.removeText, presenterEngine: input.speaker === "presenter" ? input.presenter?.engine : undefined, languages: input.targetLanguages.length, hasSourceTranscript: sourceTranscriptEnabled() && input.sourceLanguage !== "auto" }).perLanguageTotal;
 }
 
-async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: TranslationRow[], assetRows: AssetRow[]): Promise<Project> {
+/** Spend and credits already fetched for a whole list (25 Nov 2026, speed); a single project fetches its own. */
+type Pre = { spend?: ProjectSpend; creditsUsed?: number | null };
+
+async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: TranslationRow[], assetRows: AssetRow[], pre: Pre = {}): Promise<Project> {
   const stepsByKey = new Map(stepRows.map((s) => [s.key, s]));
   const assetsById = new Map(assetRows.map((a) => [a.id, a]));
-  const spend = await getProjectSpend(row.id);
-  const creditsUsed = config.demoMode ? undefined : await projectCreditsUsed(row.id).catch(() => undefined);
+  // Every link signed side by side first (25 Nov 2026): one after another, a project with several languages waited on each.
+  const [spend, creditsRaw, signed] = await Promise.all([
+    pre.spend ?? getProjectSpend(row.id),
+    pre.creditsUsed !== undefined ? pre.creditsUsed : config.demoMode ? undefined : projectCreditsUsed(row.id).catch(() => undefined),
+    Promise.all(assetRows.map(async (a): Promise<[string, string | undefined]> => [a.id, await urlFor(a)])),
+  ]);
+  const creditsUsed = creditsRaw ?? undefined;
+  const urls = new Map<string, string | undefined>(signed);
+  const urlOf = (asset: AssetRow | undefined): string | undefined => (asset ? urls.get(asset.id) : undefined);
   const budgetUsd = costLimits().maxPerCreativeUsd;
   const estimateUsd = estimateForProject(row);
 
   if (row.workflow === "ad") {
     const input = row.input as AdInput;
     const images = assetRows.filter((a) => a.kind === "image").sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-    const imageUrls = (await Promise.all(images.map(urlFor))).filter((u): u is string => Boolean(u));
+    const imageUrls = images.map(urlOf).filter((u): u is string => Boolean(u));
     const project: AdProject = {
       id: row.id,
       workflow: "ad",
@@ -158,8 +168,8 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       offer: input.offer,
       direction: input.direction,
       tone: input.tone && isAdTone(input.tone) ? input.tone : DEFAULT_TONE,
-      background: input.background?.type === "color" ? input.background : input.background?.type === "image" ? { type: "image", url: await urlFor(assetsById.get(input.background.assetId)) } : undefined,
-      brand: input.brand ? { accent: input.brand.accent, captionStyle: input.brand.captionStyle, font: input.brand.font, logoUrl: input.brand.logoAssetId ? await urlFor(assetsById.get(input.brand.logoAssetId)) : undefined } : undefined,
+      background: input.background?.type === "color" ? input.background : input.background?.type === "image" ? { type: "image", url: urlOf(assetsById.get(input.background.assetId)) } : undefined,
+      brand: input.brand ? { accent: input.brand.accent, captionStyle: input.brand.captionStyle, font: input.brand.font, logoUrl: input.brand.logoAssetId ? urlOf(assetsById.get(input.brand.logoAssetId)) : undefined } : undefined,
       reviewScript: input.reviewScript ?? false,
       format: input.format,
       hook: input.hook,
@@ -170,7 +180,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
       script: input.script,
       imageUrls,
       steps: Object.fromEntries(AD_STEPS.map((k) => [k, toStep(stepsByKey.get(k))])) as Record<StepKey, Step>,
-      finalVideoUrl: row.finalAssetId ? await urlFor(assetsById.get(row.finalAssetId)) : undefined,
+      finalVideoUrl: row.finalAssetId ? urlOf(assetsById.get(row.finalAssetId)) : undefined,
       spentUsd: spend.totalUsd,
       budgetUsd,
       estimateUsd,
@@ -195,7 +205,7 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
     createdAt: row.createdAt.toISOString(),
     sourceFileName: input.sourceFileName,
     sourceSeconds: input.sourceSeconds,
-    sourceVideoUrl: await urlFor(source),
+    sourceVideoUrl: urlOf(source),
     sourceLanguage: input.sourceLanguage,
     detectedLanguage: (row.detectedLanguage as LanguageCode | null) ?? undefined,
     targetLanguages: input.targetLanguages,
@@ -220,9 +230,9 @@ async function toProject(row: ProjectRow, stepRows: StepRow[], translationRows: 
         phase: languagePhase(stepsByKey.get("captions"), t.language),
         segments: t.segments,
         // The finished file only: a half-made version never shows as the result (27 Oct 2026).
-        videoUrl: t.status === "completed" ? await urlFor(assetsById.get(t.captionedAssetId ?? t.enhancedAssetId ?? t.videoAssetId ?? "")) : undefined,
+        videoUrl: t.status === "completed" ? urlOf(assetsById.get(t.captionedAssetId ?? t.enhancedAssetId ?? t.videoAssetId ?? "")) : undefined,
         // Before the captions (2 Nov 2026): the enhanced or translated file, or, for an edited version, the copy it was made from.
-        rawVideoUrl: t.status === "completed" ? await urlFor(assetsById.get(t.enhancedAssetId ?? t.videoAssetId ?? (input.edit ? input.sourceAssetId : "") ?? "")) : undefined,
+        rawVideoUrl: t.status === "completed" ? urlOf(assetsById.get(t.enhancedAssetId ?? t.videoAssetId ?? (input.edit ? input.sourceAssetId : "") ?? "")) : undefined,
         error: t.error ?? undefined,
         qa: t.qa ? { changes: t.qa.changes, warnings: t.qa.warnings, summary: t.qa.summary } : undefined,
         spentUsd: creativeSpent(spend, t.language, input.targetLanguages.length),
@@ -262,7 +272,9 @@ export async function listProjectsOfBatch(scope: DataScope, batchId: string): Pr
 /** Every read and write below is scoped to the workspace: a project of another workspace is "not found". */
 export async function listProjects(scope: DataScope, limit = 100): Promise<Project[]> {
   const rows = await db().select().from(projects).where(eq(projects.workspaceId, scope.workspaceId)).orderBy(desc(projects.createdAt)).limit(limit);
-  const { stepRows, translationRows, assetRows } = await loadRelated(rows.map((r) => r.id));
+  const ids = rows.map((r) => r.id);
+  // Three grouped queries for the whole list instead of two per project (25 Nov 2026, speed).
+  const [{ stepRows, translationRows, assetRows }, spendMany, creditsMany] = await Promise.all([loadRelated(ids), getProjectSpendMany(ids), config.demoMode ? new Map<string, number>() : projectCreditsUsedMany(ids).catch(() => new Map<string, number>())]);
   return Promise.all(
     rows.map((r) =>
       toProject(
@@ -270,6 +282,7 @@ export async function listProjects(scope: DataScope, limit = 100): Promise<Proje
         stepRows.filter((s) => s.projectId === r.id),
         translationRows.filter((t) => t.projectId === r.id),
         assetRows.filter((a) => a.projectId === r.id),
+        { spend: spendMany.get(r.id), creditsUsed: config.demoMode ? undefined : (creditsMany.get(r.id) ?? null) },
       ),
     ),
   );

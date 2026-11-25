@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 import { creditLedger, db } from "@/lib/db";
 
 /**
@@ -90,4 +90,15 @@ export async function projectCreditsUsed(projectId: string): Promise<number | un
   const rows = await db().select({ credits: creditLedger.credits }).from(creditLedger).where(eq(creditLedger.projectId, projectId));
   if (rows.length === 0) return undefined;
   return Math.max(0, -rows.reduce((sum, r) => sum + r.credits, 0));
+}
+
+/** Credits charged per project, for many projects in one query (25 Nov 2026, speed); projects without rows are left out. */
+export async function projectCreditsUsedMany(projectIds: string[]): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  if (projectIds.length === 0) return out;
+  const rows = await db().select({ projectId: creditLedger.projectId, credits: creditLedger.credits }).from(creditLedger).where(inArray(creditLedger.projectId, projectIds));
+  const sums = new Map<string, number>();
+  for (const r of rows) if (r.projectId) sums.set(r.projectId, (sums.get(r.projectId) ?? 0) + r.credits);
+  for (const [id, sum] of sums) out.set(id, Math.max(0, -sum));
+  return out;
 }
