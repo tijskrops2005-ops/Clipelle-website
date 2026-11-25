@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ImageUp, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { config } from "@/lib/config";
@@ -8,8 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { OptionCard } from "@/components/ui/OptionCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDuration } from "@/components/ui/VideoDropzone";
-import { FilePicker, JobRow, type Picked } from "@/components/enhance/EnhanceView";
-import { startToolJob, useEnhanceJobs } from "@/lib/data/enhanceClient";
+import { FilePicker, JobRow, SourceCard, type Picked } from "@/components/enhance/EnhanceView";
+import { startToolJob, useEnhanceJobs, useToolSource } from "@/lib/data/enhanceClient";
 import { CAPTION_PRESETS } from "@/lib/editRecipe";
 import { MEDIA_CREDITS, MEDIA_MAX_SECONDS, MEDIA_TOOLS, mediaCredits, type MediaToolKey, type MediaToolOptions } from "@/lib/mediaTools";
 
@@ -28,21 +29,32 @@ export function MediaToolView({ tool }: { tool: MediaToolKey }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const params = useSearchParams();
+  // A finished file from another tool or a project (?from=…), instead of an upload (25 Nov 2026).
+  const { source, error: sourceError } = useToolSource(params.get("from"));
+  const fromSource = source && source.media === meta.media ? source : null;
+  const current = fromSource
+    ? { name: fromSource.fileName, seconds: fromSource.seconds ?? undefined, width: fromSource.width ?? undefined, height: fromSource.height ?? undefined }
+    : picked
+      ? { name: picked.file.name, seconds: picked.seconds, width: picked.width, height: picked.height }
+      : null;
 
-  const tooLong = meta.media === "video" && picked?.seconds !== undefined && picked.seconds > MEDIA_MAX_SECONDS + 0.5;
-  const credits = picked ? (meta.media === "video" ? (picked.seconds ? mediaCredits(tool, picked.seconds) : null) : mediaCredits(tool)) : null;
-  const canStart = Boolean(picked && rights && credits !== null && !tooLong && !busy);
+  const tooLong = meta.media === "video" && current?.seconds !== undefined && current.seconds > MEDIA_MAX_SECONDS + 0.5;
+  const credits = current ? (meta.media === "video" ? (current.seconds ? mediaCredits(tool, current.seconds) : null) : mediaCredits(tool)) : null;
+  const canStart = Boolean(current && rights && (credits !== null || fromSource) && !tooLong && !busy);
   const rate = tool === "remove-text" ? "1 credit per second" : tool === "remove-background" ? `${MEDIA_CREDITS["remove-background"].perImage} credits per image` : "1 credit per 2 seconds";
   const set = (patch: MediaToolOptions) => setOptions((o) => ({ ...o, ...patch }));
 
   async function start() {
-    if (!picked) return;
+    if (!current) return;
     setBusy(true);
     setError(null);
     setProgress(0);
     try {
-      await startToolJob({ tool, file: picked.file, seconds: picked.seconds, width: picked.width, height: picked.height, options }, setProgress);
+      await startToolJob({ tool, file: picked?.file, source: fromSource ?? undefined, seconds: current.seconds, width: current.width, height: current.height, options }, setProgress);
       setPicked(null);
+      if (fromSource) router.replace(`/tools/${tool}`, { scroll: false });
       setRights(false);
       setConfirming(false);
     } catch (e) {
@@ -56,7 +68,12 @@ export function MediaToolView({ tool }: { tool: MediaToolKey }) {
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <section aria-label={meta.title} className="rounded-card bg-surface p-5 shadow-card sm:p-6">
-        <FilePicker kind={meta.media} picked={picked} onPick={(p) => { setPicked(p); setConfirming(false); setError(null); }} onReject={setError} disabled={busy} />
+        {fromSource ? (
+          <SourceCard source={fromSource} onClear={() => router.replace(`/tools/${tool}`, { scroll: false })} disabled={busy} />
+        ) : (
+          <FilePicker kind={meta.media} picked={picked} onPick={(p) => { setPicked(p); setConfirming(false); setError(null); }} onReject={setError} disabled={busy} />
+        )}
+        {sourceError && !fromSource && <p className="mt-2 text-[12.5px] text-danger">{sourceError}</p>}
         <p className="mt-2 text-[12.5px] text-muted">
           {meta.media === "video" ? `MP4, MOV or WebM, up to ${config.limits.translateVideoMaxMb} MB and ${MEDIA_MAX_SECONDS / 60} minutes. ${rate}.` : `JPG, PNG or WebP, up to 10 MB. ${rate}.`}
         </p>
@@ -96,7 +113,7 @@ export function MediaToolView({ tool }: { tool: MediaToolKey }) {
           I own this file or have permission to use it.
         </label>
 
-        {tooLong && <p className="mt-4 rounded-panel bg-warning/10 px-3 py-2 text-[13px] text-ink" role="alert">A video can be up to {MEDIA_MAX_SECONDS / 60} minutes here. This one is {formatDuration(picked!.seconds!)}.</p>}
+        {tooLong && <p className="mt-4 rounded-panel bg-warning/10 px-3 py-2 text-[13px] text-ink" role="alert">A video can be up to {MEDIA_MAX_SECONDS / 60} minutes here. This one is {formatDuration(current!.seconds!)}.</p>}
         {error && <p className="mt-4 rounded-panel bg-danger/10 px-3 py-2 text-[13px] text-danger" role="alert">{error}</p>}
 
         {!confirming ? (
@@ -107,7 +124,7 @@ export function MediaToolView({ tool }: { tool: MediaToolKey }) {
         ) : (
           <div className="mt-5 rounded-panel border border-border bg-surface-muted p-4" role="group" aria-label="Confirm">
             <p className="text-[14px] text-ink">
-              {meta.title} for <span className="font-medium">{picked?.file.name}</span>, <span className="font-semibold tabular-nums">{credits} credits</span>?
+              {meta.title} for <span className="font-medium">{current?.name}</span>, <span className="font-semibold tabular-nums">{credits === null ? "the credits shown once it is read" : `${credits} credits`}</span>?
             </p>
             {progress !== null && progress < 1 && <p className="mt-2 text-[13px] text-muted" role="status">Uploading {Math.round(progress * 100)}%</p>}
             <div className="mt-3 flex gap-2">

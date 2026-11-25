@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, Download, Plus, Scissors, ShieldCheck, SpellCheck } from "lucide-react";
 import { config } from "@/lib/config";
+import { nextToolsFor } from "@/lib/mediaTools";
 import type { LanguageCode, TranslateProject } from "@/lib/types";
 import { languageLabel, languageOf } from "@/lib/languages";
 import { formatDate } from "@/lib/utils";
@@ -192,6 +193,14 @@ function ResultSection({ project, sourceLanguage }: { project: TranslateProject;
                     <Download className="size-4" aria-hidden />
                     Download {languageOf(t.language).tag}
                   </Button>
+                )}
+                {/* Straight into another tool (25 Nov 2026): the finished file is the source, nothing to download and upload again. */}
+                {t.videoUrl && !config.demoMode && (
+                  <p className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[12.5px]">
+                    {nextToolsFor("video", `project:${project.id}:${t.language}`).filter((x) => x.key === "enhance-video" || x.key === "resize").map((x) => (
+                      <Link key={x.key} href={x.href} className="focus-ring rounded-control font-medium text-muted underline decoration-border underline-offset-4 hover:text-ink hover:decoration-ink">{x.label}</Link>
+                    ))}
+                  </p>
                 )}
               </figure>
             ))}

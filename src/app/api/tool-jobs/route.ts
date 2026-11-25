@@ -10,13 +10,14 @@ import { databaseModeOnly, readJson } from "../projects/_guard";
 
 const Body = z.object({
   tool: z.enum(MEDIA_TOOL_KEYS as [string, ...string[]]),
-  stagedPath: z.string().min(1).max(500),
-  fileName: z.string().min(1).max(300),
+  stagedPath: z.string().min(1).max(500).optional(),
+  from: z.string().min(1).max(120).optional(),
+  fileName: z.string().min(1).max(300).optional(),
   mime: z.string().max(100).optional(),
   seconds: z.number().positive().max(3600).optional(),
   options: z.object({ preset: z.string().max(40).optional(), position: z.enum(["low", "middle"]).optional(), format: z.enum(["9:16", "original"]).optional(), mode: z.enum(["fill", "fit"]).optional() }).optional(),
   rightsConfirmed: z.literal(true),
-});
+}).refine((b) => Boolean(b.stagedPath || b.from), "A file or a source is needed.");
 
 /** The media tools (25 Nov 2026): your jobs for one tool, newest first. */
 export async function GET(request: Request) {

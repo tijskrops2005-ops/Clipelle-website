@@ -10,12 +10,13 @@ import { databaseModeOnly, readJson } from "../projects/_guard";
 const Body = z.object({
   kind: z.enum(["video", "image"]),
   target: z.enum(["1080p", "4k", "2x", "4x"]),
-  stagedPath: z.string().min(1).max(500),
-  fileName: z.string().min(1).max(300),
+  stagedPath: z.string().min(1).max(500).optional(),
+  from: z.string().min(1).max(120).optional(),
+  fileName: z.string().min(1).max(300).optional(),
   mime: z.string().max(100).optional(),
   seconds: z.number().positive().max(3600).optional(),
   rightsConfirmed: z.literal(true),
-});
+}).refine((b) => Boolean(b.stagedPath || b.from), "A file or a source is needed.");
 
 /** The enhancer: your jobs (newest first) and how long a video may be per size. */
 export async function GET() {

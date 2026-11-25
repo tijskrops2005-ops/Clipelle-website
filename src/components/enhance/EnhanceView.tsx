@@ -10,8 +10,9 @@ import { OptionCard } from "@/components/ui/OptionCard";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatBytes, formatDuration } from "@/components/ui/VideoDropzone";
-import { enhanceDownloadHref, startEnhance, useEnhanceJobs, type EnhanceJobView } from "@/lib/data/enhanceClient";
-import { MEDIA_TOOLS, isMediaToolKey, optionsLabel } from "@/lib/mediaTools";
+import { enhanceDownloadHref, startEnhance, useEnhanceJobs, useToolSource, type EnhanceJobView, type ToolSource } from "@/lib/data/enhanceClient";
+import { MEDIA_TOOLS, isMediaToolKey, nextToolsFor, optionsLabel } from "@/lib/mediaTools";
+import Link from "next/link";
 import { ENHANCE_CREDITS, IMAGE_MAX_BYTES, IMAGE_TARGETS, IMAGE_TYPES, VIDEO_TARGETS, VIDEO_TYPES, imageCredits, imageOutput, videoCredits, videoOutput, type EnhanceKind, type ImageTarget, type VideoTarget } from "@/lib/enhanceRules";
 
 const VIDEO_MAX_MB = config.limits.translateVideoMaxMb;
@@ -37,23 +38,32 @@ export function EnhanceView() {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // A finished file from another tool or a project (?from=job:… / project:…), instead of an upload (25 Nov 2026).
+  const { source, error: sourceError } = useToolSource(params.get("from"));
+  const fromSource = source && source.media === kind ? source : null;
+  const current = fromSource
+    ? { name: fromSource.fileName, seconds: fromSource.seconds ?? undefined, width: fromSource.width ?? undefined, height: fromSource.height ?? undefined }
+    : picked
+      ? { name: picked.file.name, seconds: picked.seconds, width: picked.width, height: picked.height }
+      : null;
 
   const maxSeconds = limits?.maxSeconds[videoTarget];
-  const tooLong = kind === "video" && picked?.seconds !== undefined && maxSeconds !== undefined && picked.seconds > maxSeconds + 0.5;
-  const credits = kind === "video" ? (picked?.seconds ? videoCredits(picked.seconds, videoTarget) : null) : picked ? imageCredits() : null;
-  const out = picked?.width && picked.height ? (kind === "video" ? videoOutput(picked.width, picked.height, videoTarget) : imageOutput(picked.width, picked.height, imageTarget)) : null;
+  const tooLong = kind === "video" && current?.seconds !== undefined && maxSeconds !== undefined && current.seconds > maxSeconds + 0.5;
+  const credits = kind === "video" ? (current?.seconds ? videoCredits(current.seconds, videoTarget) : null) : current ? imageCredits() : null;
+  const out = current?.width && current.height ? (kind === "video" ? videoOutput(current.width, current.height, videoTarget) : imageOutput(current.width, current.height, imageTarget)) : null;
   const imageTooBig = kind === "image" && out !== null && out.factor <= 1;
-  const canStart = Boolean(picked && rights && credits !== null && !tooLong && !imageTooBig && !busy);
+  const canStart = Boolean(current && rights && (credits !== null || fromSource) && !tooLong && !imageTooBig && !busy);
   const targetLabel = kind === "video" ? (videoTarget === "4k" ? "4K" : "1080p") : imageTarget === "4x" ? "4×" : "2×";
 
   async function start() {
-    if (!picked || credits === null) return;
+    if (!current) return;
     setBusy(true);
     setError(null);
     setProgress(0);
     try {
-      await startEnhance({ kind, target: kind === "video" ? videoTarget : imageTarget, file: picked.file, seconds: picked.seconds, width: picked.width, height: picked.height }, setProgress);
+      await startEnhance({ kind, target: kind === "video" ? videoTarget : imageTarget, file: picked?.file, source: fromSource ?? undefined, seconds: current.seconds, width: current.width, height: current.height }, setProgress);
       setPicked(null);
+      if (fromSource) router.replace(`/enhance?type=${kind}`, { scroll: false });
       setRights(false);
       setConfirming(false);
     } catch (e) {
@@ -83,7 +93,12 @@ export function EnhanceView() {
           ))}
         </div>
 
-        <FilePicker kind={kind} picked={picked} onPick={(p) => { setPicked(p ? { ...p, kind } : null); setConfirming(false); setError(null); }} onReject={setError} disabled={busy} />
+        {fromSource ? (
+          <SourceCard source={fromSource} onClear={() => router.replace(`/enhance?type=${kind}`, { scroll: false })} disabled={busy} />
+        ) : (
+          <FilePicker kind={kind} picked={picked} onPick={(p) => { setPicked(p ? { ...p, kind } : null); setConfirming(false); setError(null); }} onReject={setError} disabled={busy} />
+        )}
+        {sourceError && !fromSource && <p className="mt-2 text-[12.5px] text-danger">{sourceError}</p>}
         <p className="mt-2 text-[12.5px] text-muted">
           {kind === "video"
             ? `MP4, MOV or WebM, up to ${VIDEO_MAX_MB} MB${limits ? `; up to ${limits.maxSeconds["1080p"]} s at 1080p and ${limits.maxSeconds["4k"]} s at 4K` : ""}.`
@@ -110,7 +125,7 @@ export function EnhanceView() {
           I own this file or have permission to use it.
         </label>
 
-        {tooLong && <p className="mt-4 rounded-panel bg-warning/10 px-3 py-2 text-[13px] text-ink" role="alert">At {targetLabel} a video can be up to {maxSeconds} seconds. This one is {formatDuration(picked!.seconds!)}. Pick 1080p or a shorter video.</p>}
+        {tooLong && <p className="mt-4 rounded-panel bg-warning/10 px-3 py-2 text-[13px] text-ink" role="alert">At {targetLabel} a video can be up to {maxSeconds} seconds. This one is {formatDuration(current!.seconds!)}. Pick 1080p or a shorter video.</p>}
         {imageTooBig && <p className="mt-4 rounded-panel bg-warning/10 px-3 py-2 text-[13px] text-ink" role="alert">This image is already 24 megapixels or more; it cannot be made bigger here.</p>}
         {error && <p className="mt-4 rounded-panel bg-danger/10 px-3 py-2 text-[13px] text-danger" role="alert">{error}</p>}
 
@@ -122,7 +137,7 @@ export function EnhanceView() {
         ) : (
           <div className="mt-5 rounded-panel border border-border bg-surface-muted p-4" role="group" aria-label="Confirm">
             <p className="text-[14px] text-ink">
-              Enhance <span className="font-medium">{picked?.file.name}</span> to {targetLabel} for <span className="font-semibold tabular-nums">{credits} credits</span>?
+              Enhance <span className="font-medium">{current?.name}</span> to {targetLabel} for <span className="font-semibold tabular-nums">{credits === null ? "the credits shown once it is read" : `${credits} credits`}</span>?
             </p>
             {progress !== null && progress < 1 && <p className="mt-2 text-[13px] text-muted" role="status">Uploading {Math.round(progress * 100)}%</p>}
             <div className="mt-3 flex gap-2">
@@ -166,6 +181,23 @@ function describeJob(job: EnhanceJobView) {
   const what = isMediaToolKey(job.kind) ? optionsLabel(job.kind, job.options) || null : job.target === "4k" ? "4K" : job.target === "1080p" ? "1080p" : job.target === "4x" ? "4×" : "2×";
   const size = job.outWidth && job.outHeight && job.width && job.height && (job.outWidth !== job.width || job.outHeight !== job.height) ? `${job.width} × ${job.height} → ${job.outWidth} × ${job.outHeight}` : job.width && job.height ? `${job.width} × ${job.height}` : null;
   return [media === "video" ? (job.seconds ? formatDuration(job.seconds) : "Video") : "Image", what, size, job.credits ? `${job.credits} credits` : null].filter(Boolean).join(" · ");
+}
+
+/** The stored file a job starts from (another tool's result or a project's video), with a way back to uploading. */
+export function SourceCard({ source, onClear, disabled }: { source: ToolSource; onClear: () => void; disabled?: boolean }) {
+  return (
+    <div className="mt-4 flex items-center gap-4 rounded-panel border border-border p-3">
+      <span className="relative block size-16 shrink-0 overflow-hidden rounded-[10px] bg-surface-muted">
+        {source.media === "video" ? <video src={`${source.previewUrl}#t=0.5`} muted playsInline preload="metadata" className="size-full object-cover" aria-hidden /> : // eslint-disable-next-line @next/next/no-img-element
+          <img src={source.previewUrl} alt="" className="size-full object-cover" />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[14px] font-medium text-ink">{source.fileName}</span>
+        <span className="block text-[12.5px] tabular-nums text-muted">{[source.width && source.height ? `${source.width} × ${source.height}` : null, source.seconds ? formatDuration(source.seconds) : null, "from your files"].filter(Boolean).join(" · ")}</span>
+      </span>
+      <button type="button" onClick={onClear} disabled={disabled} className="focus-ring shrink-0 rounded-control text-[13px] font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink">Use another file</button>
+    </div>
+  );
 }
 
 export function FilePicker({ kind, picked, onPick, onReject, disabled }: { kind: EnhanceKind; picked: Picked | null; onPick: (p: Picked | null) => void; onReject: (m: string) => void; disabled?: boolean }) {
@@ -231,6 +263,7 @@ export function FilePicker({ kind, picked, onPick, onReject, disabled }: { kind:
 export function JobRow({ job }: { job: EnhanceJobView }) {
   const media = mediaOf(job);
   const [open, setOpen] = useState(false);
+  const [next, setNext] = useState(false);
   const done = job.status === "completed" && job.resultUrl;
   return (
     <li className="rounded-[14px] border border-border">
@@ -254,6 +287,18 @@ export function JobRow({ job }: { job: EnhanceJobView }) {
           </>
         )}
       </div>
+      {done && (
+        <div className="border-t border-divider px-3 py-2">
+          <button type="button" onClick={() => setNext((v) => !v)} aria-expanded={next} className="focus-ring rounded-control text-[12.5px] font-medium text-muted hover:text-ink">{next ? "Hide" : "Use in another tool"}</button>
+          {next && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {nextToolsFor(media, `job:${job.id}`, isMediaToolKey(job.kind) ? job.kind : `enhance-${media}`).map((t) => (
+                <Link key={t.key} href={t.href} className="focus-ring rounded-full border border-border px-3 py-1.5 text-[12.5px] font-medium text-ink hover:bg-surface-muted">{t.label}</Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {done && open && job.sourceUrl && <Compare kind={media} before={job.sourceUrl} after={job.resultUrl!} transparent={job.kind === "remove-background"} />}
       {job.demo && done && <p className="px-3 pb-3 text-[12px] text-muted">Demo: the result is your original file.</p>}
     </li>

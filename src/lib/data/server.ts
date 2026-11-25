@@ -288,6 +288,12 @@ export async function getProject(id: string, scope: DataScope): Promise<Project 
  * (a plain link to the storage domain opened the raw URL instead). Null when not ready or not yours.
  */
 export async function resultDownloadUrl(id: string, scope: DataScope, language?: string | null) {
+  const r = await resultStoragePath(id, scope, language);
+  return r ? signedDownloadUrl(r.path, 300, `${r.name}.mp4`) : null;
+}
+
+/** Where a project's finished video is stored, with a file-safe name and what is known of its size (25 Nov 2026: tools take it as their source). */
+export async function resultStoragePath(id: string, scope: DataScope, language?: string | null): Promise<{ path: string; name: string; seconds: number | null; width: number | null; height: number | null } | null> {
   const row = await getProjectRow(id, scope);
   if (!row) return null;
   let assetId: string | null = null;
@@ -302,8 +308,8 @@ export async function resultDownloadUrl(id: string, scope: DataScope, language?:
   if (!assetId) return null;
   const [asset] = await db().select().from(assets).where(and(eq(assets.id, assetId), eq(assets.projectId, row.id))).limit(1);
   if (!asset) return null;
-  const safeName = `${row.name}${suffix}`.replace(/[^\p{L}\p{N} ()._-]+/gu, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "video";
-  return signedDownloadUrl(asset.storagePath, 300, `${safeName}.mp4`);
+  const name = `${row.name}${suffix}`.replace(/[^\p{L}\p{N} ()._-]+/gu, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "video";
+  return { path: asset.storagePath, name, seconds: asset.seconds ?? null, width: asset.width ?? null, height: asset.height ?? null };
 }
 
 export async function getProjectRow(id: string, scope: DataScope) {

@@ -2,14 +2,27 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Bot, Send, X } from "lucide-react";
+import { Bot, MessageCircleQuestion, Send, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { assistantEnabled, supportChannels } from "@/lib/support";
 import { OPEN_ASSISTANT_EVENT } from "@/components/SupportMenu";
 
 type Turn = { role: "user" | "assistant"; content: string; needsHuman?: boolean };
 
-const SUGGESTIONS = ["How do credits work?", "Which files can I upload?", "How long does a translation take?", "How do I edit a finished video?"];
+const SUGGESTIONS = [
+  "How do credits work?",
+  "Which files can I upload?",
+  "How long does a translation take?",
+  "How do I edit a finished video?",
+  "Which languages can I translate into?",
+  "What happens to my credits if a video fails?",
+  "Can I remove old captions from my video?",
+  "How do I make my video sharper or 4K?",
+  "How do I add captions to any video?",
+  "Do my credits expire?",
+  "How do I change or cancel my plan?",
+  "Can I translate into several languages at once?",
+];
 
 /**
  * The support assistant (25 Nov 2026): opened from the Support menu, a small chat panel at the bottom
@@ -23,6 +36,7 @@ export function AssistantPanel() {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [moreQuestions, setMoreQuestions] = useState(false);
   const list = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
 
@@ -42,7 +56,20 @@ export function AssistantPanel() {
     list.current?.scrollTo({ top: list.current.scrollHeight, behavior: "smooth" });
   }, [turns, busy]);
 
-  if (!assistantEnabled() || !open) return null;
+  if (!assistantEnabled()) return null;
+  // Closed: one round button at the bottom right on every app page (25 Nov 2026, Tijs).
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Ask the support assistant"
+        className="focus-ring fixed bottom-5 right-5 z-[60] grid size-14 place-items-center rounded-full bg-ink text-white shadow-card-hover transition-transform duration-150 hover:-translate-y-0.5 max-xl:bottom-24"
+      >
+        <MessageCircleQuestion className="size-6" aria-hidden />
+      </button>
+    );
+  }
   const people = supportChannels().filter((c) => c.key !== "assistant");
 
   async function ask(text: string) {
@@ -80,9 +107,12 @@ export function AssistantPanel() {
         <Bubble role="assistant">Hi! Ask me about translating, editing or enhancing a video, credits, file formats or an error you see.</Bubble>
         {turns.length === 0 && (
           <div className="flex flex-wrap gap-1.5 pt-1">
-            {SUGGESTIONS.map((s) => (
-              <button key={s} type="button" onClick={() => ask(s)} className="focus-ring rounded-full border border-border px-3 py-1.5 text-[12.5px] text-ink hover:bg-surface-muted">{s}</button>
+            {(moreQuestions ? SUGGESTIONS : SUGGESTIONS.slice(0, 6)).map((s) => (
+              <button key={s} type="button" onClick={() => ask(s)} className="focus-ring rounded-full border border-border px-3 py-1.5 text-left text-[12.5px] text-ink hover:bg-surface-muted">{s}</button>
             ))}
+            {!moreQuestions && (
+              <button type="button" onClick={() => setMoreQuestions(true)} className="focus-ring rounded-full px-3 py-1.5 text-[12.5px] font-medium text-muted underline decoration-border underline-offset-4 hover:text-ink">More questions</button>
+            )}
           </div>
         )}
         {turns.map((t, i) => (

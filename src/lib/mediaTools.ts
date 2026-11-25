@@ -86,3 +86,24 @@ export function optionsLabel(tool: MediaToolKey, o: MediaToolOptions = {}) {
   if (tool === "resize") return o.mode === "fit" ? "Whole picture" : "Fill the frame";
   return "";
 }
+
+/**
+ * Where a finished file can go next (25 Nov 2026, tools linked together): every tool that takes this
+ * kind of file, except the one that made it. `from` is "job:<id>" or "project:<id>[:<language>]".
+ */
+export function nextToolsFor(media: "video" | "image", from: string, exclude?: string): { key: string; label: string; href: string }[] {
+  const f = encodeURIComponent(from);
+  const all =
+    media === "video"
+      ? [
+          { key: "enhance-video", label: "Enhance", href: `/enhance?type=video&from=${f}` },
+          { key: "resize", label: "Resize to 9:16", href: `/tools/resize?from=${f}` },
+          { key: "captions", label: "Add captions", href: `/tools/captions?from=${f}` },
+          { key: "remove-text", label: "Remove on-screen text", href: `/tools/remove-text?from=${f}` },
+        ]
+      : [
+          { key: "enhance-image", label: "Enhance", href: `/enhance?type=image&from=${f}` },
+          { key: "remove-background", label: "Remove background", href: `/tools/remove-background?from=${f}` },
+        ];
+  return all.filter((t) => t.key !== exclude);
+}
