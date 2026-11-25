@@ -16,19 +16,17 @@ const sections = [
   { id: "safety", label: "Safety" },
 ];
 
-const install = `# in the folder we send you
-npm install
-npm run build   # writes dist/index.js`;
+const install = `# nothing to install by hand: your assistant starts it with npx
+npx -y clipelle-mcp`;
 
 /** The real site address (NEXT_PUBLIC_SITE_URL), never a placeholder host. */
 const mcpConfig = `{
   "mcpServers": {
     "clipelle": {
-      "command": "node",
-      "args": ["/absolute/path/to/mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "clipelle-mcp"],
       "env": {
-        "CLIPELLE_API_KEY": "rl_your_key",
-        "CLIPELLE_API_URL": "${siteUrl()}"
+        "CLIPELLE_API_KEY": "rl_your_key"
       }
     }
   }
@@ -65,15 +63,15 @@ export default function McpDocsPage() {
 
       <section id="install" className="space-y-4">
         <h2>Install</h2>
-        <p>The server is not published as a package yet. It is available on request: {mail ? <>write to <a href={`mailto:${mail}`} className="underline">{mail}</a></> : <><Link href="/contact" className="underline">send us a message</Link></>} and we send you the folder. You need Node 20 or newer.</p>
-        <CodeBlock code={install} lang="bash" title="Build" />
+        <p>The server is the npm package <a href="https://www.npmjs.com/package/clipelle-mcp" className="underline" rel="noopener">clipelle-mcp</a>. Your assistant starts it with <code className="font-mono">npx</code>, so there is nothing to build. You need Node 20 or newer.{mail ? <> Questions: <a href={`mailto:${mail}`} className="underline">{mail}</a>.</> : null}</p>
+        <CodeBlock code={install} lang="bash" title="Run" />
       </section>
 
       <section id="configure" className="space-y-4">
         <h2>Configure</h2>
         <p>Make a key on <Link href={viaLogin("/app/settings/api")} className="underline">Settings → API keys</Link> (every key starts with <code className="font-mono">rl_</code>), then add the server to your assistant&apos;s MCP configuration. The shape below is what most desktop assistants use; the key stays in the environment, never in a prompt.</p>
         <CodeBlock code={mcpConfig} lang="json" title="MCP configuration" />
-        <p>Set <code className="font-mono">CLIPELLE_API_URL</code> to the address above; without it the server looks for a local development build.</p>
+        <p>The server talks to <code className="font-mono">{siteUrl()}</code> by default; <code className="font-mono">CLIPELLE_API_URL</code> points it elsewhere.</p>
       </section>
 
       <section id="tools" className="space-y-4">

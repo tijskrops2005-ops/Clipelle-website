@@ -67,7 +67,7 @@ export const menus: Menu[] = [
         title: "Integrations",
         items: [
           // 24 Nov 2026 (Tijs): Dashboard left the Platform menu (the header has it); the MCP server is listed
-          // next to the API. It is not on npm yet; its page says so and offers it on request.
+          // next to the API. Published on npm as clipelle-mcp on 26 Nov 2026.
           { href: "/integrations/api", title: "Developer API", text: "Translate videos from your own code with an API key.", icon: Code2 },
           { href: "/integrations/mcp", title: "MCP server", text: "Let your AI assistant translate videos for you.", icon: Workflow },
         ],
