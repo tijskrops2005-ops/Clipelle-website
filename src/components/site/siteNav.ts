@@ -4,6 +4,7 @@ import {
   Captions,
   Clapperboard,
   Code2,
+  Eraser,
   FileText,
   Handshake,
   HelpCircle,
@@ -12,14 +13,19 @@ import {
   ListChecks,
   Mail,
   Newspaper,
+  RectangleVertical,
   ShieldCheck,
   ShoppingBag,
   Smartphone,
+  Sparkles,
   Store,
   Users,
+  Wallpaper,
+  Wand2,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
+import { toolPages } from "@/content/toolPages";
 import { config } from "@/lib/config";
 import { publishedCaseStudies } from "@/content/case-studies";
 
@@ -35,6 +41,8 @@ export type MenuKey = "platform" | "solutions" | "resources" | "company";
 export type Menu = { key: MenuKey; label: string; columns: MenuColumn[] };
 
 /** The public site's menus; one source for the header, the mobile drawer, the footer and the homepage. */
+const TOOL_ICONS: Record<string, LucideIcon> = { "enhance-video": Wand2, "enhance-image": Sparkles, "add-captions": Captions, "remove-text": Eraser, "resize-video": RectangleVertical, "remove-background": Wallpaper };
+
 export const menus: Menu[] = [
   {
     key: "platform",
@@ -47,6 +55,11 @@ export const menus: Menu[] = [
           ifAds({ href: "/platform/ads", title: "Ads from a photo", text: "One product photo becomes a finished 9:16 ad with a presenter and captions.", icon: Clapperboard }),
           ifAds({ href: "/platform/url-to-video", title: "Ads from a link", text: "Paste a product link; name, description and photos are filled in for you.", icon: Link2 }),
         ],
+      },
+      {
+        // 25 Nov 2026 (Tijs): one page per tool, after vmake.ai's tool pages.
+        title: "Tools",
+        items: toolPages.map((p) => ({ href: `/platform/${p.slug}`, title: p.menuTitle, text: p.menuText, icon: TOOL_ICONS[p.slug] ?? Sparkles })),
       },
       {
         title: "Integrations",
