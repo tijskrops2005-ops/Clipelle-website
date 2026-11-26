@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { DEMO_USER, requireUser, type AppUser } from "@/lib/auth";
 import { adminGate } from "@/lib/mfaGate";
 import { assuranceLevel } from "@/lib/mfa";
-import { careerInterests, costEntries, creditLedger, db, demoRequests, profiles, projects, rateLimits, serviceRequests, steps, waitlist, workspaces } from "@/lib/db";
+import { careerInterests, costEntries, creditLedger, db, demoRequests, feedback, profiles, projects, rateLimits, serviceRequests, steps, waitlist, workspaces } from "@/lib/db";
 import { chargeOf } from "@/lib/services/costGuard";
 import { ALL_PLANS, CREDIT_COST_USD } from "@/lib/plans";
 import { settleCredits } from "@/lib/credits";
@@ -114,6 +114,9 @@ export async function getAdminStats(period: Period) {
   const [careers] = await d.select({ n: count() }).from(careerInterests).where(gte(careerInterests.createdAt, since));
   const recentDemo = await d.select({ id: demoRequests.id, kind: demoRequests.kind, name: demoRequests.name, email: demoRequests.email, company: demoRequests.company, status: demoRequests.status, createdAt: demoRequests.createdAt }).from(demoRequests).orderBy(desc(demoRequests.createdAt)).limit(10);
   const recentWaitlist = await d.select({ feature: waitlist.feature, n: count() }).from(waitlist).groupBy(waitlist.feature);
+  const [fb] = await d.select({ n: count() }).from(feedback).where(gte(feedback.createdAt, since));
+  // Feedback (26 Nov 2026): the newest messages with the sender's address; written for us, so shown to us.
+  const recentFeedback = await d.select({ id: feedback.id, kind: feedback.kind, message: feedback.message, allowContact: feedback.allowContact, status: feedback.status, createdAt: feedback.createdAt, email: profiles.email }).from(feedback).leftJoin(profiles, eq(profiles.userId, feedback.userId)).orderBy(desc(feedback.createdAt)).limit(10);
   const recentService = await d.select({ id: serviceRequests.id, name: serviceRequests.name, email: serviceRequests.email, company: serviceRequests.company, adsPerMonth: serviceRequests.adsPerMonth, status: serviceRequests.status, createdAt: serviceRequests.createdAt }).from(serviceRequests).orderBy(desc(serviceRequests.createdAt)).limit(10);
   return {
     period,
@@ -128,10 +131,11 @@ export async function getAdminStats(period: Period) {
     expensive: expensive.map((e) => ({ ...e, usd: Math.round(Number(e.usd) * 100) / 100 })),
     stuck: stuck.map((s) => ({ ...s, updatedAt: s.updatedAt.toISOString() })),
     rateLimits: { keys: Number(rl?.keys ?? 0), hits: Number(rl?.hits ?? 0) },
-    requests: { demo: Number(demo?.n ?? 0), waitlist: Number(wl?.n ?? 0), service: Number(svc?.n ?? 0), careers: Number(careers?.n ?? 0) },
+    requests: { demo: Number(demo?.n ?? 0), waitlist: Number(wl?.n ?? 0), service: Number(svc?.n ?? 0), careers: Number(careers?.n ?? 0), feedback: Number(fb?.n ?? 0) },
     recentDemo: recentDemo.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
     waitlistByFeature: recentWaitlist.map((w) => ({ feature: w.feature, n: Number(w.n) })),
     recentService: recentService.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
+    recentFeedback: recentFeedback.map((r) => ({ ...r, email: r.email ?? null, createdAt: r.createdAt.toISOString() })),
   };
 }
 

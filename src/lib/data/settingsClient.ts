@@ -221,6 +221,27 @@ export const revokeInvite = async (id: string, inviteId: string) => { await api(
 
 export type UsageInfo = { balance: number; projectsThisMonth: number; projects: { projectId: string; name: string; workflow: string; credits: number; last: string }[]; ledger: { id: string; credits: number; kind: string; note: string | null; createdAt: string; expiresAt: string | null }[] };
 
+/** One invoice as Settings → Invoices shows it (26 Nov 2026). */
+export type InvoiceInfo = { id: string; number: string | null; date: string; amount: number; currency: string; status: string; item: string; url: string | null; pdf: string | null };
+export async function getInvoices(): Promise<{ enabled: boolean; invoices: InvoiceInfo[] }> {
+  // The demo account is on the free plan and has bought nothing: no invoices, and nothing simulated.
+  if (config.demoMode) return { enabled: false, invoices: [] };
+  return api("/api/billing/invoices");
+}
+
+/** Opens Stripe's customer portal (invoices, card, plan) and returns its address. */
+export async function billingPortalUrl(): Promise<string> {
+  const { url } = await api<{ url: string }>("/api/billing/portal", { method: "POST" });
+  return url;
+}
+
+export type FeedbackKind = "idea" | "problem" | "praise";
+/** Sends feedback to the team (26 Nov 2026). In demo mode nothing leaves the browser. */
+export async function sendFeedback(input: { kind: FeedbackKind; message: string; allowContact: boolean }): Promise<void> {
+  if (config.demoMode) return;
+  await api("/api/feedback", { method: "POST", body: JSON.stringify(input) });
+}
+
 export async function getUsage(): Promise<UsageInfo> {
   // Demo mode (23 Nov 2026): the same balance and the same projects as the dashboard and the project pages.
   if (config.demoMode) return demoUsage(getProjectsSnapshot(), Date.now());

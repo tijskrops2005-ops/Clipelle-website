@@ -59,14 +59,14 @@ export function SupportMenu({ variant = "pill", onNavigate }: { variant?: "pill"
         className={
           variant === "pill"
             ? "focus-ring inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 text-[13px] font-medium text-ink shadow-soft transition-colors duration-150 hover:bg-surface-muted"
-            : "focus-ring group flex h-11 w-full items-center gap-3 rounded-[12px] px-3 text-[14.5px] text-white/65 transition-[background-color,color] duration-150 hover:bg-white/[0.06] hover:text-white"
+            : "focus-ring group flex h-9 w-full items-center gap-3 rounded-[12px] px-3 text-[13.5px] text-white/65 transition-[background-color,color] duration-150 hover:bg-white/[0.06] hover:text-white"
         }
       >
-        <LifeBuoy className={variant === "pill" ? "size-4" : "size-[18px] text-white/55 group-hover:text-white"} aria-hidden />
+        <LifeBuoy className={variant === "pill" ? "size-4" : "size-4 text-white/55 group-hover:text-white"} aria-hidden />
         Support
       </button>
       {open && (
-        <div id={id} role="menu" aria-label="Support" className={cn("fold-in absolute z-50 w-[300px] rounded-panel border border-border bg-surface p-1.5 shadow-card-hover", variant === "pill" ? "right-0 top-11" : "bottom-12 left-0")}>
+        <div id={id} role="menu" aria-label="Support" className={cn("fold-in absolute z-50 w-[300px] rounded-panel border border-border bg-surface p-1.5 shadow-card-hover", variant === "pill" ? "right-0 top-11" : "bottom-10 left-0")}>
           {channels.map((c) => {
             const Icon = ICONS[c.key];
             const body = (

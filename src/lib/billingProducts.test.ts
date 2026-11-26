@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PLANS, TOPUPS } from "./plans";
-import { packDescription, planDescription } from "./billingProducts";
+import { creditUnitDescription, packDescription, planDescription } from "./billingProducts";
 
 describe("product descriptions on the checkout page", () => {
   it("say what a plan and a pack buy, in credits, and that credits never expire", () => {
@@ -12,5 +12,12 @@ describe("product descriptions on the checkout page", () => {
       expect(d.length).toBeLessThan(300);
       expect(d).not.toMatch(/\$/);
     }
+  });
+
+  it("name the ad rate only while ads are on", () => {
+    const pro = PLANS.find((p) => p.key === "pro")!;
+    expect(planDescription(pro, false)).not.toMatch(/\bad\b/);
+    expect(creditUnitDescription(false)).not.toMatch(/\bad\b/);
+    expect(planDescription(pro, true)).toMatch(/an ad uses \d+ per second/);
   });
 });

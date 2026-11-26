@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CreditCard, Gauge, KeyRound, UserRound, Users, type LucideIcon } from "lucide-react";
+import { CreditCard, Gauge, KeyRound, Receipt, UserRound, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Brand left the settings on 25 Nov 2026 (Tijs); /settings/brand redirects to /settings. Saved caption colours and logos keep working. */
@@ -11,6 +11,7 @@ const items: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/app/settings/team", label: "Team", icon: Users },
   { href: "/app/settings/usage", label: "Usage", icon: Gauge },
   { href: "/app/settings/billing", label: "Billing", icon: CreditCard },
+  { href: "/app/settings/invoices", label: "Invoices", icon: Receipt },
   { href: "/app/settings/api", label: "API keys", icon: KeyRound },
 ];
 

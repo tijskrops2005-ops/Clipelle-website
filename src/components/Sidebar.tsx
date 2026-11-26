@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Brand } from "@/components/Brand";
 import { SupportMenu } from "@/components/SupportMenu";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
-import { isActivePath, navItems, adminNavItem, settingsNavItem, type NavItem } from "@/components/nav";
+import { accountNavItems, isActivePath, isSettingsActive, navItems, adminNavItem, settingsNavItem, type NavItem } from "@/components/nav";
 import { SIDEBAR_TOOLS, SOON_TOOLS, STUDIO_TOOLS, activeToolKey, type Tool } from "@/components/tools";
 import { UnseenBadge } from "@/components/StatusWatcher";
 
@@ -75,11 +75,17 @@ export function SidebarLinks({ isAdmin, onNavigate, fill }: { isAdmin?: boolean;
       ))}
       <SoonGroup onNavigate={onNavigate} />
 
-      <div className={cn("flex flex-col gap-1", fill && "mt-auto pt-6")}>
+      <div className={cn("flex flex-col gap-0.5", fill && "mt-auto pt-4")}>
         <Divider />
-        <NavRow item={settingsNavItem} active={isActivePath(pathname, settingsNavItem.href)} onNavigate={onNavigate} />
+        {/* The account group (26 Nov 2026, after splister.com/app): subscription, invoices, usage, feedback,
+            affiliate, then the settings; shorter rows than the work above, so the whole column fits a laptop screen. */}
+        {accountNavItems.map((item) => (
+          <NavRow key={item.href} item={item} active={isActivePath(pathname, item.href)} onNavigate={onNavigate} compact />
+        ))}
+        <Divider />
+        <NavRow item={settingsNavItem} active={isSettingsActive(pathname)} onNavigate={onNavigate} compact />
         <SupportMenu variant="row" onNavigate={onNavigate} />
-        {isAdmin && <NavRow item={adminNavItem} active={isActivePath(pathname, adminNavItem.href)} onNavigate={onNavigate} />}
+        {isAdmin && <NavRow item={adminNavItem} active={isActivePath(pathname, adminNavItem.href)} onNavigate={onNavigate} compact />}
       </div>
     </nav>
   );
@@ -116,11 +122,11 @@ function SoonGroup({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function NavRow({ item, active, onNavigate }: { item: NavItem; active: boolean; onNavigate?: () => void }) {
+function NavRow({ item, active, onNavigate, compact }: { item: NavItem; active: boolean; onNavigate?: () => void; /** The account rows: a little shorter and quieter than the work rows. */ compact?: boolean }) {
   const Icon = item.icon;
   return (
-    <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className={cn(rowBase, active ? rowActive : rowIdle)}>
-      <Icon className={cn("size-[18px] transition-colors duration-150", active ? "text-accent-light" : "text-white/55 group-hover:text-white")} aria-hidden />
+    <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className={cn(rowBase, compact && "h-9 text-[13.5px]", active ? rowActive : rowIdle)}>
+      <Icon className={cn("transition-colors duration-150", compact ? "size-4" : "size-[18px]", active ? "text-accent-light" : "text-white/55 group-hover:text-white")} aria-hidden />
       {item.label}
       <UnseenBadge href={item.href} />
     </Link>

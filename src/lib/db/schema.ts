@@ -807,3 +807,26 @@ export const enhanceJobs = pgTable(
   },
   (t) => [index("enhance_jobs_workspace_idx").on(t.workspaceId, t.createdAt), index("enhance_jobs_status_idx").on(t.status, t.updatedAt)],
 ).enableRLS();
+
+/**
+ * Feedback from signed-in customers (26 Nov 2026, Tijs: a Feedback link in the sidebar). Stored here
+ * and mailed to NOTIFY_EMAIL; read on /admin, never shown to other customers.
+ */
+export const feedback = pgTable(
+  "feedback",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").notNull(),
+    workspaceId: uuid("workspace_id"),
+    /** idea | problem | praise */
+    kind: text("kind").notNull(),
+    message: text("message").notNull(),
+    /** May we e-mail back about this? */
+    allowContact: boolean("allow_contact").default(true).notNull(),
+    /** new | read | done */
+    status: text("status").default("new").notNull(),
+    emailed: text("emailed"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("feedback_created_idx").on(t.createdAt)],
+).enableRLS();

@@ -147,7 +147,7 @@ export function AdminView({ stats }: { stats: Stats }) {
         </Panel>
       </div>
 
-      <Panel title="Requests" hint={`In the period: ${stats.requests.demo} demo and contact · ${stats.requests.waitlist} waitlist${stats.waitlistByFeature.length ? ` (${stats.waitlistByFeature.map((w) => `${w.feature} ${w.n}`).join(", ")})` : ""} · ${stats.requests.service} service · ${stats.requests.careers} careers · ${stats.rateLimits.hits} rate-limit hits.`}>
+      <Panel title="Requests" hint={`In the period: ${stats.requests.demo} demo and contact · ${stats.requests.waitlist} waitlist${stats.waitlistByFeature.length ? ` (${stats.waitlistByFeature.map((w) => `${w.feature} ${w.n}`).join(", ")})` : ""} · ${stats.requests.service} service · ${stats.requests.careers} careers · ${stats.requests.feedback} feedback · ${stats.rateLimits.hits} rate-limit hits.`}>
         {requests.length === 0 ? (
           <p className="text-[13.5px] text-muted">None yet.</p>
         ) : (
@@ -159,6 +159,21 @@ export function AdminView({ stats }: { stats: Stats }) {
               ))}
             </tbody>
           </AdminTable>
+        )}
+      </Panel>
+
+      <Panel title="Feedback" hint="What customers wrote on /app/feedback, newest first.">
+        {stats.recentFeedback.length === 0 ? (
+          <p className="text-[13.5px] text-muted">None yet.</p>
+        ) : (
+          <ul className="divide-y divide-divider">
+            {stats.recentFeedback.map((f) => (
+              <li key={f.id} className="py-3">
+                <p className="text-[12px] text-muted">{formatDate(f.createdAt)} · {f.kind} · {f.email ?? "unknown"}{f.allowContact ? "" : " · no reply wanted"}</p>
+                <p className="mt-1 whitespace-pre-wrap text-[13.5px] text-ink">{f.message}</p>
+              </li>
+            ))}
+          </ul>
         )}
       </Panel>
     </div>
